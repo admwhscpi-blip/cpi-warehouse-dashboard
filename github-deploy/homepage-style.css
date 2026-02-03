@@ -1,0 +1,1321 @@
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: #050505;
+    color: #ffffff;
+    overflow-x: hidden;
+    height: 100vh;
+}
+
+/* --- NAVBAR --- */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 60px;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-text {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 30px;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.nav-link:hover {
+    color: #fff;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-dashboard {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.btn-dashboard:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-primary {
+    background: #ef4444;
+    /* Emergency Red */
+    border: none;
+    color: #fff;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    transition: 0.3s;
+    animation: pulse-red 2s infinite;
+}
+
+.btn-primary:hover {
+    background: #dc2626;
+}
+
+@keyframes pulse-red {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+/* --- HERO SECTION --- */
+.hero-section {
+    display: flex;
+    height: 100vh;
+    padding-top: 80px;
+    /* Nav height */
+    position: relative;
+    background: radial-gradient(circle at 50% 50%, #0f172a 0%, #000000 100%);
+}
+
+.hero-content {
+    flex: 1;
+    padding: 60px 0 60px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    z-index: 2;
+}
+
+.hero-visual {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* TEXT STYLES */
+.badge-new {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    width: fit-content;
+    margin-bottom: 20px;
+    color: #10B981;
+    /* Green Safety */
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+}
+
+.hero-headline {
+    font-size: 3.5rem;
+    line-height: 1.1;
+    font-weight: 700;
+    margin-bottom: 20px;
+    font-family: 'Inter', sans-serif;
+    /* Clean styling as per ref */
+}
+
+.text-gradient {
+    background: linear-gradient(90deg, #60a5fa, #c084fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-sub {
+    font-size: 1.1rem;
+    color: #94a3b8;
+    max-width: 500px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 60px;
+}
+
+.btn-cta-primary {
+    background: linear-gradient(90deg, #F59E0B, #ea580c);
+    border: none;
+    color: white;
+    padding: 14px 32px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: 0.3s;
+}
+
+.btn-cta-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.5);
+}
+
+.btn-cta-secondary {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 14px 32px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-cta-secondary:hover {
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* METRIC CARDS MINI */
+.partner-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 30px;
+}
+
+.partner-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.partner-logos {
+    display: flex;
+    gap: 0;
+}
+
+.metric-mini {
+    padding-right: 30px;
+    margin-right: 30px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.m-val {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.m-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+/* --- FUTURE 2030 MINIATURE REALITY --- */
+
+.hero-visual {
+    position: absolute;
+    top: 180px;
+    /* Lowered to clear the Title Headline */
+    right: 50px;
+    width: 600px;
+    height: 320px;
+    z-index: 10;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.visual-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: rgba(15, 23, 42, 0.6);
+    /* Dark Blue Glass */
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    perspective: 1000px;
+}
+
+/* Base Grid (Subtle) */
+.visual-container::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    transform: perspective(500px) rotateX(60deg);
+    pointer-events: none;
+}
+
+/* Scene General */
+.animation-scene {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    transform-style: preserve-3d;
+}
+
+.animation-scene.active {
+    opacity: 1;
+}
+
+.scene-label {
+    position: absolute;
+    top: 20px;
+    left: 25px;
+    font-family: 'Orbitron';
+    font-weight: 700;
+    color: #fff;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    z-index: 20;
+}
+
+/* --- SCENE 1: RM (SOLID MINIATURES) --- */
+/* Building: Solid Block */
+.building-rental {
+    position: absolute;
+    bottom: 80px;
+    left: 30px;
+    width: 100px;
+    height: 90px;
+    background: linear-gradient(135deg, #334155, #1e293b);
+    border-radius: 4px;
+    border: 1px solid #475569;
+    box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.6);
+}
+
+.b-roof {
+    position: absolute;
+    top: -15px;
+    left: 0;
+    width: 100%;
+    height: 15px;
+    background: #475569;
+    transform: skewX(10deg);
+}
+
+.building-factory {
+    position: absolute;
+    bottom: 100px;
+    right: 30px;
+    width: 130px;
+    height: 110px;
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    border-radius: 4px;
+    box-shadow: -10px 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.b-roof-f {
+    position: absolute;
+    top: -20px;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    background: #38bdf8;
+    transform: skewX(-10deg);
+}
+
+.road-path {
+    position: absolute;
+    bottom: 30px;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: #1e293b;
+    transform: rotateX(45deg);
+    border-top: 2px solid #334155;
+    border-bottom: 2px solid #334155;
+}
+
+/* REALISTIC MINIATURE VEHICLES (CSS BLOCKS) */
+
+/* 1. Excavator (Solid Yellow Body + Arm) */
+.vehicle-excavator {
+    position: absolute;
+    bottom: 130px;
+    left: 180px;
+    width: 60px;
+    height: 50px;
+    animation: exWork 3s ease-in-out infinite alternate;
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5));
+}
+
+.v-tracks {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 15px;
+    background: #333;
+    border-radius: 8px;
+    background: repeating-linear-gradient(90deg, #222 0, #222 4px, #444 4px, #444 6px);
+}
+
+.v-body {
+    position: absolute;
+    bottom: 15px;
+    left: 5px;
+    width: 40px;
+    height: 25px;
+    background: #f59e0b;
+    /* Safety Orange/Yellow */
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.v-arm-1 {
+    position: absolute;
+    bottom: 25px;
+    right: 10px;
+    width: 30px;
+    height: 6px;
+    background: #333;
+    transform-origin: left;
+    transform: rotate(-45deg);
+}
+
+.v-arm-2 {
+    position: absolute;
+    bottom: 45px;
+    right: -5px;
+    width: 20px;
+    height: 5px;
+    background: #333;
+    transform-origin: left;
+    transform: rotate(80deg);
+}
+
+.v-bucket {
+    position: absolute;
+    top: -20px;
+    right: -25px;
+    width: 15px;
+    height: 15px;
+    background: #333;
+    border-radius: 0 0 5px 5px;
+}
+
+/* 2. Loader (Wheel Loader) */
+.vehicle-loader {
+    position: absolute;
+    bottom: 60px;
+    left: 100px;
+    width: 50px;
+    height: 35px;
+    animation: loaderMove 6s ease-in-out infinite;
+}
+
+.v-wheels {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 12px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.v-wheels::before,
+.v-wheels::after {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background: #222;
+    border-radius: 50%;
+    border: 2px solid #555;
+}
+
+.v-scoop-arm {
+    position: absolute;
+    top: 10px;
+    right: -10px;
+    width: 20px;
+    height: 4px;
+    background: #444;
+    transform: rotate(10deg);
+}
+
+.v-scoop {
+    position: absolute;
+    top: 5px;
+    right: -18px;
+    width: 10px;
+    height: 15px;
+    background: #f59e0b;
+    border-radius: 0 4px 4px 40%;
+}
+
+/* 3. Container Truck (Solid) */
+.vehicle-container-truck {
+    position: absolute;
+    bottom: 50px;
+    left: -150px;
+    width: 100px;
+    height: 40px;
+    animation: driveTruck 7s linear infinite;
+    z-index: 5;
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5));
+}
+
+.v-cab {
+    position: absolute;
+    right: 0;
+    bottom: 5px;
+    width: 25px;
+    height: 30px;
+    background: #fff;
+    border-radius: 4px;
+    border-right: 2px solid #ccc;
+}
+
+.v-cab::after {
+    /* Window */
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background: #38bdf8;
+}
+
+.v-container-box {
+    position: absolute;
+    left: 0;
+    bottom: 8px;
+    width: 70px;
+    height: 32px;
+    background: #dc2626;
+    /* Container Red */
+    background-image: repeating-linear-gradient(90deg, transparent 0, transparent 10px, rgba(0, 0, 0, 0.1) 10px, rgba(0, 0, 0, 0.1) 11px);
+    border: 1px solid #b91c1c;
+}
+
+.v-wheels-t {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 10px;
+}
+
+.v-wheels-t::before,
+.v-wheels-t::after,
+.v-wheels-t .mid {
+    position: absolute;
+    bottom: 0;
+    width: 10px;
+    height: 10px;
+    background: #111;
+    border-radius: 50%;
+}
+
+.v-wheels-t::before {
+    left: 5px;
+}
+
+.v-wheels-t::after {
+    right: 5px;
+    content: '';
+}
+
+/* 4. Forklift (Tiny Yellow) */
+.vehicle-forklift {
+    position: absolute;
+    bottom: 50px;
+    left: 250px;
+    width: 30px;
+    height: 25px;
+    animation: forkliftRun 8s linear infinite reverse;
+}
+
+.v-forks {
+    position: absolute;
+    bottom: 2px;
+    left: -10px;
+    width: 10px;
+    height: 2px;
+    background: #333;
+}
+
+.v-body.fk {
+    background: #facc15;
+}
+
+/* Yellow */
+
+
+/* --- SCENE 2: BK (SOLID INTAKES) --- */
+.intake-structure {
+    position: absolute;
+    bottom: 100px;
+    width: 50px;
+    height: 60px;
+    background: linear-gradient(to bottom, #94a3b8, #64748b);
+    clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.i-71a {
+    left: 90px;
+}
+
+.i-71a::after {
+    content: '71A';
+    position: absolute;
+    top: 5px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.6rem;
+}
+
+.i-71b {
+    left: 180px;
+}
+
+.i-71b::after {
+    content: '71B';
+    position: absolute;
+    top: 5px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.6rem;
+}
+
+.conveyor-network {
+    position: absolute;
+    top: 130px;
+    left: 110px;
+    width: 300px;
+    height: 8px;
+    background: #334155;
+    transform: rotate(-8deg);
+    border: 1px solid #475569;
+}
+
+.conveyor-network::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 0;
+    width: 20px;
+    height: 4px;
+    background: #facc15;
+    box-shadow: 0 0 5px #facc15;
+    animation: flowLight 2s linear infinite;
+}
+
+/* Dump Truck (Green) */
+.vehicle-dump-truck {
+    position: absolute;
+    bottom: 85px;
+    width: 50px;
+    height: 30px;
+    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.5));
+}
+
+.dt-1 {
+    left: 100px;
+    animation: dumpTilt 4s infinite;
+}
+
+.dt-2 {
+    left: 190px;
+    animation: dumpTilt 4s infinite 2s;
+}
+
+.dt-cab {
+    width: 15px;
+    height: 20px;
+    background: #fff;
+    border-radius: 2px;
+    position: absolute;
+    right: 0;
+    bottom: 5px;
+}
+
+.dt-bed {
+    width: 35px;
+    height: 18px;
+    background: #16a34a;
+    position: absolute;
+    left: 0;
+    bottom: 8px;
+    transform-origin: right bottom;
+    border-radius: 2px;
+}
+
+.dt-wheels {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 8px;
+}
+
+.dt-wheels::before,
+.dt-wheels::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 8px;
+    height: 8px;
+    background: #111;
+    border-radius: 50%;
+}
+
+.dt-wheels::before {
+    left: 5px;
+}
+
+.dt-wheels::after {
+    right: 5px;
+}
+
+/* --- SCENE 3: CPO (SOLID TANKS) --- */
+.cpo-tank-group {
+    position: absolute;
+    bottom: 80px;
+    left: 60px;
+    display: flex;
+    gap: 15px;
+}
+
+.cpo-tank {
+    width: 35px;
+    height: 100px;
+    background: linear-gradient(90deg, #e2e8f0, #cbd5e1 50%, #94a3b8);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+    border: 1px solid #94a3b8;
+}
+
+.lvl-liq {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 50%;
+    background: #f59e0b;
+    /* Actual Orange Liquid */
+    opacity: 0.9;
+    animation: liquidRise 4s infinite alternate;
+}
+
+/* Round Tanker (Red/White) */
+.vehicle-round-tanker {
+    position: absolute;
+    bottom: 30px;
+    right: 80px;
+    width: 110px;
+    height: 40px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    animation: tankerIdle 2s ease-in-out infinite;
+}
+
+.rt-cab {
+    width: 25px;
+    height: 30px;
+    background: #ef4444;
+    /* Red Cab */
+    position: absolute;
+    right: 0;
+    bottom: 5px;
+    border-radius: 4px;
+}
+
+.rt-tank-body {
+    width: 80px;
+    height: 30px;
+    background: #fff;
+    /* White Tank */
+    border-radius: 15px;
+    position: absolute;
+    left: 0;
+    bottom: 5px;
+    border: 1px solid #ccc;
+    background: linear-gradient(to bottom, #fff 0%, #f1f5f9 100%);
+}
+
+.rt-stripe {
+    position: absolute;
+    top: 12px;
+    width: 100%;
+    height: 6px;
+    background: #ef4444;
+}
+
+.rt-wheels {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 8px;
+}
+
+.rt-wheels::before,
+.rt-wheels::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 10px;
+    height: 10px;
+    background: #222;
+    border-radius: 50%;
+}
+
+.rt-wheels::before {
+    left: 15px;
+}
+
+.rt-wheels::after {
+    right: 30px;
+}
+
+/* ANIMATIONS */
+@keyframes driveTruck {
+    0% {
+        left: -150px;
+    }
+
+    100% {
+        left: 650px;
+    }
+}
+
+@keyframes luxuriousPulse {
+    0% {
+        filter: drop-shadow(0 0 5px #dc2626);
+        transform: scale(1);
+    }
+
+    100% {
+        filter: drop-shadow(0 0 25px #ef4444);
+        transform: scale(1.05);
+    }
+}
+
+@keyframes holographicFlicker {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    5% {
+        opacity: 0.8;
+        transform: translateX(2px);
+    }
+
+    10% {
+        opacity: 1;
+        transform: translateX(-1px);
+    }
+
+    15% {
+        opacity: 0.9;
+        transform: skewX(1deg);
+    }
+}
+
+@keyframes modernJitter {
+    0% {
+        transform: skewX(0deg) rotate(0deg);
+    }
+
+    25% {
+        transform: skewX(-1deg) rotate(-0.5deg);
+    }
+
+    75% {
+        transform: skewX(1deg) rotate(0.5deg);
+    }
+}
+
+@keyframes gloryGlow {
+    0% {
+        text-shadow: 0 0 10px #dc2626;
+    }
+
+    100% {
+        text-shadow: 0 0 40px #ef4444, 0 0 60px #F59E0B;
+    }
+}
+
+@keyframes chatPulse {
+    0% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+
+    100% {
+        transform: scale(1.02);
+        filter: brightness(1.2);
+    }
+}
+
+@keyframes yellowFlicker {
+
+    0%,
+    18%,
+    22%,
+    25%,
+    53%,
+    57%,
+    100% {
+        opacity: 1;
+        text-shadow: 0 0 5px #facc15;
+    }
+
+    20%,
+    24%,
+    55% {
+        opacity: 0.8;
+        text-shadow: none;
+    }
+}
+
+@keyframes whiteFlicker {
+
+    0%,
+    15%,
+    19%,
+    33%,
+    37%,
+    78%,
+    82%,
+    100% {
+        opacity: 1;
+        text-shadow: 0 0 5px #fff;
+    }
+
+    17%,
+    35%,
+    80% {
+        opacity: 0.9;
+        text-shadow: none;
+    }
+}
+
+@keyframes dumpTilt {
+
+    0%,
+    50% {
+        transform: rotate(0deg);
+    }
+
+    70% {
+        transform: rotate(-25deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
+}
+
+@keyframes liquidRise {
+    0% {
+        height: 40%;
+    }
+
+    100% {
+        height: 75%;
+    }
+}
+
+@keyframes exWork {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(3deg);
+    }
+}
+
+@keyframes flowLight {
+    0% {
+        left: 0;
+        opacity: 1;
+    }
+
+    100% {
+        left: 100%;
+        opacity: 0;
+    }
+}
+
+
+
+
+/* CINEMATIC IMAGE STYLES */
+.cinematic-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transform-origin: center;
+    animation: kenBurns 15s ease-in-out infinite alternate;
+    opacity: 0.9;
+}
+
+.cinematic-bg::after {
+    /* Dark Overlay */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.holo-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.holo-tag {
+    position: absolute;
+    padding: 5px 10px;
+    border: 1px solid #00f3ff;
+    background: rgba(0, 243, 255, 0.1);
+    color: #00f3ff;
+    font-family: 'Orbitron';
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+    animation: floatTag 4s ease-in-out infinite;
+}
+
+.holo-tag::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 50%;
+    width: 20px;
+    height: 1px;
+    background: #00f3ff;
+}
+
+.holo-tag::after {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    background: #00f3ff;
+    transform: translateY(-50%);
+    border-radius: 50%;
+}
+
+@keyframes kenBurns {
+    0% {
+        transform: scale(1.0);
+    }
+
+    100% {
+        transform: scale(1.15);
+    }
+}
+
+@keyframes floatTag {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+/* RESPONSIVE */
+
+/* --- PANGLIMA FAN KING MU SEQUENCE (FINAL FIX) --- */
+.panglima-sequence {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 280px;
+    z-index: 50;
+    pointer-events: none;
+    overflow: hidden;
+    background: transparent !important;
+}
+
+/* Observers */
+.observer-group {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 250px;
+    height: 280px;
+    /* Increased height for layout */
+    z-index: 40;
+}
+
+.obs-img {
+    width: 200px;
+    height: auto;
+    opacity: 1;
+    transform-origin: center;
+    animation: headTurn 12s step-end infinite alternate;
+}
+
+/* Chat Lines (MOVED TO SIDE) */
+.chat-container {
+    position: absolute;
+    bottom: 50px;
+    /* Aligned with their heads/bodies */
+    left: 180px;
+    /* To the Right of the image */
+    width: 250px;
+    /* Constant width */
+    transform: none;
+    /* Reset center transform */
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+    text-align: left;
+    /* Align Left */
+    z-index: 60;
+}
+
+.chat-line {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 6px 15px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    /* Glassmorphism Modern Style */
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(5px);
+    border-left: 3px solid #60a5fa;
+    /* Ice-Blue accent */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+
+    animation: holographicFlicker 4s infinite alternate;
+}
+
+.text-yellow {
+    color: #facc15;
+    border-left-color: #facc15;
+    /* Gold accent */
+    background: linear-gradient(90deg, rgba(250, 204, 21, 0.1), transparent);
+}
+
+.text-white {
+    color: #ffffff;
+    border-left-color: #ffffff;
+    /* Silver accent */
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), transparent);
+}
+
+/* Panglima Group (MOVES ONLY, DOES NOT FLIP) */
+.panglima-group {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: patrolMoveOnly 12s linear infinite;
+    /* Translation Only */
+    z-index: 50;
+}
+
+/* Image (HANDLES FLIPPING) */
+.panglima-img {
+    width: 140px;
+    height: auto;
+    filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.5));
+    animation: faceFlip 12s step-end infinite;
+    /* Flip Only */
+}
+
+/* Text (NEVER FLIPS) */
+.panglima-text {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 950;
+    font-size: 1.4rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+
+    /* Luxurious Gold Gradient */
+    background: linear-gradient(to bottom, #FFF7AD 0%, #FACC15 50%, #B45309 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    filter: drop-shadow(0 0 15px rgba(220, 38, 38, 0.8));
+
+    animation:
+        modernJitter 0.15s infinite,
+        luxuriousPulse 2s ease-in-out infinite alternate;
+}
+
+/* ANIMATIONS */
+
+/* 1. Only Moves X (No Scale Changes) */
+@keyframes patrolMoveOnly {
+    0% {
+        transform: translateX(-150px);
+    }
+
+    49% {
+        transform: translateX(calc(100vw - 150px));
+    }
+
+    50% {
+        transform: translateX(calc(100vw - 150px));
+    }
+
+    /* Pause/Turn point */
+    99% {
+        transform: translateX(-150px);
+    }
+
+    100% {
+        transform: translateX(-150px);
+    }
+}
+
+/* 2. Flips the Image separate from Text */
+@keyframes faceFlip {
+    0% {
+        transform: scaleX(1);
+    }
+
+    /* Face Right */
+    49% {
+        transform: scaleX(1);
+    }
+
+    50% {
+        transform: scaleX(-1);
+    }
+
+    /* Face Left */
+    100% {
+        transform: scaleX(-1);
+    }
+
+    /* (Wait for patrolMoveOnly loop) */
+    /* Note: patrolMoveOnly is 12s linear.
+       0-49% is L->R. Image should Face Right (scaleX(1)).
+       50-99% is R->L. Image should Face Left (scaleX(-1)). */
+}
+
+/* 3. Inverted Head Turn */
+@keyframes headTurn {
+    0% {
+        transform: scaleX(-1);
+    }
+
+    /* INVERTED: Look Right */
+    49% {
+        transform: scaleX(-1);
+    }
+
+    50% {
+        transform: scaleX(1);
+    }
+
+    /* INVERTED: Look Left */
+    100% {
+        transform: scaleX(1);
+    }
+}
+
+@keyframes energeticJitter {
+
+    0%,
+    100% {
+        transform: skewX(0deg);
+    }
+
+    25% {
+        transform: skewX(-2deg);
+    }
+
+    75% {
+        transform: skewX(2deg);
+    }
+}

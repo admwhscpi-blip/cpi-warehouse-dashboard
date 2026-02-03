@@ -1,0 +1,187 @@
+/* style-warehouse.css */
+
+/* Global Stats Container */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    margin-top: 1rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--primary-neon), transparent);
+}
+
+.blue-card,
+.white-card,
+.dark-card {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Unify backgrounds */
+
+.stat-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    letter-spacing: 1px;
+}
+
+.stat-value {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+.stat-value .unit {
+    font-size: 1rem;
+    color: var(--primary-neon);
+    font-weight: 500;
+}
+
+.stat-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+}
+
+/* Circular Chart Animation */
+.circular-chart {
+    stroke-linecap: round;
+    animation: progress 1.5s ease-out forwards;
+}
+
+@keyframes progress {
+    0% {
+        stroke-dasharray: 0 100;
+    }
+}
+
+/* Compact Warehouse Card */
+.warehouse-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.warehouse-card.compact {
+    background: var(--bg-card);
+    backdrop-filter: blur(5px);
+    border: var(--glass-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.warehouse-card.compact:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 10px 20px rgba(0, 243, 255, 0.15);
+    border-color: var(--primary-neon);
+    background: var(--bg-card-hover);
+}
+
+.card-header-compact {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 10px;
+}
+
+.wh-name {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-main);
+    letter-spacing: 1px;
+}
+
+.status-badge {
+    font-size: 0.7rem;
+    color: #000;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 800;
+    text-transform: uppercase;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.card-body-compact {
+    margin-bottom: 1rem;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    color: var(--text-muted);
+}
+
+.metric-val {
+    font-weight: 600;
+    color: var(--text-main);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.1rem;
+}
+
+/* Progress Bar */
+.mini-progress {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.mini-progress .bar {
+    height: 100%;
+    position: relative;
+    box-shadow: 0 0 8px currentColor;
+    /* Glow effect follows color */
+    width: 0;
+    /* Init 0 for animation */
+    animation: barFill 1s ease-out forwards;
+}
+
+@keyframes barFill {
+    from {
+        width: 0;
+    }
+}
+
+.click-hint {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--primary-neon);
+    margin-top: 15px;
+    text-transform: uppercase;
+    opacity: 0.6;
+    letter-spacing: 1px;
+}

@@ -1,0 +1,437 @@
+/* LUXURY LAYOUT MAP STYLES v2 (ZONING EDITION) */
+
+/* 1. MAP CONTAINER */
+#layout-map-container {
+    position: relative;
+    width: 100%;
+    height: 750px;
+    /* Sedikit lebih tinggi */
+    background-color: #05060a;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 50px 50px;
+    border: 1px solid #333;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.9);
+}
+
+/* 2. ZONES (Area Arsiran) */
+.layout-zone {
+    position: absolute;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    z-index: 1;
+    pointer-events: none;
+    transition: all 0.5s;
+}
+
+.layout-zone::before {
+    content: attr(data-label);
+    position: absolute;
+    top: -25px;
+    left: 10px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: bold;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.7;
+}
+
+/* Zone Colors & Patterns */
+.zone-pabrik {
+    /* CYAN Theme */
+    background: repeating-linear-gradient(45deg, rgba(0, 255, 255, 0.03), rgba(0, 255, 255, 0.03) 10px, transparent 10px, transparent 20px);
+    border-color: rgba(0, 255, 255, 0.2);
+}
+
+.zone-pabrik::before {
+    color: #00ffff;
+}
+
+.zone-samping {
+    /* PURPLE Theme */
+    background: repeating-linear-gradient(45deg, rgba(188, 19, 254, 0.03), rgba(188, 19, 254, 0.03) 10px, transparent 10px, transparent 20px);
+    border-color: rgba(188, 19, 254, 0.2);
+}
+
+.zone-samping::before {
+    color: #bc13fe;
+}
+
+.zone-gebang {
+    /* ORANGE Theme */
+    background: repeating-linear-gradient(45deg, rgba(255, 165, 0, 0.03), rgba(255, 165, 0, 0.03) 10px, transparent 10px, transparent 20px);
+    border-color: rgba(255, 165, 0, 0.2);
+}
+
+.zone-gebang::before {
+    color: #ffa500;
+}
+
+.zone-mitra {
+    /* BLUE Theme */
+    background: repeating-linear-gradient(45deg, rgba(0, 136, 255, 0.03), rgba(0, 136, 255, 0.03) 10px, transparent 10px, transparent 20px);
+    border-color: rgba(0, 136, 255, 0.2);
+}
+
+.zone-mitra::before {
+    color: #0088ff;
+}
+
+
+/* 3. BUILDING NODES */
+.layout-node {
+    position: absolute;
+    background: rgba(10, 12, 18, 0.9);
+    border: 1px solid #444;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border-radius: 6px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    z-index: 10;
+}
+
+.layout-node:hover {
+    transform: translateY(-5px) scale(1.03);
+    z-index: 20;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.layout-node .node-icon {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    opacity: 0.8;
+}
+
+.layout-node .node-title {
+    font-family: 'Orbitron';
+    font-size: 0.8rem;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.layout-node .node-cap {
+    font-family: 'Rajdhani';
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 3px;
+}
+
+/* Node Specific Glows matched to Zones */
+.node-pabrik {
+    border-bottom: 3px solid #00ffff;
+}
+
+.node-pabrik:hover {
+    border-color: #00ffff;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.node-samping {
+    border-bottom: 3px solid #bc13fe;
+}
+
+.node-samping:hover {
+    border-color: #bc13fe;
+    box-shadow: 0 0 20px rgba(188, 19, 254, 0.2);
+}
+
+.node-gebang {
+    border-bottom: 3px solid #ffa500;
+}
+
+.node-gebang:hover {
+    border-color: #ffa500;
+    box-shadow: 0 0 20px rgba(255, 165, 0, 0.2);
+}
+
+.node-mitra {
+    border-bottom: 3px solid #0088ff;
+}
+
+.node-mitra:hover {
+    border-color: #0088ff;
+    box-shadow: 0 0 20px rgba(0, 136, 255, 0.2);
+}
+
+
+/* 4. CONNECTIONS & SVG */
+#layout-connections {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+    mix-blend-mode: screen;
+}
+
+.conn-line {
+    fill: none;
+    stroke-width: 1.5;
+    opacity: 0.4;
+    stroke: #555;
+    /* Default dim */
+}
+
+/* Active Line Types */
+.line-pabrik {
+    stroke: #00ffff;
+    filter: drop-shadow(0 0 2px #00ffff);
+    opacity: 0.6;
+}
+
+/* 5. LEGEND / OVERLAY */
+.layout-legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    z-index: 30;
+    display: flex;
+    gap: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Rajdhani';
+    font-size: 0.8rem;
+    color: #ccc;
+}
+
+
+/* 6. NEON FLOW CHAINS (Rantai Hijau Menyala) */
+.line-flow {
+    stroke: #39ff14;
+    /* Neon Green */
+    stroke-width: 2px;
+    stroke-dasharray: 8, 8;
+    /* Putus-putus */
+    stroke-linecap: round;
+    opacity: 1 !important;
+    /* Force Visibility */
+    filter: drop-shadow(0 0 5px #39ff14);
+    animation: flowAnim 1s linear infinite;
+}
+
+@keyframes flowAnim {
+    from {
+        stroke-dashoffset: 20;
+    }
+
+    to {
+        stroke-dashoffset: 4;
+    }
+}
+
+
+/* 7. FUTURISTIC HUD ELEMENTS (SUPER MODERN) */
+
+/* Header Area */
+#layout-map-container {
+    background: radial-gradient(circle at center, #0b1021 0%, #000 100%);
+    border: 1px solid #1e293b;
+    box-shadow: 0 0 50px rgba(0, 243, 255, 0.05);
+}
+
+.lux-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px !important;
+    margin-bottom: 20px;
+}
+
+#btn-fullscreen {
+    background: rgba(0, 243, 255, 0.1);
+    border: 1px solid #00f3ff;
+    color: #00f3ff;
+    font-family: 'Orbitron';
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#btn-fullscreen:hover {
+    background: #00f3ff;
+    color: #000;
+    box-shadow: 0 0 15px #00f3ff;
+}
+
+/* COMPASS ROSE (SOPHISTICATED) */
+.map-compass {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 80px;
+    z-index: 50;
+    pointer-events: none;
+}
+
+.compass-circle {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 243, 255, 0.3);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+    background: radial-gradient(circle, rgba(0,0,0,0.8) 0%, transparent 70%);
+}
+.compass-circle::before {
+    content: '';
+    position: absolute;
+    top: 5px; left: 5px; right: 5px; bottom: 5px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    animation: rotateSlow 20s linear infinite;
+}
+
+@keyframes rotateSlow { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+
+.compass-marker {
+    position: absolute;
+    font-family: 'Orbitron';
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: #fff;
+    text-shadow: 0 0 5px #000;
+}
+.compass-marker.n { top: 2px; left: 50%; transform: translateX(-50%); color: #ff2a2a; }
+.compass-marker.s { bottom: 2px; left: 50%; transform: translateX(-50%); color: #aaa; }
+.compass-marker.e { right: 5px; top: 50%; transform: translateY(-50%); color: #aaa; }
+.compass-marker.w { left: 5px; top: 50%; transform: translateY(-50%); color: #aaa; }
+
+.compass-needle {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 4px; height: 60%;
+    background: linear-gradient(to top, #444 50%, #ff2a2a 50%);
+    transform: translate(-50%, -50%);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    border-radius: 2px;
+}
+.compass-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 6px; height: 6px;
+    background: #fff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 5px #fff;
+}
+
+/* ZONES RELAUNCH (Transparent) */
+.layout-zone {
+    opacity: 1; /* Reset previous opacity logic */
+    background: rgba(0, 0, 0, 0.3) !important; /* Semi-transparent dark */
+    border-width: 2px !important;
+    border-style: solid !important;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+}
+.layout-zone::before {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid currentColor;
+}
+
+/* FULLSCREEN ADJUSTMENT */
+#layout-map-container:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+    background: #000; /* Deep clean black */
+}
+
+
+/* NODE HUD & META DATA */
+.layout-node {
+    background: rgba(10, 15, 25, 0.85);
+    /* Darker Glass */
+    clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
+    /* Sci-Fi Cut Corners */
+}
+
+.node-hud-corner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 1px solid transparent;
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.node-meta {
+    font-size: 0.6rem;
+    color: #00f3ff;
+    font-family: 'Consolas', monospace;
+    margin-top: 2px;
+    background: rgba(0, 243, 255, 0.1);
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+
+.node-dest {
+    font-size: 0.55rem;
+    color: #aaa;
+    font-style: italic;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 95%;
+}
+
+/* SPECIFIC GLOWS */
+.node-external .node-meta {
+    color: #39ff14;
+    background: rgba(57, 255, 20, 0.15);
+}
+
+.node-pabrik .node-meta {
+    color: #00ffff;
+    background: rgba(0, 255, 255, 0.15);
+}
+
+.node-mitra .node-meta {
+    color: #0088ff;
+    background: rgba(0, 136, 255, 0.15);
+}
+
+.node-samping .node-meta {
+    color: #bc13fe;
+    background: rgba(188, 19, 254, 0.15);
+}
+
+.node-gebang .node-meta {
+    color: #ffa500;
+    background: rgba(255, 165, 0, 0.15);
+}

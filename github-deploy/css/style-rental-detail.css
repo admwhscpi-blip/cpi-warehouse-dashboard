@@ -1,0 +1,222 @@
+/* RENTAL DETAIL STYLES */
+/* Modular Style - Specific for Rental Gudang Views */
+
+.detail-overlay-glass {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 15, 25, 0.96);
+    backdrop-filter: blur(15px);
+    z-index: 10000;
+    display: none;
+    flex-direction: column;
+    padding: 30px;
+    box-sizing: border-box;
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.detail-main-title {
+    font-family: 'Orbitron';
+    font-size: 2rem;
+    color: #fff;
+    text-shadow: 0 0 10px #00ffcc;
+}
+
+.detail-sub-title {
+    font-family: 'Rajdhani';
+    color: #888;
+    letter-spacing: 2px;
+}
+
+.close-btn-rect {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 8px 24px;
+    cursor: pointer;
+    font-family: 'Rajdhani';
+    letter-spacing: 1px;
+    transition: all 0.3s;
+}
+
+.close-btn-rect:hover {
+    background: #fff;
+    color: #000;
+}
+
+/* SPLIT LAYOUT */
+.rental-split-view {
+    display: flex;
+    flex: 1;
+    gap: 30px;
+}
+
+/* 1. MAP CONTAINER (LEFT) */
+.rental-map-container {
+    flex: 2;
+    background: #111;
+    border: 1px solid #333;
+    position: relative;
+    border-radius: 8px;
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8);
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+/* GATES */
+.rental-gate {
+    position: absolute;
+    background: #fff;
+    color: #000;
+    border: 1px solid #999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    box-shadow: 0 0 10px white;
+}
+
+/* LOTS */
+.rental-lot {
+    position: absolute;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #000;
+    font-family: 'Rajdhani';
+    font-weight: bold;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s;
+    cursor: pointer;
+}
+
+.rental-lot:hover {
+    transform: scale(1.02);
+    z-index: 5;
+}
+
+.lot-label {
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+.lot-info {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* 2. STATS PANEL (RIGHT) */
+.rental-stats-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 3px solid #00ffcc;
+}
+
+.stat-card.half {
+    flex: 1;
+}
+
+.stat-row {
+    display: flex;
+    gap: 15px;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #aaa;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.stat-val {
+    font-family: 'Orbitron';
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.stat-val-lg {
+    font-family: 'Orbitron';
+    font-size: 2rem;
+    color: #00ffcc;
+}
+
+.stat-val.highlight {
+    color: #ffff00;
+}
+
+/* Progress Bar */
+.progress-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: #00ffcc;
+    box-shadow: 0 0 10px #00ffcc;
+}
+
+/* Mini Table */
+.mini-table-header {
+    font-family: 'Rajdhani';
+    font-weight: bold;
+    color: #00ffcc;
+    margin-top: 20px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
+}
+
+.mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Rajdhani';
+    margin-top: 10px;
+}
+
+.mini-table td {
+    padding: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+.mini-table tr:last-child td {
+    border: none;
+}
+
+.text-red {
+    color: #ff5555;
+    font-weight: bold;
+}
+
+.text-green {
+    color: #55ff55;
+    font-weight: bold;
+}

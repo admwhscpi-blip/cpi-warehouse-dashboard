@@ -1,0 +1,145 @@
+/* style-category.css */
+
+.analytics-grid-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* --- Layout Donut Chart --- */
+.donut-layout {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.donut-visual {
+    width: 150px;
+    height: 150px;
+    flex-shrink: 0;
+    position: relative;
+    animation: rotateEntrance 1.5s ease-out;
+}
+
+@keyframes rotateEntrance {
+    from {
+        transform: rotate(-90deg) scale(0.8);
+        opacity: 0;
+    }
+
+    to {
+        transform: rotate(0deg) scale(1);
+        opacity: 1;
+    }
+}
+
+.donut-chart circle {
+    fill: transparent;
+    transition: all 0.5s;
+}
+
+.chart-text {
+    fill: #fff;
+    transform: translateY(0.25em);
+}
+
+.chart-number {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.8rem;
+    line-height: 1;
+    text-anchor: middle;
+    font-weight: 700;
+}
+
+.chart-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.2rem;
+    text-anchor: middle;
+    fill: var(--text-muted);
+}
+
+/* --- Legend --- */
+.donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    transition: background 0.2s;
+}
+
+.legend-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 10px;
+    box-shadow: 0 0 5px currentColor;
+}
+
+.legend-name {
+    flex-grow: 1;
+    color: var(--text-main);
+}
+
+.legend-val {
+    font-weight: 700;
+    font-family: 'Rajdhani', sans-serif;
+    color: var(--text-muted);
+}
+
+/* Neon Colors Reused */
+.cat-color-1 {
+    background: #00f3ff;
+    color: #00f3ff;
+}
+
+.cat-color-2 {
+    background: #bc13fe;
+    color: #bc13fe;
+}
+
+.cat-color-3 {
+    background: #ff2a2a;
+    color: #ff2a2a;
+}
+
+.cat-color-4 {
+    background: #ff9e0b;
+    color: #ff9e0b;
+}
+
+.cat-color-5 {
+    background: #0aff0a;
+    color: #0aff0a;
+}
+
+.cat-color-6 {
+    background: #ffffff;
+    color: #ffffff;
+}
+
+.cat-color-default {
+    background: #94a3b8;
+    color: #94a3b8;
+}
+
+@media (max-width: 480px) {
+    .donut-layout {
+        flex-direction: column;
+        text-align: center;
+    }
+}

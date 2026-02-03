@@ -1,0 +1,171 @@
+/* Simulation Specific Styles */
+
+/* Controls Container */
+.sim-controls {
+    display: flex;
+    flex-wrap: wrap;
+    /* Key for flow */
+    gap: 1.5rem;
+    align-items: flex-end;
+    background: rgba(16, 26, 46, 0.6);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    margin-bottom: 2rem;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1 1 200px;
+    /* Allow growing/shrinking */
+}
+
+.control-group label {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    color: #ccc;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.control-input,
+.control-select {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.8rem;
+    border-radius: 6px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    width: 100%;
+    outline: none;
+    transition: all 0.3s;
+}
+
+.control-input:focus,
+.control-select:focus {
+    border-color: var(--primary-neon);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+}
+
+.action-btn {
+    background: linear-gradient(90deg, var(--primary-neon) 0%, rgba(0, 120, 255, 1) 100%);
+    color: #000;
+    font-weight: bold;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+    height: 44px;
+    width: 100%;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+}
+
+/* Results & Table */
+.section-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.save-btn {
+    background: rgba(188, 19, 254, 0.2);
+    border: 1px solid var(--secondary-neon);
+    color: var(--secondary-neon);
+    padding: 0.6rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: bold;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.save-btn:hover {
+    background: var(--secondary-neon);
+    color: #fff;
+    box-shadow: 0 0 15px var(--secondary-neon);
+}
+
+.sim-table-container {
+    overflow-x: auto;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px;
+}
+
+.sim-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Rajdhani', sans-serif;
+}
+
+.sim-table th {
+    text-align: left;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    border-bottom: 2px solid #555;
+}
+
+.sim-table td {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #ddd;
+}
+
+.editable-cell {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 5px;
+    width: 80px;
+    border-radius: 4px;
+    text-align: right;
+}
+
+.editable-cell:focus {
+    border-color: #ff9e0b;
+    background: rgba(255, 158, 11, 0.1);
+}
+
+/* Mode Switch */
+.mode-switch {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 30px;
+    padding: 4px;
+    width: fit-content;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+}
+
+.switch-option {
+    padding: 8px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #888;
+    transition: all 0.3s;
+}
+
+.switch-option.active {
+    background: var(--primary-neon);
+    color: #000;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}

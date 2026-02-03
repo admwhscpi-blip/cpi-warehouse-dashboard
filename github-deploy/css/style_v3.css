@@ -1,0 +1,277 @@
+/* STYLE V3 - WHSMART INDUSTRIAL PREMIERE */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --bg-deep: #050510;
+    --primary-violet: #8b5cf6;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --text-main: #ffffff;
+    --text-muted: #94a3b8;
+}
+
+body {
+    background-color: var(--bg-deep);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+/* 1. INTENSIFIED MESH GRADIENT */
+.mesh-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(139, 92, 246, 0.25), transparent 50%),
+        radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.2), transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(6, 182, 212, 0.15), transparent 60%);
+    filter: blur(80px);
+}
+
+.grid-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+    z-index: -1;
+    opacity: 0.5;
+}
+
+/* 2. PILL NAVIGATION (WHSMART) */
+.nav-container {
+    display: flex;
+    justify-content: center;
+    padding-top: 25px;
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+}
+
+.nav-pill {
+    background: rgba(10, 10, 20, 0.7);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(16px);
+    border-radius: 100px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    min-width: 550px;
+    justify-content: space-between;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    margin-right: 5px;
+}
+
+.brand-title {
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: -0.5px;
+}
+
+.nav-menu {
+    display: flex;
+    gap: 5px;
+}
+
+.nav-btn {
+    padding: 8px 18px;
+    border-radius: 50px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.3s;
+    text-decoration: none;
+}
+
+.nav-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-btn.active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.action-btn {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+/* 3. HERO & INDUSTRIAL THEME */
+.hero-wrapper {
+    text-align: center;
+    padding: 60px 20px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.version-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #a78bfa;
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+
+.hero-heading {
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 25px;
+}
+
+.hero-heading span {
+    background: linear-gradient(90deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-sub {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    max-width: 650px;
+    margin: 0 auto 60px;
+}
+
+/* 4. DASHBOARD DECK (INDUSTRIAL CARDS) */
+.deck-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    padding: 40px;
+    background: linear-gradient(180deg, rgba(20, 25, 40, 0.4), rgba(5, 5, 12, 0.8));
+    border: 1px solid var(--glass-border);
+    border-radius: 30px;
+    backdrop-filter: blur(24px);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+    margin: 0 auto 50px;
+    max-width: 1100px;
+    position: relative;
+    overflow: hidden;
+}
+
+.ind-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.ind-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(139, 92, 246, 0.3);
+    transform: translateY(-5px);
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.icon-box {
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.4rem;
+}
+
+.metric-val {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* Industrial Visuals */
+.stock-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 35px;
+    margin-top: 15px;
+}
+
+.s-col {
+    width: 8px;
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 2px;
+}
+
+.s-col.fill {
+    background: #6366f1;
+}
+
+.logistics-line {
+    width: 100%;
+    height: 2px;
+    background: rgba(59, 130, 246, 0.3);
+    margin-top: 30px;
+    position: relative;
+}
+
+.truck-dot {
+    position: absolute;
+    top: -6px;
+    left: 30%;
+    width: 14px;
+    height: 14px;
+    background: #3b82f6;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #3b82f6;
+}
+
+/* Modules Container */
+#app-modules {
+    padding: 80px 40px;
+    min-height: 80vh;
+}

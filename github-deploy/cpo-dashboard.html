@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPI WAREHOUSE - CPO Stock</title>
+
+    <!-- FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- STYLES -->
+    <link rel="stylesheet" href="css/rm_stock_v2.css">
+    <link rel="stylesheet" href="homepage-style.css">
+
+    <style>
+        /* CPO Page Specifics */
+        body {
+            background-color: #050505;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            background: rgba(5, 5, 5, 0.95);
+            z-index: 1000;
+        }
+
+        .cpo-container {
+            padding: 40px 60px;
+        }
+
+        .cpo-panel {
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 15px;
+        }
+
+        .panel-title {
+            font-family: 'Orbitron';
+            font-size: 1.4rem;
+            color: #00f3ff;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+        }
+
+        /* --- VISUAL TANK STYLES --- */
+        .tank-farm-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 60px;
+            /* Space between rows */
+            padding: 20px 0;
+        }
+
+        .tank-row {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            /* Align bottom */
+        }
+
+        .tank-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        /* TANK BODY GRAPHIC */
+        .tank-visual {
+            position: relative;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow:
+                0 0 20px rgba(0, 0, 0, 0.5),
+                inset 0 0 15px rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(2px);
+            /* Metal Hinge details */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        /* Specific Sizes */
+        .tank-visual.size-small {
+            width: 140px;
+            height: 180px;
+        }
+
+        .tank-visual.size-large {
+            width: 200px;
+            /* Wider */
+            height: 240px;
+            /* Taller */
+            box-shadow:
+                0 0 30px rgba(0, 0, 0, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+
+        .tank-liquid {
+            width: 100%;
+            background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+            /* Premium Gold/Orange */
+            box-shadow: 0 -2px 10px rgba(251, 191, 36, 0.5);
+            position: relative;
+            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Liquid Top Surface effect */
+        .tank-liquid::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        /* Glass Shine Overlay */
+        .tank-shine {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.03) 20%,
+                    rgba(255, 255, 255, 0.1) 40%,
+                    rgba(255, 255, 255, 0.03) 60%,
+                    rgba(255, 255, 255, 0) 100%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Measurement Lines */
+        .measure-line {
+            position: absolute;
+            right: 0;
+            width: 20px;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.3);
+            z-index: 5;
+        }
+
+        /* INFO CARD (BELOW TANK) */
+        .tank-info-card {
+            margin-top: 20px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            width: 100%;
+            /* Matches tank width */
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Card Glow */
+        .tank-info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00f3ff, transparent);
+        }
+
+        .tank-name-label {
+            font-family: 'Orbitron';
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 5px;
+        }
+
+        .tank-big-percent {
+            font-family: 'Orbitron';
+            font-size: 1.4rem;
+            color: #fbbf24;
+            font-weight: 900;
+            margin-bottom: 5px;
+            text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+        }
+
+        .tank-data-row {
+            font-family: 'Rajdhani';
+            font-size: 0.8rem;
+            color: #ccc;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+        }
+
+        .remark-badge {
+            background: rgba(245, 158, 11, 0.1);
+            color: #fbbf24;
+            border: 1px solid #fbbf24;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            margin-top: 5px;
+            display: inline-block;
+            font-weight: 700;
+        }
+
+        /* --- TABLE STYLES (MATCHED) --- */
+        .cpo-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .cpo-table th {
+            text-align: left;
+            padding: 15px 20px;
+            color: #94a3b8;
+            font-family: 'Orbitron';
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cpo-table td {
+            padding: 20px;
+            font-family: 'Rajdhani';
+            font-weight: 600;
+            font-size: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #cbd5e1;
+        }
+
+        .percent-bar-bg {
+            width: 100px;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+        }
+
+        .percent-bar-fill {
+            height: 100%;
+            background: #00f3ff;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <div class="logo-icon">🚜</div>
+            <div class="logo-text">CPI CPO STOCK</div>
+        </div>
+        <div class="nav-links">
+            <a href="homepage-v1.html" class="nav-link">Home</a>
+            <a href="#" class="nav-link active"
+                style="color:#ff9e0b; text-shadow:0 0 10px rgba(255,158,11,0.5);">CPO-STOCK</a>
+            <a href="cpo-simulation.html" class="nav-link">CPO-SIMULASI</a>
+        </div>
+    </nav>
+
+    <div class="cpo-container">
+
+        <!-- TANK FARM VISUALS -->
+        <div class="cpo-panel">
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title">CPO TANK FARM STATUS</div>
+                </div>
+            </div>
+
+            <div class="tank-farm-layout">
+                <!-- Row 1: Small Tanks -->
+                <div id="tank-row-1" class="tank-row"></div>
+                <!-- Row 2: Large Tanks -->
+                <div id="tank-row-2" class="tank-row"></div>
+            </div>
+        </div>
+
+        <!-- TANK DATA TABLE -->
+        <div class="cpo-panel">
+            <div class="panel-header">
+                <div>
+                    <div class="panel-title" style="font-size:1.2rem; color:#fff;">Tank Physical Data</div>
+                </div>
+            </div>
+            <table class="cpo-table">
+                <thead>
+                    <tr>
+                        <th>Tank Name</th>
+                        <th>Stock (kg)</th>
+                        <th>Capacity (kg)</th>
+                        <th>Fill %</th>
+                        <th>Age (Days)</th>
+                        <th>Remark</th>
+                    </tr>
+                </thead>
+                <tbody id="tank-table-body"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        const tanks = [
+            { name: "TK01", stock: 72863, cap: 150000, age: 70, remark: "PAKAI & SIRKULASI" },
+            { name: "TK02", stock: 96117, cap: 150000, age: 74, remark: "IDLE" },
+            { name: "TK03", stock: 103868, cap: 150000, age: 118, remark: "SIRKULASI" },
+            { name: "TK04", stock: 272430, cap: 500000, age: 43, remark: "IDLE" },
+            { name: "TK05", stock: 0, cap: 500000, age: 117, remark: "IDLE" },
+            { name: "TK06", stock: 199626, cap: 500000, age: 91, remark: "IDLE" },
+            { name: "TK07", stock: 501021, cap: 500000, age: 70, remark: "IDLE" }
+        ];
+
+        // 1. Render Table
+        const tbody = document.getElementById('tank-table-body');
+        let htmlTable = '';
+        tanks.forEach(t => {
+            const pct = (t.stock / t.cap) * 100;
+            htmlTable += `
+                <tr>
+                    <td>${t.name}</td>
+                    <td style="color:${t.stock === 0 ? '#ef4444' : '#4ade80'}">${t.stock.toLocaleString()}</td>
+                    <td>${t.cap.toLocaleString()}</td>
+                    <td>
+                        <div class="percent-bar-bg">
+                            <div class="percent-bar-fill" style="width:${pct}%;"></div>
+                        </div>
+                    </td>
+                    <td>${t.age}</td>
+                    <td style="color:${t.remark !== 'IDLE' ? '#fbbf24' : '#64748b'}">${t.remark}</td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = htmlTable;
+
+        // 2. Render Visuals
+        const r1 = document.getElementById('tank-row-1');
+        const r2 = document.getElementById('tank-row-2');
+
+        tanks.forEach((t, i) => {
+            const pct = Math.min(100, Math.max(0, (t.stock / t.cap) * 100)); // Clamp 0-100
+            const isLarge = t.cap >= 500000;
+
+            // Build Card
+            const card = `
+                <div class="tank-unit">
+                    <!-- GRAPHIC ONLY, NO TEXT -->
+                    <div class="tank-visual ${isLarge ? 'size-large' : 'size-small'}">
+                        <div class="tank-shine"></div>
+                        <div class="tank-liquid" style="height:${pct}%"></div>
+                        <!-- Markers -->
+                        <div class="measure-line" style="bottom:25%"></div>
+                        <div class="measure-line" style="bottom:50%; width:30px"></div>
+                        <div class="measure-line" style="bottom:75%"></div>
+                    </div>
+                    
+                    <!-- INFO CARD BELOW -->
+                    <div class="tank-info-card" style="width:${isLarge ? '200px' : '140px'}">
+                        <div class="tank-name-label">${t.name}</div>
+                        <div class="tank-big-percent">${pct.toFixed(1)}%</div>
+                        
+                        <div class="tank-data-row">
+                            <span>S: ${(t.stock / 1000).toLocaleString()} T</span>
+                            <span>C: ${(t.cap / 1000).toLocaleString()} T</span>
+                        </div>
+                        <div class="tank-data-row" style="justify-content:center; margin-top:5px; color:#94a3b8;">
+                            Age: ${t.age} Days
+                        </div>
+                        
+                        ${t.remark !== 'IDLE' ? `<div class="remark-badge">${t.remark}</div>` : ''}
+                    </div>
+                </div>
+            `;
+
+            if (isLarge) r2.innerHTML += card;
+            else r1.innerHTML += card;
+        });
+
+    </script>
+</body>
+
+</html>

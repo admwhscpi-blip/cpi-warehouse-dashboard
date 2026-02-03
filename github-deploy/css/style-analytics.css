@@ -1,0 +1,112 @@
+/* style-analytics.css */
+
+.card-analytics {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border: var(--glass-border);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border-left: 4px solid var(--secondary-neon);
+}
+
+.analytics-header h3 {
+    margin: 0;
+    color: var(--text-main);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 1px;
+}
+
+.analytics-header .subtitle {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+}
+
+/* Table Style */
+.analytics-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    /* Spacing between rows */
+}
+
+.analytics-table th {
+    text-align: left;
+    padding: 10px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.analytics-table td {
+    padding: 15px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 1rem;
+    color: var(--text-main);
+}
+
+.analytics-table tr td:first-child {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.analytics-table tr td:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.analytics-table tr:hover td {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.rank-badge {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    text-align: center;
+    line-height: 28px;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    font-weight: bold;
+    font-family: 'Orbitron', sans-serif;
+}
+
+/* Top 3 Colors */
+.tr-rank-1 .rank-badge {
+    background: var(--primary-neon);
+    color: #000;
+    box-shadow: 0 0 10px var(--primary-neon);
+}
+
+.tr-rank-2 .rank-badge {
+    background: #fff;
+    color: #000;
+    box-shadow: 0 0 10px white;
+}
+
+.tr-rank-3 .rank-badge {
+    background: var(--warning-neon);
+    color: #000;
+    box-shadow: 0 0 10px var(--warning-neon);
+}
+
+.bar-container {
+    background: rgba(255, 255, 255, 0.1);
+    height: 6px;
+    border-radius: 3px;
+    width: 100px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--secondary-neon);
+    box-shadow: 0 0 8px var(--secondary-neon);
+}

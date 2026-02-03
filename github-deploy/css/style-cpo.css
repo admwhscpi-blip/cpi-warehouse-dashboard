@@ -1,0 +1,570 @@
+/* LUXURY UI STYLES FOR CPO SIMULATION */
+
+.sim-luxury-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.lux-header {
+    text-align: center;
+    border-bottom: 2px solid orange;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.lux-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    color: orange;
+    text-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+    letter-spacing: 2px;
+}
+
+.lux-subtitle {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    color: #888;
+    letter-spacing: 1px;
+}
+
+/* Dashboard Grid */
+.lux-dashboard {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+.lux-panel {
+    background: rgba(10, 10, 15, 0.8);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.panel-header {
+    font-family: 'Orbitron';
+    font-size: 0.9rem;
+    color: #ccc;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.panel-header .icon {
+    font-size: 1.2rem;
+}
+
+/* Tank Selector Grid */
+.tank-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px;
+}
+
+.lux-tank-card {
+    position: relative;
+    background: #151520;
+    border: 1px solid #444;
+    border-radius: 8px;
+    height: 100px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.lux-tank-card:hover {
+    border-color: orange;
+    transform: translateY(-2px);
+}
+
+.lux-tank-card.active {
+    border-color: #ffae00;
+    box-shadow: 0 0 15px rgba(255, 174, 0, 0.3);
+}
+
+.lux-tank-card .card-bg {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to top, rgba(255, 165, 0, 0.3), transparent);
+    z-index: 0;
+}
+
+.lux-tank-card .card-content {
+    position: relative;
+    z-index: 1;
+    padding: 10px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-name {
+    font-weight: bold;
+    color: #fff;
+}
+
+.card-stock {
+    font-size: 0.75rem;
+    color: #aaa;
+}
+
+.card-rank {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: orange;
+    color: #000;
+    font-weight: bold;
+    font-size: 0.7rem;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Priority Flow */
+.priority-display-area {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
+    min-height: 150px;
+}
+
+.priority-pill {
+    background: linear-gradient(90deg, #222, #111);
+    border: 1px solid #444;
+    padding: 8px 15px;
+    border-radius: 30px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pill-rank {
+    background: #333;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.pill-name {
+    color: orange;
+    font-weight: bold;
+    font-family: 'Rajdhani';
+    font-size: 1.1rem;
+}
+
+.pill-controls span {
+    cursor: pointer;
+    color: #666;
+    font-size: 0.8rem;
+    margin-left: 5px;
+}
+
+.pill-controls span:hover {
+    color: #fff;
+}
+
+.flow-arrow {
+    color: #444;
+    font-size: 0.8rem;
+}
+
+/* Params */
+.params-grid {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.param-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.param-group label {
+    font-size: 0.7rem;
+    color: #888;
+    letter-spacing: 1px;
+}
+
+.lux-input {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #444;
+    color: #fff;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: 'Rajdhani';
+    font-size: 1rem;
+    outline: none;
+}
+
+.lux-input:focus {
+    border-color: orange;
+}
+
+.highlight-in {
+    border-left: 3px solid #0aff0a;
+}
+
+.highlight-out {
+    border-left: 3px solid #ff2a2a;
+}
+
+/* Button */
+.lux-action-btn {
+    margin-top: 20px;
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(45deg, #ffae00, #ff6600);
+    border: none;
+    border-radius: 6px;
+    color: #000;
+    font-weight: bold;
+    font-family: 'Orbitron';
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.lux-action-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(255, 165, 0, 0.5);
+}
+
+/* Results */
+.lux-chart-container {
+    height: 500px;
+    /* Bigger Chart */
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.table-title {
+    font-family: 'Orbitron';
+    color: orange;
+}
+
+.view-btn {
+    background: transparent;
+    border: 1px solid #444;
+    color: #888;
+    padding: 5px 15px;
+    cursor: pointer;
+    font-family: 'Rajdhani';
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.view-btn.active {
+    background: orange;
+    color: #000;
+    border-color: orange;
+}
+
+.lux-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid #333;
+    border-radius: 8px;
+    min-height: 300px;
+    /* Force height */
+    background: rgba(0, 0, 0, 0.2);
+    width: 100%;
+}
+
+.lux-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+}
+
+.lux-table th {
+    background: #222;
+    color: orange;
+    padding: 12px;
+    text-align: center;
+    border-bottom: 2px solid #555;
+    white-space: nowrap;
+}
+
+.lux-table td {
+    background: rgba(20, 20, 30, 0.8);
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #333;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.lux-table .sticky-col {
+    position: sticky;
+    left: 0;
+    background: #1a1a20;
+    z-index: 2;
+    border-right: 2px solid #555;
+}
+
+.val-in {
+    color: #0aff0a;
+    font-weight: bold;
+}
+
+.val-out {
+    color: #ff2a2a;
+    font-weight: bold;
+}
+
+.val-stock {
+    color: #fff;
+    font-weight: bold;
+}
+
+.cpo-sim-table {
+    display: none !important;
+}
+
+/* Ensure LUX table is visible */
+.lux-table {
+    width: 100%;
+    border-collapse: collapse;
+    display: table;
+}
+
+.cpo-sim-table th {
+    background: rgba(255, 165, 0, 0.1);
+    color: orange;
+}
+
+.cpo-sim-table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.sim-summary-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-around;
+}
+
+/* Grid Layout */
+/* Grid Layout Container */
+.cpo-grid {
+    display: flex;
+    flex-direction: column;
+    /* Stack rows vertically */
+    gap: 2rem;
+    padding: 2rem;
+    background: radial-gradient(circle at center, #1a202c 0%, #0d1117 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Individual Rows (Horizontal) */
+.cpo-row {
+    display: flex;
+    flex-wrap: wrap;
+    /* Safety wrap if screen very small */
+    gap: 3rem;
+    justify-content: center;
+    align-items: flex-end;
+    /* Align tanks at bottom */
+    width: 100%;
+}
+
+/* Wrapper per Item */
+.tank-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    /* Lebar tangki proporsional */
+    width: 160px;
+    transition: transform 0.3s ease;
+}
+
+.tank-wrapper:hover {
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+/* Visual Tangki (Silinder Utama) */
+.tank-body {
+    width: 100%;
+    /* Height akan di-inject via JS */
+    min-height: 100px;
+    background: linear-gradient(90deg, #555, #ccc 20%, #ddd 50%, #ccc 80%, #555);
+    /* Efek Metallic */
+    border-radius: 10px;
+    /* Sedikit rounded di sudut */
+    position: relative;
+    box-shadow:
+        inset 0 0 20px rgba(0, 0, 0, 0.8),
+        /* Shadow dalam */
+        5px 5px 15px rgba(0, 0, 0, 0.5);
+    /* Shadow luar */
+    overflow: hidden;
+    /* Masking liquid */
+    border: 1px solid #666;
+}
+
+/* Tutup Atas (Ellipse) - Opsional untuk efek 3D lebih kuat if needed, 
+   tapi pakai rounded border radius sudah cukup bagus untuk simulasi 2.5D */
+.tank-lid {
+    position: absolute;
+    top: -10px;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    background: linear-gradient(90deg, #666, #eee, #666);
+    border-radius: 50%;
+    border: 1px solid #444;
+    z-index: 2;
+}
+
+/* Cairan CPO (Orange/Golden) */
+.tank-liquid {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    /* Height dikontrol persentase isi */
+    background: linear-gradient(90deg, #cc6600, #ffae00 30%, #ffcc00 50%, #ffae00 70%, #cc6600);
+    opacity: 0.9;
+    box-shadow: 0 0 15px rgba(255, 165, 0, 0.4);
+    transition: height 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Permukaan Cairan (Meniscus Effect) */
+.tank-liquid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    transform: skewX(-20deg);
+    /* Kilau */
+}
+
+/* Garis Ukur (Ruler) */
+.tank-ruler {
+    position: absolute;
+    right: 5px;
+    top: 5%;
+    bottom: 5%;
+    width: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    opacity: 0.6;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.ruler-mark {
+    width: 100%;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+/* Label Info Di Bawah Tangki */
+.tank-info {
+    margin-top: 15px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 180px;
+    /* Lebih lebar dari tangki supaya muat teks */
+    backdrop-filter: blur(4px);
+}
+
+.tank-name {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #fff;
+    text-shadow: 0 0 5px orange;
+}
+
+.tank-stats {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-top: 4px;
+}
+
+.tank-fill-pct {
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--primary-neon);
+}
+
+/* Indikator Status (Kritis/Penuh) */
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+/* Tooltip on Hover */
+.tank-wrapper:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid orange;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 20;
+    pointer-events: none;
+}

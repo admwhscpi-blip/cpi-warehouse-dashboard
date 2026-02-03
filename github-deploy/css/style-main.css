@@ -1,0 +1,119 @@
+/* style-main.css */
+/* THEME: CYBER WAREHOUSE 2077 */
+
+:root {
+    --bg-deep: #050a14;
+    --bg-card: rgba(16, 26, 46, 0.7);
+    --bg-card-hover: rgba(24, 40, 70, 0.9);
+
+    --primary-neon: #00f3ff;
+    --secondary-neon: #bc13fe;
+    --success-neon: #0aff0a;
+    --warning-neon: #ff9e0b;
+    --danger-neon: #ff2a2a;
+
+    --text-main: #e0e6ed;
+    --text-muted: #94a3b8;
+
+    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+    --neon-glow: 0 0 10px rgba(0, 243, 255, 0.2);
+}
+
+body {
+    font-family: 'Rajdhani', sans-serif;
+    background-color: var(--bg-deep);
+    background-image:
+        radial-gradient(circle at 10% 20%, rgba(0, 243, 255, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(188, 19, 254, 0.05) 0%, transparent 40%);
+    color: var(--text-main);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+header {
+    background: rgba(5, 10, 20, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    margin: 0;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, #fff, #00f3ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.version {
+    font-size: 0.8rem;
+    background: var(--secondary-neon);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    vertical-align: middle;
+    -webkit-text-fill-color: white;
+    /* Override gradient */
+}
+
+.sub-header {
+    font-size: 1rem;
+    color: var(--primary-neon);
+    margin-top: 5px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+#app-container {
+    max-width: 1400px;
+    /* Lebar ditambah */
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+}
+
+/* Loading State */
+#loading {
+    text-align: center;
+    font-size: 1.5rem;
+    padding: 3rem;
+    color: var(--primary-neon);
+    font-family: 'Orbitron', sans-serif;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.5;
+        text-shadow: 0 0 5px var(--primary-neon);
+    }
+
+    50% {
+        opacity: 1;
+        text-shadow: 0 0 20px var(--primary-neon);
+    }
+
+    100% {
+        opacity: 0.5;
+        text-shadow: 0 0 5px var(--primary-neon);
+    }
+}
+
+.section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    border-left: 4px solid var(--primary-neon);
+    padding-left: 10px;
+    margin: 2rem 0 1rem 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
