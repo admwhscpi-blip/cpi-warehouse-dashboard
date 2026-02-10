@@ -236,11 +236,6 @@
     gap: 20px;
 }
 
-@media (max-width: 900px) {
-    .analytics-layout-grid {
-        grid-template-columns: 1fr;
-    }
-}
 
 /* TRACING SYSTEM INPUT */
 #rm-search-input:focus {
@@ -262,4 +257,161 @@
 #rm-search-results::-webkit-scrollbar-thumb {
     background: #444;
     border-radius: 3px;
+}
+
+/* =========================================
+   UNIVERSAL MOBILE RESPONSIVE PATCH
+   ========================================= */
+@media (max-width: 900px) {
+    .analytics-layout-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+
+    /* 1. AUTO-SCROLL TABLES */
+    table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    /* 2. STACKED GRIDS */
+    .grid-cols-2,
+    .grid-cols-3,
+    .grid-cols-4,
+    [style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* 3. NAVBAR ADJUSTMENTS */
+    .navbar {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding: 10px 15px !important;
+        height: auto !important;
+        gap: 10px !important;
+        position: relative !important;
+    }
+
+    .nav-links {
+        width: 100% !important;
+        overflow-x: auto !important;
+        padding-bottom: 5px !important;
+        justify-content: flex-start !important;
+        /* Hide scrollbar visually but allow scroll */
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .nav-links::-webkit-scrollbar {
+        display: none;
+    }
+
+    .logo-link {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+
+    /* 4. DASHBOARD CARDS */
+    .dashboard-container,
+    .main-container {
+        padding: 10px !important;
+        width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .stat-card,
+    .glass-card,
+    .card-analytics {
+        padding: 15px !important;
+        margin-bottom: 15px !important;
+    }
+
+    .stat-value {
+        font-size: 1.5rem !important;
+    }
+
+    /* 5. HERO SECTION FIXES */
+    .hero-section {
+        flex-direction: column;
+        height: auto;
+        padding-top: 120px;
+        /* Account for stacked nav */
+    }
+
+    .hero-content {
+        padding: 20px;
+        text-align: center;
+        align-items: center;
+    }
+
+    .hero-headline {
+        font-size: 2rem !important;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .btn-cta-primary,
+    .btn-cta-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .hero-visual {
+        position: relative;
+        top: 0;
+        right: 0;
+        width: 100%;
+        height: 300px;
+        margin-top: 20px;
+        transform: scale(0.8);
+    }
+
+    /* 6. PARTNER LOGOS STACK */
+    .partner-logos {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .metric-mini {
+        border-right: none !important;
+        padding-right: 0 !important;
+        margin-right: 0 !important;
+        width: 45%;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+
+    /* 7. WAREHOUSE GRID SCROLL */
+    #module-rm .warehouse-grid {
+        padding-bottom: 10px;
+        min-height: 250px;
+    }
+
+    #module-rm .warehouse-card {
+        min-width: 80px;
+        /* Smaller bars */
+    }
+
+    /* 8. DROPDOWNS ON MOBILE */
+    /* Make dropdowns click-to-open or vertically expanded */
+    .dropdown:hover .dropdown-content {
+        position: fixed;
+        top: auto;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        z-index: 9999;
+        max-height: 50vh;
+        overflow-y: auto;
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+        border: 1px solid var(--rm-primary-neon);
+    }
 }

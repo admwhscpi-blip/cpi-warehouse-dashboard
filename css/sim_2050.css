@@ -1,0 +1,335 @@
+/* HUD-2050 Futurist Simulation Styles */
+.hud-viewport {
+    display: none;
+}
+
+body.fullscreen-mode {
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    background: #000;
+}
+
+body.fullscreen-mode .navbar,
+body.fullscreen-mode .sim-container>.engine-panel,
+body.fullscreen-mode .queue-container,
+body.fullscreen-mode .table-options-bar,
+body.fullscreen-mode .sim-container>h3,
+body.fullscreen-mode .table-panel {
+    display: none !important;
+}
+
+body.fullscreen-mode .hud-viewport {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, #0f172a 0%, #050505 100%);
+    z-index: 9999;
+}
+
+.hud-header {
+    height: 50px;
+    border-bottom: 2px solid rgba(0, 243, 255, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.hud-title {
+    font-family: 'Orbitron';
+    font-weight: 900;
+    font-size: 1.2rem;
+    color: #00f3ff;
+    text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+    letter-spacing: 2px;
+}
+
+.hud-content {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 2fr 1.2fr;
+    grid-template-rows: 1.4fr 1fr;
+    gap: 15px;
+    padding: 15px;
+    overflow: hidden;
+}
+
+/* Material Resolver Modal Styles */
+.resolver-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 20000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+.resolver-modal {
+    width: 600px;
+    background: #0f172a;
+    border: 2px solid #00f3ff;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.resolver-header {
+    padding: 15px 20px;
+    background: rgba(0, 243, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+    font-family: 'Orbitron';
+    color: #00f3ff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.resolver-body {
+    padding: 20px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    padding: 10px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.suggestion-item:hover {
+    background: rgba(0, 243, 255, 0.1);
+    border-color: #00f3ff;
+}
+
+.suggestion-item.selected {
+    background: #00f3ff;
+    color: #000;
+}
+
+.hud-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.hud-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #00f3ff;
+}
+
+.hud-card-header {
+    padding: 8px 15px;
+    background: rgba(0, 243, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+    font-family: 'Orbitron';
+    font-size: 0.7rem;
+    color: #00f3ff;
+    letter-spacing: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hud-card-body {
+    flex: 1;
+    padding: 15px;
+    overflow: hidden;
+}
+
+.insight-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.insight-metric {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    border-radius: 4px;
+}
+
+.metric-label {
+    font-size: 0.6rem;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.metric-value {
+    font-family: 'Rajdhani';
+    font-size: 1.4rem;
+    color: #fff;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.metric-date {
+    font-size: 0.65rem;
+    color: #00f3ff;
+    opacity: 0.7;
+}
+
+/* Historical Table Styling */
+.history-panel {
+    margin-bottom: 25px;
+    background: rgba(188, 19, 254, 0.05);
+    border: 1px dashed rgba(188, 19, 254, 0.3);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.history-list {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+}
+
+.history-card {
+    min-width: 200px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(188, 19, 254, 0.3);
+    padding: 12px;
+    border-radius: 6px;
+    position: relative;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.history-card:hover {
+    border-color: #bc13fe;
+    background: rgba(188, 19, 254, 0.1);
+}
+
+/* Specific button style */
+.btn-hud-primary {
+    background: rgba(0, 243, 255, 0.1);
+    border: 1px solid #00f3ff;
+    color: #00f3ff;
+    padding: 5px 15px;
+    font-family: 'Orbitron';
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-hud-primary:hover {
+    background: #00f3ff;
+    color: #000;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+}
+
+.btn-hud-exit {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid #ef4444;
+    color: #ef4444;
+}
+
+.btn-hud-exit:hover {
+    background: #ef4444;
+    color: #fff;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+}
+
+.scanline {
+    width: 100%;
+    height: 100px;
+    background: linear-gradient(to bottom, transparent, rgba(0, 243, 255, 0.05), transparent);
+    position: absolute;
+    top: 0;
+    z-index: 10000;
+    pointer-events: none;
+    animation: scanmove 10s linear infinite;
+}
+
+@keyframes scanmove {
+    0% {
+        top: -100px;
+    }
+
+    100% {
+        top: 100vh;
+    }
+}
+
+.table-high-scroll {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.table-high-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #0f172a !important;
+}
+
+/* Slicer Styles */
+.slicer-group {
+    display: flex;
+    gap: 5px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 3px;
+    border-radius: 4px;
+}
+
+.slicer-btn {
+    padding: 4px 10px;
+    font-size: 0.65rem;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.slicer-btn.active {
+    background: #00f3ff;
+    color: #000;
+    font-weight: bold;
+}
+
+.editable-cell {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: inherit;
+    text-align: center;
+    padding: 5px;
+    font-size: 0.85rem;
+}
+
+.editable-cell:focus {
+    background: rgba(0, 243, 255, 0.1);
+    outline: none;
+}

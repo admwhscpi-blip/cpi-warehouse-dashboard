@@ -1,0 +1,152 @@
+/* analytic_hud.css */
+/* Visual excellence for 2050 Cinematic Analytic Dashboard */
+
+:root {
+    --hud-glow: 0 0 15px rgba(0, 243, 255, 0.3);
+    --hud-border: 1px solid rgba(0, 243, 255, 0.2);
+    --purp-glow: 0 0 15px rgba(188, 19, 254, 0.3);
+}
+
+.hud-viewport {
+    background: radial-gradient(circle at center, #0a0a1a 0%, #020205 100%);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+}
+
+.fire-logo-small {
+    width: 30px;
+    height: 30px;
+    background: url('img/fire-logo.png') center/contain no-repeat;
+    filter: drop-shadow(0 0 5px #ef4444);
+    animation: flicker 2s infinite;
+}
+
+@keyframes flicker {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(0.95);
+    }
+}
+
+.hud-slicers {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-sl {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    padding: 2px 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 15px;
+    transition: all 0.3s;
+    font-family: 'Orbitron';
+}
+
+.btn-sl.active {
+    background: #00f3ff;
+    color: #000;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+.vol-list {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-family: 'Inter';
+}
+
+.vol-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    padding: 5px 8px;
+    border-left: 2px solid transparent;
+}
+
+.fast-item {
+    border-left-color: #0aff0a;
+    background: rgba(10, 255, 10, 0.05);
+}
+
+.slow-item {
+    border-left-color: #64748b;
+    background: rgba(100, 116, 139, 0.05);
+}
+
+.mat-chip {
+    padding: 6px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #94a3b8;
+    transition: all 0.3s;
+    font-family: 'Orbitron';
+}
+
+.mat-chip.active {
+    border-color: #bc13fe;
+    background: rgba(188, 19, 254, 0.2);
+    color: #fff;
+    box-shadow: var(--purp-glow);
+}
+
+.cat-item {
+    padding: 10px;
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.cat-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.cat-item.active {
+    background: rgba(0, 243, 255, 0.05);
+    border-color: #00f3ff;
+}
+
+/* Scrollbar HUD Style */
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #00f3ff;
+}
