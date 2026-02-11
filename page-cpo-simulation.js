@@ -1,5 +1,5 @@
 /**
- * CPO SIMULATION CONTROLLER
+ * CPO SIMULATION CONTROLLER [V.19.47]
  * Handles the Advanced Projection Engine Logic
  */
 
@@ -20,7 +20,7 @@ const CPOSim = {
     chartInstance: null,
 
     init: function () {
-        console.log("CPO Sim Init");
+        console.log("CPO Sim Init [19:47]");
         this.renderTankGrid();
         this.setDefaults();
     },
