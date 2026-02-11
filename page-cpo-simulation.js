@@ -1,7 +1,9 @@
 /**
- * CPO SIMULATION CONTROLLER [V.19.47]
+ * CPO SIMULATION CONTROLLER [V.19.55]
  * Handles the Advanced Projection Engine Logic
  */
+window.CPO_ENGINE_VERSION = "19:55";
+console.log("CPO ENGINE LOADED: v19.55 - AGING ACTIVE");
 
 const CPOSim = {
     // Mock Data (Typically from API, but hardcoded here as per previous CPO page)
