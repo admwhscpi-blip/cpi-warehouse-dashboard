@@ -4,9 +4,21 @@
     const ROLE_KEY = "userRole";
 
     const path = window.location.pathname.toLowerCase();
-    const isLoginPage = path.endsWith('index.html') || path === '/' || path.endsWith('login.html') || path.includes('about-page.html');
+    const href = window.location.href.toLowerCase();
 
-    if (!isLoginPage) {
+    // DEBUG: Beritahu user di console apa yang sedang dideteksi
+    console.log("AUTH GUARD LOG:", { path, href });
+
+    const isPublicPage = href.indexOf('about-page') !== -1 ||
+        path.indexOf('about-page') !== -1 ||
+        path.endsWith('index.html') ||
+        path.endsWith('login.html') ||
+        path === '/' ||
+        path.endsWith('/');
+
+    console.log("IS PUBLIC PAGE?", isPublicPage);
+
+    if (!isPublicPage) {
         // Step 1: Check gatekeeper (index login)
         const token = sessionStorage.getItem(AUTH_KEY);
         if (token !== AUTH_VALUE) {
