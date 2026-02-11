@@ -257,6 +257,14 @@
             00:00:00
         </div>
 
+        <!-- SEARCH HUD -->
+        <div class="search-hud">
+            <input type="text" id="matSearch" placeholder="SEARCH MATERIAL (e.g. COPPER)...">
+            <div id="searchResults"
+                style="position:absolute; top:100%; left:0; right:0; background:rgba(10,10,11,0.95); border:1px solid var(--neon-blue); border-top:none; border-radius:0 0 12px 12px; display:none; z-index:2000; max-height:300px; overflow-y:auto; backdrop-filter:blur(15px);">
+            </div>
+        </div>
+
         <button class="hud-btn" onclick="HistoryApp.toggleFullscreen()">
             <i class="fas fa-expand"></i> FULLSCREEN
         </button>
