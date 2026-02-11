@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMART WAREHOUSE V2.0 - CPO Predictive Engine</title>
+    <title>SMART WAREHOUSE V2.0 - CPO Simulation</title>
 
     <!-- FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,10 +16,9 @@
     <!-- STYLES -->
     <link rel="stylesheet" href="css/rm_stock_v2.css">
     <link rel="stylesheet" href="homepage-style.css">
-    <link rel="stylesheet" href="css/sim_2050.css">
 
     <style>
-        /* Simulation Specific Overrides */
+        /* CPO SIMULATION SPECIFIC STYLES */
         body {
             background-color: #050505;
             color: #fff;
@@ -36,174 +35,238 @@
 
         .sim-container {
             padding: 30px 40px;
-            max-width: 1600px;
+            max-width: 1800px;
             margin: 0 auto;
         }
 
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .page-title {
+            font-family: 'Orbitron';
+            color: #ff9e0b;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(255, 158, 11, 0.3);
+            margin-bottom: 5px;
+        }
+
+        .page-subtitle {
+            font-family: 'Rajdhani';
+            color: #64748b;
+            font-size: 0.9rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        /* GRID LAYOUT */
+        .engine-layout {
+            display: grid;
+            grid-template-columns: 3fr 1.5fr;
+            gap: 30px;
+        }
+
         .engine-panel {
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(10, 10, 10, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 25px;
-            margin-bottom: 30px;
-            backdrop-filter: blur(10px);
+            height: 100%;
         }
 
-        .engine-title {
-            font-family: 'Orbitron';
-            color: #00f3ff;
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            padding-left: 10px;
-            border-left: 3px solid #00f3ff;
-        }
-
-        .input-group-row {
-            display: grid;
-            grid-template-columns: 2fr 2fr 1.5fr 1.5fr 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-            align-items: end;
-        }
-
-        .control-label {
-            display: block;
-            color: #94a3b8;
-            font-size: 0.75rem;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .control-input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid #334155;
-            color: white;
-            padding: 12px 15px;
-            border-radius: 6px;
-            font-family: 'Inter';
-            font-size: 0.9rem;
-            transition: all 0.3s;
-        }
-
-        .control-input:focus {
-            outline: none;
-            border-color: #00f3ff;
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
-        }
-
-        /* Date Picker Styling */
-        input[type="date"] {
-            cursor: pointer;
-            position: relative;
-        }
-
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            cursor: pointer;
-            filter: invert(1);
-            opacity: 0.7;
-            padding: 5px;
-        }
-
-        input[type="date"]::-webkit-calendar-picker-indicator:hover {
-            opacity: 1;
-        }
-
-
-        .btn-add-sim {
-            width: 100%;
-            background: #00f3ff;
-            color: #000;
-            border: none;
-            padding: 15px;
-            border-radius: 6px;
-            font-family: 'Orbitron';
-            font-weight: 700;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: all 0.3s;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
-        }
-
-        .btn-add-sim:hover {
-            background: #fff;
-            box-shadow: 0 0 25px rgba(0, 243, 255, 0.6);
-            transform: translateY(-2px);
-        }
-
-        /* Queue Styling */
-        .queue-container {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .queue-label {
-            color: #64748b;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-right: 10px;
-        }
-
-        .sim-chip {
-            padding: 8px 15px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
+        .panel-title-bar {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 0.85rem;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+        }
+
+        .panel-title {
+            font-family: 'Orbitron';
             color: #cbd5e1;
-            transition: all 0.3s;
+            font-size: 1rem;
+            text-transform: uppercase;
         }
 
-        .sim-chip:hover {
-            border-color: #fff;
+        /* TANK SELECTION GRID */
+        .tank-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
-        .sim-chip.active-chip {
-            border-color: #00f3ff;
-            background: rgba(0, 243, 255, 0.05);
-            color: #fff;
-        }
-
-        .chip-color {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-
-        .chip-close {
+        .tank-select-card {
+            width: 120px;
+            height: 100px;
+            border: 1px solid #ff9e0b;
+            border-radius: 8px;
+            background: rgba(255, 158, 11, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             cursor: pointer;
-            opacity: 0.5;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .tank-select-card:hover {
+            background: rgba(255, 158, 11, 0.1);
+            box-shadow: 0 0 15px rgba(255, 158, 11, 0.2);
+        }
+
+        .tank-select-card.selected {
+            background: rgba(255, 158, 11, 0.2);
+            box-shadow: inset 0 0 10px rgba(255, 158, 11, 0.4);
+            border-width: 2px;
+        }
+
+        .tank-card-num {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ff9e0b;
+            color: #000;
+            font-size: 0.6rem;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
         }
 
-        .chip-close:hover {
-            opacity: 1;
-            color: #ef4444;
+        .tank-card-name {
+            font-family: 'Orbitron';
+            font-weight: bold;
+            color: #ff9e0b;
+            font-size: 1rem;
+            margin-bottom: 5px;
         }
 
-        /* Data Table Styling */
+        .tank-card-stock {
+            font-family: 'Rajdhani';
+            color: #cbd5e1;
+            font-size: 0.8rem;
+        }
+
+        /* PRIORITY LIST */
+        .priority-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .priority-item {
+            display: flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px 15px;
+        }
+
+        .p-num {
+            width: 24px;
+            height: 24px;
+            background: #333;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7rem;
+            margin-right: 15px;
+            font-family: 'Orbitron';
+        }
+
+        .p-name {
+            flex: 1;
+            font-family: 'Orbitron';
+            color: #ff9e0b;
+            font-weight: bold;
+        }
+
+        .p-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .p-btn {
+            border: none;
+            background: none;
+            color: #555;
+            cursor: pointer;
+            font-size: 0.6rem;
+        }
+
+        .p-btn:hover {
+            color: #fff;
+        }
+
+        /* INPUTS */
+        .param-group {
+            margin-bottom: 15px;
+        }
+
+        .param-label {
+            display: block;
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-bottom: 5px;
+            font-family: 'Orbitron';
+        }
+
+        .param-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #333;
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Inter';
+        }
+
+        .btn-initiate {
+            width: 100%;
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+            border: none;
+            padding: 15px;
+            color: #000;
+            font-family: 'Orbitron';
+            font-weight: 900;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 20px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .btn-initiate:hover {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+            letter-spacing: 2px;
+            color: #fff;
+        }
+
+        /* RESULT SECTION (HIDDEN BY DEFAULT) */
+        .result-section {
+            margin-top: 50px;
+            display: none;
+            /* Toggled by JS */
+            animation: fadeIn 0.5s ease-out;
+        }
+
         .table-panel {
             background: #0a0a0a;
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             overflow: hidden;
-        }
-
-        .table-header-custom {
-            padding: 15px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
         .consolidated-table {
@@ -230,6 +293,8 @@
         .th-group-header {
             font-family: 'Orbitron';
             letter-spacing: 1px;
+            background: #111 !important;
+            color: #ff9e0b !important;
         }
 
         .consolidated-table td {
@@ -238,7 +303,7 @@
             color: #cbd5e1;
         }
 
-        .consolidated-table input {
+        .editable-cell {
             background: transparent;
             border: 1px solid transparent;
             color: inherit;
@@ -248,10 +313,11 @@
             font-weight: inherit;
             padding: 5px;
             border-radius: 4px;
+            transition: all 0.2s;
         }
 
-        .consolidated-table input:hover,
-        .consolidated-table input:focus {
+        .editable-cell:hover,
+        .editable-cell:focus {
             background: #1e293b;
             border-color: #475569;
             outline: none;
@@ -271,23 +337,16 @@
             color: #f87171 !important;
         }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
 
-        ::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -311,412 +370,139 @@
         </a>
 
         <div class="nav-links">
-            <!-- MENU DIKOSONGKAN SESUAI INSTRUKSI -->
+            <!-- MENU DIKOSONGKAN -->
         </div>
 
         <div class="nav-actions">
-            <button class="btn-hud-primary" onclick="SimPage.toggleFullscreen()">FULL SCREEN MODE</button>
+            <!-- TOMBOL DIHAPUS -->
         </div>
     </nav>
 
     <div class="sim-container">
 
-        <!-- ENGINE PANEL -->
-        <div class="engine-panel">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <div class="engine-title" style="margin-bottom:0;">CPO PREDICTIVE SIMULATION ENGINE</div>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn-hud-primary" onclick="SimPage.saveProject()">💾 SAVE PROJECT</button>
-                    <button class="btn-hud-primary" onclick="SimPage.toggleFullscreen()">🖥️ HUD MODE</button>
-                </div>
-            </div>
-
-            <div class="input-group-row">
-                <!-- Target Material (CPO Grade) -->
-                <div>
-                    <label class="control-label">Target CPO Grade</label>
-                    <select id="sim-material" class="control-input">
-                        <option value="">Loading Materials...</option>
-                    </select>
-                </div>
-
-                <!-- Target Tank (Multi-Select) -->
-                <div style="position:relative;">
-                    <label class="control-label">Target Tank</label>
-                    <div id="facility-dropdown-btn" class="control-input"
-                        style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;"
-                        onclick="SimPage.toggleFacilityDropdown()">
-                        <span id="facility-selected-text">ALL TANKS</span>
-                        <span style="font-size:0.7rem;">▼</span>
-                    </div>
-                    <div id="facility-dropdown-menu"
-                        style="display:none; position:absolute; top:100%; left:0; right:0; background:#0f172a; border:1px solid #334155; border-radius:6px; max-height:250px; overflow-y:auto; z-index:100; margin-top:5px;">
-                        <label
-                            style="display:flex; align-items:center; padding:10px 15px; cursor:pointer; border-bottom:1px solid #1e293b; background:rgba(0,243,255,0.05);">
-                            <input type="checkbox" id="facility-all" checked
-                                onchange="SimPage.toggleAllFacilities(this.checked)"
-                                style="margin-right:10px; accent-color:#00f3ff;">
-                            <span style="color:#00f3ff; font-weight:600;">ALL TANKS (Combined)</span>
-                        </label>
-                        <div id="facility-list">
-                            <!-- Tank checkboxes injected here -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Start Date -->
-                <div>
-                    <label class="control-label">Start Date</label>
-                    <input type="date" id="sim-start" class="control-input" onclick="this.showPicker()">
-                </div>
-
-                <!-- End Date -->
-                <div>
-                    <label class="control-label">Ending Date</label>
-                    <input type="date" id="sim-end" class="control-input" onclick="this.showPicker()">
-                </div>
-
-                <!-- Daily In -->
-                <div>
-                    <label class="control-label">Default In (Ton)</label>
-                    <input type="number" id="sim-daily-in" class="control-input" value="0">
-                </div>
-
-                <!-- Daily Out -->
-                <div>
-                    <label class="control-label">Default Out (Ton)</label>
-                    <input type="number" id="sim-daily-out" class="control-input" value="0">
-                </div>
-            </div>
-
-            <!-- ACTION BUTTON -->
-            <button class="btn-add-sim" onclick="SimPage.addToSession()">+ ADD TO SIMULATION</button>
+        <div class="page-header">
+            <div class="page-title">CPO ADVANCED PROJECTION ENGINE</div>
+            <div class="page-subtitle">PRIORITIZED WATERFALL SIMULATION</div>
         </div>
 
-        <!-- EXCEL IMPORT ENGINE -->
-        <div class="engine-panel" style="margin-top:20px; border-left:3px solid #bc13fe;">
-            <div class="engine-title" style="color:#bc13fe;">📊 EXCEL IMPORT ENGINE (CPO)</div>
-            <p style="color:#64748b; font-size:0.8rem; margin-bottom:20px;">Upload file Excel dari Tim Import/Logistic
-                untuk data kedatangan CPO.</p>
+        <div class="engine-layout">
 
-            <div class="input-group-row" style="grid-template-columns: 1fr 1fr 1fr;">
-                <!-- File Upload -->
-                <div style="grid-column: span 3;">
-                    <label class="control-label">📁 Upload File Excel (.xlsx / .xls)</label>
-                    <input type="file" id="excel-file" accept=".xlsx,.xls" class="control-input" style="padding:10px;"
-                        onchange="SimPage.previewExcelFile(this)">
+            <!-- LEFT PANEL: TANK SELECTION -->
+            <div class="engine-panel">
+                <div class="panel-title-bar">
+                    <div style="color:#ff9e0b;">🛢️</div>
+                    <div class="panel-title">TANK SELECTION</div>
                 </div>
 
-                <!-- Column: Tanggal -->
-                <div>
-                    <label class="control-label">Kolom Tanggal</label>
-                    <input type="text" id="col-date" class="control-input" placeholder="Contoh: C"
-                        style="text-transform:uppercase;" oninput="SimPage.refreshPreview()">
+                <div class="tank-grid" id="tank-selection-grid">
+                    <!-- INJECTED BY JS -->
                 </div>
 
-                <!-- Column: Grade/Material -->
-                <div>
-                    <label class="control-label">Kolom Grade/CPO</label>
-                    <input type="text" id="col-material" class="control-input" placeholder="Contoh: E"
-                        style="text-transform:uppercase;" oninput="SimPage.refreshPreview()">
-                </div>
-
-                <!-- Column: Qty IN -->
-                <div>
-                    <label class="control-label">Kolom Qty Masuk (Ton)</label>
-                    <input type="text" id="col-qty-in" class="control-input" placeholder="Contoh: F"
-                        style="text-transform:uppercase;" oninput="SimPage.refreshPreview()">
-                </div>
-
-                <!-- Header Row -->
-                <div>
-                    <label class="control-label">Baris Header</label>
-                    <input type="number" id="row-header" class="control-input" placeholder="Contoh: 1" value="1" min="1"
-                        oninput="SimPage.refreshPreview()">
-                </div>
-
-                <!-- Data Range -->
-                <div>
-                    <label class="control-label">Range Data (Awal:Akhir)</label>
-                    <input type="text" id="row-data-range" class="control-input" placeholder="Contoh: 2:100"
-                        value="2:100" oninput="SimPage.refreshPreview()">
-                </div>
-
-                <!-- Default Usage/Out -->
-                <div>
-                    <label class="control-label">Default Usage (Ton/Hari)</label>
-                    <input type="number" id="import-default-out" class="control-input" value="0">
+                <div style="margin-top:20px; color:#64748b; font-size:0.8rem; font-style:italic;">
+                    Click tanks to add to Filling Queue
                 </div>
             </div>
 
-            <!-- Preview Area -->
-            <div id="excel-preview"
-                style="display:none; margin-top:15px; background:rgba(0,0,0,0.3); border:1px solid #334155; border-radius:6px; padding:15px; max-height:200px; overflow:auto;">
-                <div style="color:#00f3ff; font-weight:600; margin-bottom:10px;">📄 Preview Data (First 5 Rows)</div>
-                <div id="excel-preview-content" style="font-family:monospace; font-size:0.75rem; color:#cbd5e1;"></div>
+            <!-- RIGHT PANEL: PRIORITY & PARAMS -->
+            <div class="engine-panel">
+
+                <!-- PRIORITY -->
+                <div class="panel-title-bar">
+                    <div style="color:#ff9e0b;">🔢</div>
+                    <div class="panel-title">FILLING PRIORITY</div>
+                </div>
+
+                <div class="priority-list" id="priority-list-container">
+                    <!-- INJECTED BY JS -->
+                    <div style="text-align:center; color:#444; padding:20px;">No Tanks Selected</div>
+                </div>
+
+                <!-- PARAMS -->
+                <div class="panel-title-bar" style="margin-top:40px;">
+                    <div style="color:#ff9e0b;">⚙️</div>
+                    <div class="panel-title">SIMULATION PARAMETERS</div>
+                </div>
+
+                <div class="param-group">
+                    <label class="param-label">START DATE</label>
+                    <input type="date" id="sim-start-date" class="param-input">
+                </div>
+
+                <div class="param-group">
+                    <label class="param-label">END DATE</label>
+                    <input type="date" id="sim-end-date" class="param-input">
+                </div>
+
+                <div class="param-group">
+                    <label class="param-label">TOTAL DAILY IN (TON)</label>
+                    <input type="number" id="sim-daily-in" class="param-input" value="0">
+                </div>
+
+                <div class="param-group">
+                    <label class="param-label">TOTAL DAILY OUT (TON)</label>
+                    <input type="number" id="sim-daily-out" class="param-input" value="0">
+                </div>
+
+                <button class="btn-initiate" onclick="CPOSim.initiateProjection()">INITIATE PROJECTION</button>
+
             </div>
 
-            <!-- Preview & Final Actions -->
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="btn-hud-primary" style="flex:1; background:#00f3ff; color:#000; font-weight:700;"
-                    onclick="SimPage.verifyAndPreviewData()">👁️ PREVIEW & VERIFIKASI GRADE</button>
-                <button class="btn-add-sim" style="flex:1; background:#bc13fe; margin-top:0;"
-                    onclick="SimPage.importFromExcel()">🚀 RUN SIMULATION</button>
+        </div>
+
+    </div>
+
+    <!-- RESULT SECTION (Reused Structure from RM-Sim) -->
+    <div id="result-section" class="result-section sim-container">
+
+        <!-- GRAPH -->
+        <div
+            style="background:rgba(15,23,42,0.8); border:1px solid #333; padding:20px; border-radius:12px; margin-bottom:20px;">
+            <h3 style="font-family:'Orbitron'; color:#ff9e0b; margin-bottom:20px; font-size:1rem;">PROJECTED TANK LEVELS
+            </h3>
+            <div style="height:350px;">
+                <canvas id="cpoChart"></canvas>
             </div>
         </div>
 
-        <!-- QUEUE BAR -->
-        <div class="queue-container" id="session-queue">
-            <span class="queue-label">SESSION QUEUE (Ready to Compare):</span>
-            <!-- Queue items added here -->
-            <span style="color:#444; font-size:0.8rem; font-style:italic;">No active simulations. Add a material above
-                to start.</span>
+        <!-- TABLE CONTROLS -->
+        <div style="margin-bottom:15px; display:flex; justify-content:space-between;">
+            <div class="panel-title" style="color:#fff;">PROJECTION DATA</div>
+            <select id="view-mode" onchange="CPOSim.renderTable()"
+                style="background:#000; color:#fff; border:1px solid #333; padding:5px 10px;">
+                <option value="detailed">BEDAH SATU-SATU (Detailed)</option>
+                <option value="summary">RINGKAS (Summary)</option>
+            </select>
         </div>
 
-        <!-- SLICER CONTROLS -->
-        <div style="display:flex; justify-content:center; margin-bottom:15px;">
-            <div class="slicer-group"
-                style="background:#000; border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:5px;">
-                <button class="slicer-btn active" id="slicer-daily" onclick="SimPage.setSlicer('daily')">DAILY</button>
-                <button class="slicer-btn" id="slicer-weekly" onclick="SimPage.setSlicer('weekly')">WEEKLY</button>
-                <button class="slicer-btn" id="slicer-monthly" onclick="SimPage.setSlicer('monthly')">MONTHLY</button>
-            </div>
-        </div>
-
-        <!-- GRAPH PANEL -->
-        <div class="engine-panel"
-            style="padding:20px; margin-bottom:20px; display:flex; flex-direction:column; gap:20px;">
-
-            <!-- STOCK CHART -->
-            <div style="height:350px; width:100%; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:15px;">
-                <h3
-                    style="font-family:'Orbitron'; color:#00f3ff; margin:0 0 10px 0; font-size:0.9rem; border-left:3px solid #00f3ff; padding-left:10px;">
-                    📈 TOTAL CPO STOCK vs TANK CAPACITY
-                </h3>
-                <canvas id="stockChart"></canvas>
-            </div>
-
-            <!-- MOVEMENT CHART -->
-            <div style="height:350px; width:100%;">
-                <h3
-                    style="font-family:'Orbitron'; color:#bc13fe; margin:0 0 10px 0; font-size:0.9rem; border-left:3px solid #bc13fe; padding-left:10px;">
-                    📊 CPO MOVEMENT ANALYSIS (IMPACT ON STOCK)
-                </h3>
-                <canvas id="movementChart"></canvas>
-            </div>
-        </div>
-
-        <!-- SUMMARY PREDICTIVE BOXES -->
-        <div class="engine-panel"
-            style="padding:0; overflow:hidden; display:flex; background:transparent; border:none; margin-bottom:20px;">
-
-            <!-- BOX 1: INFO -->
-            <div
-                style="flex:1; background:rgba(15, 23, 42, 0.8); border:1px solid rgba(255,255,255,0.1); border-right:none; border-radius:12px 0 0 12px; padding:20px;">
-                <div style="font-family:'Orbitron'; color:#fff; margin-bottom:10px; font-size:0.9rem;">📑 SIMULATION
-                    STATUS</div>
-                <div id="summary-doc-info" style="font-size:0.8rem; color:#cbd5e1; line-height:1.6;">
-                    <div
-                        style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:5px; margin-bottom:5px;">
-                        <span>ACTIVE PROJECTS:</span>
-                        <span id="txt-active-projects" style="color:#00f3ff; font-weight:600;">-</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between;">
-                        <span>LAST UPDATED:</span>
-                        <span id="txt-last-update" style="color:#bc13fe; font-weight:600;">-</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- BOX 2: MOVEMENT ANALYSIS -->
-            <div
-                style="flex:2; background:rgba(15, 23, 42, 0.9); border:1px solid rgba(255,255,255,0.1); padding:20px; display:flex; flex-direction:column; justify-content:center;">
-                <div style="font-family:'Orbitron'; color:#00f3ff; margin-bottom:5px; font-size:1rem;">⚡ PREDICTIVE
-                    MOVEMENT INSIGHT</div>
-                <div id="summary-movement-text"
-                    style="font-family:'Rajdhani'; font-size:1.1rem; color:#fff; line-height:1.4;">
-                    Waiting for simulation data...
-                </div>
-            </div>
-
-            <!-- BOX 3: CONCLUSION -->
-            <div
-                style="flex:1; background:rgba(15, 23, 42, 0.8); border:1px solid rgba(255,255,255,0.1); border-left:none; border-radius:0 12px 12px 0; padding:20px; display:flex; flex-direction:column; justify-content:center; align-items:flex-end; text-align:right;">
-                <div style="font-family:'Orbitron'; color:#94a3b8; font-size:0.8rem; margin-bottom:5px;">TOTAL STOCK
-                    IMPACT</div>
-                <div id="summary-total-impact"
-                    style="font-family:'Orbitron'; font-size:2rem; font-weight:900; color:#fff;">
-                    0 TON
-                </div>
-                <div id="summary-impact-desc" style="font-size:0.7rem; color:#64748b;">(STOCK HARI INI) > (PREDIKSI)
-                </div>
-            </div>
-        </div>
-
-        <!-- PREDICTIONS HISTORY LIST -->
-        <div id="history-section" class="engine-panel"
-            style="padding:15px; margin-bottom:20px; border-left:3px solid #bc13fe; display:none;">
-            <div class="engine-title" style="color:#bc13fe; font-size:0.9rem; margin-bottom:10px;">⏳ HISTORY &
-                PREDICTIONS LOG (CPO)</div>
-            <div id="history-list" style="display:flex; gap:10px; overflow-x:auto; padding-bottom:10px;">
-                <!-- History Items injected via JS -->
-            </div>
-        </div>
-
-        <!-- TABLE OPTIONS -->
-        <div class="table-options-bar"
-            style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; gap:10px;">
-                <button class="nav-btn active"
-                    style="background:#bc13fe; color:white; border:none; padding:5px 15px; border-radius:4px; font-size:0.7rem;">CONSOLIDATED
-                    CPO DATA TABLE</button>
-                <button class="btn-hud-primary" onclick="SimPage.saveProject()">💾 SAVE TO PROJECT</button>
-            </div>
-
-            <!-- VIEW TOGGLE -->
-            <div
-                style="display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.5); padding:5px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">
-                <label style="color:#aaa; font-size:0.8rem; align-self:center; margin-left:5px;">VIEW MODE:</label>
-                <select id="view-mode-select" onchange="SimPage.renderTable()"
-                    style="background:#000; color:#fff; border:1px solid #333; padding:5px; border-radius:4px;">
-                    <option value="detailed">BEDAH SATU-SATU (Detailed)</option>
-                    <option value="summary">RINGKAS (Summary)</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- TABLE PANEL -->
+        <!-- TABLE -->
         <div class="table-panel">
-            <div class="table-high-scroll">
+            <div style="overflow-x:auto;">
                 <table class="consolidated-table" id="sim-table">
-                    <thead id="sim-table-head"></thead>
-                    <tbody id="sim-table-body"></tbody>
+                    <thead id="result-thead"></thead>
+                    <tbody id="result-tbody"></tbody>
                 </table>
             </div>
         </div>
 
     </div>
 
-    <!-- HUD VIEWPORT VIEW -->
-    <div id="hud-viewport" class="hud-viewport">
-        <div class="scanline"></div>
-
-        <div class="hud-header">
-            <div class="hud-title">CPO PREDICTIVE v.20</div>
-            <div style="display:flex; gap:20px; align-items:center;">
-                <div id="hud-timer" style="font-family:'Orbitron'; color:#64748b; font-size:0.8rem;">REALTIME
-                    PROJECTION: ACTIVE</div>
-                <button class="btn-hud-primary btn-hud-exit" onclick="SimPage.toggleFullscreen()">EXIT HUD</button>
-            </div>
-        </div>
-
-        <div class="hud-content" style="display:flex; gap:20px;">
-            <!-- LEFT COLUMN: CHARTS -->
-            <div class="hud-card" style="flex:2; display:flex; flex-direction:column;">
-                <div class="hud-card-header">
-                    <span style="color:#FFE600; text-shadow: 0 0 10px rgba(255, 230, 0, 0.5);">LIVE PROJECTION
-                        VISUALIZER</span>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <span id="hud-slicer-label" style="font-size:0.6rem; color:#64748b;">MODE: DAILY</span>
-                        <div style="display:flex; background:rgba(255,255,255,0.05); border-radius:4px; padding:2px;">
-                            <button class="btn-hud-primary"
-                                style="padding:2px 8px; font-size:0.5rem; border:none; background:transparent;"
-                                onclick="SimPage.setSlicer('daily')">D</button>
-                            <button class="btn-hud-primary"
-                                style="padding:2px 8px; font-size:0.5rem; border:none; background:transparent;"
-                                onclick="SimPage.setSlicer('weekly')">W</button>
-                            <button class="btn-hud-primary"
-                                style="padding:2px 8px; font-size:0.5rem; border:none; background:transparent;"
-                                onclick="SimPage.setSlicer('monthly')">M</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="hud-card-body" style="flex:1; display:flex; flex-direction:column; gap:10px; padding:10px;">
-                    <div style="flex:1; border-bottom:1px solid rgba(255,255,255,0.05);">
-                        <div style="font-size:0.65rem; color:#00f3ff; margin-bottom:5px;">STOCK LEVEL vs CAPACITY</div>
-                        <div style="height:90%; position:relative;">
-                            <canvas id="hudStockChart"></canvas>
-                        </div>
-                    </div>
-                    <div style="flex:1;">
-                        <div style="font-size:0.65rem; color:#bc13fe; margin-bottom:5px;">MOVEMENT IMPACT</div>
-                        <div style="height:90%; position:relative;">
-                            <canvas id="hudMovementChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- RIGHT COLUMN: SUMMARY -->
-            <div style="flex:1; display:flex; flex-direction:column; gap:15px;">
-                <div class="hud-card" style="flex:3;">
-                    <div class="hud-card-header">ANALYTICAL INSIGHTS</div>
-                    <div class="hud-card-body">
-                        <div id="analytics-grid" class="insight-grid" style="grid-template-columns: 1fr;">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="hud-card" style="flex:0 0 auto;">
-                    <div class="hud-card-header">📑 SIMULATION STATUS</div>
-                    <div class="hud-card-body" style="padding:15px;">
-                        <!-- Status from main boxes -->
-                    </div>
-                </div>
-
-                <div class="hud-card" style="flex:1; overflow:hidden;">
-                    <div class="hud-card-header">⚡ PREDICTIVE INSIGHT</div>
-                    <div class="hud-card-body" style="padding:15px; overflow-y:auto;">
-                        <div id="hud-summary-movement-text"
-                            style="font-family:'Rajdhani'; font-size:0.9rem; color:#fff; line-height:1.4;">
-                            Waiting for data...
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MATERIAL RESOLVER MODAL -->
-    <div id="material-resolver-overlay" class="resolver-overlay">
-        <div class="resolver-modal" style="width: 700px;">
-            <div class="resolver-header">
-                <span>VERIFIKASI DATA SUMBER EXCEL</span>
-                <span id="resolver-progress" style="font-size:0.7rem; color:#64748b;">1 of 1</span>
-            </div>
-            <div class="resolver-body">
-                <div id="resolver-info"
-                    style="margin-bottom:15px; padding:15px; background:rgba(255,255,255,0.05); border-radius:4px; border-left: 4px solid #bc13fe;">
-                    <div style="color:#64748b; font-size:0.7rem; text-transform:uppercase;">Data Sumber:</div>
-                    <div id="resolver-raw-value"
-                        style="font-size:1.4rem; color:#fff; font-weight:700; margin:5px 0; font-family:'Orbitron';">
-                        KODE_CPO</div>
-                </div>
-
-                <div style="color:#64748b; font-size:0.7rem; text-transform:uppercase; margin-bottom:10px;">Pilih Grade
-                    CPO yang Sesuai:</div>
-                <div id="resolver-suggestions" class="suggestion-list"
-                    style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                    <!-- Suggestions injected here -->
-                </div>
-
-                <div style="margin-top:20px; display:flex; gap:10px;">
-                    <button class="btn-hud-primary" style="flex:2;" onclick="SimPage.applyResolution()">KONFIRMASI
-                        PILIHAN</button>
-                    <button class="btn-hud-primary btn-hud-exit" style="flex:1;"
-                        onclick="SimPage.ignoreMaterial()">ABAIKAN</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- SCRIPTS -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="js/app-config.js"></script>
-    <script src="js/app-data.js"></script>
     <script src="js/page-cpo-simulation.js"></script>
-
+    <script>
+        window.onload = () => {
+            try {
+                // Simulation init if needed
+            } catch (err) {
+                console.error("Init failed:", err);
+            } finally {
+                setTimeout(() => {
+                    const overlay = document.getElementById('loading-overlay');
+                    if (overlay) overlay.classList.add('hidden');
+                }, 1200);
+            }
+        };
+    </script>
 </body>
 
 </html>
