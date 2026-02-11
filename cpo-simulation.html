@@ -262,6 +262,81 @@
             animation: fadeIn 0.5s ease-out;
         }
 
+        .table-panel {
+            background: #0a0a0a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .consolidated-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .consolidated-table th,
+        .consolidated-table td {
+            border: 1px solid #1e293b;
+            padding: 12px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .consolidated-table th {
+            background: #0f172a;
+            color: #94a3b8;
+            font-family: 'Inter';
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .th-group-header {
+            font-family: 'Orbitron';
+            letter-spacing: 1px;
+            background: #111 !important;
+            color: #ff9e0b !important;
+        }
+
+        .consolidated-table td {
+            font-family: 'Rajdhani';
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .editable-cell {
+            background: transparent;
+            border: 1px solid transparent;
+            color: inherit;
+            width: 100%;
+            text-align: center;
+            font-family: inherit;
+            font-weight: inherit;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .editable-cell:hover,
+        .editable-cell:focus {
+            background: #1e293b;
+            border-color: #475569;
+            outline: none;
+        }
+
+        .col-stock {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .col-in {
+            background: rgba(16, 185, 129, 0.05);
+            color: #34d399 !important;
+        }
+
+        .col-out {
+            background: rgba(239, 68, 68, 0.05);
+            color: #f87171 !important;
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -400,11 +475,13 @@
         </div>
 
         <!-- TABLE -->
-        <div style="background:#0a0a0a; border:1px solid #333; border-radius:10px; overflow:hidden;">
-            <table style="width:100%; border-collapse:collapse;">
-                <thead id="result-thead"></thead>
-                <tbody id="result-tbody"></tbody>
-            </table>
+        <div class="table-panel">
+            <div style="overflow-x:auto;">
+                <table class="consolidated-table" id="sim-table">
+                    <thead id="result-thead"></thead>
+                    <tbody id="result-tbody"></tbody>
+                </table>
+            </div>
         </div>
 
     </div>
