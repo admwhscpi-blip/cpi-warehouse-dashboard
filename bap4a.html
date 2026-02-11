@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <script src="auth-guard.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BAP4A - SMART WAREHOUSE</title>
+    <title>BAP4A - LOGISTICS AUDIT GENERATOR [V.21.00]</title>
 
     <!-- FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,82 +18,289 @@
     <link rel="stylesheet" href="homepage-style.css">
 
     <style>
-        body {
-            padding-top: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 80vh;
-            flex-direction: column;
+        :root {
+            --audit-primary: #00f3ff;
+            --audit-warning: #ff9e0b;
+            --audit-danger: #ef4444;
+            --audit-success: #10b981;
+            --audit-bg: #050505;
+            --panel-bg: rgba(15, 23, 42, 0.6);
+            --border-glow: rgba(0, 243, 255, 0.2);
         }
 
-        .construction-card {
-            background: rgba(15, 23, 42, 0.6);
+        body {
+            background-color: var(--audit-bg);
+            color: #fff;
+            padding-top: 80px;
+            overflow-x: hidden;
+        }
+
+        .generator-container {
+            max-width: 1700px;
+            margin: 0 auto;
+            padding: 20px 40px;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 30px;
+        }
+
+        .header-section {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header-title {
+            font-family: 'Orbitron';
+            font-size: 2.2rem;
+            color: var(--audit-primary);
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+
+        .header-subtitle {
+            font-family: 'Rajdhani';
+            font-size: 1rem;
+            color: #64748b;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+        }
+
+        /* PANELS */
+        .glass-panel {
+            background: var(--panel-bg);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
-            padding: 60px;
-            text-align: center;
-            max-width: 600px;
-            box-shadow: 0 0 50px rgba(0, 243, 255, 0.1);
-            animation: float 4s ease-in-out infinite;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.3s;
         }
 
-        @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
+        .glass-panel:hover {
+            border-color: var(--border-glow);
         }
 
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            color: #00f3ff;
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
             margin-bottom: 20px;
-            font-size: 2.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
         }
 
-        p {
+        .panel-icon {
+            font-size: 1.3rem;
+            color: var(--audit-primary);
+        }
+
+        .panel-title {
+            font-family: 'Orbitron';
+            font-size: 1rem;
+            color: #cbd5e1;
+            letter-spacing: 1px;
+        }
+
+        /* INPUT GROUPS */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-col {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            font-family: 'Orbitron';
+            font-size: 0.65rem;
             color: #94a3b8;
-            font-size: 1.1rem;
-            margin-bottom: 30px;
-            line-height: 1.6;
+            margin-bottom: 8px;
+            text-transform: uppercase;
         }
 
-        .icon-construct {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            display: inline-block;
-            animation: spin-slow 10s linear infinite;
+        .audit-select,
+        .audit-input,
+        .audit-textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #fff;
+            font-family: 'Inter';
+            font-size: 0.9rem;
+            transition: all 0.3s;
         }
 
-        @keyframes spin-slow {
-            to {
-                transform: rotate(360deg);
-            }
+        .audit-select:focus,
+        .audit-input:focus,
+        .audit-textarea:focus {
+            border-color: var(--audit-primary);
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
         }
 
-        .btn-back {
-            background: transparent;
-            border: 1px solid #00f3ff;
-            color: #00f3ff;
-            padding: 10px 30px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: bold;
-            transition: 0.3s;
+        /* STATUS TOGGLES */
+        .status-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
         }
 
-        .btn-back:hover {
-            background: #00f3ff;
+        .status-btn {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #64748b;
+            font-family: 'Orbitron';
+            font-size: 0.6rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .status-btn.active.support {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: var(--audit-success);
+            color: var(--audit-success);
+        }
+
+        .status-btn.active.validated {
+            background: rgba(0, 243, 255, 0.1);
+            border-color: var(--audit-primary);
+            color: var(--audit-primary);
+        }
+
+        /* GEN BUTTON */
+        .btn-generate {
+            width: 100%;
+            padding: 15px;
+            margin-top: 10px;
+            background: linear-gradient(90deg, #00f3ff, #0088ff);
+            border: none;
+            border-radius: 10px;
             color: #000;
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+            font-family: 'Orbitron';
+            font-weight: 900;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .btn-generate:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
+            color: #fff;
+        }
+
+        /* OUTPUT PANEL */
+        .output-panel {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 200px);
+            min-height: 700px;
+        }
+
+        .report-preview {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 35px;
+            overflow-y: auto;
+            font-family: 'Inter';
+            line-height: 1.8;
+            color: #cbd5e1;
+        }
+
+        .report-preview h3 {
+            font-family: 'Orbitron';
+            color: var(--audit-warning);
+            margin-bottom: 20px;
+            font-size: 1rem;
+            border-left: 4px solid var(--audit-warning);
+            padding-left: 15px;
+            margin-top: 30px;
+        }
+
+        .report-preview h3:first-child {
+            margin-top: 0;
+        }
+
+        .report-preview p {
+            margin-bottom: 20px;
+            text-align: justify;
+        }
+
+        .action-btns-container {
+            position: absolute;
+            top: 35px;
+            right: 35px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-icon-btn {
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid var(--audit-primary);
+            color: var(--audit-primary);
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-family: 'Rajdhani';
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .action-icon-btn:hover {
+            background: var(--audit-primary);
+            color: #000;
+        }
+
+        .placeholder-text {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            gap: 20px;
+        }
+
+        /* IMPACT ROWS */
+        .impact-ui {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 1200px) {
+            .generator-container {
+                grid-template-columns: 1fr;
+            }
+
+            .output-panel {
+                height: auto;
+            }
         }
     </style>
 </head>
@@ -108,24 +315,156 @@
                 <span class="brand-v2">V2.0</span>
             </div>
         </a>
-
-        <div class="nav-links">
-            <!-- MENU DIKOSONGKAN -->
-        </div>
-
-        <div class="nav-actions">
-            <!-- TOMBOL DIHAPUS -->
-        </div>
     </nav>
 
-    <div class="construction-card">
-        <div class="icon-construct">⚙️</div>
-        <h1>MODUL BAP4A</h1>
-        <p>Fitur Berita Acara Penerimaan Barang (BAP4A) sedang dalam tahap pengembangan akhir. Nantikan update
-            selanjutnya!</p>
-        <a href="index.html" class="btn-back">KEMBALI KE DASHBOARD</a>
+    <div class="generator-container">
+
+        <div class="header-section">
+            <h1 class="header-title">BAP4A AUTO-GENERATOR</h1>
+            <p class="header-subtitle">ADVANCED AUDIT & CALCULATION ENGINE</p>
+        </div>
+
+        <!-- LEFT PANEL: INPUT -->
+        <div class="glass-panel">
+            <div class="panel-header">
+                <div class="panel-icon">📝</div>
+                <div class="panel-title">AUDIT INPUT PARAMETERS</div>
+            </div>
+
+            <!-- STEP 1: Identification -->
+            <div class="input-row">
+                <div class="input-col">
+                    <label>Material Name</label>
+                    <input type="text" id="input-material" class="audit-input" placeholder="e.g. CPO">
+                </div>
+                <div class="input-col">
+                    <label>Warehouse (SLOC)</label>
+                    <input type="text" id="input-sloc" class="audit-input" placeholder="e.g. Tank 03">
+                </div>
+            </div>
+
+            <!-- STEP 2: Stock Discrepancy -->
+            <div class="input-row">
+                <div class="input-col">
+                    <label>Condition</label>
+                    <select id="input-condition" class="audit-select">
+                        <option value="SUSUT">SUSUT (DISCREPANCY -)</option>
+                        <option value="OVER">OVER (DISCREPANCY +)</option>
+                    </select>
+                </div>
+                <div class="input-col">
+                    <label>Total Discrepancy (Amount)</label>
+                    <input type="number" id="input-amount" class="audit-input" placeholder="Ton balance">
+                </div>
+                <div class="input-col">
+                    <label>Dev. Percent (%)</label>
+                    <input type="text" id="input-percent" class="audit-input" placeholder="e.g. 3%">
+                </div>
+            </div>
+
+            <!-- STEP 3: Reference Info -->
+            <div class="input-group">
+                <label>Total Receipts (Penerimaan dalam Ton)</label>
+                <input type="number" id="input-receipts" class="audit-input" placeholder="Total reference volume">
+            </div>
+
+            <!-- STEP 4: Factor A -->
+            <div class="input-group">
+                <label>Analysis Factor A (Technical)</label>
+                <div class="status-container">
+                    <button class="status-btn active support"
+                        onclick="updateFactorStatus('A', 'support')">MENDUKUNG</button>
+                    <button class="status-btn" onclick="updateFactorStatus('A', 'validated')">NORMAL</button>
+                </div>
+                <div class="input-row" style="margin-bottom:0; gap:10px;">
+                    <div style="flex:2">
+                        <input type="text" id="input-reason-a" class="audit-input"
+                            placeholder="Brief reason (sensor kotor)">
+                    </div>
+                    <div style="flex:1" id="ui-impact-a">
+                        <input type="number" id="input-impact-a" class="audit-input" placeholder="Impact %">
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 5: Factor B -->
+            <div class="input-group">
+                <label>Analysis Factor B (Admin)</label>
+                <div class="status-container">
+                    <button class="status-btn" onclick="updateFactorStatus('B', 'support')">MENDUKUNG</button>
+                    <button class="status-btn active validated"
+                        onclick="updateFactorStatus('B', 'validated')">NORMAL</button>
+                </div>
+                <div class="input-row" style="margin-bottom:0; gap:10px;">
+                    <div style="flex:2">
+                        <input type="text" id="input-reason-b" class="audit-input"
+                            placeholder="Brief reason (SOP timbangan)">
+                    </div>
+                    <div style="flex:1" id="ui-impact-b" style="display:none;">
+                        <input type="number" id="input-impact-b" class="audit-input" placeholder="Impact %">
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 6: Plan -->
+            <div class="input-group">
+                <label>Proposed Corrective Action (Brief)</label>
+                <textarea id="input-plan" class="audit-textarea" placeholder="e.g. Kalibrasi sensor"></textarea>
+            </div>
+
+            <button class="btn-generate" onclick="BAPGenerator.generate()">GENERATE NARRATIVE REPORT</button>
+        </div>
+
+        <!-- RIGHT PANEL: OUTPUT -->
+        <div class="glass-panel output-panel">
+            <div class="panel-header">
+                <div class="panel-icon">📄</div>
+                <div class="panel-title">AUDIT NARRATIVE PREVIEW</div>
+            </div>
+
+            <div class="action-btns-container" id="action-btns" style="display:none;">
+                <button class="action-icon-btn" onclick="BAPGenerator.copySection(1)">
+                    <span>📋</span> COPY I
+                </button>
+                <button class="action-icon-btn" onclick="BAPGenerator.copySection(2)">
+                    <span>📋</span> COPY II
+                </button>
+                <button class="action-icon-btn" onclick="BAPGenerator.copySection(3)">
+                    <span>📋</span> COPY III
+                </button>
+            </div>
+
+            <div id="report-output" class="report-preview">
+                <div class="placeholder-text">
+                    <div class="placeholder-icon">📡</div>
+                    <div>Waiting for audit parameters...</div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
+    <!-- SCRIPTS -->
+    <script src="js/app-bap4a.js"></script>
+    <script>
+        window.factorStatus = { A: 'support', B: 'validated' };
+
+        function updateFactorStatus(factor, status) {
+            window.factorStatus[factor] = status;
+
+            // UI Toggle
+            const container = event.target.parentElement;
+            const btns = container.querySelectorAll('.status-btn');
+            btns.forEach(b => b.classList.remove('active', 'support', 'validated'));
+            event.target.classList.add('active', status);
+
+            // Handle Impact Visibility
+            const impactUi = document.getElementById(`ui-impact-${factor.toLowerCase()}`);
+            if (impactUi) {
+                impactUi.style.display = (status === 'support') ? 'block' : 'none';
+            }
+        }
+    </script>
 </body>
 
 </html>
