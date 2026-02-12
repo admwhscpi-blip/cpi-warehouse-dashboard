@@ -22,7 +22,8 @@ const BKKSim = {
         const BKK_API_URL = CONFIG.BKK_API_URL;
 
         try {
-            const response = await fetch(BKK_API_URL + (BKK_API_URL.includes('?') ? '&' : '?') + "t=" + new Date().getTime());
+            const sep = BKK_API_URL.includes('?') ? '&' : '?';
+            const response = await fetch(BKK_API_URL + sep + "t=" + new Date().getTime());
             const data = await response.json();
 
             let materials = data.materials || [];

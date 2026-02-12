@@ -968,16 +968,16 @@
 
         let appData = null;
 
-        async function fetchBKK() {
-            try {
-                const response = await fetch(API_URL + (API_URL.includes('?') ? '&' : '?') + "t=" + Date.now());
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                console.error("Fetch Error:", error);
-                // Return empty structure to prevent crashes
-                return { trucks: [], intake: [], silos: [] };
-            }
+        function fetchBKK() {
+            return new Promise((resolve, reject) => {
+                const cb = 'bkk_' + Math.round(Math.random() * 100000);
+                window[cb] = (d) => { delete window[cb]; document.body.removeChild(tag); resolve(d); };
+                const tag = document.createElement('script');
+                const sep = API_URL.includes('?') ? '&' : '?';
+                tag.src = `${API_URL}${sep}callback=${cb}&t=${Date.now()}`;
+                tag.onerror = reject;
+                document.body.appendChild(tag);
+            });
         }
 
         async function init() {
@@ -985,12 +985,12 @@
                 const data = await fetchBKK();
 
                 // DATA ADAPTATION
-                if (!data.silos && data.materials) {
+                if (data && !data.silos && data.materials) {
                     data.silos = data.materials.map(m => ({
                         id: m.warehouse,
                         material: m.name,
                         stock: m.stock,
-                        percentage: (m.percentage || 0) / 100,
+                        percentage: (m.percentage || 0) / (m.percentage > 1 ? 100 : 1), // Standardize
                         age: m.age,
                         doh: m.doh,
                         usage: m.usageDaily
@@ -1001,7 +1001,16 @@
                 document.getElementById('loading').style.display = 'none';
                 renderDashboard(data);
                 setTimeout(drawConnectors, 500);
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error("Initialization Error:", e);
+                document.getElementById('loading').innerHTML = `
+                    <div style="text-align:center; padding:20px;">
+                        <h2 style="color:var(--neon-pink); font-family:'Orbitron';">CONNECTION ERROR</h2>
+                        <p style="color:#aaa;">Gagal terhubung ke Apps Script. Pastikan Internet aktif & setting "Anyone" di Apps Script sudah benar.</p>
+                        <button onclick="location.reload()" style="background:var(--neon-cyan); padding:8px 16px; border:none; border-radius:4px; font-family:'Orbitron'; font-weight:bold; cursor:pointer;">TRY AGAIN</button>
+                    </div>
+                `;
+            }
         }
 
         function renderDashboard(data) {

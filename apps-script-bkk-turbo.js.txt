@@ -1,0 +1,147 @@
+/**
+ * GOOGLE APPS SCRIPT - BKK INTEGRATED TURBO (OUTSTANDING & DOWNTIME)
+ * Project: Smart Warehouse V2.0
+ * Last Updated: 12 FEB 2026
+ * Optimization: Bulk Data Fetching (Reduces roundtrips to Spreadsheet)
+ */
+
+function doGet(e) {
+  var action = e.parameter.action || "getData";
+  var ssId = "17rIBNXdJOQkuizl_gJ5jGid7oqiEfJdWxUgPtz-i3As";
+  
+  try {
+    if (action === "getDowntime") {
+      return getDowntimeData(ssId, e);
+    } else {
+      return getOutstandingBKKTurbo(ssId, e);
+    }
+  } catch (err) {
+    return createOutput({error: err.toString()}, e);
+  }
+}
+
+/**
+ * OPTIMIZED: OUTSTANDING BKK (Turbo Mode)
+ */
+function getOutstandingBKKTurbo(ssId, e) {
+  var sheetName = "Monitoring bongkaran";
+  var ss = SpreadsheetApp.openById(ssId);
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) throw new Error("Sheet '" + sheetName + "' not found");
+
+  var lastRow = sheet.getLastRow();
+  // ONE SINGLE CALL: Ambil semua data sekaligus untuk efisiensi
+  var allValues = sheet.getRange(1, 1, lastRow, 9).getValues();
+
+  // 1. INTAKE DATA (B2:C4) 
+  var intakeData = [
+    { name: allValues[1][1], status: allValues[2][1], material: allValues[3][1] },
+    { name: allValues[1][2], status: allValues[2][2], material: allValues[3][2] }
+  ];
+
+  // 2. SILO DATA (D7:I14) 
+  var silos = [];
+  var siloNames = ["BK1", "BK2", "BK3", "BK4", "BK5", "BK6"];
+  for (var col = 0; col < 6; col++) {
+    var c = 3 + col; // Column D (index 3)
+    silos.push({
+      id: siloNames[col],
+      material: allValues[6][c],
+      vessel: allValues[7][c], 
+      stock: allValues[8][c], 
+      percentage: allValues[9][c],
+      age: allValues[10][c], 
+      usage: allValues[11][c], 
+      doh: allValues[12][c], 
+      status: allValues[13][c]
+    });
+  }
+
+  // 3. TRUCK DATA (Row 22 Down)
+  var truckData = [];
+  for (var i = 21; i < allValues.length; i++) {
+    var row = allValues[i];
+    if (!row[2] && !row[3]) continue; 
+    
+    var mixedStr = (row[3] || "").toString();
+    var dateMatch = mixedStr.match(/(\d{2}[-./]\d{2}[-./]\d{2,4})/);
+    var date = dateMatch ? dateMatch[0] : "";
+    var parts = mixedStr.split(date);
+    
+    truckData.push({
+      material: row[2], sequence: parts[0].trim(), date: date,
+      nopol: parts.length > 1 ? parts[1].trim() : "",
+      netto: row[4], type: row[5], grade: row[6], aging: row[7]
+    });
+  }
+
+  return createOutput({ timestamp: new Date().toISOString(), intake: intakeData, silos: silos, trucks: truckData }, e);
+}
+
+/**
+ * FEATURE 2: BKK DOWNTIME (NEW)
+ */
+function getDowntimeData(ssId, e) {
+  var sheetName = "DOWNTIME";
+  var ss = SpreadsheetApp.openById(ssId);
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) throw new Error("Sheet '" + sheetName + "' not found");
+
+  var lastRow = sheet.getLastRow();
+  var downtimeData = [];
+  
+  if (lastRow >= 5) {
+    var numRows = lastRow - 5 + 1;
+    // Bulk fetch (Cols A-Y)
+    var data = sheet.getRange(5, 1, numRows, 25).getValues();
+    
+    for (var i = 0; i < data.length; i++) {
+      var row = data[i];
+      if (!row[0]) continue;
+      
+      downtimeData.push({
+        tanggal: row[0],
+        intake_direct: row[1],
+        petugas: row[2],
+        scada: row[3],
+        shift: row[4],
+        nopol: row[5],
+        jenis_truck: row[6],
+        bruto: row[7],
+        netto: row[8],
+        material: row[9],
+        sloc: row[10],
+        pt_ts1: row[11],
+        pt_ts2: row[12],
+        pt_total: row[13],
+        pb_start: row[14],
+        pb_finish: row[15],
+        pb_total: row[16],
+        manuver_mulai: row[17],
+        manuver_selesai: row[18],
+        manuver_total: row[19],
+        qc_start: row[20],
+        qc_finish: row[21],
+        qc_total: row[22],
+        tenaga: row[23],
+        moisture: row[24]
+      });
+    }
+  }
+
+  return createOutput({ timestamp: new Date().toISOString(), data: downtimeData }, e);
+}
+
+/**
+ * Helper Output
+ */
+function createOutput(result, e) {
+  var jsonString = JSON.stringify(result);
+  if (e.parameter.callback) {
+    return ContentService.createTextOutput(e.parameter.callback + "(" + jsonString + ")")
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  } else {
+    return ContentService.createTextOutput(jsonString)
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}

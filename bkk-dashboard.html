@@ -448,40 +448,44 @@
                 return dummyData;
             }
 
-            try {
-                const response = await fetch(BKK_API_URL + "?t=" + new Date().getTime());
-                const data = await response.json();
+            return new Promise((resolve) => {
+                const cb = 'bkk_dash_' + Math.round(Math.random() * 100000);
+                window[cb] = (data) => {
+                    delete window[cb];
+                    const scriptTag = document.getElementById(cb);
+                    if (scriptTag) document.body.removeChild(scriptTag);
 
-                // DATA ADAPTATION FOR BKK-DASHBOARD
-                let materials = data.materials || [];
+                    // DATA ADAPTATION FOR BKK-DASHBOARD
+                    let materials = data.materials || [];
 
-                // If 'materials' is missing but 'silos' exists (Outstanding BKK format)
-                if (materials.length === 0 && data.silos) {
-                    materials = data.silos.map(s => ({
-                        warehouse: s.id,
-                        name: s.material || 'EMPTY',
-                        supplier: s.vessel || s.supplier || '-',
-                        stock: s.stock || 0,
-                        capacity: s.capacity || (s.stock / (s.percentage || 1)) || 3000000,
-                        percentage: (s.percentage || 0) * (s.percentage < 1 ? 100 : 1),
-                        age: s.age || 0,
-                        doh: s.doh || 0,
-                        usageDaily: s.usage || 0,
-                        remark: s.status || 'OK'
-                    }));
-                }
+                    if (materials.length === 0 && data.silos) {
+                        materials = data.silos.map(s => ({
+                            warehouse: s.id,
+                            name: s.material || 'EMPTY',
+                            supplier: s.vessel || s.supplier || '-',
+                            stock: s.stock || 0,
+                            capacity: s.capacity || (s.stock / (s.percentage || 1)) || 3000000,
+                            percentage: (s.percentage || 0) * (s.percentage < 1 ? 100 : 1),
+                            age: s.age || 0,
+                            doh: s.doh || 0,
+                            usageDaily: s.usage || 0,
+                            remark: s.status || 'OK'
+                        }));
+                    }
+                    data.materials = materials;
+                    resolve(data);
+                };
 
-                data.materials = materials;
-
-                if (data.error) {
-                    console.error("API Error:", data.error);
-                    return dummyData;
-                }
-                return data;
-            } catch (error) {
-                console.error("Fetch error:", error);
-                return dummyData;
-            }
+                const tag = document.createElement('script');
+                tag.id = cb;
+                const sep = BKK_API_URL.includes('?') ? '&' : '?';
+                tag.src = `${BKK_API_URL}${sep}callback=${cb}&t=${Date.now()}`;
+                tag.onerror = () => {
+                    console.error("JSONP Fetch Failed for BKK-Dashboard");
+                    resolve(dummyData);
+                };
+                document.body.appendChild(tag);
+            });
         }
 
         function renderDashboard(data) {
