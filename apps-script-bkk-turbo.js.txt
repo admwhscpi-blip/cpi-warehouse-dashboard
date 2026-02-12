@@ -199,8 +199,8 @@ function parseTime(t) {
     var totalMin = (h * 60) + m + (s / 60);
     
     // Filter out sentinel/placeholder value (~23:34 = 1414 min)
-    // and any unrealistic duration (>120 min for a single truck process)
-    if (totalMin > 120) return 0;
+    // and any unrealistic duration (>240 min for a single truck process)
+    if (totalMin > 240) return 0;
     
     return totalMin;
   }
@@ -222,7 +222,7 @@ function parseTime(t) {
   // Plain number (already in minutes)
   var num = parseFloat(str.replace(",", "."));
   if (isNaN(num)) return 0;
-  return num > 120 ? 0 : num;
+  return num > 240 ? 0 : num;
 }
 
 function getDowntimeQuery(ssId, e) {
@@ -318,16 +318,22 @@ function getDowntimeQuery(ssId, e) {
       i71TruckCount++;
       if (rawMat) { i71MaterialNetto[rawMat] = (i71MaterialNetto[rawMat] || 0) + rowNetto; }
       
-      // Collect timestamps ONLY for idle gap (loss) calculation
-      var bMulai = rawData[i][14];   // BONGKAR MULAI (start time)
-      var bSelesai = rawData[i][15]; // BONGKAR SELESAI (finish time)
+      // Collect timestamps and metadata for real-month timeline analysis
+      var bMulai = rawData[i][14];   
+      var bSelesai = rawData[i][15]; 
       if (bMulai instanceof Date && bSelesai instanceof Date &&
           !isNaN(bMulai.getTime()) && !isNaN(bSelesai.getTime())) {
-        var startMin = bMulai.getHours() * 60 + bMulai.getMinutes() + bMulai.getSeconds() / 60;
-        var endMin = bSelesai.getHours() * 60 + bSelesai.getMinutes() + bSelesai.getSeconds() / 60;
-        if (startMin <= 1380 && endMin <= 1380 && endMin > startMin) {
-          intake71Trucks.push({ dateKey: dateKey, startMin: startMin, endMin: endMin });
-        }
+        // Absolute minutes from start of month for timeline sorting
+        var day = rowDate.getDate();
+        var absStart = ((day - 1) * 24 * 60) + (bMulai.getHours() * 60) + bMulai.getMinutes() + (bMulai.getSeconds() / 60);
+        var absEnd = ((day - 1) * 24 * 60) + (bSelesai.getHours() * 60) + bSelesai.getMinutes() + (bSelesai.getSeconds() / 60);
+        
+        intake71Trucks.push({ 
+          absStart: absStart, 
+          absEnd: absEnd, 
+          mat: rawMat, 
+          code: (rawData[i][10] || "").toString().trim().toUpperCase() // Assuming Col K is code
+        });
       }
     }
     
@@ -348,44 +354,75 @@ function getDowntimeQuery(ssId, e) {
     }
   }
   
-  // ======== INTAKE 71 IDLE LOSS (gap between trucks) ========
-  var byDate = {};
-  for (var i = 0; i < intake71Trucks.length; i++) {
-    var dk = intake71Trucks[i].dateKey;
-    if (!byDate[dk]) byDate[dk] = [];
-    byDate[dk].push(intake71Trucks[i]);
+  // ======== INTAKE 71 BALANCED TIMELINE ANALYSIS ========
+  var totalMonthMin = 31 * 24 * 60; // Default
+  if (targetMonth && targetYear) {
+    totalMonthMin = new Date(targetYear, targetMonth, 0).getDate() * 24 * 60;
   }
   
-  var totalLossMin = 0;
-  var dateKeys = Object.keys(byDate);
-  for (var di = 0; di < dateKeys.length; di++) {
-    var tks = byDate[dateKeys[di]];
-    tks.sort(function(a, b) { return a.startMin - b.startMin; });
-    for (var t = 0; t < tks.length - 1; t++) {
-      var gap = tks[t + 1].startMin - tks[t].endMin;
-      if (gap > 0 && gap < 120) totalLossMin += gap;
+  var totalActiveMin = i71TotalBongkar;
+  var rawIdleMin = 0;
+  var rawOffMin = 0;
+  
+  if (intake71Trucks.length > 0) {
+    intake71Trucks.sort(function(a, b) { return a.absStart - b.absStart; });
+    
+    // 1. RAW Gaps before/after operasional (Count as Off/Setup)
+    rawOffMin += intake71Trucks[0].absStart;
+    var lastTruckEnd = intake71Trucks[intake71Trucks.length - 1].absEnd;
+    if (totalMonthMin > lastTruckEnd) {
+      rawOffMin += (totalMonthMin - lastTruckEnd);
     }
+    
+    // 2. RAW Gaps between trucks
+    for (var i = 0; i < intake71Trucks.length - 1; i++) {
+      var curr = intake71Trucks[i];
+      var next = intake71Trucks[i+1];
+      var gap = next.absStart - curr.absEnd;
+      
+      if (gap > 0) {
+        // Pure Material/Code logic: Different = Off, Same = Idle
+        if (curr.mat !== next.mat || curr.code !== next.code) {
+          rawOffMin += gap;
+        } else {
+          rawIdleMin += gap;
+        }
+      }
+    }
+  } else {
+    rawOffMin = totalMonthMin;
   }
   
-  // processMin from BONGKAR TOTAL column (NOT calculated from timestamps)
-  var processMin = Math.round(i71TotalBongkar);
-  var manuverMin = Math.round(i71TotalMan);
-  var qcMin = Math.round(i71TotalQC);
-  var netDischarge = Math.max(0, processMin - manuverMin - qcMin);
-  var lossMin = Math.round(totalLossMin);
+  // 3. BALANCE & SCALE (Sum of Active + Idle + Off must equal totalMonthMin)
+  var leftForGaps = Math.max(0, totalMonthMin - totalActiveMin);
+  var rawGapTotal = rawIdleMin + rawOffMin;
+  var finalIdleMin, finalOffMin;
   
-  var effPct = (processMin + lossMin > 0) 
-    ? Math.round((processMin / (processMin + lossMin)) * 100) : 0;
-  var idlePct = 100 - effPct;
+  if (rawGapTotal > 0) {
+    // Scale gaps proportionately into the remaining "Calendar Minutes"
+    finalIdleMin = (rawIdleMin / rawGapTotal) * leftForGaps;
+    finalOffMin = leftForGaps - finalIdleMin; // Ensures exact sum
+  } else {
+    finalIdleMin = 0;
+    finalOffMin = leftForGaps;
+  }
+  
+  // Percentages relative to totalMonthMin
+  var activePct = totalMonthMin > 0 ? Math.round((totalActiveMin / totalMonthMin) * 100) : 0;
+  var idlePct = totalMonthMin > 0 ? Math.round((finalIdleMin / totalMonthMin) * 100) : 0;
+  var offPct = 100 - activePct - idlePct; // Residual ensures 100% total
   
   var intake71 = {
-    processMin: processMin,           // BONGKAR TOTAL (includes manuver+QC)
-    netDischargeMin: netDischarge,     // clean bongkar = total - manuver - QC
-    manuverMin: manuverMin,            // MANUVER TOTAL
-    qcMin: qcMin,                      // QC TOTAL
-    lossMin: lossMin,                  // idle gap between trucks
-    efficiencyPct: effPct,             // yield %
-    idlePct: idlePct,                  // idle loss %
+    activeMin: Math.round(totalActiveMin),
+    netMin: Math.max(0, Math.round(totalActiveMin - i71TotalMan - i71TotalQC)),
+    manMin: Math.round(i71TotalMan),
+    qcMin: Math.round(i71TotalQC),
+    idleMin: Math.round(finalIdleMin),
+    offMin: Math.round(finalOffMin),
+    activePct: activePct,
+    idlePct: idlePct,
+    offPct: offPct,
+    totalMonthMin: totalMonthMin,
     trucks: i71TruckCount,
     nettoKg: Math.round(i71TotalNetto),
     materials: i71MaterialNetto

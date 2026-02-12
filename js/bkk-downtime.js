@@ -170,28 +170,34 @@ const BKKDowntimeApp = {
         const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
         const setBar = (id, pct) => { const el = document.getElementById(id); if (el) el.style.width = Math.min(100, pct) + '%'; };
 
-        const proc = i71.processMin || 0;
-        const net = i71.netDischargeMin || 0;
-        const man = i71.manuverMin || 0;
-        const qc = i71.qcMin || 0;
-        const loss = i71.lossMin || 0;
+        const active = i71.activeMin || 0;
+        const idle = i71.idleMin || 0;
+        const off = i71.offMin || 0;
+        const activePct = i71.activePct || 0;
         const idlePct = i71.idlePct || 0;
-        const netPct = proc > 0 ? Math.round((net / proc) * 100) : 0;
-        const manPct = proc > 0 ? Math.round((man / proc) * 100) : 0;
-        const qcPct = proc > 0 ? Math.round((qc / proc) * 100) : 0;
+        const offPct = i71.offPct || 0;
 
-        setVal('val-intake71-eff', (i71.efficiencyPct || 0) + '%');
+        const net = i71.netMin || 0;
+        const man = i71.manMin || 0;
+        const qc = i71.qcMin || 0;
+        const netPct = active > 0 ? Math.round((net / active) * 100) : 0;
+        const manPct = active > 0 ? Math.round((man / active) * 100) : 0;
+        const qcPct = active > 0 ? Math.round((qc / active) * 100) : 0;
+
+        setVal('val-intake71-eff', activePct + '%');
         setVal('val-intake71-trucks', (i71.trucks || 0) + ' trucks');
-        setVal('val-active-min', proc.toLocaleString() + ' min');
+        setVal('val-active-min', active.toLocaleString() + ' min');
         setVal('val-net-discharge', net.toLocaleString() + ' min');
         setVal('val-net-pct', '(' + netPct + '%)');
         setVal('val-manuver-dt', man.toLocaleString() + ' min');
         setVal('val-man-pct', '(' + manPct + '%)');
         setVal('val-qc-hold', qc.toLocaleString() + ' min');
         setVal('val-qc-pct', '(' + qcPct + '%)');
-        setVal('val-intake71-ton', ((i71.nettoKg || 0) / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' Ton');
-        setVal('val-idle-min', loss.toLocaleString() + ' min');
+        setVal('val-idle-min', idle.toLocaleString() + ' min');
         setVal('val-idle-pct', idlePct + '%');
+        setVal('val-off-min', off.toLocaleString() + ' min');
+        setVal('val-off-pct', offPct + '%');
+        setVal('val-intake71-ton', ((i71.nettoKg || 0) / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' Ton');
 
         // Animate progress bars
         setTimeout(() => {
@@ -200,19 +206,17 @@ const BKKDowntimeApp = {
             setBar('bar-qc', qcPct);
         }, 100);
 
-        // Yield vs Loss donut chart
-        const yieldVal = i71.efficiencyPct || 0;
-        const lossVal = idlePct;
+        // Active vs Idle vs Off donut chart
         if (this.charts.yieldLoss) this.charts.yieldLoss.destroy();
         this.charts.yieldLoss = new ApexCharts(document.getElementById('chart-yield-loss'), {
-            series: [yieldVal, lossVal],
-            labels: ['YIELD', 'LOSS'],
-            chart: { type: 'donut', height: 200 },
-            colors: ['#00ff88', '#ff003c'],
+            series: [activePct, idlePct, offPct],
+            labels: ['ACTIVE', 'IDLE', 'OFF'],
+            chart: { type: 'donut', height: 130 },
+            colors: ['#00ff88', '#ff003c', '#bc13fe'],
             stroke: { show: false },
-            plotOptions: { pie: { donut: { size: '70%', labels: { show: true, name: { fontFamily: 'Orbitron', fontSize: '10px', color: '#ccc' }, value: { fontFamily: 'Orbitron', fontSize: '16px', color: '#fff', formatter: val => val + '%' }, total: { show: true, label: 'YIELD', fontFamily: 'Orbitron', fontSize: '9px', color: '#8892b0', formatter: () => yieldVal + '%' } } } } },
+            plotOptions: { pie: { donut: { size: '70%', labels: { show: true, name: { fontFamily: 'Orbitron', fontSize: '10px', color: '#ccc' }, value: { fontFamily: 'Orbitron', fontSize: '16px', color: '#fff', formatter: val => val + '%' }, total: { show: true, label: 'ACTIVE', fontFamily: 'Orbitron', fontSize: '9px', color: '#8892b0', formatter: () => activePct + '%' } } } } },
             legend: { show: false },
-            tooltip: { enabled: false }
+            tooltip: { enabled: true, theme: 'dark' }
         });
         this.charts.yieldLoss.render();
 

@@ -280,6 +280,15 @@
             padding: 10px;
         }
 
+        body.fullscreen-active .dashboard-main {
+            gap: 12px !important;
+            padding: 12px !important;
+        }
+
+        body.fullscreen-active .glass-panel {
+            padding: 10px !important;
+        }
+
         body.fullscreen-active .panel-title {
             font-size: 0.55rem;
             margin-bottom: 2px;
@@ -287,16 +296,16 @@
         }
 
         body.fullscreen-active .metric-card {
-            padding: 10px !important;
+            padding: 8px 10px !important;
         }
 
         body.fullscreen-active .metric-value {
-            font-size: 2.2rem !important;
+            font-size: 2.1rem !important;
         }
 
         body.fullscreen-active .metric-label {
-            font-size: 0.55rem !important;
-            margin-top: 5px !important;
+            font-size: 0.5rem !important;
+            margin-top: 3px !important;
         }
 
         body.fullscreen-active #panel-distribution {
@@ -328,27 +337,27 @@
 
         /* Adjusting chart heights for fullscreen */
         body.fullscreen-active #chart-main-volume {
-            height: 110px !important;
+            height: 105px !important;
         }
 
         body.fullscreen-active #chart-sbm-pkm-71 {
-            height: 100px !important;
+            height: 95px !important;
         }
 
         body.fullscreen-active #chart-pie-yield {
-            height: 100px !important;
+            height: 95px !important;
         }
 
         body.fullscreen-active #chart-yield-loss {
-            height: 100px !important;
+            height: 95px !important;
         }
 
         body.fullscreen-active #chart-direct-material {
-            height: 110px !important;
+            height: 100px !important;
         }
 
         body.fullscreen-active #chart-direct-volume {
-            height: 110px !important;
+            height: 100px !important;
         }
 
         body.fullscreen-active .metric-card {
@@ -357,6 +366,25 @@
             justify-content: flex-start !important;
             padding-top: 10px !important;
             padding-bottom: 10px !important;
+        }
+
+        body.fullscreen-active #chart-yield-loss {
+            height: 120px !important;
+        }
+
+        /* Aggressive scaling for Intake 71 section in FS */
+        body.fullscreen-active #val-intake71-eff {
+            font-size: 1.8rem !important;
+        }
+
+        body.fullscreen-active #val-active-min,
+        body.fullscreen-active #val-idle-min,
+        body.fullscreen-active #val-off-min {
+            font-size: 1.2rem !important;
+        }
+
+        body.fullscreen-active .intake71-grid .metric-card {
+            padding: 8px !important;
         }
 
         select.modern-select {
@@ -701,7 +729,8 @@
                 style="font-family:'Orbitron'; font-size:0.8rem; color:var(--neon-green); margin-bottom:20px; display:flex; align-items:center; gap:10px; border-left:3px solid var(--neon-green); padding-left:10px;">
                 <i class="fas fa-industry"></i> INTAKE 71 OPERATIONAL ANALYSIS
             </div>
-            <div style="display:grid; grid-template-columns: 1fr 2fr 1fr 1.5fr; gap:18px;">
+            <div class="intake71-grid"
+                style="display:grid; grid-template-columns: 0.9fr 1.5fr 1fr 1fr 1.3fr; gap:18px;">
                 <!-- Discharge Yield -->
                 <div
                     style="text-align:center; padding:20px 15px; background:rgba(0,0,0,0.3); border-radius:12px; border:1px solid rgba(0,255,136,0.15);">
@@ -794,21 +823,32 @@
                         IDLE LOSS</div>
                     <div style="font-family:'Orbitron'; font-size:1.4rem; font-weight:700; color:var(--neon-red); margin-top:12px; opacity:0.7;"
                         id="val-idle-pct">0%</div>
-                    <div style="font-family:'Orbitron'; font-size:0.4rem; color:#556; margin-top:2px;">OF TOTAL TIME
+                    <div style="font-family:'Orbitron'; font-size:0.4rem; color:#556; margin-top:2px;">WAITING SAME MAT
                     </div>
-                    <div
-                        style="font-family:'Orbitron'; font-size:0.35rem; color:#445; margin-top:10px; line-height:1.5;">
-                        INTER-TRUCK GAP<br>FINISH → NEXT START</div>
                 </div>
-                <!-- Yield vs Loss Chart -->
+                <!-- Off Time with % -->
                 <div
-                    style="padding:10px; background:rgba(0,0,0,0.3); border-radius:12px; border:1px solid rgba(0,255,136,0.1);">
+                    style="text-align:center; padding:20px 15px; background:rgba(0,0,0,0.3); border-radius:12px; border:1px solid rgba(188,19,254,0.15);">
+                    <div style="font-family:'Orbitron'; font-size:2rem; font-weight:700; color:var(--neon-purple);"
+                        id="val-off-min">0 min</div>
+                    <div
+                        style="font-family:'Orbitron'; font-size:0.5rem; color:#8892b0; letter-spacing:1px; margin-top:6px;">
+                        OFF TIME (SETUP)</div>
+                    <div style="font-family:'Orbitron'; font-size:1.4rem; font-weight:700; color:var(--neon-purple); margin-top:12px; opacity:0.7;"
+                        id="val-off-pct">0%</div>
+                    <div style="font-family:'Orbitron'; font-size:0.4rem; color:#556; margin-top:2px;">CHANGEOVER / STOP
+                    </div>
+                </div>
+                <!-- Yield vs Loss Chart Integration -->
+                <div
+                    style="padding:10px; background:rgba(0,0,0,0.3); border-radius:12px; border:1px solid rgba(0,255,136,0.1); display:flex; flex-direction:column; justify-content:center;">
                     <div
                         style="font-family:'Orbitron'; font-size:0.45rem; color:#8892b0; text-align:center; margin-bottom:5px; letter-spacing:1px;">
                         YIELD vs LOSS</div>
-                    <div id="chart-yield-loss" style="height:200px;"></div>
+                    <div id="chart-yield-loss" style="height:140px;"></div>
                 </div>
             </div>
+        </div>
         </div>
 
 
