@@ -310,7 +310,7 @@
     <!-- SCRIPT -->
     <script>
         // PASTE YOUR DEPLOYED GOOGLE APPS SCRIPT WEB APP URL HERE
-        const OUTSTANDING_API_URL = "https://script.google.com/macros/s/AKfycbwXIxVTx7oMLlzrQWams1ArxJxJnJhUL37MopO8FQMYfF-Ak_lVZnh2nOInwASqAgku/exec";
+        const OUTSTANDING_API_URL = "https://script.google.com/macros/s/AKfycbxKxNpxKj00pipJuRbIuYFJkXkblUVCxbSG5EtqArpkcyzSZCKywflMgVS_kjHQ1E3d/exec";
 
         // Dummy data for testing
         const dummyData = {
@@ -333,21 +333,42 @@
 
             console.log("Fetching from URL:", OUTSTANDING_API_URL);
 
-            try {
-                const response = await fetch(OUTSTANDING_API_URL + "&t=" + new Date().getTime());
-                const data = await response.json();
+            return new Promise((resolve, reject) => {
+                // Create unique callback name
+                const callbackName = 'jsonpCallback_' + Date.now();
 
-                console.log("API Response:", data);
+                // Create script element for JSONP
+                const script = document.createElement('script');
+                const url = OUTSTANDING_API_URL + '?callback=' + callbackName + '&t=' + new Date().getTime();
 
-                if (data.error) {
-                    console.error("API Error:", data.error);
-                    return dummyData;
-                }
-                return data;
-            } catch (error) {
-                console.error("Fetch error:", error);
-                return dummyData;
-            }
+                // Define global callback
+                window[callbackName] = function (data) {
+                    console.log("JSONP Response:", data);
+
+                    // Cleanup
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+
+                    if (data.error) {
+                        console.error("API Error:", data.error);
+                        resolve(dummyData);
+                    } else {
+                        resolve(data);
+                    }
+                };
+
+                // Error handling
+                script.onerror = function () {
+                    console.error("JSONP request failed");
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    resolve(dummyData);
+                };
+
+                // Load script
+                script.src = url;
+                document.body.appendChild(script);
+            });
         }
 
         function renderDashboard(data) {

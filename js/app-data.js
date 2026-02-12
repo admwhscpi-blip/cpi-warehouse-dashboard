@@ -4,37 +4,36 @@
 const DataService = {
     fetchData: async function () {
         try {
-            // Anti-cache param
-            const url = `${CONFIG.API_URL}?t=${new Date().getTime()}`;
+            // Anti-cache param & Action param
+            const url = `${CONFIG.API_URL}?action=getData&t=${new Date().getTime()}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error("Gagal mengambil data");
-            const data = await response.json();
-            if (!data.warehouses) data.warehouses = [];
-            if (!data.materials) data.materials = [];
+            const raw = await response.json();
 
-            // 1. Prioritize Manual Capacities from Config (with safety trim/uppercase)
-            data.capacities = data.warehouses.map(wName => {
-                const cleanName = wName.trim().toUpperCase();
-                const manualCapTon = CONFIG.WAREHOUSE_CAPACITIES[cleanName];
-                if (manualCapTon !== undefined) {
-                    return manualCapTon * CONFIG.UNIT_DIVIDER;
-                }
-                console.warn(`Capacity for warehouse "${wName}" not found in CONFIG. Using default.`);
-                return 1000 * CONFIG.UNIT_DIVIDER;
-            });
+            // Handle New Comprehensive API Structure
+            if (raw.success) {
+                const data = {
+                    warehouses: raw.warehouses || [],
+                    capacities: raw.capacities || [],
+                    materials: raw.materials || []
+                };
 
+                // 1. Sanitize Capacities (Ensure numbers)
+                data.capacities = data.capacities.map(c => parseFloat(c) || 0);
 
-
-            // 2. Sanitize Materials
-            data.materials.forEach(mat => {
-                if (!mat.stocks) mat.stocks = new Array(data.warehouses.length).fill(0);
-                mat.stocks = mat.stocks.map(s => {
-                    const num = parseFloat(s);
-                    return isNaN(num) ? 0 : num;
+                // 2. Sanitize Materials
+                data.materials.forEach(mat => {
+                    if (!mat.stocks) mat.stocks = new Array(data.warehouses.length).fill(0);
+                    mat.stocks = mat.stocks.map(s => {
+                        const num = parseFloat(s);
+                        return isNaN(num) ? 0 : num;
+                    });
                 });
-            });
 
-            return data;
+                return data;
+            }
+
+            throw new Error("Struktur data API tidak valid");
         } catch (error) {
             console.error("Error Fetching Data:", error);
             alert(`Gagal mengambil data: ${error.message}. \n\nPastikan koneksi internet lancar dan URL Google Apps Script di app-config.js sudah benar.`);
@@ -51,16 +50,12 @@ const DataService = {
         let totalCapacity = 0;
         let totalFilled = 0;
 
-        // Loop setiap gudang untuk kalkulasi
-        data.warehouses.forEach((_, index) => {
-            // Kapasitas
-            totalCapacity += data.capacities[index];
+        // 1. Total Capacity from array
+        totalCapacity = data.capacities.reduce((a, b) => a + b, 0);
 
-            // Terisi (Loop material)
-            data.materials.forEach(mat => {
-                const qty = mat.stocks[index];
-                if (qty) totalFilled += qty;
-            });
+        // 2. Total Filled from materials breakdown
+        data.materials.forEach(mat => {
+            totalFilled += mat.stocks.reduce((a, b) => a + b, 0);
         });
 
         return {

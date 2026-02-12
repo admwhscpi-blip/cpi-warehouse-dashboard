@@ -1,5 +1,5 @@
 const CONFIG = {
-    API_URL: "https://script.google.com/macros/s/AKfycbw7oGJOSrw4E3OhnEao59Gd8-drVTtblSYvBzI_dO9j32NYSIL9dmxHMW4UEnJR2yJ-Qg/exec",
+    API_URL: "https://script.google.com/macros/s/AKfycbwnStVw3UhKxgQDuTfufSlNMaTrf4ZpXC0FPAp6AK96t-YIJQNcJ1h0rtkbM2XlxPCr/exec",
     BIN_SWEEPING_API_URL: "https://script.google.com/macros/s/AKfycbynVL7SFG8TBeTbu2PjO2eGIgM1JkQcV8nT3zsoi6zWc4cArJ23VQfTgjtLyyTZCQFM/exec",
     DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbxDerZpvftORq993r2EfGnG7gpALFWsXxA21mWe-xMzHCE-5wmJpDJXKNl29hgW-GQz/exec",
 
