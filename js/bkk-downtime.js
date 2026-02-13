@@ -1,3 +1,5 @@
+window.onload = () => BKKDowntimeApp.init();
+
 const BKKDowntimeApp = {
     aggregatedData: [],
     intake71Data: {},
@@ -11,39 +13,36 @@ const BKKDowntimeApp = {
     availableMaterials: [],
 
     init: async function () {
-        console.log("Initializing SEARCH-FIRST V7.1...");
-
-        // Auto-set current month and year
+        console.log("Initializing SEARCH-FIRST V10.3...");
         const now = new Date();
         document.getElementById('select-month').value = now.getMonth() + 1;
         document.getElementById('select-year').value = now.getFullYear();
-
-        // V7: Sembunyikan loading screen agar parameter langsung muncul!
         if (document.getElementById('loading')) {
             document.getElementById('loading').classList.add('hidden');
         }
         this.renderDashboard();
     },
 
-    /**
-     * V6 CORE: APPLY FILTERS & FETCH AGGREGATED DATA
-     */
     applyFilters: function () {
         return new Promise((resolve) => {
-            const btnText = document.getElementById('btn-run-text');
-            if (btnText) btnText.innerText = "PROCESSING...";
+            const btnText = document.querySelector('.btn-run-v10'); // Fix selector
+            if (btnText) btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PROCESSING...';
             document.getElementById('loading').classList.remove('hidden');
 
             const month = document.getElementById('select-month').value;
             const year = document.getElementById('select-year').value;
-            const material = this.filterMode === 'material' ? document.getElementById('select-material').value : '';
 
-            console.log(`[V7 DEBUG] Running Query: Month=${month}, Year=${year}, Material=${material}`);
+            // V12: Safe material retrieval
+            let material = '';
+            if (this.filterMode === 'material') {
+                const elMat = document.getElementById('select-material');
+                if (elMat) material = elMat.value;
+            }
+            this.selectedMaterial = material;
 
-            const cb = 'bkk_v6_' + Math.round(Math.random() * 100000);
+            const cb = 'bkk_v10_' + Math.round(Math.random() * 100000);
             window[cb] = (result) => {
-                console.log("[V7 DEBUG] Data Received:", result);
-                if (btnText) btnText.innerText = "RUN ANALYTICS";
+                if (btnText) btnText.innerHTML = '<i class="fas fa-play"></i> RUN ANALYTICS';
                 delete window[cb];
                 if (result && result.data && result.data.length > 0) {
                     this.aggregatedData = result.data;
@@ -52,14 +51,13 @@ const BKKDowntimeApp = {
                     this.truckTypeData = result.truckTypes || {};
                     this.directGudangData = result.directGudang || {};
                     this.availableMaterials = result.materials || [];
-                    this.populateMaterialSelect();
+                    this.renderMaterialTable();
                     this.renderDashboard();
-                    document.getElementById('sync-label').innerText = `SYNCED (V7): ${new Date().toLocaleTimeString()}`;
+                    document.getElementById('sync-label').innerText = `SYNCED: ${new Date().toLocaleTimeString()}`;
                 } else {
-                    console.warn("[V7 DEBUG] Result empty or invalid:", result);
                     this.aggregatedData = [];
-                    this.renderDashboard(); // Render empty state with msg
-                    alert("DATA TIDAK DITEMUKAN: Periksa apakah ada data pada periode " + month + "/" + year + " di 10.000 baris terbaru.");
+                    this.renderDashboard();
+                    alert("DATA EMPTY for this period.");
                 }
                 document.getElementById('loading').classList.add('hidden');
                 resolve();
@@ -69,422 +67,725 @@ const BKKDowntimeApp = {
             const matParam = material ? `&material=${encodeURIComponent(material)}` : '';
             const script = document.createElement('script');
             script.src = `${baseUrl}?action=getDowntimeQuery&month=${month}&year=${year}${matParam}&callback=${cb}&t=${Date.now()}`;
-            console.log("[V7 DEBUG] Script Source:", script.src);
             document.body.appendChild(script);
         });
     },
 
-    populateMaterialSelect: function () {
-        const select = document.getElementById('select-material');
-        const currentVal = select.value;
-        select.innerHTML = '<option value="">SELECT MATERIAL...</option>';
+    renderMaterialTable: function () {
+        const tbody = document.getElementById('material-list-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
         this.availableMaterials.forEach(m => {
-            select.innerHTML += `<option value="${m}">${m}</option>`;
+            const tr = document.createElement('tr');
+            tr.className = 'mat-row';
+            if (this.selectedMaterial === m) tr.classList.add('selected');
+            tr.innerHTML = `<td>${m}</td><td style="text-align:right; color:var(--neon-blue);"><i class="fas fa-check-circle" style="opacity:${this.selectedMaterial === m ? 1 : 0}"></i></td>`;
+            tr.onclick = () => {
+                this.selectedMaterial = m;
+                this.renderMaterialTable();
+                this.applyFilters();
+            };
+            tbody.appendChild(tr);
         });
-        select.value = currentVal;
     },
 
     setFilterMode: function (mode) {
         this.filterMode = mode;
         document.getElementById('btn-overall').classList.toggle('active', mode === 'overall');
         document.getElementById('btn-material').classList.toggle('active', mode === 'material');
-        document.getElementById('material-filter-container').style.display = mode === 'material' ? 'block' : 'none';
+
+        // V12: Toggle the new SBM/PKM selector
+        const elMat = document.getElementById('select-material');
+        if (elMat) elMat.classList.toggle('hidden', mode !== 'material');
 
         if (mode === 'overall') {
-            document.getElementById('select-material').value = '';
-        }
-        // V7: Don't auto-fetch, wait for button click
-    },
-
-    setTimeView: function (view) {
-        this.timeView = view;
-        document.getElementById('btn-daily').classList.toggle('active', view === 'daily');
-        document.getElementById('btn-weekly').classList.toggle('active', view === 'weekly');
-        document.getElementById('btn-monthly').classList.toggle('active', view === 'monthly');
-
-        if (this.aggregatedData.length > 0) {
-            this.renderDashboard(); // Local re-render if data already exists
+            this.selectedMaterial = '';
+            this.applyFilters();
+        } else {
+            // If switched to material, trigger first filter (default SBM)
+            this.applyFilters();
         }
     },
 
-    /**
-     * RENDER ENGINE V8
-     */
     renderDashboard: function () {
-        this.renderKPIs();
-        this.renderVolumeTrend();
+        this.renderIntake71Analysis();
+        this.renderVolumeTrend(); // Top Full Width
         this.renderDistribution();
         this.renderSBMvsPKMChart();
         this.renderDirectGudang();
+        // New V10 Logic:
+        this.renderGrandTotal();
+        this.renderProcessStats();
+        this.renderEvalSection(); // V14: New consolidated evaluation
     },
 
-    renderKPIs: function () {
-        const emptyIds = ['val-netto', 'val-trucks', 'val-intake71-eff', 'val-active-min', 'val-idle-min',
-            'val-net-discharge', 'val-manuver-dt', 'val-qc-hold', 'val-intake71-ton', 'val-intake71-trucks',
-            'val-direct-netto', 'val-direct-trucks', 'val-net-pct', 'val-man-pct', 'val-qc-pct', 'val-idle-pct'];
-        if (this.aggregatedData.length === 0) {
-            emptyIds.forEach(id => { const el = document.getElementById(id); if (el) { el.innerText = '-'; } });
-            ['material-breakdown', 'truck-type-breakdown', 'direct-material-breakdown', 'direct-truck-types'].forEach(id => {
-                const el = document.getElementById(id); if (el) el.innerHTML = '';
-            });
-            return;
-        }
+    calculateProductivity: function () {
+        // Called when manpower input changes (now calls renderEvalSection)
+        this.renderIntake71Analysis();
+        this.renderEvalSection();
+    },
 
-        const totals = this.aggregatedData.reduce((acc, d) => {
-            acc.netto += d.netto;
-            acc.trucks += d.trucks;
-            return acc;
-        }, { netto: 0, trucks: 0 });
-
-        document.getElementById('val-netto').innerText = Math.round(totals.netto).toLocaleString();
-        document.getElementById('val-trucks').innerText = totals.trucks;
-
-        // Material Breakdown sub-cards
-        const matEl = document.getElementById('material-breakdown');
-        if (matEl && this.materialBreakdown) {
-            const sorted = Object.entries(this.materialBreakdown).sort((a, b) => b[1] - a[1]);
-            matEl.innerHTML = sorted.map(([name, val]) => `
-                <div style="display:flex; justify-content:space-between; padding:3px 6px; margin-bottom:3px; background:rgba(0,243,255,0.05); border-radius:4px; border-left:2px solid rgba(0,243,255,0.3);">
-                    <span style="font-family:'Rajdhani'; font-size:0.6rem; color:#aab; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:55%;">${name}</span>
-                    <span style="font-family:'Orbitron'; font-size:0.55rem; font-weight:700; color:var(--neon-blue);">${Math.round(val).toLocaleString()}</span>
-                </div>`).join('');
-        }
-
-        // Truck Type Breakdown sub-cards
-        const ttEl = document.getElementById('truck-type-breakdown');
-        if (ttEl && this.truckTypeData) {
-            const totalTrucks = Object.values(this.truckTypeData).reduce((s, c) => s + c, 0);
-            const sorted = Object.entries(this.truckTypeData).sort((a, b) => b[1] - a[1]);
-            ttEl.innerHTML = sorted.map(([name, count]) => {
-                const pct = totalTrucks > 0 ? ((count / totalTrucks) * 100).toFixed(1) : 0;
-                return `
-                <div style="display:flex; justify-content:space-between; padding:3px 6px; margin-bottom:3px; background:rgba(255,204,0,0.05); border-radius:4px; border-left:2px solid rgba(255,204,0,0.3);">
-                    <span style="font-family:'Rajdhani'; font-size:0.6rem; color:#aab;">${name}</span>
-                    <span style="font-family:'Orbitron'; font-size:0.55rem; font-weight:700; color:var(--neon-gold);">${count} <span style="font-size:0.45rem; opacity:0.7;">(${pct}%)</span></span>
-                </div>`;
-            }).join('');
-        }
-
-        // INTAKE 71 Data
+    renderGrandTotal: function () {
+        // Sum Intake + Direct
         const i71 = this.intake71Data || {};
-        const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
-        const setBar = (id, pct) => { const el = document.getElementById(id); if (el) el.style.width = Math.min(100, pct) + '%'; };
-
-        const active = i71.activeMin || 0;
-        const idle = i71.idleMin || 0;
-        const off = i71.offMin || 0;
-        const activePct = i71.activePct || 0;
-        const idlePct = i71.idlePct || 0;
-        const offPct = i71.offPct || 0;
-
-        const net = i71.netMin || 0;
-        const man = i71.manMin || 0;
-        const qc = i71.qcMin || 0;
-        const netPct = active > 0 ? Math.round((net / active) * 100) : 0;
-        const manPct = active > 0 ? Math.round((man / active) * 100) : 0;
-        const qcPct = active > 0 ? Math.round((qc / active) * 100) : 0;
-
-        setVal('val-intake71-eff', activePct + '%');
-        setVal('val-intake71-trucks', (i71.trucks || 0) + ' trucks');
-        setVal('val-active-min', active.toLocaleString() + ' min');
-        setVal('val-net-discharge', net.toLocaleString() + ' min');
-        setVal('val-net-pct', '(' + netPct + '%)');
-        setVal('val-manuver-dt', man.toLocaleString() + ' min');
-        setVal('val-man-pct', '(' + manPct + '%)');
-        setVal('val-qc-hold', qc.toLocaleString() + ' min');
-        setVal('val-qc-pct', '(' + qcPct + '%)');
-        setVal('val-idle-min', idle.toLocaleString() + ' min');
-        setVal('val-idle-pct', idlePct + '%');
-        setVal('val-off-min', off.toLocaleString() + ' min');
-        setVal('val-off-pct', offPct + '%');
-        setVal('val-intake71-ton', ((i71.nettoKg || 0) / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' Ton');
-
-        // Animate progress bars
-        setTimeout(() => {
-            setBar('bar-net', netPct);
-            setBar('bar-man', manPct);
-            setBar('bar-qc', qcPct);
-        }, 100);
-
-        // Active vs Idle vs Off donut chart
-        if (this.charts.yieldLoss) this.charts.yieldLoss.destroy();
-        this.charts.yieldLoss = new ApexCharts(document.getElementById('chart-yield-loss'), {
-            series: [activePct, idlePct, offPct],
-            labels: ['ACTIVE', 'IDLE', 'OFF'],
-            chart: { type: 'donut', height: 130 },
-            colors: ['#00ff88', '#ff003c', '#bc13fe'],
-            stroke: { show: false },
-            plotOptions: { pie: { donut: { size: '70%', labels: { show: true, name: { fontFamily: 'Orbitron', fontSize: '10px', color: '#ccc' }, value: { fontFamily: 'Orbitron', fontSize: '16px', color: '#fff', formatter: val => val + '%' }, total: { show: true, label: 'ACTIVE', fontFamily: 'Orbitron', fontSize: '9px', color: '#8892b0', formatter: () => activePct + '%' } } } } },
-            legend: { show: false },
-            tooltip: { enabled: true, theme: 'dark' }
-        });
-        this.charts.yieldLoss.render();
-
-        // Direct Gudang KPIs
         const dg = this.directGudangData || {};
-        setVal('val-direct-netto', (dg.totalNetto || 0).toLocaleString());
-        setVal('val-direct-trucks', dg.totalTrucks || 0);
+        const dailyDirect = dg.daily || [];
 
-        // Direct Material Breakdown
-        const dmEl = document.getElementById('direct-material-breakdown');
-        if (dmEl && dg.materials) {
-            const sorted = Object.entries(dg.materials).sort((a, b) => b[1] - a[1]);
-            dmEl.innerHTML = sorted.map(([name, val]) => `
-                <div style="display:flex; justify-content:space-between; padding:3px 6px; margin-bottom:3px; background:rgba(188,19,254,0.05); border-radius:4px; border-left:2px solid rgba(188,19,254,0.3);">
-                    <span style="font-family:'Rajdhani'; font-size:0.6rem; color:#aab; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:55%;">${name}</span>
-                    <span style="font-family:'Orbitron'; font-size:0.55rem; font-weight:700; color:var(--neon-purple);">${Math.round(val).toLocaleString()}</span>
-                </div>`).join('');
-        }
+        const intakeNetto = i71.nettoKg || 0;
+        const directNetto = dailyDirect.reduce((sum, d) => sum + (d.netto || 0), 0);
+        const grandTotal = intakeNetto + directNetto;
 
-        // Direct Truck Types
-        const dtEl = document.getElementById('direct-truck-types');
-        if (dtEl && dg.truckTypes) {
-            const totalDGTrucks = Object.values(dg.truckTypes).reduce((s, c) => s + c, 0);
-            const sorted = Object.entries(dg.truckTypes).sort((a, b) => b[1] - a[1]);
-            dtEl.innerHTML = sorted.map(([name, count]) => {
-                const pct = totalDGTrucks > 0 ? ((count / totalDGTrucks) * 100).toFixed(1) : 0;
-                return `
-                <div style="display:flex; justify-content:space-between; padding:3px 6px; margin-bottom:3px; background:rgba(188,19,254,0.05); border-radius:4px; border-left:2px solid rgba(188,19,254,0.3);">
-                    <span style="font-family:'Rajdhani'; font-size:0.6rem; color:#aab;">${name}</span>
-                    <span style="font-family:'Orbitron'; font-size:0.55rem; font-weight:700; color:var(--neon-purple);">${count} <span style="font-size:0.45rem; opacity:0.7;">(${pct}%)</span></span>
-                </div>`;
-            }).join('');
-        }
+        const el = document.getElementById('val-grand-total');
+        if (el) el.innerText = (grandTotal / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+        // Also update subtitles
+        document.getElementById('val-intake-total-ton').innerText = (intakeNetto / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' TON';
+        document.getElementById('val-direct-total-ton').innerText = (directNetto / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' TON';
     },
 
-    renderVolumeTrend: function () {
-        if (this.aggregatedData.length === 0) {
-            document.querySelector("#chart-main-volume").innerHTML = `
-                <div style="display:flex; height:100%; align-items:center; justify-content:center; color:#444; font-family:Orbitron; font-size:1.2rem; letter-spacing:2px;">
-                    <i class="fas fa-search" style="margin-right:15px; opacity:0.5;"></i> READY TO SCAN...
-                </div>`;
-            return;
+    renderIntake71Analysis: function () {
+        const i71 = this.intake71Data || {};
+
+        // --- 1. PREPARE DATA ---
+        const totalNetto = i71.nettoKg || 0;
+        const totalTon = totalNetto / 1000;
+        const netMin = i71.netDischarge || 0;
+        const activeTotal = i71.activeTotal || 0;
+        const idleLoss = i71.idleLoss || 0;
+        const offSetup = i71.offSetup || 0;
+        const totalTime = activeTotal + idleLoss + offSetup;
+
+        // --- 2. CALCULATE SPEEDS (Min, Avg, Max) ---
+        // Need Daily Data for Min/Max
+        let dailyIntakeVol = [];
+
+        if (this.aggregatedData && this.aggregatedData.length > 0) {
+            this.aggregatedData.forEach(d => {
+                // Estimate Intake share
+                const intakeShare = d.dist && d.dist.intake ? d.dist.intake : (d.netto > 0 ? 100 : 0);
+                const val = d.netto * (intakeShare / 100);
+
+                // Push to daily volume series
+                dailyIntakeVol.push({ x: new Date(d.date).getTime(), y: val });
+            });
         }
 
-        const groups = {};
-        this.aggregatedData.forEach(d => {
-            const dateObj = new Date(d.date);
-            const keys = {
-                daily: d.date,
-                weekly: this.getWeekStr(dateObj),
-                monthly: d.date.substring(0, 7)
-            };
-            const key = keys[this.timeView] || keys.daily;
+        // --- 2. CALCULATE SPEEDS (Min, Avg, Max) ---
+        const speedTonHr = i71.avgSpeed || 0;
+        const minSpeed = i71.minSpeed || 0;
+        const maxSpeed = i71.maxSpeed || 0;
 
-            if (!groups[key]) groups[key] = { netto: 0, trucks: 0 };
-            groups[key].netto += d.netto;
-            groups[key].trucks += d.trucks;
-        });
+        // Set Values
+        const fmt = (n) => Math.round(n).toLocaleString();
+        const fmtDec = (n) => n.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
 
-        const sortedKeys = Object.keys(groups).sort();
-        const seriesData = sortedKeys.map(k => Math.round(groups[k].netto));
+        // Yield (V12.2: Active Working vs Total Month)
+        let den = i71.totalMonthMin || 1;
+        const yieldPct = ((i71.activeTotal || 0) / den) * 100;
+        setVal('val-yield-pct', yieldPct.toFixed(1) + '%');
 
-        const options = {
-            series: [{ name: 'NETTO (KG)', data: seriesData }],
-            chart: {
-                type: 'area', height: 380, toolbar: { show: false }, zoom: { enabled: false }
-            },
+        setVal('val-intake-total-ton', fmtDec(totalTon) + ' TON');
+        setVal('stat-min-speed', fmtDec(minSpeed));
+        setVal('val-speed-ton', fmtDec(speedTonHr));
+        setVal('stat-max-speed', fmtDec(maxSpeed));
+        setVal('stat-max-date', 'REAL-TIME MEASURED');
+
+        // --- 3. DURATION BREAKDOWN METRICS ---
+        // V12.2: Perfect 100% Math
+        den = i71.totalMonthMin || totalTime || 1;
+        const manTime = i71.manuverTotal || 0;
+        const qcTime = i71.qcTotal || 0;
+        const activeTotalWorking = i71.activeTotal || (netMin + manTime + qcTime);
+
+        setVal('val-active-min', fmt(activeTotalWorking) + ' MIN');
+        setVal('val-active-pct', ((activeTotalWorking / den) * 100).toFixed(0) + '%');
+
+        setVal('val-idle-min', fmt(idleLoss) + ' MIN');
+        setVal('val-idle-pct', ((idleLoss / den) * 100).toFixed(0) + '%');
+
+        setVal('val-off-min', fmt(offSetup) + ' MIN');
+        setVal('val-off-pct', ((offSetup / den) * 100).toFixed(0) + '%');
+
+        // Restore Deep Dive Metrics (V12.2)
+        const avgGap = i71.trucks > 0 ? (idleLoss / i71.trucks) : 0;
+        setVal('val-avg-gap', avgGap.toFixed(1));
+
+        const days = dailyIntakeVol.length || 1;
+        const avgSetup = days > 0 ? (offSetup / (days * 2)) : 0; // Assume 2 setups/day avg
+        setVal('val-avg-setup', avgSetup.toFixed(1));
+
+        // Micro Breakdown Text
+        setVal('micro-net', fmt(netMin) + 'm');
+        setVal('micro-man', fmt(manTime) + 'm');
+        setVal('micro-qc', fmt(qcTime) + 'm');
+
+        // --- 4. CHARTS ---
+        const activeSeries = [netMin, manTime, qcTime];
+        const activeLabels = ['Net Bongkar', 'Manuver', 'QC Check'];
+        const activeColors = ['#00e5ff', '#2979ff', '#651fff'];
+
+        const activeOpts = {
+            series: activeSeries,
+            labels: activeLabels,
+            chart: { type: 'donut', height: 160, background: 'transparent', fontFamily: 'Orbitron' },
+            colors: activeColors,
+            stroke: { show: false },
             dataLabels: { enabled: false },
-            colors: ['#00f3ff'],
-            fill: { type: 'gradient', gradient: { opacityFrom: 0.6, opacityTo: 0.1 } },
-            stroke: { curve: 'smooth', width: 3 },
-            xaxis: {
-                categories: sortedKeys,
-                labels: { style: { colors: '#64748b', fontSize: '10px', fontFamily: 'Orbitron' } }
-            },
-            yaxis: {
-                labels: { formatter: val => (val / 1000).toFixed(0) + 'T', style: { colors: '#64748b' } }
-            },
-            grid: { borderColor: 'rgba(255,255,255,0.05)' },
+            legend: { show: false },
+            plotOptions: { pie: { donut: { size: '75%', labels: { show: true, name: { show: true, color: '#fff', fontSize: '13px' }, value: { show: true, color: '#fff', fontSize: '18px', formatter: v => v + 'm' } } } } },
             tooltip: { theme: 'dark' }
         };
 
-        if (this.charts.volume) this.charts.volume.destroy();
-        this.charts.volume = new ApexCharts(document.querySelector("#chart-main-volume"), options);
-        this.charts.volume.render();
+        if (this.charts.activeBreakdown) this.charts.activeBreakdown.destroy();
+        const elActive = document.getElementById('chart-active-breakdown');
+        if (elActive) {
+            this.charts.activeBreakdown = new ApexCharts(elActive, activeOpts);
+            this.charts.activeBreakdown.render();
+        }
+
+        const intakeOpts = {
+            series: [{ name: 'Intake Volume', data: dailyIntakeVol }],
+            chart: { type: 'area', height: 220, toolbar: { show: false }, background: 'transparent', fontFamily: 'Orbitron' },
+            colors: ['#d500f9'],
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.1, stops: [0, 95, 100] } },
+            stroke: { curve: 'smooth', width: 2 },
+            dataLabels: { enabled: false },
+            xaxis: { type: 'datetime', labels: { style: { colors: '#aaa', fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+            yaxis: { labels: { formatter: val => (val / 1000).toFixed(0) + 'T', style: { colors: '#aaa', fontSize: '11px' } }, grid: { show: false } },
+            grid: { borderColor: 'rgba(255,255,255,0.05)', strokeDashArray: 3 },
+            tooltip: { theme: 'dark', x: { format: 'dd MMM' } }
+        };
+
+        if (this.charts.intakeVol) this.charts.intakeVol.destroy();
+        const elIntake = document.getElementById('chart-intake-volume');
+        if (elIntake) {
+            this.charts.intakeVol = new ApexCharts(elIntake, intakeOpts);
+            this.charts.intakeVol.render();
+        }
+
+        // V11.3: Trigger with path separation
+        this.renderTruckAnalysis('intake');
+    },
+
+    renderProcessStats: function () {
+        const avg = parseFloat(document.getElementById('val-speed-ton').innerText.replace(/,/g, '')) || 0;
+        const maxSpeed = (avg * 1.3);
+        const elMax = document.getElementById('stat-max-speed');
+        if (elMax) elMax.innerText = maxSpeed.toFixed(0);
+        const elMaxDate = document.getElementById('stat-max-date');
+        if (elMaxDate) elMaxDate.innerText = "ESTIMATED";
+    },
+
+    renderDowntimeBarChart: function (i71, active, idle, off) {
+        const net = i71.netDischarge || 0;
+        const man = i71.manuverTotal || 0;
+        const qc = i71.qcTotal || 0;
+        const options = {
+            series: [{ name: 'NET DISCHARGE', data: [net] }, { name: 'MANUVER', data: [man] }, { name: 'QC HOLD', data: [qc] }, { name: 'IDLE LOSS', data: [idle] }, { name: 'OFF/SETUP', data: [off] }],
+            chart: { type: 'bar', height: 140, stacked: true, toolbar: { show: false }, background: 'transparent' },
+            plotOptions: { bar: { horizontal: true, barHeight: '60%' } },
+            colors: ['#00f3ff', '#00a8ff', '#bc13fe', '#ffcc00', '#ff003c'],
+            dataLabels: { enabled: false },
+            stroke: { width: 1, colors: ['#000'] },
+            xaxis: { categories: ['TIME'], labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
+            yaxis: { show: false },
+            tooltip: { theme: 'dark', y: { formatter: (val) => val.toLocaleString() + ' min' } },
+            legend: { position: 'top', horizontalAlign: 'left', fontFamily: 'Orbitron', labels: { colors: '#fff' }, fontSize: '11px' },
+            grid: { show: false }
+        };
+        if (this.charts.downtimeBar) this.charts.downtimeBar.destroy();
+        this.charts.downtimeBar = new ApexCharts(document.getElementById('chart-downtime-bar'), options);
+        this.charts.downtimeBar.render();
+    },
+
+    renderVolumeTrend: function () {
+        const daily = this.aggregatedData || [];
+        let intakeSeries = [];
+        let directSeries = [];
+        let cats = [];
+
+        const dateMap = {};
+        // Use dist percentages to split intake vs total correctly
+        daily.forEach(d => {
+            const intakePct = (d.dist && d.dist.intake) ? d.dist.intake : 100;
+            const intakeVal = Math.round(d.netto * (intakePct / 100));
+            dateMap[d.date] = { intake: intakeVal, direct: 0 };
+        });
+
+        if (this.directGudangData && this.directGudangData.daily) {
+            this.directGudangData.daily.forEach(d => {
+                if (!dateMap[d.date]) dateMap[d.date] = { intake: 0, direct: 0 };
+                dateMap[d.date].direct = d.netto;
+            });
+        }
+
+        const sortedDates = Object.keys(dateMap).sort();
+        sortedDates.forEach(date => {
+            cats.push(new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
+            intakeSeries.push(dateMap[date].intake);
+            directSeries.push(dateMap[date].direct);
+        });
+
+        const options = {
+            series: [
+                { name: 'Intake 71', data: intakeSeries },
+                { name: 'Direct Gudang', data: directSeries }
+            ],
+            chart: {
+                type: 'area',
+                height: 200,
+                background: 'transparent',
+                toolbar: { show: false },
+                fontFamily: 'Orbitron',
+                zoom: { enabled: false }
+            },
+            colors: ['#d500f9', '#00e5ff'],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.5,
+                    opacityTo: 0.1,
+                    stops: [0, 90, 100]
+                }
+            },
+            dataLabels: { enabled: false },
+            stroke: { curve: 'smooth', width: 2 },
+            xaxis: {
+                categories: cats,
+                labels: { style: { colors: '#aaa', fontSize: '11px' } },
+                axisBorder: { show: false },
+                axisTicks: { show: false }
+            },
+            yaxis: {
+                labels: {
+                    formatter: val => (val / 1000).toFixed(0) + 'T',
+                    style: { colors: '#aaa', fontSize: '11px' }
+                },
+                grid: { show: false }
+            },
+            grid: {
+                borderColor: 'rgba(255,255,255,0.05)',
+                strokeDashArray: 3,
+                show: true
+            },
+            theme: { mode: 'dark' },
+            legend: { show: true, position: 'top', horizontalAlign: 'right', labels: { colors: '#ccc' } }
+        };
+
+        if (this.charts.mainVolume) this.charts.mainVolume.destroy();
+        this.charts.mainVolume = new ApexCharts(document.getElementById('chart-main-volume'), options);
+        this.charts.mainVolume.render();
     },
 
     renderDistribution: function () {
-        if (this.aggregatedData.length === 0) {
-            document.querySelector("#chart-distribution").innerHTML = `<div style="display:flex; height:100%; align-items:center; justify-content:center; color:#444; font-family:Orbitron; font-size:0.7rem;">NO DATA</div>`;
-            return;
-        }
-
-        const totals = this.aggregatedData.reduce((acc, d) => {
-            acc.intake += (d.netto * d.dist.intake / 100);
-            acc.direct += (d.netto * d.dist.direct / 100);
-            return acc;
-        }, { intake: 0, direct: 0 });
+        const i71Netto = (this.intake71Data.nettoKg || 0);
+        const dgNetto = (this.directGudangData.daily || []).reduce((acc, d) => acc + (d.netto || 0), 0);
 
         const options = {
-            series: [Math.round(totals.intake), Math.round(totals.direct)],
-            labels: ['INTAKE', 'DIRECT'],
-            chart: { type: 'donut', height: 380 },
-            colors: ['#00f3ff', '#ffcc00'],
+            series: [i71Netto, dgNetto],
+            labels: ['Intake 71', 'Direct Gudang'],
+            chart: { type: 'donut', height: 180, background: 'transparent', fontFamily: 'Orbitron' },
+            colors: ['#d500f9', '#00e5ff'],
+            plotOptions: { pie: { donut: { size: '70%', labels: { show: false } } } },
+            dataLabels: { enabled: false },
+            legend: { show: false },
             stroke: { show: false },
-            legend: { position: 'bottom', labels: { colors: '#fff' }, fontFamily: 'Orbitron' },
-            plotOptions: { pie: { donut: { size: '75%' } } },
-            tooltip: { theme: 'dark', y: { formatter: val => val.toLocaleString() + ' KG' } }
+            tooltip: {
+                theme: 'dark',
+                y: { formatter: val => (val / 1000).toFixed(0) + ' Ton' }
+            }
         };
 
-        if (this.charts.dist) this.charts.dist.destroy();
-        this.charts.dist = new ApexCharts(document.querySelector("#chart-distribution"), options);
-        this.charts.dist.render();
+        if (this.charts.distribution) this.charts.distribution.destroy();
+        const el = document.getElementById('chart-distribution');
+        if (el) {
+            this.charts.distribution = new ApexCharts(el, options);
+            this.charts.distribution.render();
+        }
     },
 
     renderSBMvsPKMChart: function () {
         const i71 = this.intake71Data || {};
         const container = document.querySelector("#chart-sbm-pkm-71");
         if (!container) return;
-
-        if (this.aggregatedData.length === 0 || !i71.materials) {
-            container.innerHTML = `<div style="display:flex; height:100%; align-items:center; justify-content:center; color:#444; font-family:Orbitron; font-size:0.7rem;">NO DATA</div>`;
+        if (!i71.materials) {
+            container.innerHTML = `<div style="display:flex; height:100%; align-items:center; justify-content:center; color:#444; font-family:Orbitron;">NO DATA</div>`;
             return;
         }
-
-        let sbmTotal = 0;
-        let pkmTotal = 0;
-        let otherTotal = 0;
-
+        let sbm = 0, pkm = 0, other = 0;
         Object.entries(i71.materials).forEach(([name, val]) => {
-            const upper = name.toUpperCase();
-            if (upper.includes("SBM")) sbmTotal += val;
-            else if (upper.includes("PKM")) pkmTotal += val;
-            else otherTotal += val;
+            const u = name.toUpperCase();
+            if (u.includes("SBM")) sbm += val; else if (u.includes("PKM")) pkm += val; else other += val;
         });
-
         const options = {
-            series: [Math.round(sbmTotal), Math.round(pkmTotal), Math.round(otherTotal)],
+            series: [Math.round(sbm), Math.round(pkm), Math.round(other)],
             labels: ['SBM', 'PKM', 'OTHERS'],
-            chart: { type: 'pie', height: 380 },
+            chart: { type: 'pie', height: 250 },
             colors: ['#00f3ff', '#ffcc00', '#64748b'],
             stroke: { show: false },
-            legend: { position: 'bottom', labels: { colors: '#fff' }, fontFamily: 'Orbitron' },
-            dataLabels: { enabled: true, formatter: (val) => val.toFixed(1) + "%" },
+            legend: { position: 'bottom', labels: { colors: '#fff' }, fontFamily: 'Orbitron', fontSize: '11px' },
+            plotOptions: { pie: {} },
             tooltip: { theme: 'dark', y: { formatter: val => val.toLocaleString() + ' KG' } }
         };
-
         if (this.charts.sbmPkm) this.charts.sbmPkm.destroy();
         this.charts.sbmPkm = new ApexCharts(container, options);
         this.charts.sbmPkm.render();
     },
 
     renderDirectGudang: function () {
-        const emptyHtml = `<div style="display:flex; height:100%; align-items:center; justify-content:center; color:#444; font-family:Orbitron; font-size:0.7rem;">NO DIRECT DATA</div>`;
         const dg = this.directGudangData || {};
         const daily = dg.daily || [];
+        const breakdown = dg.materials || {};
+
+        const totalNetto = daily.reduce((acc, d) => acc + (d.netto || 0), 0);
+        const totalTrucks = daily.reduce((acc, d) => acc + (d.trucks || 0), 0);
+        const avgLoad = totalTrucks > 0 ? (totalNetto / totalTrucks) : 0;
+
+        const elNet = document.getElementById('val-direct-netto');
+        const elTrk = document.getElementById('val-direct-trucks');
+        const elAvg = document.getElementById('val-direct-avg-load');
+        const elTon = document.getElementById('val-direct-total-ton');
+
+        if (elNet) elNet.innerText = totalNetto.toLocaleString();
+        if (elTrk) elTrk.innerText = totalTrucks.toLocaleString();
+        if (elAvg) elAvg.innerText = Math.round(avgLoad).toLocaleString();
+        if (elTon) elTon.innerText = (totalNetto / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 }) + ' TON';
 
         if (daily.length === 0) {
-            ['chart-direct-volume', 'chart-direct-material'].forEach(id => {
-                const el = document.getElementById(id); if (el) el.innerHTML = emptyHtml;
-            });
+            // Clear existing charts when no data (e.g. material filter applied)
+            if (this.charts.directVol) { this.charts.directVol.destroy(); this.charts.directVol = null; }
+            if (this.charts.directMat) { this.charts.directMat.destroy(); this.charts.directMat = null; }
+            const elVol = document.getElementById('chart-direct-volume');
+            if (elVol) elVol.innerHTML = '<div style="color:#444; font-family:Orbitron; font-size:0.8rem; text-align:center; padding:40px;">NO DATA</div>';
+            const elMat = document.getElementById('chart-direct-material');
+            if (elMat) elMat.innerHTML = '<div style="color:#444; font-family:Orbitron; font-size:0.8rem; text-align:center; padding:40px;">NO DATA</div>';
+            this.renderTruckAnalysis('direct');
             return;
         }
 
-        // --- Daily Volume Bar Chart ---
-        const dates = daily.map(d => d.date);
-        const nettos = daily.map(d => d.netto);
-        const truckCounts = daily.map(d => d.trucks);
+        daily.sort((a, b) => new Date(a.date) - new Date(b.date));
 
         const volOpts = {
-            series: [
-                { name: 'NETTO (KG)', type: 'bar', data: nettos },
-                { name: 'TRUCKS', type: 'line', data: truckCounts }
-            ],
-            chart: { height: 330, toolbar: { show: false } },
-            colors: ['#bc13fe', '#ffcc00'],
-            stroke: { width: [0, 3], curve: 'smooth' },
-            plotOptions: { bar: { columnWidth: '60%', borderRadius: 4 } },
-            xaxis: { categories: dates, labels: { style: { colors: '#64748b', fontSize: '9px', fontFamily: 'Orbitron' } } },
-            yaxis: [
-                { labels: { formatter: val => (val / 1000).toFixed(0) + 'T', style: { colors: '#64748b' } } },
-                { opposite: true, labels: { style: { colors: '#ffcc00' } } }
-            ],
-            grid: { borderColor: 'rgba(255,255,255,0.05)' },
-            tooltip: { theme: 'dark' },
-            legend: { labels: { colors: '#fff' }, fontFamily: 'Orbitron', fontSize: '9px' }
+            series: [{ name: 'NETTO (KG)', data: daily.map(d => d.netto) }],
+            chart: { type: 'bar', height: 250, toolbar: { show: false }, background: 'transparent', fontFamily: 'Orbitron' },
+            colors: ['#00e5ff'],
+            plotOptions: { bar: { borderRadius: 4, columnWidth: '50%' } },
+            dataLabels: { enabled: false },
+            xaxis: {
+                categories: daily.map(d => new Date(d.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })),
+                labels: { style: { colors: '#aaa', fontSize: '11px' } },
+                axisBorder: { show: false }, axisTicks: { show: false }
+            },
+            yaxis: { show: false },
+            grid: { show: false },
+            tooltip: { theme: 'dark', y: { formatter: val => (val / 1000).toFixed(1) + ' T' } }
         };
 
         if (this.charts.directVol) this.charts.directVol.destroy();
-        this.charts.directVol = new ApexCharts(document.getElementById('chart-direct-volume'), volOpts);
-        this.charts.directVol.render();
+        const elVol = document.getElementById('chart-direct-volume');
+        if (elVol) {
+            this.charts.directVol = new ApexCharts(elVol, volOpts);
+            this.charts.directVol.render();
+        }
 
-        // --- Material Distribution Donut ---
-        const mats = dg.materials || {};
-        const matEntries = Object.entries(mats).sort((a, b) => b[1] - a[1]);
-        const purpleShades = ['#bc13fe', '#9b59b6', '#8e44ad', '#7d3c98', '#6c3483', '#5b2c6f', '#4a235a'];
-
+        const matEntries = Object.entries(breakdown).sort((a, b) => b[1] - a[1]);
         const matOpts = {
             series: matEntries.map(([, v]) => Math.round(v)),
             labels: matEntries.map(([k]) => k),
-            chart: { type: 'donut', height: 310 },
-            colors: matEntries.map((_, i) => purpleShades[i % purpleShades.length]),
+            chart: { type: 'donut', height: 180, background: 'transparent', fontFamily: 'Orbitron' },
+            colors: ['#00e5ff', '#ffea00', '#ff005c', '#76ff03'],
             stroke: { show: false },
-            legend: { position: 'bottom', labels: { colors: '#fff' }, fontFamily: 'Orbitron', fontSize: '9px' },
-            plotOptions: { pie: { donut: { size: '70%' } } },
+            legend: { show: false },
+            plotOptions: { pie: { donut: { size: '65%' } } },
+            dataLabels: { enabled: false },
             tooltip: { theme: 'dark', y: { formatter: val => val.toLocaleString() + ' KG' } }
         };
 
         if (this.charts.directMat) this.charts.directMat.destroy();
-        this.charts.directMat = new ApexCharts(document.getElementById('chart-direct-material'), matOpts);
-        this.charts.directMat.render();
-    },
-
-    showDrillDown: function (label) {
-        const modal = document.getElementById('modal-drill');
-        modal.style.display = 'flex';
-        document.getElementById('modal-header').innerText = `SUMMARY: ${label}`;
-        document.getElementById('modal-content-body').innerHTML = `
-            <div style="text-align:center; padding:50px; color:#666; font-family:Orbitron;">
-                <i class="fas fa-bolt" style="font-size:3rem; color:var(--neon-gold); margin-bottom:20px;"></i><br>
-                DIRECT ANALYTICS V7 ACTIVE<br>
-                <span style="font-size:0.8rem; color:#444;">Detailed logs are hidden for maximum performance.</span>
-            </div>
-        `;
-    },
-
-    closeModal: function () {
-        document.getElementById('modal-drill').style.display = 'none';
-    },
-
-    // HELPERS
-    toggleFullscreen: function () {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.log("Fullscreen Error:", err);
-            });
-            document.body.classList.add('fullscreen-active');
-        } else {
-            if (document.exitFullscreen) document.exitFullscreen();
-            document.body.classList.remove('fullscreen-active');
+        const elMat = document.getElementById('chart-direct-material');
+        if (elMat) {
+            this.charts.directMat = new ApexCharts(elMat, matOpts);
+            this.charts.directMat.render();
         }
 
-        const fsChangeHandler = () => {
-            if (!document.fullscreenElement) {
-                document.body.classList.remove('fullscreen-active');
-                window.dispatchEvent(new Event('resize'));
-                document.removeEventListener('fullscreenchange', fsChangeHandler);
+        // V11.3: Trigger with path separation
+        this.renderTruckAnalysis('direct');
+    },
+
+    renderEvalSection: function () {
+        const container = document.getElementById('section-eval-prod');
+        if (!container) return;
+
+        // 1. Determine Mode
+        let mode = 'OVERALL';
+        if (this.selectedMaterial && this.selectedMaterial.includes('SBM')) mode = 'SBM';
+        if (this.selectedMaterial && this.selectedMaterial.includes('PKM')) mode = 'PKM';
+
+        // OVERALL -> HIDE SECTION
+        if (mode === 'OVERALL') {
+            container.innerHTML = '';
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+
+        // Prepare Data
+        const i71 = this.intake71Data || {};
+        const dailyDetail = i71.dailyDetail || [];
+        const subTypes = i71.intakeSubTypes || {};
+        const workers = i71.workerStats || {};
+        const directTrucks = this.directGudangData.truckTypes || {};
+
+        // Helper: Find max/min
+        let maxOutput = { val: 0, date: '-', detail: {} };
+        let minOutput = { val: 999999999, date: '-', detail: {} };
+        let maxIdle = { val: 0, date: '-' };
+        let maxOff = { val: 0, date: '-' };
+
+        dailyDetail.forEach(d => {
+            if (d.tonPerHour > maxOutput.val) { maxOutput = { val: d.tonPerHour, date: d.date, detail: d }; }
+            if (d.tonPerHour > 0 && d.tonPerHour < minOutput.val) { minOutput = { val: d.tonPerHour, date: d.date, detail: d }; }
+            if (d.idleMin > maxIdle.val) { maxIdle = { val: d.idleMin, date: d.date }; }
+            if (d.offMin > maxOff.val) { maxOff = { val: d.offMin, date: d.date }; }
+        });
+        if (minOutput.val === 999999999) minOutput.val = 0;
+
+        // Build HTML Structure based on Mode
+        let html = '';
+
+        // PKM: 2 Columns (Prod Table + Eval). SBM: 1 Column (Eval only)
+        const gridStyle = mode === 'PKM' ? 'display:grid; grid-template-columns: 1fr 1fr; gap:25px;' : 'display:block;';
+
+        html += `<div style="${gridStyle}">`;
+
+        // --- LEFT COLUMN: PRODUCTIVITY TABLE (PKM ONLY) ---
+        if (mode === 'PKM') {
+            html += `
+            <div class="coin-card">
+                <div class="coin-header">
+                    <span style="color:var(--coin-accent);"><i class="fas fa-users-cog"></i> PRODUKTIVITAS TENAGA KERJA</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:8px;">
+                    <table class="data-table-v10">
+                        <thead>
+                            <tr style="color:#8892b0; font-size:0.7rem;">
+                                <th>JUMLAH TEAM</th>
+                                <th style="text-align:center;">TRUCK</th>
+                                <th style="text-align:right;">SPEED (T/H)</th>
+                                <th style="text-align:right;">AVG LOAD</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            const sortedWorkers = Object.values(workers).sort((a, b) => b.count - a.count);
+            if (sortedWorkers.length === 0) {
+                html += `<tr><td colspan="3" style="text-align:center; color:#666;">TIDAK ADA DATA</td></tr>`;
+            } else {
+                sortedWorkers.forEach(w => {
+                    const avgLoad = w.trucks > 0 ? (w.totalNetto / w.trucks) : 0;
+                    const speed = w.totalDur > 0 ? ((w.totalNetto / 1000) / (w.totalDur / 60)) : 0;
+
+                    html += `
+                    <tr>
+                        <td style="color:#fff; font-weight:bold;">${w.count} ORANG</td>
+                        <td style="text-align:center; color:var(--neon-blue);">${w.trucks}</td>
+                        <td style="text-align:right; color:var(--neon-green); font-weight:bold; font-family:'Orbitron';">${speed.toFixed(1)} T/H</td>
+                        <td style="text-align:right; color:#aaa; font-size:0.8rem;">${(avgLoad / 1000).toFixed(1)} T</td>
+                    </tr>`;
+                });
             }
-        };
-        document.addEventListener('fullscreenchange', fsChangeHandler);
 
-        // Trigger resize for ApexCharts
-        setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+            html += `</tbody></table>
+                    <div style="padding:10px; font-size:0.6rem; color:#666; font-style:italic; text-align:center;">
+                        *Analisa berdasarkan jumlah tenaga bongkar (Col 23)
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // --- RIGHT COLUMN: EVALUASI OPERASIONAL (BOTH) ---
+        html += `
+        <div class="coin-card" style="${mode === 'SBM' ? 'max-width:800px; margin:0 auto;' : ''}">
+            <div class="coin-header">
+                <span style="color:#00e5ff;"><i class="fas fa-search-dollar"></i> EVALUASI OPERASIONAL (${mode})</span>
+            </div>
+            <div style="color:#ccc; font-family:'Rajdhani'; font-size:0.95rem; line-height:1.6;">
+                <ul style="padding-left:15px; list-style-type:none;">`;
+
+        // POINT 1: CAPAIAN TERTINGGI (SPEED)
+        if (maxOutput.val > 0) {
+            const d = maxOutput.detail;
+            html += `<li style="margin-bottom:15px;">
+                <div style="color:var(--neon-green); font-weight:bold; margin-bottom:4px;">1. PERFORMA TERTINGGI (SPEED) (${new Date(maxOutput.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })})</div>
+                <table style="width:100%; font-size:0.8rem; background:rgba(0,255,100,0.05); border-radius:4px;">
+                    <tr><td style="padding:4px 8px;">Speed Output:</td><td style="text-align:right; color:var(--neon-green); font-weight:bold;">${d.tonPerHour} Ton/Jam</td></tr>
+                    <tr><td style="padding:4px 8px;">Duration Active:</td><td style="text-align:right; color:#fff;">${(d.activeMin / 60).toFixed(1)} Jam</td></tr>
+                    <tr><td style="padding:4px 8px;">Total Volume:</td><td style="text-align:right; color:#fff;">${(d.netto / 1000).toFixed(0)} Ton</td></tr>
+                    <tr><td style="padding:4px 8px;">Idle Time:</td><td style="text-align:right; color:#fff;">${(d.idleMin / 60).toFixed(1)} Jam</td></tr>
+                </table>
+                <div style="font-size:0.8rem; color:#aaa; margin-top:3px;"><i>"Pertahankan ritme kerja pada tanggal ini."</i></div>
+            </li>`;
+        }
+
+        // POINT 2: CAPAIAN TERENDAH (SPEED)
+        if (minOutput.val > 0) {
+            const d = minOutput.detail;
+            html += `<li style="margin-bottom:15px;">
+                <div style="color:var(--neon-red); font-weight:bold; margin-bottom:4px;">2. PERFORMA TERENDAH (SPEED) (${new Date(minOutput.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })})</div>
+                <table style="width:100%; font-size:0.8rem; background:rgba(255,0,0,0.05); border-radius:4px;">
+                    <tr><td style="padding:4px 8px;">Speed Output:</td><td style="text-align:right; color:var(--neon-red); font-weight:bold;">${d.tonPerHour} Ton/Jam</td></tr>
+                    <tr><td style="padding:4px 8px;">Duration Active:</td><td style="text-align:right; color:#fff;">${(d.activeMin / 60).toFixed(1)} Jam</td></tr>
+                    <tr><td style="padding:4px 8px;">Total Volume:</td><td style="text-align:right; color:#fff;">${(d.netto / 1000).toFixed(0)} Ton</td></tr>
+                    <tr><td style="padding:4px 8px;">Idle Time:</td><td style="text-align:right; color:#fff;">${(d.idleMin / 60).toFixed(1)} Jam</td></tr>
+                </table>
+            </li>`;
+        }
+
+        // POINT 3: IDLE TERBANYAK
+        if (maxIdle.val > 0) {
+            html += `<li style="margin-bottom:15px;">
+                <strong style="color:var(--neon-blue)">3. IDLE TERBANYAK:</strong> Terjadi pada <b>${new Date(maxIdle.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</b> dengan total <b>${(maxIdle.val / 60).toFixed(1)} Jam</b> (${maxIdle.val} menit).
+                <br><span style="color:#888; font-size:0.85rem;">Indikasi antrian truck kurang optimal atau masalah internal jetty.</span>
+            </li>`;
+        }
+
+        // POINT 4: OFF TERLAMA
+        if (maxOff.val > 0) {
+            html += `<li style="margin-bottom:15px;">
+                <strong style="color:#aaa">4. OFF TERLAMA:</strong> Terjadi pada <b>${new Date(maxOff.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</b> selama <b>${(maxOff.val / 60).toFixed(1)} Jam</b>.
+            </li>`;
+        }
+
+        // POINT 5: INTAKE COMPARISON (TILTING VS MANUAL)
+        const man = subTypes.MANUAL || { trucks: 0, netto: 0, duration: 0 };
+        const tilt = subTypes.TILTING || { trucks: 0, netto: 0, duration: 0 };
+        const manProd = man.duration > 0 ? ((man.netto / 1000) / (man.duration / 60)) : 0;
+        const tiltProd = tilt.duration > 0 ? ((tilt.netto / 1000) / (tilt.duration / 60)) : 0;
+
+        html += `<li style="margin-bottom:15px;">
+            <div style="color:var(--neon-gold); font-weight:bold; margin-bottom:4px;">5. KOMPARASI INTAKE (PRODUKTIVITAS)</div>
+            <table style="width:100%; font-size:0.8rem; background:rgba(255,255,255,0.05); border-radius:4px;">
+                <tr>
+                    <td style="padding:4px;">MANUAL</td>
+                    <td style="text-align:right;">${man.trucks} Trucks</td>
+                    <td style="text-align:right; color:var(--neon-blue); font-weight:bold;">${manProd.toFixed(0)} T/H</td>
+                </tr>
+                <tr>
+                    <td style="padding:4px;">TILTING</td>
+                    <td style="text-align:right;">${tilt.trucks} Trucks</td>
+                    <td style="text-align:right; color:var(--neon-blue); font-weight:bold;">${tiltProd.toFixed(0)} T/H</td>
+                </tr>
+            </table>
+        </li>`;
+
+        // POINT 6 & 7: DIRECT DEEP ANALYSIS (PKM ONLY)
+        if (mode === 'PKM') {
+            let directHtml = '';
+            let bestType = { name: '-', speed: 0 };
+            let worstType = { name: '-', speed: 9999 };
+            let typeCount = 0;
+
+            const dTypes = Object.entries(directTrucks);
+            if (dTypes.length > 0) {
+                directHtml += `<table style="width:100%; font-size:0.8rem; background:rgba(0,229,255,0.05); border-radius:4px;">`;
+                dTypes.forEach(([type, stats]) => {
+                    const dProd = stats.validDurCount > 0 ? ((stats.netto / 1000) / (stats.duration / 60)) : 0;
+                    if (dProd > bestType.speed) bestType = { name: type, speed: dProd };
+                    if (dProd < worstType.speed && dProd > 0) worstType = { name: type, speed: dProd };
+                    typeCount++;
+
+                    directHtml += `<tr>
+                        <td style="padding:4px;">${type}</td>
+                        <td style="text-align:right;">${stats.trucks} Trucks</td>
+                        <td style="text-align:right; color:#00e5ff; font-weight:bold;">${dProd.toFixed(0)} T/H</td>
+                     </tr>`;
+                });
+                directHtml += `</table>`;
+            } else {
+                directHtml = '<i style="color:#666">Tidak ada data Direct Gudang.</i>';
+            }
+
+            html += `<li style="margin-bottom:15px;">
+                <div style="color:#00e5ff; font-weight:bold; margin-bottom:4px;">6. ANALISA DIRECT GUDANG (BY TRUCK)</div>
+                ${directHtml}
+            </li>`;
+
+            let conclusion = "";
+            if (bestType.speed > 0) {
+                conclusion = `Tipe truck <b>${bestType.name}</b> mencatatkan produktivitas tertinggi sebesar <b style="color:var(--neon-green)">${bestType.speed.toFixed(0)} Ton/Jam</b>.`;
+                if (typeCount > 1 && worstType.speed < 9999) {
+                    conclusion += ` Lebih efisien dibandingkan ${worstType.name} (${worstType.speed.toFixed(0)} T/H). Disarankan memprioritaskan ${bestType.name} untuk Direct Gudang.`;
+                } else {
+                    conclusion += ` Disarankan mempertahankan alokasi unit tipe ini.`;
+                }
+            } else {
+                conclusion = `Belum ada data yang cukup untuk menyimpulkan produktivitas per tipe truck.`;
+            }
+
+            html += `<li style="margin-bottom:15px;">
+                <strong>7. KESIMPULAN DIRECT:</strong> 
+                <span style="color:#aaa; font-style:italic;">${conclusion}</span>
+            </li>`;
+        }
+
+        html += `</ul></div></div></div>`;
+
+        container.innerHTML = html;
     },
 
-    getWeekStr: function (date) {
-        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-        const weekNo = Math.ceil((((d - new Date(Date.UTC(d.getUTCFullYear(), 0, 1))) / 86400000) + 1) / 7);
-        return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
+    renderTruckAnalysis: function (path) {
+        // V11.2 Fix: Use specific source for direct path
+        const truckData = (path === 'direct') ? (this.directGudangData.truckTypes || {}) : (this.truckTypeData || {});
+        const container = document.getElementById('truck-list-' + path);
+        if (!container) return;
+
+        let html = "";
+        const entries = Object.entries(truckData);
+
+        if (entries.length === 0) {
+            container.innerHTML = `<div style="color:#666; font-size:0.8rem; text-align:center; padding:20px;">TIDAK ADA DATA TRUCK (${path.toUpperCase()})</div>`;
+            return;
+        }
+
+        entries.forEach(([type, stats]) => {
+            const total = stats.trucks || 0;
+            const validCount = stats.validDurCount || 0;
+            const avgDur = validCount > 0 ? (stats.duration / validCount) : 0;
+            const minDur = (stats.min === 9999) ? 0 : (stats.min || 0);
+            const maxDur = stats.max || 0;
+            const avgNetto = total > 0 ? (stats.netto / total) : 0;
+
+            const accent = (path === 'intake') ? '#d500f9' : '#00e5ff';
+
+            html += `
+            <div style="background:rgba(255,255,255,0.03); border-left:4px solid ${accent}; padding:18px; border-radius:8px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:8px;">
+                    <span style="font-family:'Orbitron'; font-weight:bold; color:#fff; font-size:1.1rem; letter-spacing:1px;">${type.toUpperCase()}</span>
+                    <span style="color:${accent}; font-family:'Orbitron'; font-size:1.2rem; font-weight:bold;">${total} TRUCK</span>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1.15fr; gap:15px;">
+                    <div>
+                        <div style="color:#888; font-size:0.75rem; font-family:'Rajdhani'; font-weight:bold; text-transform:uppercase;">Durasi (Min/Avg/Max)</div>
+                        <div style="color:#fff; font-family:'Orbitron'; font-size:0.95rem; margin-top:4px;">
+                            ${Math.round(minDur)} <span style="color:#444; font-size:0.7rem;">/</span> ${Math.round(avgDur)} <span style="color:#444; font-size:0.7rem;">/</span> ${Math.round(maxDur)}
+                            <span style="color:#666; font-size:0.65rem; font-family:'Rajdhani';">MIN</span>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="color:#888; font-size:0.75rem; font-family:'Rajdhani'; font-weight:bold; text-transform:uppercase;">Avg Netto / Truck</div>
+                        <div style="color:#fff; font-family:'Orbitron'; font-size:1.1rem; margin-top:4px; font-weight:bold; color:${accent};">
+                            ${Math.round(avgNetto).toLocaleString()} <span style="color:#666; font-size:0.75rem; font-family:'Rajdhani';">KG</span>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
     },
 
-    formatMinutesToTime: function (totalMin) {
-        if (isNaN(totalMin) || totalMin === 0) return "00:00";
-        const mins = Math.floor(totalMin);
-        const secs = Math.round((totalMin - mins) * 60);
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
+    closeModal: function () { document.getElementById('modal-drill').style.display = 'none'; }
 };
-
-window.onload = () => BKKDowntimeApp.init();

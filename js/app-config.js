@@ -2,8 +2,8 @@ const CONFIG = {
     API_URL: "https://script.google.com/macros/s/AKfycbwnStVw3UhKxgQDuTfufSlNMaTrf4ZpXC0FPAp6AK96t-YIJQNcJ1h0rtkbM2XlxPCr/exec",
     BIN_SWEEPING_API_URL: "https://script.google.com/macros/s/AKfycbynVL7SFG8TBeTbu2PjO2eGIgM1JkQcV8nT3zsoi6zWc4cArJ23VQfTgjtLyyTZCQFM/exec",
     DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbxDerZpvftORq993r2EfGnG7gpALFWsXxA21mWe-xMzHCE-5wmJpDJXKNl29hgW-GQz/exec",
-    BKK_API_URL: "https://script.google.com/macros/s/AKfycbyPfRevZowqZVX_yCNX-k3x92fpp6IJw6hA1S-7w_Suy8FYMJ50dERWHYYIVqmVb3F3/exec?action=getData",
-    BKK_DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbyPfRevZowqZVX_yCNX-k3x92fpp6IJw6hA1S-7w_Suy8FYMJ50dERWHYYIVqmVb3F3/exec?action=getDowntime",
+    BKK_API_URL: "https://script.google.com/macros/s/AKfycbxekcvj7G9FqjeuBlNwHGdxhtSnBbCBZKWDOaDRUGcc8mv7DuyZ3vLclzfJEz3g39y_/exec?action=getData",
+    BKK_DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbyKZ4kbPiEKKQZi_mWEB6Hq_YZh0_H86d568avIFGdDAiGCuO2bpFBbDJDeMrUEUAeG/exec?action=getDowntimeQuery",
 
     // Konfigurasi konversi satuan
     UNIT_DIVIDER: 1000,
