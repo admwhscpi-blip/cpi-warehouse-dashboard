@@ -40,29 +40,112 @@ const SimPage = {
         setTimeout(() => {
             const overlay = document.getElementById('loading-overlay');
             if (overlay) overlay.classList.add('hidden');
-        }, 500);
+        }, 1000); // Increased slightly to ensure render
+
+        // FAILSAFE: Force hide loading overlay after 5 seconds max
+        setTimeout(() => {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay && !overlay.classList.contains('hidden')) {
+                console.warn("Forcing loading overlay to hide...");
+                overlay.classList.add('hidden');
+            }
+        }, 5000);
+
+        // EVENT LISTENER: Close material dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            const container = document.getElementById('material-list');
+            const input = document.getElementById('sim-material-input');
+            if (container && input && !container.contains(e.target) && !input.contains(e.target)) {
+                container.style.display = 'none';
+            }
+        });
 
         console.log("SimPage Ready");
     },
 
     populateDropdowns: function () {
         const matSelect = document.getElementById('sim-material');
-        matSelect.innerHTML = '';
+        // matSelect.innerHTML = ''; // REPLACED WITH AUTOCOMPLETE
 
-        if (this.data.materials) {
-            this.data.materials.forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m.name;
-                opt.innerText = m.name;
-                matSelect.appendChild(opt);
-            });
-        }
+        // if (this.data.materials) {
+        //     this.data.materials.forEach(m => {
+        //         const opt = document.createElement('option');
+        //         opt.value = m.name;
+        //         opt.innerText = m.name;
+        //         matSelect.appendChild(opt);
+        //     });
+        // }
 
         // Populate Facility Checkboxes with Space Info
         this.populateFacilityList();
 
         // Populate Import Facility Checkboxes
         this.populateImportFacilityList();
+    },
+
+    searchMaterial: function (query) {
+        const listContainer = document.getElementById('material-list');
+        if (!this.data.materials) return;
+
+        // Show/Hide based on focus
+        listContainer.style.display = 'block';
+
+        const lowerQ = query ? query.toLowerCase() : '';
+
+        // Filter
+        const matches = this.data.materials.filter(m => m.name.toLowerCase().includes(lowerQ));
+
+        if (matches.length === 0) {
+            listContainer.innerHTML = '<div style="padding:15px; color:#94a3b8; text-align:center;">Tidak ada material ditemukan</div>';
+            return;
+        }
+
+        let html = '';
+        matches.slice(0, 50).forEach(m => {
+            // Calculate Stats
+            let totalStock = 0;
+            let warehouses = [];
+
+            m.stocks.forEach((qty, idx) => {
+                if (qty > 0) {
+                    totalStock += qty;
+                    // Get Warehouse Name and % if possible (though we don't have max cap per material easily, just show qty)
+                    // Or show Warehouse name + Qty
+                    const whName = this.data.warehouses[idx];
+                    const qtyTon = DataService.convertKgToTon(qty);
+                    warehouses.push(`${whName} (<span style="color:#00f3ff">${qtyTon}T</span>)`);
+                }
+            });
+
+            const totalTon = parseFloat(DataService.convertKgToTon(totalStock)).toLocaleString('en-US');
+            const locationStr = warehouses.length > 0 ? warehouses.join(', ') : 'No Stock';
+
+            // Highlight Match
+            const nameDisplay = m.name.replace(new RegExp(query, "gi"), (match) => `<span class="mat-highlight">${match}</span>`);
+
+            html += `
+                <div class="material-item" onclick="SimPage.selectMaterial('${m.name}')">
+                    <div>
+                        <div class="mat-name">${nameDisplay}</div>
+                        <div style="font-size:0.7rem; color:#64748b; margin-top:2px;">
+                            ${locationStr}
+                        </div>
+                    </div>
+                    <div class="mat-info">
+                        <div style="color:#fff; font-weight:bold; font-size:0.9rem;">${totalTon} TON</div>
+                        <div style="font-size:0.65rem;">Total Stock</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        listContainer.innerHTML = html;
+    },
+
+    selectMaterial: function (name) {
+        document.getElementById('sim-material-input').value = name;
+        document.getElementById('sim-material').value = name;
+        document.getElementById('material-list').style.display = 'none';
     },
 
     populateFacilityList: function () {
@@ -72,15 +155,15 @@ const SimPage = {
 
         this.data.warehouses.forEach((name, index) => {
             // Calculate current stock and available space
-            let currentStock = 0;
+            let currentStockKg = 0;
             this.data.materials.forEach(m => {
-                if (m.stocks && m.stocks[index]) currentStock += m.stocks[index];
+                if (m.stocks && m.stocks[index]) currentStockKg += parseFloat(m.stocks[index]) || 0;
             });
-            let currentStockTon = currentStock;
+            const currentStockTon = parseFloat(DataService.convertKgToTon(currentStockKg));
 
             // Get hard capacity from config or fallback
             const hardCapTon = CONFIG.WAREHOUSE_CAPACITIES[name.toUpperCase()] || this.data.capacities[index];
-            const availableSpace = Math.max(0, hardCapTon - currentStockTon).toFixed(0);
+            const availableSpace = Math.max(0, hardCapTon - currentStockTon).toFixed(2);
             const usagePercent = hardCapTon > 0 ? ((currentStockTon / hardCapTon) * 100).toFixed(0) : 0;
             const barColor = usagePercent >= 80 ? '#ef4444' : (usagePercent >= 60 ? '#ff9e0b' : '#00f3ff');
 
@@ -93,13 +176,13 @@ const SimPage = {
                 <div style="display:flex; align-items:center; gap:10px;">
                     <input type="checkbox" class="facility-checkbox" value="${name}" onchange="SimPage.updateFacilitySelection()" style="accent-color:#00f3ff;">
                     <span style="color:#fff; font-weight:600; flex:1;">${name}</span>
-                    <span style="color:#64748b; font-size:0.75rem;">${usagePercent}% Full</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:10px; margin-top:6px; margin-left:24px;">
-                    <div style="flex:1; height:4px; background:#1e293b; border-radius:2px; overflow:hidden;">
-                        <div style="width:${usagePercent}%; height:100%; background:${barColor};"></div>
-                    </div>
-                    <span style="color:#10b981; font-size:0.7rem; font-weight:600;">Avail: ${availableSpace}T</span>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px; margin-left:24px; font-size:0.75rem;">
+                    <span style="color:#ff9e0b;">Stock: ${currentStockTon.toLocaleString('en-US')} T</span>
+                    <span style="color:#10b981; font-weight:600;">Space: ${availableSpace} T</span>
+                </div>
+                <div style="margin-top:4px; margin-left:24px; height:4px; background:#1e293b; border-radius:2px; overflow:hidden;">
+                    <div style="width:${usagePercent}%; height:100%; background:${barColor};"></div>
                 </div>
             `;
             container.appendChild(label);
@@ -142,7 +225,7 @@ const SimPage = {
     },
 
 
-    addToSession: function () {
+    addMaterialToQueue: function (shouldNavigate = false) {
         // Read Inputs
         const matName = document.getElementById('sim-material').value;
         const selectedFacilities = this.getSelectedFacilities();
@@ -151,13 +234,13 @@ const SimPage = {
         const defIn = parseFloat(document.getElementById('sim-daily-in').value) || 0;
         const defOut = parseFloat(document.getElementById('sim-daily-out').value) || 0;
 
-        // Read New Document Inputs
+        // Read New Document Inputs (Optional Context)
         const docDateSemarang = document.getElementById('doc-date-semarang').value;
         const docDatePriok = document.getElementById('doc-date-priok').value;
 
-        if (!matName) { alert("Please select a material"); return; }
-        if (!startDate || !endDate) { alert("Please set date range"); return; }
-        if (new Date(endDate) <= new Date(startDate)) { alert("End date must be after start date"); return; }
+        if (!matName) { alert("Please select a material"); return false; }
+        if (!startDate || !endDate) { alert("Please set date range"); return false; }
+        if (new Date(endDate) <= new Date(startDate)) { alert("End date must be after start date"); return false; }
 
         // Get Current Base Stock (based on selected facilities)
         let currentStock = 0;
@@ -201,9 +284,59 @@ const SimPage = {
         // Render Updates
         this.renderQueue();
         this.renderTable();
+
+        // Clear Material Input for next entry
+        document.getElementById('sim-material').value = '';
+        document.getElementById('sim-material-input').value = '';
+
+        // Notify
+        if (!shouldNavigate) {
+            alert(`Material '${matName}' added to queue!`);
+        }
+
+        return true;
+    },
+
+    finishInput: function () {
+        // If input fields are filled, verify if user wants to add them first
+        const matName = document.getElementById('sim-material').value;
+        if (matName) {
+            // Try to add current input
+            const success = this.addMaterialToQueue(true);
+            if (!success) return; // Validation failed
+        } else if (this.session.length === 0) {
+            alert("Queue is empty. Please add at least one material.");
+            return;
+        }
+
+        // Navigate
+        this.goToStep(2);
+    },
+
+    goToStep: function (stepNum) {
+        // Hide all steps
+        document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
+
+        // Show target
+        if (stepNum === 1) document.getElementById('step-parameters').classList.add('active');
+        if (stepNum === 2) document.getElementById('step-editor').classList.add('active');
+        if (stepNum === 3) document.getElementById('step-analytics').classList.add('active');
+
+        window.scrollTo(0, 0);
+    },
+
+    goToAnalytics: function () {
+        if (this.session.length === 0) {
+            alert("Belum ada data simulasi.");
+            return;
+        }
+
+        // Trigger calculations
         this.renderCharts(); // Updates both charts and summary
         this.calculateInsights();
-        if (this.isFullscreen) this.renderHUD();
+
+        // Go to Step 3
+        this.goToStep(3);
     },
 
     removeFromSession: function (id) {
@@ -231,6 +364,12 @@ const SimPage = {
 
         // Always redraw chart to handle resize
         this.renderChart();
+    },
+
+    toggleTableFullscreen: function () {
+        const container = document.getElementById('table-panel-container');
+        if (!container) return;
+        container.classList.toggle('table-fullscreen');
     },
 
     setSlicer: function (mode) {
@@ -385,6 +524,18 @@ const SimPage = {
         this.loadHistory();
     },
 
+    deleteProject: function (id, event) {
+        if (event) event.stopPropagation(); // Prevent launching card click
+
+        if (!confirm("Are you sure you want to delete this project? Data cannot be recovered.")) return;
+
+        let history = JSON.parse(localStorage.getItem('rm_sim_history') || '[]');
+        history = history.filter(h => h.id !== id);
+        localStorage.setItem('rm_sim_history', JSON.stringify(history));
+
+        this.loadHistory();
+    },
+
     loadHistory: function () {
         const history = JSON.parse(localStorage.getItem('rm_sim_history') || '[]');
         const container = document.getElementById('history-section');
@@ -405,6 +556,9 @@ const SimPage = {
                     <div style="font-size:0.65rem; color:#bc13fe; margin-bottom:10px;">👤 ${h.updater || 'Unknown'}</div>
                     <div style="font-size:0.6rem; color:#64748b;">${date}</div>
                     <div style="position:absolute; bottom:5px; right:10px; font-size:0.5rem; color:#10b981;">AUTO-SYNC READY</div>
+                    <div class="history-delete-btn" onclick="SimPage.deleteProject(${h.id}, event)">
+                        <i class="fas fa-trash"></i>
+                    </div>
                 </div>
             `;
         });
@@ -448,6 +602,46 @@ const SimPage = {
 
         alert(`Scenario "${project.name}" loaded and synced with current stocks.`);
     },
+
+    // NAVIGATION & FLOW
+    goToStep: function (step) {
+        // Hide all using class manipulation
+        ['step-parameters', 'step-editor', 'step-analytics'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        });
+
+        let targetId = '';
+        if (step === 1) targetId = 'step-parameters';
+        if (step === 2) targetId = 'step-editor';
+        if (step === 3) targetId = 'step-analytics';
+
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+            targetEl.classList.add('active');
+        }
+        window.scrollTo(0, 0);
+    },
+
+    finishInput: function () {
+        if (this.session.length === 0) {
+            alert("Please add at least one material to simulation queue!");
+            return;
+        }
+        this.goToStep(2);
+        this.renderTable();
+    },
+
+    goToAnalytics: function () {
+        this.goToStep(3);
+        setTimeout(() => { this.renderCharts(); }, 100);
+    },
+
+    // Aliases
+    nextStep: function () { this.finishInput(); },
+    runSimulation: function () { this.goToAnalytics(); },
+    backToEditor: function () { this.goToStep(2); },
+    editParameter: function () { this.goToStep(1); },
 
     renderQueue: function () {
         const container = document.getElementById('session-queue');
@@ -786,8 +980,9 @@ const SimPage = {
     },
 
     renderMovementChart: function (targetId = 'movementChart') {
-        const ctx = document.getElementById(targetId);
-        if (!ctx) return;
+        const canvas = document.getElementById(targetId);
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
 
         const isHud = targetId.includes('hud');
         let inst = isHud ? this.hudMovementChartInstance : this.movementChartInstance;
@@ -827,28 +1022,44 @@ const SimPage = {
                 data.push(state.stock);
             }
 
+            // Create Dynamic Gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, s.color);
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
             return {
                 label: s.material,
                 data: data,
                 borderColor: s.color,
-                backgroundColor: 'transparent',
-                borderWidth: 2,
-                pointRadius: 2,
-                tension: 0.3,
-                fill: false
+                backgroundColor: gradient,
+                borderWidth: 3,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#fff',
+                tension: 0.4,
+                fill: true
             };
         });
 
+        // 4. Render Chart
         const newChart = new Chart(ctx, {
-            type: 'line', // CHANGED TO LINE
-            data: { labels: labels, datasets: datasets },
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: { display: true, labels: { color: isHud ? '#fff' : '#94a3b8', font: { family: 'Orbitron', size: 11, weight: 'bold' } } },
+                    legend: { display: false }, // Hide legend for cleaner look, or keep? Reference shows no legend inline
                     tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#bc13fe',
+                        borderWidth: 1,
                         callbacks: {
                             label: function (context) {
                                 return `${context.dataset.label}: ${Math.round(context.raw).toLocaleString()} Kg`;
@@ -859,12 +1070,12 @@ const SimPage = {
                 scales: {
                     y: {
                         grid: { color: 'rgba(255,255,255,0.05)' },
-                        ticks: { color: '#94a3b8', font: { size: isHud ? 8 : 12 } },
-                        title: { display: !isHud, text: 'Stock Level (Kg)', color: '#64748b' } // Changed Unit Label
+                        ticks: { color: '#94a3b8', font: { size: isHud ? 8 : 10 } },
+                        beginAtZero: true
                     },
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#94a3b8', maxTicksLimit: 10, font: { size: isHud ? 8 : 12 } }
+                        ticks: { color: '#94a3b8', maxTicksLimit: 10, font: { size: isHud ? 8 : 10 } }
                     }
                 }
             }
@@ -878,28 +1089,37 @@ const SimPage = {
         if (this.session.length === 0) return;
 
         // BOX 1: DOCUMENTS
-        const s = this.session[this.session.length - 1]; // Use latest
-        const semarangDate = s.docDateSemarang ? this.formatDate(s.docDateSemarang) : '-';
-        const priokDate = s.docDatePriok ? this.formatDate(s.docDatePriok) : '-';
+        // (Elements txt-semarang-date and txt-priok-date were removed in UI overhaul)
+        // const s = this.session[this.session.length - 1]; 
+        // const semarangDate = s.docDateSemarang ? this.formatDate(s.docDateSemarang) : '-';
+        // const priokDate = s.docDatePriok ? this.formatDate(s.docDatePriok) : '-';
 
-        // Update Main View
-        document.getElementById('txt-semarang-date').innerText = semarangDate;
-        document.getElementById('txt-priok-date').innerText = priokDate;
 
-        // Update HUD View (if elements exist)
-        const hudSemarang = document.getElementById('hud-txt-semarang-date');
-        const hudPriok = document.getElementById('hud-txt-priok-date');
-        if (hudSemarang) hudSemarang.innerText = semarangDate;
-        if (hudPriok) hudPriok.innerText = priokDate;
-
-        // BOX 2: DYNAMIC PREDICTIVE INSIGHT
-        const textContainer = document.getElementById('summary-movement-text');
-        const predictiveHtml = this.generatePredictiveText();
-        textContainer.innerHTML = predictiveHtml;
+        // BOX 2: DYNAMIC PREDICTIVE INSIGHT & RANGKUMAN
+        try {
+            this.generateRangkuman();
+        } catch (e) {
+            console.error("Error in generateRangkuman:", e);
+        }
 
         // Update HUD View
         const hudTextContainer = document.getElementById('hud-summary-movement-text');
-        if (hudTextContainer) hudTextContainer.innerHTML = predictiveHtml;
+        if (hudTextContainer) hudTextContainer.innerHTML = "<div style='color:#34d399'>LIVE ANALYTICS ACTIVE</div>";
+
+        // RENDER ADVANCED CHARTS
+        try {
+            console.log("Rendering Radar Chart...");
+            this.renderRadarChart();
+        } catch (e) {
+            console.error("Error in renderRadarChart:", e);
+        }
+
+        try {
+            console.log("Rendering Flux Chart...");
+            this.renderFluxChart();
+        } catch (e) {
+            console.error("Error in renderFluxChart:", e);
+        }
 
         // BOX 3: TOTAL IMPACT
         // Calculate Total Net Change across all materials/sessions from Start to End
@@ -924,8 +1144,9 @@ const SimPage = {
 
         const netImpact = totalEndStock - totalStartStock;
         const sign = netImpact >= 0 ? '+' : '';
-        document.getElementById('summary-total-impact').innerText = `${sign}${netImpact.toLocaleString()} TON`;
-        document.getElementById('summary-total-impact').style.color = netImpact >= 0 ? '#34d399' : '#f87171';
+        document.getElementById('summary-total-impact').innerText = `${sign}${netImpact.toLocaleString()} KG`;
+        const impactEl = document.getElementById('summary-total-impact');
+        if (impactEl) impactEl.style.color = netImpact >= 0 ? '#34d399' : '#f87171';
 
         // Dynamic Desc
         const todayStock = totalStartStock.toLocaleString();
@@ -934,28 +1155,185 @@ const SimPage = {
         document.getElementById('summary-impact-desc').innerText = `STOCK HARI INI (${todayStock}) ${operator} FUTURE (${futureStock}) -> ${netImpact >= 0 ? 'SURPLUS' : 'DEFICIT'}`;
     },
 
-    generatePredictiveText: function () {
-        // Logic: Iterate periods based on Slicer. 
-        // "FEBRUARY WEEK 1: Material A +500..."
+    generateRangkuman: function () {
+        console.log("Generating Rangkuman...");
+        const listContainer = document.getElementById('summary-material-list');
+        if (!listContainer) return;
+        listContainer.innerHTML = '';
+
+        let globalLowest = { qty: Infinity, pct: 100 };
+        let globalHighest = { qty: -Infinity, pct: 0 };
+        const totalCapacity = 26000000; // 26,000 Ton in KG
+
         const fullDates = this.getDateRange();
-        const step = this.getStep();
-        const labels = this.getLabels(fullDates);
+        if (!fullDates || fullDates.length === 0) {
+            listContainer.innerHTML = '<div style="color:orange">Insufficient Date Range</div>';
+            return;
+        }
 
-        let html = '';
+        // 1. MATERIAL LIST SNAPSHOT
+        this.session.forEach(s => {
+            const startDate = fullDates[0];
+            const endDate = fullDates[fullDates.length - 1];
 
-        // Limit to first 3 periods to avoid overflow, or make it scrollable? 
-        // User wants "TIAP WEEK NYA". Let's show max 3 relevant periods.
-        const maxUncollapsed = 100; // Unlimited for now, use div scroll
+            const startState = this.calculateStateAtDate(s, startDate.toISOString().split('T')[0], startDate);
+            const endState = this.calculateStateAtDate(s, endDate.toISOString().split('T')[0], endDate);
 
-        for (let i = 0; i < fullDates.length && i < (step * 5); i += step) {
-            const label = labels[Math.floor(i / step)];
+            // Find Peak
+            let peak = 0;
+            for (let d of fullDates) {
+                const state = this.calculateStateAtDate(s, d.toISOString().split('T')[0], d);
+                if (state.stock > peak) peak = state.stock;
+            }
 
-            // Calculate movement for this period
-            let periodMovements = [];
-            let periodTotal = 0;
+            const item = document.createElement('div');
+            item.style.marginBottom = '8px';
+            item.style.borderLeft = `3px solid ${s.color}`;
+            item.style.paddingLeft = '8px';
+            item.innerHTML = `
+                <div style="color:${s.color}; font-weight:bold;">${s.material}</div>
+                <div style="display:flex; justify-content:space-between; color:#cbd5e1; font-size:0.8rem;">
+                    <span>Start: <b>${(startState.stock / 1000).toLocaleString()} T</b></span>
+                    <span>Peak: <b>${(peak / 1000).toLocaleString()} T</b></span>
+                    <span>End: <b>${(endState.stock / 1000).toLocaleString()} T</b></span>
+                </div>
+            `;
+            listContainer.appendChild(item);
+        });
 
+        // 2. GLOBAL PEAK & LOW (Aggregated)
+        for (let d of fullDates) {
+            let dailyTotal = 0;
             this.session.forEach(s => {
-                let net = 0;
+                const state = this.calculateStateAtDate(s, d.toISOString().split('T')[0], d);
+                dailyTotal += state.stock;
+            });
+
+            if (dailyTotal < globalLowest.qty) globalLowest.qty = dailyTotal;
+            if (dailyTotal > globalHighest.qty) globalHighest.qty = dailyTotal;
+        }
+
+        // Calculate Percentages
+        globalLowest.pct = (globalLowest.qty / totalCapacity) * 100;
+        globalHighest.pct = (globalHighest.qty / totalCapacity) * 100;
+
+        // Render Peak/Low
+        document.getElementById('summary-lowest-stock').innerText = `${(globalLowest.qty / 1000).toLocaleString()} T`;
+        document.getElementById('summary-lowest-pct').innerText = `${globalLowest.pct.toFixed(1)}% Capacity`;
+
+        document.getElementById('summary-highest-stock').innerText = `${(globalHighest.qty / 1000).toLocaleString()} T`;
+        document.getElementById('summary-highest-pct').innerText = `${globalHighest.pct.toFixed(1)}% Capacity`;
+
+        // 3. CONCLUSION
+        const conclusionBox = document.getElementById('summary-conclusion-box');
+        const remainingSpace = totalCapacity - globalHighest.qty;
+
+        if (remainingSpace < 0) {
+            conclusionBox.style.borderColor = '#ef4444';
+            conclusionBox.style.background = 'rgba(239, 68, 68, 0.1)';
+            conclusionBox.innerHTML = `
+                <div style="font-family:'Orbitron'; font-size:1.5rem; color:#ef4444; margin-bottom:5px;">COLLAPSE</div>
+                <div style="color:#cbd5e1; font-size:0.85rem;">Over Capacity: <b style="color:#ef4444">${Math.abs(remainingSpace / 1000).toLocaleString()} T</b></div>
+            `;
+        } else {
+            conclusionBox.style.borderColor = '#34d399';
+            conclusionBox.style.background = 'rgba(52, 211, 153, 0.1)';
+            conclusionBox.innerHTML = `
+                <div style="font-family:'Orbitron'; font-size:1.5rem; color:#34d399; margin-bottom:5px;">AMAN</div>
+                <div style="color:#cbd5e1; font-size:0.85rem;">Sisa Space: <b style="color:#34d399">${(remainingSpace / 1000).toLocaleString()} T</b></div>
+            `;
+        }
+    },
+    renderRadarChart: function () {
+        const canvas = document.getElementById('radarChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        const fullDates = this.getDateRange();
+        if (!fullDates || fullDates.length === 0) {
+            console.warn("renderRadarChart: No dates available.");
+            return;
+        }
+
+        const lastDate = fullDates[fullDates.length - 1];
+        const lastDateStr = lastDate.toISOString().split('T')[0];
+
+        // 1. Get Latest Stock per Facility
+        const facilityStocks = {};
+
+        let hasData = false;
+
+        this.session.forEach(s => {
+            const state = this.calculateStateAtDate(s, lastDateStr, lastDate);
+            if (!facilityStocks[s.material]) facilityStocks[s.material] = 0;
+            facilityStocks[s.material] += state.stock;
+            if (state.stock > 0) hasData = true;
+        });
+
+        const labels = Object.keys(facilityStocks);
+        const data = Object.values(facilityStocks).map(v => v / 1000); // In Ton
+
+        if (this.radarChartInstance) {
+            this.radarChartInstance.destroy();
+            this.radarChartInstance = null;
+        }
+
+        this.radarChartInstance = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Stock Distribution (Ton)',
+                    data: data,
+                    backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                    borderColor: '#34d399',
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#34d399',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#34d399'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        pointLabels: { color: '#cbd5e1', font: { size: 10 } },
+                        ticks: { display: false, backdropColor: 'transparent' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    },
+
+    renderFluxChart: function () {
+        const canvas = document.getElementById('fluxChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        const fullDates = this.getDateRange();
+        if (!fullDates || fullDates.length === 0) {
+            console.warn("renderFluxChart: No dates available.");
+            return;
+        }
+
+        let labels = [];
+        let netFluxData = [];
+
+        const step = this.getStep();
+        const dateLabels = this.getLabels(fullDates);
+
+        for (let i = 0; i < fullDates.length; i += step) {
+            labels.push(dateLabels[Math.floor(i / step)] || '');
+
+            let periodNet = 0;
+            // Sum flux for all sessions in this period
+            this.session.forEach(s => {
                 for (let j = 0; j < step && (i + j) < fullDates.length; j++) {
                     const d = fullDates[i + j];
                     const dateStr = d.toISOString().split('T')[0];
@@ -965,41 +1343,54 @@ const SimPage = {
                         if (s.overrides[dateStr].in !== undefined) dIn = Number(s.overrides[dateStr].in);
                         if (s.overrides[dateStr].out !== undefined) dOut = Number(s.overrides[dateStr].out);
                     }
-                    net += (dIn - dOut);
-                }
-                if (Math.abs(net) > 0) {
-                    periodMovements.push({ mat: s.material, val: net, color: s.color });
-                    periodTotal += net;
+                    periodNet += (dIn - dOut);
                 }
             });
-
-            if (periodMovements.length === 0) continue;
-
-            // Sort by absolute impact
-            periodMovements.sort((a, b) => Math.abs(b.val) - Math.abs(a.val));
-
-            // Generate HTML
-            html += `<div style="margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">`;
-            html += `<div style="font-weight:700; color:#00f3ff; font-size:0.85rem; margin-bottom:2px;">[${label}] TOTAL: ${periodTotal > 0 ? '+' : ''}${periodTotal.toLocaleString()} T</div>`;
-
-            periodMovements.forEach(pm => {
-                html += `<div style="display:flex; justify-content:space-between; font-size:0.8rem; padding-left:10px;">
-                            <span style="color:${pm.color};">• ${pm.mat}</span>
-                            <span style="color:${pm.val >= 0 ? '#34d399' : '#f87171'}">${pm.val > 0 ? '+' : ''}${pm.val.toLocaleString()} T</span>
-                         </div>`;
-            });
-
-            let stockImpactMsg = "";
-            const currentStock = this.calculateTotalStockAtDate(fullDates[i]); // Approx start of period
-            const futureStock = currentStock + periodTotal;
-            if (periodTotal > 0) stockImpactMsg = `📈 Stock akumulasi naik ke ${futureStock.toLocaleString()} T`;
-            else stockImpactMsg = `📉 Stock tergerus menjadi ${futureStock.toLocaleString()} T`;
-
-            html += `<div style="font-size:0.7rem; color:#64748b; margin-top:2px; font-style:italic;">${stockImpactMsg}</div>`;
-            html += `</div>`;
+            // STORE IN TONS
+            netFluxData.push(periodNet);
         }
 
-        return html || '<div style="color:#64748b;">No movement detected in this range.</div>';
+        if (this.fluxChartInstance) {
+            this.fluxChartInstance.destroy();
+            this.fluxChartInstance = null;
+        }
+
+        this.fluxChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Net Flux (Ton)',
+                    data: netFluxData,
+                    backgroundColor: netFluxData.map(v => v >= 0 ? '#34d399' : '#f87171'),
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#64748b' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#64748b', maxTicksLimit: 10 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return context.raw > 0 ? `+${context.raw.toLocaleString()} Ton` : `${context.raw.toLocaleString()} Ton`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
     },
 
     calculateTotalStockAtDate: function (dateObj) {
@@ -1088,55 +1479,58 @@ const SimPage = {
     },
 
     calculateStateAtDate: function (sessionObj, dateStr, dateObj) {
-        // Simple day-by-day accumulation from Start Date up to Target Date
-        // Note: This is inefficient for long lists (O(N^2)), but fine for < 100 days.
-        // Optimize: Calculate ALL states once and cache.
+        // Enforce Number Types
+        const baseStock = Number(sessionObj.baseStock) || 0;
+        const defaultIn = Number(sessionObj.defaultIn) || 0;
+        const defaultOut = Number(sessionObj.defaultOut) || 0;
 
-        // Let's do a simple iterative calculation from Session Start Date
         const startDate = new Date(sessionObj.startDate);
-        const targetDate = new Date(dateStr);
+        const targetDate = new Date(dateStr); // Ensure dateStr is valid string
 
-        // Base Stock (Ton) -> Kg
-        let currentKg = sessionObj.baseStock;
-
-        // Iterate days from Start up to Target
         // If Target is before Start, return Base
-        if (targetDate < startDate) return { stock: currentKg, inVal: 0, outVal: 0 };
+        if (targetDate < startDate) return { stock: baseStock, inVal: 0, outVal: 0 };
 
+        let currentKg = baseStock;
         let d = new Date(startDate);
         let lastIn = 0;
         let lastOut = 0;
 
-        while (d <= targetDate) {
+        // Validation Loop Limit (prevent infinite loop if dates are broken)
+        let loopCount = 0;
+        const MAX_LOOPS = 400; // > 1 year
+
+        while (d <= targetDate && loopCount < MAX_LOOPS) {
             const dStr = d.toISOString().split('T')[0];
 
             // Get override or default
-            let dIn = sessionObj.defaultIn;
-            let dOut = sessionObj.defaultOut;
+            let dIn = defaultIn;
+            let dOut = defaultOut;
 
-            if (sessionObj.overrides[dStr]) {
-                if (sessionObj.overrides[dStr].in !== undefined) dIn = sessionObj.overrides[dStr].in;
-                if (sessionObj.overrides[dStr].out !== undefined) dOut = sessionObj.overrides[dStr].out;
+            if (sessionObj.overrides && sessionObj.overrides[dStr]) {
+                if (sessionObj.overrides[dStr].in !== undefined) dIn = Number(sessionObj.overrides[dStr].in);
+                if (sessionObj.overrides[dStr].out !== undefined) dOut = Number(sessionObj.overrides[dStr].out);
             }
 
             // Convert Ton -> Kg
             const inKg = dIn * 1000;
             const outKg = dOut * 1000;
 
-            // Update Stock (Apply previous day's movement? Or today's? Usually end-of-day balance)
-            // Logic: Start Day Bal = Base + In - Out
+            // Update Stock
             currentKg = currentKg + (inKg - outKg);
 
             lastIn = dIn;
             lastOut = dOut;
 
             d.setDate(d.getDate() + 1);
+            loopCount++;
         }
 
-        // REVISION: If target date is beyond session end date, flow is 0, stock is stable (calculated up to end)
         const sessionEnd = new Date(sessionObj.endDate);
+        // If target > sessionEnd, we stop flow but keep stock level
         if (targetDate > sessionEnd) {
-            return { stock: currentKg, inVal: 0, outVal: 0 };
+            // Logic: Stock stays same after end date? Or drops to 0? 
+            // Simulation usually implies 'what happens until X'.
+            // Let's keep the last calculated stock.
         }
 
         return { stock: currentKg, inVal: lastIn, outVal: lastOut };
