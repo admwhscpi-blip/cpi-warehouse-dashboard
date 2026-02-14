@@ -10,24 +10,29 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <!-- CHART.JS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --primary: #f97316;
-            /* Orange Accent */
-            --secondary: #3b82f6;
-            /* Blue Accent */
-            --text-main: #f1f5f9;
+            --bg-dark: #020617;
+            /* Very Dark Slate */
+            --bg-card: rgba(15, 23, 42, 0.75);
+            /* Glassy Slate */
+            --primary: #06b6d4;
+            /* Cyan Neon */
+            --secondary: #f97316;
+            /* Orange Neon */
+            --accent: #8b5cf6;
+            /* Violet Neon */
+            --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --border: #334155;
+            --border-glow: rgba(6, 182, 212, 0.5);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --neon-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
         }
 
         * {
@@ -36,85 +41,120 @@
 
         body {
             background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(6, 182, 212, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(249, 115, 22, 0.08), transparent 25%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
             color: var(--text-main);
             font-family: 'Outfit', sans-serif;
-            /* Cleaner, modern font */
             margin: 0;
             overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* NAVBAR (Legacy Support) */
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* NAVBAR (Minimalist) */
         .navbar {
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            background: rgba(15, 23, 42, 0.95);
-            z-index: 1000;
+            background: rgba(2, 6, 23, 0.8);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 10px 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 40px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
+            z-index: 100;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
 
-        .nav-links a {
-            color: var(--text-muted);
-            text-decoration: none;
-            margin: 0 15px;
-            font-weight: 500;
-            font-size: 0.9rem;
-            transition: 0.3s;
-        }
-
-        .nav-links a.active,
-        .nav-links a:hover {
-            color: var(--primary);
-        }
-
-        .btn-action {
-            background: var(--primary);
-            color: #fff;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: 'Outfit', sans-serif;
-            transition: 0.2s;
-        }
-
-        .btn-action:hover {
-            background: #ea580c;
-        }
-
-        /* CONTAINER */
-        .container {
-            padding: 30px 40px;
-            max-width: 1800px;
-            margin: 0 auto;
-        }
-
-        .header-title h1 {
-            font-size: 1.8rem;
-            margin: 0;
+        .brand-text {
+            font-family: 'Orbitron', sans-serif;
             font-weight: 700;
-            color: #fff;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #fff, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
         }
 
-        .header-title p {
-            color: var(--text-muted);
-            margin: 5px 0 0 0;
-            font-size: 0.9rem;
+        .status-pill {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
         }
 
-        /* DASHBOARD GRID */
-        .dashboard-grid {
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        /* GRID LAYOUT */
+        .dashboard-container {
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+            max-width: 1920px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .dense-grid {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
-            gap: 24px;
-            margin-top: 30px;
+            grid-auto-rows: minmax(140px, auto);
+            gap: 16px;
         }
 
+        /* GRID SPANS */
         .col-12 {
             grid-column: span 12;
         }
@@ -135,555 +175,436 @@
             grid-column: span 3;
         }
 
-        /* CARD STYLE */
-        .card {
+        .row-2 {
+            grid-row: span 2;
+        }
+
+        /* CARD COMPONENT */
+        .bento-card {
             background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
             border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            position: relative;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             display: flex;
             flex-direction: column;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            position: relative;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            min-height: 0;
+            min-width: 0;
         }
 
-        .card:hover {
+        .bento-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(6, 182, 212, 0.15);
             transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-            border-color: rgba(255, 255, 255, 0.08);
+            z-index: 10;
         }
 
-        /* Card Header */
-        .card-header {
+        .bento-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+            align-items: flex-start;
+            margin-bottom: 15px;
         }
 
         .card-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .card-title small {
-            color: var(--text-muted);
-            font-weight: 400;
-            font-size: 0.85rem;
-            display: block;
-            margin-top: 2px;
-        }
-
-        /* Controls */
-        .card-tools {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .slicer-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            padding: 4px 12px;
-            border-radius: 20px;
             font-size: 0.75rem;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .slicer-btn.active {
-            background: rgba(249, 115, 22, 0.1);
-            color: var(--primary);
-            border-color: var(--primary);
-        }
-
-        .btn-fullscreen {
-            background: transparent;
-            border: none;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
             color: var(--text-muted);
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .btn-fullscreen:hover {
-            color: #fff;
-        }
-
-        .chart-body {
-            position: relative;
-            flex-grow: 1;
-            min-height: 300px;
-            /* Taller default */
-        }
-
-        /* FULLSCREEN CARD MODE */
-        .card.fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 9999;
-            border-radius: 0;
-            padding: 40px;
-        }
-
-        .card.fullscreen .chart-body {
-            height: 90vh;
-        }
-
-        /* SEARCH HUD */
-        .search-box {
-            background: #0f172a;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 5px 20px;
+            font-weight: 600;
             display: flex;
-            align-items: center;
-            width: 100%;
+            flex-direction: column;
+            margin-bottom: 2px;
         }
 
-        .search-box input {
-            background: transparent;
-            border: none;
+        .card-title b {
             color: #fff;
-            padding: 10px;
-            width: 100%;
-            outline: none;
-            font-family: 'Outfit';
+            font-size: 1rem;
+            margin-bottom: 4px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
         }
 
-        .stat-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .stat-item {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-        }
-
-        .stat-val {
-            font-size: 1.5rem;
+        .value-display {
+            font-family: 'Orbitron', sans-serif;
             font-weight: 700;
             color: #fff;
         }
 
-        .stat-lbl {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-top: 4px;
+        /* KPI CARD STYLES */
+        .kpi-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .kpi-value-lg {
+            font-size: 2.5rem;
+            background: linear-gradient(180deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-family: 'Orbitron';
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2));
+        }
+
+        .kpi-trend {
+            font-size: 0.75rem;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 5px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .kpi-trend.down {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        /* CHART CONTAINERS */
+        .chart-container-full {
+            flex-grow: 1;
+            position: relative;
+            width: 100%;
+            min-height: 0;
+        }
+
+        /* CUSTOM TABLE/LIST FOR MATERIAL */
+        .material-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+            flex-grow: 1;
+            margin-top: 10px;
+            padding-right: 5px;
+        }
+
+        .feed-item {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 10px 14px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            border-left: 3px solid transparent;
+            transition: 0.2s;
+        }
+
+        .feed-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: var(--primary);
+            transform: translateX(2px);
+        }
+
+        .feed-val {
+            font-family: 'Orbitron';
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        /* FORM ELEMENTS */
+        .cyber-select {
+            background: #0f172a;
+            border: 1px solid var(--border-subtle);
+            color: var(--primary);
+            font-family: 'Orbitron';
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 6px;
+            outline: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .cyber-select:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+        }
+
+        .cyber-select.active {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .cyber-input {
+            background: #0f172a;
+            border: 1px solid var(--border-subtle);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-family: 'Outfit';
+            font-size: 0.9rem;
+            width: 100%;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .cyber-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+        }
+
+        /* UTILS */
+        .text-cyan {
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+        }
+
+        .text-orange {
+            color: var(--secondary);
+            text-shadow: 0 0 10px rgba(249, 115, 22, 0.4);
+        }
+
+        .text-violet {
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+        }
+
+        .slicer-group {
+            display: flex;
+            gap: 5px;
         }
     </style>
 </head>
 
 <body>
-    <!-- NAVBAR -->
+    <!-- HEADER -->
     <nav class="navbar">
-        <a href="homepage-v1.html" class="logo-link">
-            <div class="logo-text">
-                <span class="brand-smart">SMART WAREHOUSE</span>
-                <span class="brand-v2">V2.0</span>
-            </div>
+        <a href="homepage-v1.html" style="text-decoration:none;">
+            <div class="brand-text">SMART WAREHOUSE <span style="font-weight:300; opacity:0.7;">V2.0</span></div>
         </a>
 
-        <div class="nav-links">
-            <!-- MENU DIKOSONGKAN -->
+        <!-- GLOBAL FILTER -->
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">PERIOD:</div>
+            <select id="global-month-filter" class="cyber-select"
+                style="min-width:150px; border-color:var(--primary); box-shadow:0 0 10px rgba(6,182,212,0.2);"
+                onchange="AnalysApp.handleGlobalFilterChange(this.value)">
+                <option value="">LOADING...</option>
+            </select>
         </div>
 
-        <div class="nav-actions">
-            <!-- TOMBOL DIHAPUS -->
+        <div class="status-pill">
+            <div class="status-dot"></div>
+            SYSTEM ONLINE
         </div>
     </nav>
 
-    <div class="container">
-        <div class="header-title" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-            <div>
-                <h1>RM OPERATIONAL ANALYTICS</h1>
-                <p>Real-time performance metrics & trend analysis.</p>
-            </div>
-            <div style="text-align:right;">
-                <div id="sync-status"
-                    style="font-family:'Orbitron', sans-serif; font-size:0.7rem; color:#10b981; font-weight:700;">●
-                    SYSTEM ONLINE</div>
-                <div id="last-update" style="font-size:0.6rem; color:#64748b; margin-top:5px;">LAST SYNC: NEVER</div>
-            </div>
-        </div>
+    <div class="dashboard-container">
+        <div class="dense-grid">
 
-        <div class="dashboard-grid">
+            <!-- ROW 1: KPI STATS (Height ~140px) -->
+            <div class="col-3 bento-card">
+                <div class="card-title"><b>TOTAL VOLUME</b><span>MT + BKR + STP</span></div>
 
-            <!-- 1. OPERATIONAL DAILY RM-STORAGE (THE BIG CHART) -->
-            <div class="col-12 card" id="card-opsDaily">
-                <div class="card-header">
-                    <div style="display:flex; align-items:center; gap:20px;">
-                        <div class="card-title">OPERATIONAL DAILY RM-STORAGE
-                            <small>Total Volume: Muat + Bongkar + Stapel Process</small>
+                <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
+                    <div class="kpi-value-lg" id="kpi-total-vol">0 <span class="text-sm text-gray-500">KG</span></div>
+
+                    <!-- Breakdown -->
+                    <div class="flex gap-2 mt-2 pt-2 border-t border-white/5 text-[10px] text-gray-400"
+                        style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px; margin-top:5px;">
+                        <div style="text-align:center;">
+                            <span style="display:block; color:var(--primary); font-size:0.65rem;">BONGKAR</span>
+                            <span id="kpi-vol-bongkar"
+                                style="font-family:'Orbitron'; color:#fff; font-size:0.8rem;">0</span>
                         </div>
+                        <div style="text-align:center; border-left:1px solid rgba(255,255,255,0.1); padding-left:8px;">
+                            <span style="display:block; color:var(--secondary); font-size:0.65rem;">MUAT</span>
+                            <span id="kpi-vol-muat"
+                                style="font-family:'Orbitron'; color:#fff; font-size:0.8rem;">0</span>
+                        </div>
+                        <div style="text-align:center; border-left:1px solid rgba(255,255,255,0.1); padding-left:8px;">
+                            <span style="display:block; color:var(--accent); font-size:0.65rem;">STAPEL</span>
+                            <span id="kpi-vol-stapel"
+                                style="font-family:'Orbitron'; color:#fff; font-size:0.8rem;">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                        <!-- NEW: MONTH SELECTOR -->
-                        <div style="background:#0f172a; border:1px solid #334155; padding:5px 10px; border-radius:8px;">
-                            <span style="font-size:0.7rem; color:#94a3b8; margin-right:5px;">SELECT MONTH:</span>
-                            <select id="ops-month-filter"
-                                onchange="AnalysApp.renderOpsDaily(AnalysApp.currentOpsPeriod)"
-                                style="background:transparent; border:none; color:#f97316; font-family:'Orbitron'; outline:none; cursor:pointer;">
-                                <!-- Populated by JS -->
-                            </select>
+            <div class="col-3 bento-card">
+                <div class="card-title"><b>TOTAL ATTENDANCE</b><span>Daily + Borong</span></div>
+
+                <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="kpi-value-lg" style="color:#10b981;" id="kpi-total-attn">0 <span
+                                class="text-sm text-gray-500">ORG</span></div>
+                        <div style="text-align:right;">
+                            <div style="font-size:0.65rem; color:#94a3b8;">Highest</div>
+                            <div style="font-family:'Orbitron'; color:#fff; font-size:0.8rem;" id="kpi-attn-date">-
+                            </div>
                         </div>
                     </div>
 
-                    <!-- SUMMARY BOXES -->
+                    <!-- Breakdown -->
+                    <div class="flex gap-2 mt-2 pt-2 border-t border-white/5 text-[10px] text-gray-400"
+                        style="display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px; margin-top:5px;">
+                        <div style="text-align:center; flex:1;">
+                            <span style="display:block; color:#3b82f6; font-size:0.65rem;">BORONG</span>
+                            <span id="kpi-attn-borong"
+                                style="font-family:'Orbitron'; color:#fff; font-size:0.8rem;">0</span>
+                        </div>
+                        <div
+                            style="text-align:center; flex:1; border-left:1px solid rgba(255,255,255,0.1); padding-left:8px;">
+                            <span style="display:block; color:#ec4899; font-size:0.65rem;">HARIAN</span>
+                            <span id="kpi-attn-harian"
+                                style="font-family:'Orbitron'; color:#fff; font-size:0.8rem;">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-3 bento-card">
+                <div class="card-title"><b>TOP PRODUCTIVITY</b><span>Team Performance</span></div>
+                <div style="display:flex; align-items:center; gap:15px; margin-top:10px;">
                     <div
-                        style="display:flex; gap:15px; margin-left:20px; flex-grow:1; justify-content:flex-end; margin-right:20px;">
-                        <!-- BOX 1: DETAIL CLICK (Only one box now as requested) -->
-                        <div id="ops-detail-box"
-                            style="background:rgba(255,255,255,0.05); border:1px solid #334155; padding:5px 15px; border-radius:8px; display:flex; flex-direction:column; justify-content:center; min-width:180px;">
-                            <div style="font-size:0.6rem; color:#94a3b8; letter-spacing:1px;">SELECTED SUMMARY</div>
-                            <div id="ops-detail-val" style="font-size:1.1rem; font-weight:700; color:#f97316;">Click
-                                Chart to View</div>
-                        </div>
-                    </div>
-
-                    <div class="card-tools">
-                        <div class="slicer-group" data-target="opsDaily">
-                            <button class="slicer-btn active"
-                                onclick="AnalysApp.setSlicer('opsDaily', 'daily')">Daily</button>
-                            <button class="slicer-btn"
-                                onclick="AnalysApp.setSlicer('opsDaily', 'weekly')">Weekly</button>
-                            <button class="slicer-btn"
-                                onclick="AnalysApp.setSlicer('opsDaily', 'monthly')">Monthly</button>
-                        </div>
-                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-opsDaily')"><i
-                                class="fas fa-expand"></i></button>
-                    </div>
-                </div>
-                <div class="chart-body" style="display:flex; flex-direction:column;">
-                    <div style="flex-grow:1; min-height:0;">
-                        <canvas id="chart-opsDaily"></canvas>
-                    </div>
-                    <!-- CONCLUSION TEXT FOOTER -->
-                    <div id="ops-conclusion"
-                        style="margin-top:15px; padding:15px; background:rgba(0,0,0,0.3); border-left:4px solid #f97316; font-size:0.9rem; color:#e2e8f0; font-family:'Courier New', monospace; min-height:60px;">
-                        WAITING FOR SELECTION...
+                        style="width:50px; height:50px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; box-shadow:0 0 15px rgba(139,92,246,0.4); font-size:1.2rem;">
+                        #1</div>
+                    <div>
+                        <div style="font-weight:700; font-size:1.2rem; color:#fff;" id="kpi-top-team">-</div>
+                        <div style="font-size:0.8rem; color:#94a3b8;">Avg: <span class="text-violet"
+                                id="kpi-top-val">-</span> kg/org</div>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. MATERIAL FINDER -->
-            <div class="col-4 card">
-                <div class="card-header">
-                    <div class="card-title">MATERIAL DURATION
-                        <small>Calculator Min/Avg/Max</small>
+            <div class="col-3 bento-card">
+                <div class="card-title"><b>AVG QC WAIT TIME</b><span>Efficiency Metric</span></div>
+                <div class="kpi-row">
+                    <div class="kpi-value-lg text-orange" id="kpi-qc-wait">-</div>
+                    <div style="text-align:right; max-width:120px;">
+                        <span style="font-size:0.65rem; color:#94a3b8;">TARGET: < 15m</span>
+                                <div
+                                    style="width:100px; height:6px; background:#334155; border-radius:3px; margin-top:5px; overflow:hidden;">
+                                    <div id="kpi-qc-bar"
+                                        style="width:60%; height:100%; background:var(--secondary); border-radius:3px; box-shadow:0 0 10px var(--secondary);">
+                                    </div>
+                                </div>
                     </div>
                 </div>
-                <!-- Search Input & Button -->
-                <div style="display:flex; gap:10px; margin-bottom:15px;">
-                    <div class="search-box">
-                        <i class="fas fa-search" style="color:var(--text-muted)"></i>
-                        <input type="text" id="material-search" placeholder="Type Material..."
-                            onkeyup="AnalysApp.renderMaterialList()">
-                    </div>
-                    <button class="btn-action" onclick="AnalysApp.calculateDurationStats()" style="white-space:nowrap;">
-                        <i class="fas fa-calculator"></i> CHECK
-                    </button>
-                </div>
+            </div>
 
-                <!-- Result Grid (Initially Hidden or Empty) -->
-                <div class="stat-grid" id="material-stats" style="display:none; transition:all 0.3s;">
-                    <div class="stat-item">
-                        <div class="stat-val" id="val-min" style="color:#10b981">-</div>
-                        <div class="stat-lbl">MIN (Mins)</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-val" id="val-avg" style="color:#f97316">-</div>
-                        <div class="stat-lbl">AVG (Mins)</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-val" id="val-max" style="color:#ef4444">-</div>
-                        <div class="stat-lbl">MAX (Mins)</div>
+            <!-- ROW 2: MAIN CHART & MATERIAL FEED -->
+            <!-- OPS DAILY (WIDER & TALLER) -->
+            <div class="col-8 row-2 bento-card">
+                <div class="bento-header">
+                    <div class="card-title"><b>OPERATIONAL DAILY VOLUME</b><span>Material Movement Analysis</span></div>
+                    <div class="slicer-group">
+                        <button class="cyber-select" onclick="AnalysApp.setSlicer('opsDaily', 'daily')">D</button>
+                        <button class="cyber-select" onclick="AnalysApp.setSlicer('opsDaily', 'weekly')">W</button>
                     </div>
                 </div>
+                <!-- CHART -->
+                <div class="chart-container-full">
+                    <canvas id="chart-opsDaily"></canvas>
+                </div>
+            </div>
 
-                <!-- PROCESSED DATA LIST -->
+            <!-- MATERIAL DURATION FEED -->
+            <div class="col-4 row-2 bento-card">
+                <div class="bento-header">
+                    <div class="card-title"><b>MATERIAL DURATION</b><span>Process Timeline</span></div>
+                </div>
+                <div style="margin-bottom:15px;">
+                    <input type="text" id="material-search" class="cyber-input" placeholder="Search Material..."
+                        onkeyup="AnalysApp.filterMaterialFeed()">
+                </div>
+                <!-- STATS ROW -->
                 <div
-                    style="margin-top:15px; border-top:1px solid #334155; padding-top:10px; flex-grow:1; display:flex; flex-direction:column; min-height:0;">
-                    <div
-                        style="font-size:0.75rem; color:#94a3b8; margin-bottom:5px; display:flex; justify-content:space-between;">
-                        <span>MATCHED DATA LIST</span>
-                        <!-- Outlier count hidden as requested, but ID kept if needed for debug -->
-                        <span id="outlier-count" style="display:none; color:#ef4444; font-weight:700;"></span>
+                    style="display:flex; justify-content:space-between; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid var(--border-subtle);">
+                    <div style="text-align:center;">
+                        <div style="font-size:0.65rem; color:#94a3b8;">MIN</div>
+                        <div class="value-display text-cyan" id="mat-min" style="font-size:1.2rem;">-</div>
                     </div>
-                    <div id="material-matches"
-                        style="overflow-y:auto; font-size:0.8rem; color:#cbd5e1; display:flex; flex-direction:column; gap:2px; padding-right:5px; max-height:300px;">
-                        <div style="padding:10px; text-align:center; color:#64748b; font-style:italic;">Type to search
-                            materials...</div>
-                        <!-- JS Populated -->
+                    <div style="text-align:center;">
+                        <div style="font-size:0.65rem; color:#94a3b8;">AVG</div>
+                        <div class="value-display text-orange" id="mat-avg" style="font-size:1.2rem;">-</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.65rem; color:#94a3b8;">MAX</div>
+                        <div class="value-display text-violet" id="mat-max" style="font-size:1.2rem;">-</div>
+                    </div>
+                </div>
+                <!-- FEED LIST -->
+                <div class="material-feed" id="material-matches">
+                    <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.8rem;">
+                        Waiting for input...
                     </div>
                 </div>
             </div>
 
-            <!-- 3. ABSENSI BORONG (UPGRADED) -->
-            <div class="col-12 card" id="card-absBorong">
-                <div class="card-header">
-                    <div style="display:flex; align-items:center; gap:20px;">
-                        <div class="card-title">ABSENSI KULI BORONG
-                            <small>Kehadiran per Tim</small>
-                        </div>
-
-                        <!-- MONTH SELECTOR -->
-                        <div style="background:#0f172a; border:1px solid #334155; padding:5px 10px; border-radius:8px;">
-                            <span style="font-size:0.7rem; color:#94a3b8; margin-right:5px;">SELECT MONTH:</span>
-                            <select id="absBorong-month-filter"
-                                onchange="AnalysApp.renderAbsensiBorong(AnalysApp.currentAbsBorongPeriod)"
-                                style="background:transparent; border:none; color:#f97316; font-family:'Orbitron'; outline:none; cursor:pointer;">
-                                <!-- Populated by JS -->
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- SUMMARY BOX -->
-                    <div
-                        style="display:flex; gap:15px; margin-left:20px; flex-grow:1; justify-content:flex-end; margin-right:20px;">
-                        <div id="absBorong-detail-box"
-                            style="background:rgba(255,255,255,0.05); border:1px solid #334155; padding:5px 15px; border-radius:8px; display:flex; flex-direction:column; justify-content:center; min-width:180px;">
-                            <div style="font-size:0.6rem; color:#94a3b8; letter-spacing:1px;">TOTAL ATTENDANCE</div>
-                            <div id="absBorong-detail-val" style="font-size:1.1rem; font-weight:700; color:#f97316;">-
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card-tools">
-                        <div class="slicer-group" data-target="absBorong">
-                            <button class="slicer-btn active"
-                                onclick="AnalysApp.setSlicer('absBorong', 'daily')">Daily</button>
-                            <button class="slicer-btn"
-                                onclick="AnalysApp.setSlicer('absBorong', 'weekly')">Weekly</button>
-                            <button class="slicer-btn"
-                                onclick="AnalysApp.setSlicer('absBorong', 'monthly')">Monthly</button>
-                        </div>
-                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-absBorong')"><i
-                                class="fas fa-expand"></i></button>
-                    </div>
+            <!-- ROW 3: SIDE BY SIDE -->
+            <div class="col-4 bento-card" style="min-height:300px;">
+                <div class="bento-header">
+                    <div class="card-title"><b>ABSENSI KULI BORONG</b><span>Attendance</span></div>
                 </div>
-                <div class="chart-body" style="display:flex; flex-direction:column;">
-                    <div style="flex-grow:1; min-height:0;">
-                        <canvas id="chart-absBorong"></canvas>
-                    </div>
-                    <!-- CONCLUSION -->
-                    <div id="absBorong-conclusion"
-                        style="margin-top:15px; padding:15px; background:rgba(0,0,0,0.3); border-left:4px solid #f97316; font-size:0.9rem; color:#e2e8f0; font-family:'Courier New', monospace; min-height:60px;">
-                        WAITING FOR SELECTION...
-                    </div>
+                <div class="chart-container-full">
+                    <canvas id="chart-absBorong"></canvas>
                 </div>
             </div>
 
-            <!-- 4. ABSENSI HARIAN (UPGRADED) -->
-            <div class="col-12 card" id="card-absHarian">
-                <div class="card-header">
-                    <div style="display:flex; align-items:center; gap:20px;">
-                        <div class="card-title">ABSENSI KULI HARIAN
-                            <small>Kehadiran per Tim</small>
-                        </div>
-
-                        <!-- MONTH SELECTOR -->
-                        <div style="background:#0f172a; border:1px solid #334155; padding:5px 10px; border-radius:8px;">
-                            <span style="font-size:0.7rem; color:#94a3b8; margin-right:5px;">SELECT MONTH:</span>
-                            <select id="absHarian-month-filter"
-                                onchange="AnalysApp.renderAbsensiHarian(AnalysApp.currentAbsHarianPeriod)"
-                                style="background:transparent; border:none; color:#f97316; font-family:'Orbitron'; outline:none; cursor:pointer;">
-                                <!-- Populated by JS -->
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- SUMMARY BOX -->
-                    <div
-                        style="display:flex; gap:15px; margin-left:20px; flex-grow:1; justify-content:flex-end; margin-right:20px;">
-                        <div id="absHarian-detail-box"
-                            style="background:rgba(255,255,255,0.05); border:1px solid #334155; padding:5px 15px; border-radius:8px; display:flex; flex-direction:column; justify-content:center; min-width:180px;">
-                            <div style="font-size:0.6rem; color:#94a3b8; letter-spacing:1px;">TOTAL ATTENDANCE</div>
-                            <div id="absHarian-detail-val" style="font-size:1.1rem; font-weight:700; color:#f97316;">-
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card-tools">
-                        <div class="slicer-group" data-target="absHarian">
-                            <button class="slicer-btn active"
-                                onclick="AnalysApp.setSlicer('absHarian', 'daily')">Daily</button>
-                            <button class="slicer-btn"
-                                onclick="AnalysApp.setSlicer('absHarian', 'weekly')">Weekly</button>
-                            <button class="slicer-btn"
-                                onclick="AnalysApp.setSlicer('absHarian', 'monthly')">Monthly</button>
-                        </div>
-                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-absHarian')"><i
-                                class="fas fa-expand"></i></button>
-                    </div>
+            <div class="col-4 bento-card" style="min-height:300px;">
+                <div class="bento-header">
+                    <div class="card-title"><b>ABSENSI KULI HARIAN</b><span>Attendance</span></div>
                 </div>
-                <div class="chart-body" style="display:flex; flex-direction:column;">
-                    <div style="flex-grow:1; min-height:0;">
-                        <canvas id="chart-absHarian"></canvas>
-                    </div>
-                    <!-- CONCLUSION -->
-                    <div id="absHarian-conclusion"
-                        style="margin-top:15px; padding:15px; background:rgba(0,0,0,0.3); border-left:4px solid #f97316; font-size:0.9rem; color:#e2e8f0; font-family:'Courier New', monospace; min-height:60px;">
-                        WAITING FOR SELECTION...
-                    </div>
+                <div class="chart-container-full">
+                    <canvas id="chart-absHarian"></canvas>
                 </div>
             </div>
 
-            <!-- 5. PRODUCTIVITY TEAM (UPGRADED) -->
-            <div class="col-8 card" id="card-prodTeam">
-                <div class="card-header">
-                    <div style="display:flex; align-items:center; gap:20px;">
-                        <div class="card-title">PRODUCTIVITY (KG/ORG)</div>
-
-                        <!-- MONTH SELECTOR -->
-                        <div style="background:#0f172a; border:1px solid #334155; padding:5px 10px; border-radius:8px;">
-                            <span style="font-size:0.7rem; color:#94a3b8; margin-right:5px;">SELECT MONTH:</span>
-                            <select id="prodTeam-month-filter"
-                                onchange="AnalysApp.renderProdTeam(AnalysApp.currentProdTeamPeriod)"
-                                style="background:transparent; border:none; color:#f97316; font-family:'Orbitron'; outline:none; cursor:pointer;">
-                                <!-- Populated by JS -->
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- SUMMARY BOX -->
-                    <div
-                        style="display:flex; gap:15px; margin-left:20px; flex-grow:1; justify-content:flex-end; margin-right:20px;">
-                        <div id="prodTeam-detail-box"
-                            style="background:rgba(255,255,255,0.05); border:1px solid #334155; padding:5px 15px; border-radius:8px; display:flex; flex-direction:column; justify-content:center; min-width:180px;">
-                            <div style="font-size:0.6rem; color:#94a3b8; letter-spacing:1px;">TOP PERFORMER</div>
-                            <div id="prodTeam-detail-val" style="font-size:1.1rem; font-weight:700; color:#f97316;">-
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card-tools">
-                        <div class="slicer-group" data-target="prodTeam">
-                            <button class="slicer-btn" onclick="AnalysApp.setSlicer('prodTeam', 'daily')">Daily</button>
-                            <button class="slicer-btn active"
-                                onclick="AnalysApp.setSlicer('prodTeam', 'weekly')">Weekly</button>
-                            <button class="slicer-btn"
-                                onclick="AnalysApp.setSlicer('prodTeam', 'monthly')">Monthly</button>
-                        </div>
-                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-prodTeam')"><i
-                                class="fas fa-expand"></i></button>
-                    </div>
+            <div class="col-4 bento-card" style="min-height:300px;">
+                <div class="bento-header">
+                    <div class="card-title"><b>PRODUCTIVITY RANK</b><span>KG / ORG</span></div>
                 </div>
-                <div class="card-body" style="display:flex; flex-direction:column; min-height:300px;">
-                    <div style="flex-grow:1; min-height:0;">
-                        <canvas id="chart-prodTeam"></canvas>
-                    </div>
-                    <!-- CONCLUSION -->
-                    <div id="prodTeam-conclusion"
-                        style="margin-top:15px; padding:15px; background:rgba(0,0,0,0.3); border-left:4px solid #f97316; font-size:0.9rem; color:#e2e8f0; font-family:'Courier New', monospace; min-height:60px;">
-                        WAITING FOR SELECTION...
-                    </div>
+                <div class="chart-container-full">
+                    <canvas id="chart-prodTeam"></canvas>
                 </div>
             </div>
 
-            <!-- 6. PROD MAN HOUR -->
-            <div class="col-4 card" id="card-prodManHour">
-                <div class="card-header">
-                    <div class="card-title">KULHAR MAN-HOUR</div>
-                    <div class="card-tools">
-                        <div class="slicer-group" data-target="prodManHour">
-                            <button class="slicer-btn" onclick="AnalysApp.setSlicer('prodManHour', 'daily')">D</button>
-                            <button class="slicer-btn active"
-                                onclick="AnalysApp.setSlicer('prodManHour', 'weekly')">W</button>
-                        </div>
-                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-prodManHour')"><i
-                                class="fas fa-expand"></i></button>
+            <!-- ROW 4: TRENDS -->
+            <div class="col-6 bento-card" style="min-height:280px;">
+                <div class="bento-header">
+                    <div class="card-title"><b>TREND FLOW: BONGKAR</b><span>Unloading Activity</span></div>
+                    <div class="slicer-group">
+                        <button class="cyber-select" onclick="AnalysApp.setSlicer('sumBongkar', 'weekly')">W</button>
+                        <button class="cyber-select" onclick="AnalysApp.setSlicer('sumBongkar', 'monthly')">M</button>
                     </div>
                 </div>
-                <div class="chart-body"><canvas id="chart-prodManHour"></canvas></div>
-            </div>
-
-            <!-- 7. SUMMARY GUDANG (TIME SERIES) -->
-            <div class="col-6 card" id="card-sumBongkar">
-                <div class="card-header">
-                    <div class="card-title">TRENDA BONGKAR <small>Total Activity over Time</small></div>
-                    <div class="card-tools">
-                        <div class="slicer-group" data-target="sumBongkar">
-                            <button class="slicer-btn active"
-                                onclick="AnalysApp.setSlicer('sumBongkar', 'daily')">D</button>
-                            <button class="slicer-btn" onclick="AnalysApp.setSlicer('sumBongkar', 'weekly')">W</button>
-                            <button class="slicer-btn" onclick="AnalysApp.setSlicer('sumBongkar', 'monthly')">M</button>
-                        </div>
-                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-sumBongkar')"><i
-                                class="fas fa-expand"></i></button>
-                    </div>
-                </div>
-                <div class="card-body" style="display:flex; flex-direction:column; min-height:300px;">
-                    <div style="flex-grow:1; min-height:0;"><canvas id="chart-sumBongkar"></canvas></div>
-                    <div id="sumBongkar-conclusion"
-                        style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.3); border-left:3px solid #f97316; font-size:0.8rem; color:#cbd5e1; min-height:40px;">
-                        WAITING...</div>
+                <div class="chart-container-full">
+                    <canvas id="chart-sumBongkar"></canvas>
                 </div>
             </div>
 
-            <div class="col-6 card" id="card-sumMuat">
-                <div class="card-header">
-                    <div class="card-title">TRENDA MUAT <small>Total Activity over Time</small></div>
-                    <div class="card-tools">
-                        <div class="slicer-group" data-target="sumMuat">
-                            <button class="slicer-btn active"
-                                onclick="AnalysApp.setSlicer('sumMuat', 'daily')">D</button>
-                            <button class="slicer-btn" onclick="AnalysApp.setSlicer('sumMuat', 'weekly')">W</button>
-                            <button class="slicer-btn" onclick="AnalysApp.setSlicer('sumMuat', 'monthly')">M</button>
-                        </div>
-                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-sumMuat')"><i
-                                class="fas fa-expand"></i></button>
+            <div class="col-6 bento-card" style="min-height:280px;">
+                <div class="bento-header">
+                    <div class="card-title"><b>TREND FLOW: MUAT</b><span>Loading Activity</span></div>
+                    <div class="slicer-group">
+                        <button class="cyber-select" onclick="AnalysApp.setSlicer('sumMuat', 'weekly')">W</button>
+                        <button class="cyber-select" onclick="AnalysApp.setSlicer('sumMuat', 'monthly')">M</button>
                     </div>
                 </div>
-                <div class="card-body" style="display:flex; flex-direction:column; min-height:300px;">
-                    <div style="flex-grow:1; min-height:0;"><canvas id="chart-sumMuat"></canvas></div>
-                    <div id="sumMuat-conclusion"
-                        style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.3); border-left:3px solid #3b82f6; font-size:0.8rem; color:#cbd5e1; min-height:40px;">
-                        WAITING...</div>
+                <div class="chart-container-full">
+                    <canvas id="chart-sumMuat"></canvas>
                 </div>
             </div>
 
-            <!-- 8. DURASI TUNGGU QC -->
-            <div class="col-12 card" id="card-tungguQC">
-                <div class="card-header">
-                    <div style="display:flex; align-items:center; gap:20px;">
-                        <div class="card-title">DURASI TUNGGU QC <small>Average Wait Time (Minutes)</small></div>
-                        <div style="background:#0f172a; border:1px solid #334155; padding:5px 10px; border-radius:8px;">
-                            <span style="font-size:0.7rem; color:#94a3b8; margin-right:5px;">SELECT MONTH:</span>
-                            <select id="tungguQC-month-filter"
-                                onchange="AnalysApp.renderTungguQC(AnalysApp.currentTungguQCPeriod)"
-                                style="background:transparent; border:none; color:#ef4444; font-family:'Orbitron'; outline:none; cursor:pointer;">
-                                <!-- Populated by JS -->
-                            </select>
-                        </div>
-                    </div>
-                    <div class="card-tools">
-                        <div class="slicer-group" data-target="tungguQC">
-                            <button class="slicer-btn active"
-                                onclick="AnalysApp.setSlicer('tungguQC', 'daily')">Daily</button>
-                            <button class="slicer-btn"
-                                onclick="AnalysApp.setSlicer('tungguQC', 'weekly')">Weekly</button>
-                            <button class="slicer-btn"
-                                onclick="AnalysApp.setSlicer('tungguQC', 'monthly')">Monthly</button>
-                        </div>
-                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-tungguQC')"><i
-                                class="fas fa-expand"></i></button>
-                    </div>
+            <!-- ROW 5: WAIT TIME -->
+            <div class="col-12 bento-card" style="min-height:280px;">
+                <div class="bento-header">
+                    <div class="card-title"><b>QC WAIT TIME ANALYSIS</b><span>Process Efficiency Impact</span></div>
                 </div>
-                <div class="card-body" style="display:flex; flex-direction:column; min-height:300px;">
-                    <div style="flex-grow:1; min-height:0;"><canvas id="chart-tungguQC"></canvas></div>
-                    <div id="tungguQC-conclusion"
-                        style="margin-top:15px; padding:15px; background:rgba(0,0,0,0.3); border-left:4px solid #ef4444; font-size:0.9rem; color:#cbd5e1; min-height:60px;">
-                        WAITING...</div>
+                <div class="chart-container-full">
+                    <canvas id="chart-tungguQC"></canvas>
                 </div>
             </div>
 
@@ -693,6 +614,12 @@
     <!-- SCRIPTS -->
     <script src="js/app-config.js"></script>
     <script src="js/rm-dt-analys.js"></script>
+
+    <!-- INLINE OVERRIDES TO FIX JS REFERENCES IF NEEDED -->
+    <script>
+        // Ensure globals that might be expected
+        window.AnalysApp = window.AnalysApp || {};
+    </script>
 </body>
 
 </html>

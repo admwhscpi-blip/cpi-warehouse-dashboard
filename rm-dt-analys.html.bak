@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM ANALYTICS // SMART WAREHOUSE</title>
+
+    <!-- FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CHART.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --primary: #f97316;
+            /* Orange Accent */
+            --secondary: #3b82f6;
+            /* Blue Accent */
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            /* Cleaner, modern font */
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* NAVBAR (Legacy Support) */
+        .navbar {
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+
+        .nav-links a.active,
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .btn-action {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            transition: 0.2s;
+        }
+
+        .btn-action:hover {
+            background: #ea580c;
+        }
+
+        /* CONTAINER */
+        .container {
+            padding: 30px 40px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .header-title h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            margin: 5px 0 0 0;
+            font-size: 0.9rem;
+        }
+
+        /* DASHBOARD GRID */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+            margin-top: 30px;
+        }
+
+        .col-12 {
+            grid-column: span 12;
+        }
+
+        .col-8 {
+            grid-column: span 8;
+        }
+
+        .col-6 {
+            grid-column: span 6;
+        }
+
+        .col-4 {
+            grid-column: span 4;
+        }
+
+        .col-3 {
+            grid-column: span 3;
+        }
+
+        /* CARD STYLE */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Card Header */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .card-title small {
+            color: var(--text-muted);
+            font-weight: 400;
+            font-size: 0.85rem;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Controls */
+        .card-tools {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .slicer-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .slicer-btn.active {
+            background: rgba(249, 115, 22, 0.1);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-fullscreen {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-fullscreen:hover {
+            color: #fff;
+        }
+
+        .chart-body {
+            position: relative;
+            flex-grow: 1;
+            min-height: 300px;
+            /* Taller default */
+        }
+
+        /* FULLSCREEN CARD MODE */
+        .card.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            border-radius: 0;
+            padding: 40px;
+        }
+
+        .card.fullscreen .chart-body {
+            height: 90vh;
+        }
+
+        /* SEARCH HUD */
+        .search-box {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 5px 20px;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            padding: 10px;
+            width: 100%;
+            outline: none;
+            font-family: 'Outfit';
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-val {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .stat-lbl {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="homepage-v1.html" class="logo-link">
+            <div class="logo-text">
+                <span class="brand-smart">SMART WAREHOUSE</span>
+                <span class="brand-v2">V2.0</span>
+            </div>
+        </a>
+
+        <div class="nav-links">
+            <!-- MENU DIKOSONGKAN -->
+        </div>
+
+        <div class="nav-actions">
+            <!-- TOMBOL DIHAPUS -->
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header-title" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <div>
+                <h1>RM OPERATIONAL ANALYTICS</h1>
+                <p>Real-time performance metrics & trend analysis.</p>
+            </div>
+            <div style="text-align:right;">
+                <div id="sync-status"
+                    style="font-family:'Orbitron', sans-serif; font-size:0.7rem; color:#10b981; font-weight:700;">●
+                    SYSTEM ONLINE</div>
+                <div id="last-update" style="font-size:0.6rem; color:#64748b; margin-top:5px;">LAST SYNC: NEVER</div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+
+            <!-- 1. OPERATIONAL DAILY RM-STORAGE (THE BIG CHART) -->
+            <div class="col-12 card" id="card-opsDaily">
+                <div class="card-header">
+                    <div style="display:flex; align-items:center; gap:20px;">
+                        <div class="card-title">OPERATIONAL DAILY RM-STORAGE
+                            <small>Total Volume: Muat + Bongkar + Stapel Process</small>
+                        </div>
+
+                        <!-- NEW: MONTH SELECTOR -->
+                        <div style="background:#0f172a; border:1px solid #334155; padding:5px 10px; border-radius:8px;">
+                            <span style="font-size:0.7rem; color:#94a3b8; margin-right:5px;">SELECT MONTH:</span>
+                            <select id="ops-month-filter"
+                                onchange="AnalysApp.renderOpsDaily(AnalysApp.currentOpsPeriod)"
+                                style="background:transparent; border:none; color:#f97316; font-family:'Orbitron'; outline:none; cursor:pointer;">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- SUMMARY BOXES -->
+                    <div
+                        style="display:flex; gap:15px; margin-left:20px; flex-grow:1; justify-content:flex-end; margin-right:20px;">
+                        <!-- BOX 1: DETAIL CLICK (Only one box now as requested) -->
+                        <div id="ops-detail-box"
+                            style="background:rgba(255,255,255,0.05); border:1px solid #334155; padding:5px 15px; border-radius:8px; display:flex; flex-direction:column; justify-content:center; min-width:180px;">
+                            <div style="font-size:0.6rem; color:#94a3b8; letter-spacing:1px;">SELECTED SUMMARY</div>
+                            <div id="ops-detail-val" style="font-size:1.1rem; font-weight:700; color:#f97316;">Click
+                                Chart to View</div>
+                        </div>
+                    </div>
+
+                    <div class="card-tools">
+                        <div class="slicer-group" data-target="opsDaily">
+                            <button class="slicer-btn active"
+                                onclick="AnalysApp.setSlicer('opsDaily', 'daily')">Daily</button>
+                            <button class="slicer-btn"
+                                onclick="AnalysApp.setSlicer('opsDaily', 'weekly')">Weekly</button>
+                            <button class="slicer-btn"
+                                onclick="AnalysApp.setSlicer('opsDaily', 'monthly')">Monthly</button>
+                        </div>
+                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-opsDaily')"><i
+                                class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+                <div class="chart-body" style="display:flex; flex-direction:column;">
+                    <div style="flex-grow:1; min-height:0;">
+                        <canvas id="chart-opsDaily"></canvas>
+                    </div>
+                    <!-- CONCLUSION TEXT FOOTER -->
+                    <div id="ops-conclusion"
+                        style="margin-top:15px; padding:15px; background:rgba(0,0,0,0.3); border-left:4px solid #f97316; font-size:0.9rem; color:#e2e8f0; font-family:'Courier New', monospace; min-height:60px;">
+                        WAITING FOR SELECTION...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. MATERIAL FINDER -->
+            <div class="col-4 card">
+                <div class="card-header">
+                    <div class="card-title">MATERIAL DURATION
+                        <small>Calculator Min/Avg/Max</small>
+                    </div>
+                </div>
+                <!-- Search Input & Button -->
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <div class="search-box">
+                        <i class="fas fa-search" style="color:var(--text-muted)"></i>
+                        <input type="text" id="material-search" placeholder="Type Material..."
+                            onkeyup="AnalysApp.renderMaterialList()">
+                    </div>
+                    <button class="btn-action" onclick="AnalysApp.calculateDurationStats()" style="white-space:nowrap;">
+                        <i class="fas fa-calculator"></i> CHECK
+                    </button>
+                </div>
+
+                <!-- Result Grid (Initially Hidden or Empty) -->
+                <div class="stat-grid" id="material-stats" style="display:none; transition:all 0.3s;">
+                    <div class="stat-item">
+                        <div class="stat-val" id="val-min" style="color:#10b981">-</div>
+                        <div class="stat-lbl">MIN (Mins)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val" id="val-avg" style="color:#f97316">-</div>
+                        <div class="stat-lbl">AVG (Mins)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-val" id="val-max" style="color:#ef4444">-</div>
+                        <div class="stat-lbl">MAX (Mins)</div>
+                    </div>
+                </div>
+
+                <!-- PROCESSED DATA LIST -->
+                <div
+                    style="margin-top:15px; border-top:1px solid #334155; padding-top:10px; flex-grow:1; display:flex; flex-direction:column; min-height:0;">
+                    <div
+                        style="font-size:0.75rem; color:#94a3b8; margin-bottom:5px; display:flex; justify-content:space-between;">
+                        <span>MATCHED DATA LIST</span>
+                        <!-- Outlier count hidden as requested, but ID kept if needed for debug -->
+                        <span id="outlier-count" style="display:none; color:#ef4444; font-weight:700;"></span>
+                    </div>
+                    <div id="material-matches"
+                        style="overflow-y:auto; font-size:0.8rem; color:#cbd5e1; display:flex; flex-direction:column; gap:2px; padding-right:5px; max-height:300px;">
+                        <div style="padding:10px; text-align:center; color:#64748b; font-style:italic;">Type to search
+                            materials...</div>
+                        <!-- JS Populated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. ABSENSI BORONG (UPGRADED) -->
+            <div class="col-12 card" id="card-absBorong">
+                <div class="card-header">
+                    <div style="display:flex; align-items:center; gap:20px;">
+                        <div class="card-title">ABSENSI KULI BORONG
+                            <small>Kehadiran per Tim</small>
+                        </div>
+
+                        <!-- MONTH SELECTOR -->
+                        <div style="background:#0f172a; border:1px solid #334155; padding:5px 10px; border-radius:8px;">
+                            <span style="font-size:0.7rem; color:#94a3b8; margin-right:5px;">SELECT MONTH:</span>
+                            <select id="absBorong-month-filter"
+                                onchange="AnalysApp.renderAbsensiBorong(AnalysApp.currentAbsBorongPeriod)"
+                                style="background:transparent; border:none; color:#f97316; font-family:'Orbitron'; outline:none; cursor:pointer;">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- SUMMARY BOX -->
+                    <div
+                        style="display:flex; gap:15px; margin-left:20px; flex-grow:1; justify-content:flex-end; margin-right:20px;">
+                        <div id="absBorong-detail-box"
+                            style="background:rgba(255,255,255,0.05); border:1px solid #334155; padding:5px 15px; border-radius:8px; display:flex; flex-direction:column; justify-content:center; min-width:180px;">
+                            <div style="font-size:0.6rem; color:#94a3b8; letter-spacing:1px;">TOTAL ATTENDANCE</div>
+                            <div id="absBorong-detail-val" style="font-size:1.1rem; font-weight:700; color:#f97316;">-
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-tools">
+                        <div class="slicer-group" data-target="absBorong">
+                            <button class="slicer-btn active"
+                                onclick="AnalysApp.setSlicer('absBorong', 'daily')">Daily</button>
+                            <button class="slicer-btn"
+                                onclick="AnalysApp.setSlicer('absBorong', 'weekly')">Weekly</button>
+                            <button class="slicer-btn"
+                                onclick="AnalysApp.setSlicer('absBorong', 'monthly')">Monthly</button>
+                        </div>
+                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-absBorong')"><i
+                                class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+                <div class="chart-body" style="display:flex; flex-direction:column;">
+                    <div style="flex-grow:1; min-height:0;">
+                        <canvas id="chart-absBorong"></canvas>
+                    </div>
+                    <!-- CONCLUSION -->
+                    <div id="absBorong-conclusion"
+                        style="margin-top:15px; padding:15px; background:rgba(0,0,0,0.3); border-left:4px solid #f97316; font-size:0.9rem; color:#e2e8f0; font-family:'Courier New', monospace; min-height:60px;">
+                        WAITING FOR SELECTION...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. ABSENSI HARIAN (UPGRADED) -->
+            <div class="col-12 card" id="card-absHarian">
+                <div class="card-header">
+                    <div style="display:flex; align-items:center; gap:20px;">
+                        <div class="card-title">ABSENSI KULI HARIAN
+                            <small>Kehadiran per Tim</small>
+                        </div>
+
+                        <!-- MONTH SELECTOR -->
+                        <div style="background:#0f172a; border:1px solid #334155; padding:5px 10px; border-radius:8px;">
+                            <span style="font-size:0.7rem; color:#94a3b8; margin-right:5px;">SELECT MONTH:</span>
+                            <select id="absHarian-month-filter"
+                                onchange="AnalysApp.renderAbsensiHarian(AnalysApp.currentAbsHarianPeriod)"
+                                style="background:transparent; border:none; color:#f97316; font-family:'Orbitron'; outline:none; cursor:pointer;">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- SUMMARY BOX -->
+                    <div
+                        style="display:flex; gap:15px; margin-left:20px; flex-grow:1; justify-content:flex-end; margin-right:20px;">
+                        <div id="absHarian-detail-box"
+                            style="background:rgba(255,255,255,0.05); border:1px solid #334155; padding:5px 15px; border-radius:8px; display:flex; flex-direction:column; justify-content:center; min-width:180px;">
+                            <div style="font-size:0.6rem; color:#94a3b8; letter-spacing:1px;">TOTAL ATTENDANCE</div>
+                            <div id="absHarian-detail-val" style="font-size:1.1rem; font-weight:700; color:#f97316;">-
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-tools">
+                        <div class="slicer-group" data-target="absHarian">
+                            <button class="slicer-btn active"
+                                onclick="AnalysApp.setSlicer('absHarian', 'daily')">Daily</button>
+                            <button class="slicer-btn"
+                                onclick="AnalysApp.setSlicer('absHarian', 'weekly')">Weekly</button>
+                            <button class="slicer-btn"
+                                onclick="AnalysApp.setSlicer('absHarian', 'monthly')">Monthly</button>
+                        </div>
+                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-absHarian')"><i
+                                class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+                <div class="chart-body" style="display:flex; flex-direction:column;">
+                    <div style="flex-grow:1; min-height:0;">
+                        <canvas id="chart-absHarian"></canvas>
+                    </div>
+                    <!-- CONCLUSION -->
+                    <div id="absHarian-conclusion"
+                        style="margin-top:15px; padding:15px; background:rgba(0,0,0,0.3); border-left:4px solid #f97316; font-size:0.9rem; color:#e2e8f0; font-family:'Courier New', monospace; min-height:60px;">
+                        WAITING FOR SELECTION...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. PRODUCTIVITY TEAM (UPGRADED) -->
+            <div class="col-8 card" id="card-prodTeam">
+                <div class="card-header">
+                    <div style="display:flex; align-items:center; gap:20px;">
+                        <div class="card-title">PRODUCTIVITY (KG/ORG)</div>
+
+                        <!-- MONTH SELECTOR -->
+                        <div style="background:#0f172a; border:1px solid #334155; padding:5px 10px; border-radius:8px;">
+                            <span style="font-size:0.7rem; color:#94a3b8; margin-right:5px;">SELECT MONTH:</span>
+                            <select id="prodTeam-month-filter"
+                                onchange="AnalysApp.renderProdTeam(AnalysApp.currentProdTeamPeriod)"
+                                style="background:transparent; border:none; color:#f97316; font-family:'Orbitron'; outline:none; cursor:pointer;">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- SUMMARY BOX -->
+                    <div
+                        style="display:flex; gap:15px; margin-left:20px; flex-grow:1; justify-content:flex-end; margin-right:20px;">
+                        <div id="prodTeam-detail-box"
+                            style="background:rgba(255,255,255,0.05); border:1px solid #334155; padding:5px 15px; border-radius:8px; display:flex; flex-direction:column; justify-content:center; min-width:180px;">
+                            <div style="font-size:0.6rem; color:#94a3b8; letter-spacing:1px;">TOP PERFORMER</div>
+                            <div id="prodTeam-detail-val" style="font-size:1.1rem; font-weight:700; color:#f97316;">-
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-tools">
+                        <div class="slicer-group" data-target="prodTeam">
+                            <button class="slicer-btn" onclick="AnalysApp.setSlicer('prodTeam', 'daily')">Daily</button>
+                            <button class="slicer-btn active"
+                                onclick="AnalysApp.setSlicer('prodTeam', 'weekly')">Weekly</button>
+                            <button class="slicer-btn"
+                                onclick="AnalysApp.setSlicer('prodTeam', 'monthly')">Monthly</button>
+                        </div>
+                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-prodTeam')"><i
+                                class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+                <div class="card-body" style="display:flex; flex-direction:column; min-height:300px;">
+                    <div style="flex-grow:1; min-height:0;">
+                        <canvas id="chart-prodTeam"></canvas>
+                    </div>
+                    <!-- CONCLUSION -->
+                    <div id="prodTeam-conclusion"
+                        style="margin-top:15px; padding:15px; background:rgba(0,0,0,0.3); border-left:4px solid #f97316; font-size:0.9rem; color:#e2e8f0; font-family:'Courier New', monospace; min-height:60px;">
+                        WAITING FOR SELECTION...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. PROD MAN HOUR -->
+            <div class="col-4 card" id="card-prodManHour">
+                <div class="card-header">
+                    <div class="card-title">KULHAR MAN-HOUR</div>
+                    <div class="card-tools">
+                        <div class="slicer-group" data-target="prodManHour">
+                            <button class="slicer-btn" onclick="AnalysApp.setSlicer('prodManHour', 'daily')">D</button>
+                            <button class="slicer-btn active"
+                                onclick="AnalysApp.setSlicer('prodManHour', 'weekly')">W</button>
+                        </div>
+                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-prodManHour')"><i
+                                class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+                <div class="chart-body"><canvas id="chart-prodManHour"></canvas></div>
+            </div>
+
+            <!-- 7. SUMMARY GUDANG (TIME SERIES) -->
+            <div class="col-6 card" id="card-sumBongkar">
+                <div class="card-header">
+                    <div class="card-title">TRENDA BONGKAR <small>Total Activity over Time</small></div>
+                    <div class="card-tools">
+                        <div class="slicer-group" data-target="sumBongkar">
+                            <button class="slicer-btn active"
+                                onclick="AnalysApp.setSlicer('sumBongkar', 'daily')">D</button>
+                            <button class="slicer-btn" onclick="AnalysApp.setSlicer('sumBongkar', 'weekly')">W</button>
+                            <button class="slicer-btn" onclick="AnalysApp.setSlicer('sumBongkar', 'monthly')">M</button>
+                        </div>
+                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-sumBongkar')"><i
+                                class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+                <div class="card-body" style="display:flex; flex-direction:column; min-height:300px;">
+                    <div style="flex-grow:1; min-height:0;"><canvas id="chart-sumBongkar"></canvas></div>
+                    <div id="sumBongkar-conclusion"
+                        style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.3); border-left:3px solid #f97316; font-size:0.8rem; color:#cbd5e1; min-height:40px;">
+                        WAITING...</div>
+                </div>
+            </div>
+
+            <div class="col-6 card" id="card-sumMuat">
+                <div class="card-header">
+                    <div class="card-title">TRENDA MUAT <small>Total Activity over Time</small></div>
+                    <div class="card-tools">
+                        <div class="slicer-group" data-target="sumMuat">
+                            <button class="slicer-btn active"
+                                onclick="AnalysApp.setSlicer('sumMuat', 'daily')">D</button>
+                            <button class="slicer-btn" onclick="AnalysApp.setSlicer('sumMuat', 'weekly')">W</button>
+                            <button class="slicer-btn" onclick="AnalysApp.setSlicer('sumMuat', 'monthly')">M</button>
+                        </div>
+                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-sumMuat')"><i
+                                class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+                <div class="card-body" style="display:flex; flex-direction:column; min-height:300px;">
+                    <div style="flex-grow:1; min-height:0;"><canvas id="chart-sumMuat"></canvas></div>
+                    <div id="sumMuat-conclusion"
+                        style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.3); border-left:3px solid #3b82f6; font-size:0.8rem; color:#cbd5e1; min-height:40px;">
+                        WAITING...</div>
+                </div>
+            </div>
+
+            <!-- 8. DURASI TUNGGU QC -->
+            <div class="col-12 card" id="card-tungguQC">
+                <div class="card-header">
+                    <div style="display:flex; align-items:center; gap:20px;">
+                        <div class="card-title">DURASI TUNGGU QC <small>Average Wait Time (Minutes)</small></div>
+                        <div style="background:#0f172a; border:1px solid #334155; padding:5px 10px; border-radius:8px;">
+                            <span style="font-size:0.7rem; color:#94a3b8; margin-right:5px;">SELECT MONTH:</span>
+                            <select id="tungguQC-month-filter"
+                                onchange="AnalysApp.renderTungguQC(AnalysApp.currentTungguQCPeriod)"
+                                style="background:transparent; border:none; color:#ef4444; font-family:'Orbitron'; outline:none; cursor:pointer;">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-tools">
+                        <div class="slicer-group" data-target="tungguQC">
+                            <button class="slicer-btn active"
+                                onclick="AnalysApp.setSlicer('tungguQC', 'daily')">Daily</button>
+                            <button class="slicer-btn"
+                                onclick="AnalysApp.setSlicer('tungguQC', 'weekly')">Weekly</button>
+                            <button class="slicer-btn"
+                                onclick="AnalysApp.setSlicer('tungguQC', 'monthly')">Monthly</button>
+                        </div>
+                        <button class="btn-fullscreen" onclick="AnalysApp.toggleCardFullscreen('card-tungguQC')"><i
+                                class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+                <div class="card-body" style="display:flex; flex-direction:column; min-height:300px;">
+                    <div style="flex-grow:1; min-height:0;"><canvas id="chart-tungguQC"></canvas></div>
+                    <div id="tungguQC-conclusion"
+                        style="margin-top:15px; padding:15px; background:rgba(0,0,0,0.3); border-left:4px solid #ef4444; font-size:0.9rem; color:#cbd5e1; min-height:60px;">
+                        WAITING...</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="js/app-config.js"></script>
+    <script src="js/rm-dt-analys.js"></script>
+</body>
+
+</html>
