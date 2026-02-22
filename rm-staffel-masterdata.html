@@ -563,13 +563,15 @@
                     return;
                 }
 
-                // Ambil data terakhir untuk statistik
-                const lastRow = data[data.length - 1];
-                const stockReady = parseFloat(lastRow.beginningStock) || 0;
-                // PERBAIKAN: Ambil dari PEMAKAIAN BELUM STAPEL (kolom F, G, H)
-                const belumStapelBadrun = parseFloat(lastRow.pemakaianBadrun) || 0;
-                const belumStapelKartono = parseFloat(lastRow.pemakaianKartono) || 0;
-                const belumStapelKulhar = parseFloat(lastRow.pemakaianKulhar) || 0;
+                // Ambil data terakhir untuk statistik (S sebelum dibalik)
+                const latestRow = data[data.length - 1];
+                const stockReady = parseFloat(latestRow.beginningStock) || 0;
+                const belumStapelBadrun = parseFloat(latestRow.pemakaianBadrun) || 0;
+                const belumStapelKartono = parseFloat(latestRow.pemakaianKartono) || 0;
+                const belumStapelKulhar = parseFloat(latestRow.pemakaianKulhar) || 0;
+
+                // BALIK DATA: Tanggal terbaru di atas
+                data.reverse();
 
                 // Isi tabel dengan data
                 data.forEach((row) => {
@@ -577,7 +579,8 @@
 
                     // Helper function untuk format angka
                     const formatNum = (val) => {
-                        if (!val || val === 0) return '-';
+                        if (val === undefined || val === null || val === '') return '-';
+                        if (parseFloat(val) === 0) return '-';
                         return parseFloat(val).toLocaleString('id-ID');
                     };
 
