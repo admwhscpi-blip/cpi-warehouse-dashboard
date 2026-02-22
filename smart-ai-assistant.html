@@ -149,25 +149,26 @@
         .chat-bubble {
             max-width: 85%;
             margin-bottom: 25px;
-            padding: 18px;
-            border-radius: 16px;
-            font-size: 0.95rem;
+            padding: 20px;
+            border-radius: 20px;
+            font-size: 1rem;
             position: relative;
             line-height: 1.6;
-            animation: bubbleLux 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(12px);
+            animation: bubbleLux 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
         }
 
         @keyframes bubbleLux {
             0% {
-                transform: translateY(20px) scale(0.95);
-                opacity: 0;
+                transform: translateY(30px) opacity(0);
+                filter: blur(10px);
             }
 
             100% {
-                transform: translateY(0) scale(1);
-                opacity: 1;
+                transform: translateY(0) opacity(1);
+                filter: blur(0);
             }
         }
 
@@ -457,11 +458,10 @@
 
     <header>
         <div class="brand">
-            <i class="fas fa-robot"></i>
             <div>
-                <h1>ADMIN PUSAT</h1>
-                <div style="font-size: 0.55rem; color: var(--neon-cyan); letter-spacing: 2px;">SMART RESEARCH ENGINE
-                    V3.0</div>
+                <h1 style="font-size: 1.5rem;">DATA NAVIGATOR</h1>
+                <div style="font-size: 0.65rem; color: var(--neon-cyan); letter-spacing: 3px; font-weight: 700;">ADMIN
+                    A1 - SMART SEARCH ENGINE V4.0</div>
             </div>
         </div>
         <div class="header-actions">
@@ -481,53 +481,18 @@
 
     <main id="chatWindow">
         <div class="chat-bubble ai-bubble">
-            <span class="label-msg ai-label">ADMIN PUSAT</span>
-            Selamat datang, <strong>Pak Bos</strong>! Saya <strong>ADMIN PUSAT</strong>, otak di balik struktur
-            <strong>SMART-WAREHOUSE V2.0</strong>.
+            <span class="label-msg ai-label">ADMIN A1 - NAVIGATOR</span>
+            Selamat datang, **Pak Bos**! Saya **ADMIN A1**, Navigator Data Anda.
             <br><br>
-            Saya telah memetakan seluruh koordinat sistem: dari Jurnal SAP (MB1A/B/C), Alur 6-Tahap Intake 71, hingga
-            detail Teknis Luprosil.
-            Apapun data yang Pak Bos butuhkan, saya siap menyajikannya dengan presisi mutlak. <strong>GGMU!</strong> 🔥
+            Tugas saya adalah memandu Anda menemukan koordinat data rill di seluruh ekosistem **SMART-WAREHOUSE V2.0**.
+            <br><br>
+            Cukup ketik data yang Anda cari (contoh: *"Limestone"*, *"BBM"*, *"Lembur"*), dan saya akan tunjukkan di
+            menu mana saja data tersebut berada.
+            **GGMU!** 🔥
         </div>
     </main>
 
-    <div class="info-panel">
-        <div class="glass-panel">
-            <div class="panel-title">
-                <i class="fas fa-microchip"></i>
-                BRAIN STATUS
-            </div>
-            <div class="data-point">
-                <span class="data-value" id="currentModelDisplay">LOCAL CORE</span>
-            </div>
-            <div class="data-point">
-                <span class="data-label">Engine Status:</span>
-                <span class="data-value" id="apiKeyStatus" style="color: #22c55e;">Autonomous</span>
-            </div>
-        </div>
-
-        <div class="glass-panel">
-            <div class="panel-title">
-                <i class="fas fa-database"></i>
-                KNOWLEDGE CONTEXT
-            </div>
-            <div class="data-point">
-                <span class="data-label">Stock Data:</span>
-                <span class="data-value">SECURED</span>
-            </div>
-            <div class="data-point">
-                <span class="data-label">Downtime:</span>
-                <span class="data-value">SYNCED</span>
-            </div>
-            <div class="data-point">
-                <span class="data-label">Last Sync:</span>
-                <span class="data-value" id="lastSync">...</span>
-            </div>
-            <button onclick="syncKnowledge()"
-                style="width:100%; margin-top:10px; padding:5px; border-radius:4px; border:1px solid var(--neon-cyan); background:rgba(6, 182, 212, 0.1); color:var(--neon-cyan); font-family:'Orbitron'; font-size:0.6rem; cursor:pointer;">RE-SYNC
-                DATA</button>
-        </div>
-    </div>
+    <!-- LEGACY INFO PANEL REMOVED FOR CLEAN COMMAND CENTER UI -->
 
     <div class="input-area">
         <div class="input-group">
@@ -753,15 +718,8 @@ ${sensitiveContext}
 
         // INITIAL CHECK
         function updateStatus() {
-            if (API_KEY) {
-                apiKeyStatus.innerText = "Connected";
-                apiKeyStatus.style.color = "#22c55e";
-            } else {
-                apiKeyStatus.innerText = "Disconnected";
-                apiKeyStatus.style.color = "var(--neon-red)";
-            }
-            document.getElementById('modelSelect').value = SELECTED_MODEL;
-            document.getElementById('currentModelDisplay').innerText = SELECTED_MODEL.toUpperCase().replace(/-/g, ' ');
+            // Updated for Data Navigator V4.0
+            console.log("NAVIGATOR ENGINE STATUS: ONLINE");
         }
 
         function openConfig() {
@@ -871,219 +829,94 @@ ${sensitiveContext}
             }
         }
 
-        // === SEMANTIC LIBRARIAN V7.0 (INTENT MAPPING & DATE RESOLVER) ===
-        const SemanticLibrarian = {
-            keywords: {
-                SBM: ["SBM", "SOYA", "SB M", "LUPO", "LUPROSIL"],
-                RICE_BRAN: ["RICE BRAN", "401200", "RB", "BEKATUL", "RICEBRAN"],
-                PKM: ["PKM", "PALM", "INTI SAWIT"],
-                STOCK: ["STOK", "STOCK", "ADA BERAPA", "SISA"],
-                UNLOADING: ["BONGKAR", "MASUK", "DATANG", "VESSEL", "KAPAL", "TRUCK"],
-                DOWNTIME: ["MATI", "RUSAK", "DOWNTIME", "KENDALA", "TROUBLE"],
-                SAFETY: ["SAFETY", "APD", "KECELAKAAN", "AMAN"]
-            },
+        // === SMART WAREHOUSE KNOWLEDGE GRAPH (V5.0) ===
+        const SYSTEM_MAP = [
+            { category: "RM STORAGE (GUDANG RM)", menu: "RM-STOCK", path: "rm-dashboard.html", keywords: ["STOK", "STOCK", "GUDANG", "SBM", "RICE BRAN", "PKM", "LIMESTONE", "LUPROSIL", "JUMLAH"] },
+            { category: "RM STORAGE (GUDANG RM)", menu: "RM-AGING", path: "rm-aging.html", keywords: ["AGING", "UMUR", "LAMA", "STOK LAMA", "FIFO"] },
+            { category: "RM STORAGE (GUDANG RM)", menu: "RM-SIMULASI/PREDIKTIF", path: "rm-simulation.html", keywords: ["SIMULASI", "PREDIKSI", "KAPAN HABIS", "ESTIMASI"] },
+            { category: "RM STORAGE (GUDANG RM)", menu: "RM-SIMULASI/HISTORIS", path: "rm-history.html", keywords: ["HISTORY", "MASA LALU", "TREN STOK"] },
+            { category: "RM STORAGE (GUDANG RM)", menu: "RM-STAFFEL/MASTER DATA", path: "rm-staffel-masterdata.html", keywords: ["STAFFEL", "BIAYA GUDANG", "TARIF"] },
+            { category: "RM STORAGE (GUDANG RM)", menu: "RM-LANGSIR/CONTROLLING", path: "rm-langsiran.html", keywords: ["LANGSIR", "PINDAH GUDANG", "TRANSFER"] },
+            { category: "RM STORAGE (GUDANG RM)", menu: "RM-LANGSIR/GPS TRACKER", path: "rm-transport-tracker.html", keywords: ["GPS", "TRACKER", "TRACKING", "POSISI TRUK"] },
+            { category: "RM STORAGE (GUDANG RM)", menu: "BIN SWEEPING", path: "bin-sweeping-status.html", keywords: ["SWEEPING", "SAPU", "BIN", "SISA BIN"] },
+            { category: "RM STORAGE (GUDANG RM)", menu: "RM-KADAR AIR", path: "rm-ka-analys.html", keywords: ["KA", "KADAR AIR", "MOISTURE", "LAB", "KUALITAS"] },
+            { category: "RM STORAGE (GUDANG RM)", menu: "RM-SEALMAP", path: "rm-sealmap.html", keywords: ["SEAL", "SEGEL", "MAP", "PETA SEGEL"] },
 
-            mapIntent: function (query) {
+            { category: "CPO STORAGE", menu: "CPO-STOCK", path: "cpo-dashboard.html", keywords: ["CPO", "MINYAK", "TANGKI", "STOK CPO"] },
+
+            { category: "BKK STORAGE", menu: "BKK-STOCK", path: "bkk-dashboard.html", keywords: ["BKK", "BUNGKIL", "STOK BKK"] },
+
+            { category: "HUB SYSTEM", menu: "MATERIAL AUDIT", path: "material-audit-history.html", keywords: ["AUDIT", "CEK STOK", "OPNAME"] },
+            { category: "HUB SYSTEM", menu: "STRUKTUR ORGANISASI", path: "about-structure.html", keywords: ["STRUKTUR", "ORANG", "JABATAN", "ORGANISASI"] },
+            { category: "HUB SYSTEM", menu: "BAP4A", path: "bap4a.html", keywords: ["BAP4A", "ADMINISTRASI", "FORM"] },
+            { category: "HUB SYSTEM", menu: "OPERASIONAL/EKSPEDISI", path: "op-ekspedisi-masterdata.html", keywords: ["EKSPEDISI", "TRANSPORT", "VENDOR"] },
+            { category: "HUB SYSTEM", menu: "OPERASIONAL/BBM SOLAR", path: "op-kontrol-bbm-masterdata.html", keywords: ["BBM", "SOLAR", "BAHAN BAKAR", "KONSUMSI"] },
+            { category: "HUB SYSTEM", menu: "INPUT DOWNTIME (APP)", path: "entry-downtime.html", keywords: ["INPUT DOWNTIME", "FORM DOWNTIME", "MASUKKAN DATA RUSAK"] },
+
+            { category: "HUMAN RESOURCE", menu: "KONTROL ABSEN", path: "hr-absen.html", keywords: ["ABSEN", "KEHADIRAN", "MASUK KERJA"] },
+            { category: "HUMAN RESOURCE", menu: "KONTROL CUTI", path: "hr-cuti-dashboard.html", keywords: ["CUTI", "IZIN", "LIBUR"] },
+            { category: "HUMAN RESOURCE", menu: "KONTROL LEMBURAN", path: "hr-lembur-dashboard.html", keywords: ["LEMBUR", "OVERTIME", "OT", "GAJI TAMBAHAN"] },
+            { category: "HUMAN RESOURCE", menu: "PAYSLIP ESTIMATOR", path: "hr-payslip.html", keywords: ["GAJI", "PAYSLIP", "DAPAT BERAPA"] },
+
+            { category: "UNLOADING ANALYTICS", menu: "BKK-DOWNTIME", path: "bkk-downtime.html", keywords: ["DOWNTIME BKK", "BKK RUSAK", "KENDALA BKK"] },
+            { category: "UNLOADING ANALYTICS", menu: "RM-DOWNTIME", path: "rm-downtime.html", keywords: ["DOWNTIME RM", "INTAKE RUSAK", "KENDALA INTAKE"] },
+
+            { category: "OUTSTANDING", menu: "OUTSTANDING RM", path: "outstanding-rm.html", keywords: ["OUTSTANDING", "BELUM BONGKAR", "ANTRIAN"] },
+
+            { category: "KNOWLEDGE CENTER", menu: "SOP & WI CENTER", path: "hub-sop-wi.html", keywords: ["SOP", "WI", "PROSEDUR", "CARA KERJA", "INSTRUKSI"] }
+        ];
+
+        const DataNavigator = {
+            search: function (query) {
                 const up = query.toUpperCase();
-                let intents = [];
-                for (let topic in this.keywords) {
-                    if (this.keywords[topic].some(k => up.includes(k))) intents.push(topic);
-                }
-                return intents.length > 0 ? intents.join(", ") : "GENERAL QUERY";
+                const matches = SYSTEM_MAP.filter(m => {
+                    return m.keywords.some(k => up.includes(k)) ||
+                        m.menu.toUpperCase().includes(up) ||
+                        m.category.toUpperCase().includes(up);
+                });
+
+                if (matches.length === 0) return null;
+                return matches;
             },
 
-            resolveDate: function (query) {
-                const now = new Date();
-                const up = query.toUpperCase();
+            formatResponse: function (query, matches) {
+                let res = `### HASIL NAVIGASI UNTUK: "${query.toUpperCase()}"\n\n`;
+                res += `Data yang Pak Bos cari ditemukan di modul berikut:\n\n`;
 
-                if (up.includes("KEMARIN") || up.includes("KMRN")) {
-                    const d = new Date(now); d.setDate(d.getDate() - 1);
-                    return `TARGET DATE: ${d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}`;
-                }
-                if (up.includes("3 HARI")) {
-                    return `RANGE: 3 Hari Terakhir (Sejak 14 Feb 2026)`;
-                }
-                if (up.includes("TADI") || up.includes("HARI INI")) {
-                    return `TARGET DATE: Today (${now.toLocaleDateString('id-ID')})`;
-                }
-                return "TIMEFRAME: Latest Data Available";
-            }
-        };
+                matches.forEach((m, i) => {
+                    res += `${i + 1}. **${m.menu}** (Kategori: *${m.category}*)\n`;
+                    res += `   > [KLIK DISINI UNTUK MENUJU KE ${m.menu}](${m.path})\n\n`;
+                });
 
-        // === LOCAL ADMIN PUSAT ENGINE (REPLACING CLOUD AI) ===
-        const LocalAdminPusat = {
-            processQuery: function (query) {
-                const intent = SemanticLibrarian.mapIntent(query);
-                const time = SemanticLibrarian.resolveDate(query);
-                const upQuery = query.toUpperCase();
-                let results = [`**DIAGNOSA MANUAL:** Topic: ${intent} | ${time}`];
-
-                // 1. SAP TRANSACTIONS
-                if (upQuery.includes("MB1B") || upQuery.includes("TRANSFER")) {
-                    results.push("**INFORMASI SAP MB1B (MOVEMENT 311):**\nDigunakan untuk **Transfer Stok Internal** (SLoc to SLoc). Contoh: Pemindahan Luprosil dari `RM01` ke `TANK` penampungan. Wajib cek saldo asal sebelum posting! GGMU!");
-                }
-                if (upQuery.includes("MB1A") || upQuery.includes("ISSUE") || upQuery.includes("KELUAR")) {
-                    results.push("**INFORMASI SAP MB1A (MOVEMENT 201):**\nDigunakan untuk **Goods Issue** ke Departemen lain (Maintenance/Produksi). Membutuhkan Cost Center. \n- GL: `607230`\n- Sample CC: `189909` (Maintenance).");
-                }
-                if (upQuery.includes("MB1C") || upQuery.includes("RECEIPT") || upQuery.includes("MASUK")) {
-                    results.push("**INFORMASI SAP MB1C (MOVEMENT 919):**\nDigunakan untuk **Manual Receipt**. Sering digunakan untuk input hasil *Bin Sweeping* dengan kode material NS berakhiran **400** (Contoh: `940.08.0001`).");
-                }
-
-                // 2. OPERATIONAL FLOWS
-                if (upQuery.includes("INTAKE") || upQuery.includes("71")) {
-                    results.push("**ALUR 6-TAHAP INTAKE 71:**\n1. **Manuver Awal**\n2. **Wait QC** (Sampling)\n3. **Bongkar 1**\n4. **Hold QC** (Re-check)\n5. **Bongkar 2**\n6. **Manuver Akhir**\nData rill diproses secara otomatis di dashboard Command Center.");
-                }
-                if (upQuery.includes("SWEEPING") || upQuery.includes("BIN")) {
-                    results.push("**BIN SWEEPING LOGIC:**\n- Mengutamakan prinsip FIFO untuk hasil ayak.\n- Material NS wajib menggunakan kode akhiran **400**.\n- Lokasi utama: Bin BS.");
-                }
-
-                // 3. UI OBSERVABILITY (TYPO)
-                if (upQuery.includes("TYPO") || upQuery.includes("MAMPU") || upQuery.includes("CEK UI")) {
-                    results.push("**LAPORAN OBSERVASI UI:**\nAdmin Pusat mendeteksi typo pada sub-menu: **'ANALYSTIC'** (Harusnya *Analytic* atau *Analytics*) di menu RM Kadar Air dan Bin Sweeping. Mohon koreksi pada iterasi berikutnya, Pak Bos!");
-                }
-
-                // 4. STOCK DATA EXTRACTION (REAL DATA)
-                if (intent.includes("STOCK") || intent.includes("UNLOADING") || upQuery.includes("BERAPA")) {
-                    const matches = this.findAllMaterialsInContext(upQuery);
-
-                    if (matches.length === 1) {
-                        results.push(this.formatStockResponse(matches[0]));
-                    } else if (matches.length > 1) {
-                        let suggestionMsg = "### BEBERAPA KANDIDAT MATERIAL DITEMUKAN:\n";
-                        suggestionMsg += "Mungkin maksud Pak Bos salah satu dari ini?:\n";
-                        matches.forEach((m, i) => {
-                            suggestionMsg += `${i + 1}. **${m.name}** (${m.code})\n`;
-                        });
-                        suggestionMsg += "\nSilakan ketik nama lengkap atau kodenya untuk data presisi.";
-                        results.push(suggestionMsg);
-                    } else {
-                        // SUGGEST BASED ON PARTIAL MATCH IF NO EXACT INTENT MATCH
-                        const partials = this.findPartialMatches(upQuery);
-                        if (partials.length > 0) {
-                            let partialMsg = "### SARAN ADMIN PUSAT:\n";
-                            partialMsg += "Saya tidak menemukan data rill untuk kata kunci tersebut, tapi mungkin maksud Pak Bos:\n";
-                            partials.forEach((p, i) => {
-                                partialMsg += `${i + 1}. **${p.name}** (${p.code})\n`;
-                            });
-                            results.push(partialMsg);
-                        } else {
-                            results.push("Izin Pak Bos, sebutkan nama materialnya secara spesifik (misal: SBM, Rice Bran, PKM). Saya akan tarik data rill dari database pusat.");
-                        }
-                    }
-                }
-
-                // Default if no patterns matched
-                if (results.length === 0) {
-                    return "Maaf Pak Bos, query tersebut belum masuk dalam database fundamental Admin Pusat. \n\nSaya merekomendasikan cek menu **SOP/WI CENTER** atau tanya spesifik tentang **SAP (MB1A/B/C)**, **Stok Material**, atau **Alur Intake**. GGMU!";
-                }
-
-                return results.join("\n\n---\n\n");
-            },
-
-            findAllMaterialsInContext: function (query) {
-                let found = [];
-                const up = query.toUpperCase();
-
-                // DATA RILL DARI API (Dynamic)
-                if (window.App && App.data && App.data.materials) {
-                    App.data.materials.forEach(mat => {
-                        const name = mat.name.toUpperCase();
-                        // Matching Eksak atau Nama mengandung Kata Kunci
-                        if (up.includes(name) || (mat.code && up.includes(mat.code))) {
-                            found.push({ name: mat.name, code: mat.code || 'N/A' });
-                        }
-                    });
-                }
-
-                // FALLBACK KE CONFIG (Static)
-                for (let code in CONFIG.MATERIAL_CODES) {
-                    const name = CONFIG.MATERIAL_CODES[code].toUpperCase();
-                    if (up.includes(name) || up.includes(code)) {
-                        // Avoid duplicates if already found in App.data
-                        if (!found.some(f => f.name.toUpperCase() === name)) {
-                            found.push({ name: name, code: code });
-                        }
-                    }
-                }
-                return found;
-            },
-
-            findPartialMatches: function (query) {
-                let suggestions = [];
-                const up = query.toUpperCase();
-                const words = up.split(' ').filter(w => w.length > 2);
-
-                if (words.length === 0) return [];
-
-                // 1. Search in live Data
-                if (window.App && App.data && App.data.materials) {
-                    App.data.materials.forEach(mat => {
-                        const name = mat.name.toUpperCase();
-                        if (words.some(w => name.includes(w))) {
-                            suggestions.push({ name: mat.name, code: mat.code || 'N/A' });
-                        }
-                    });
-                }
-
-                // 2. Search in Config
-                for (let code in CONFIG.MATERIAL_CODES) {
-                    const name = CONFIG.MATERIAL_CODES[code].toUpperCase();
-                    if (words.some(w => name.includes(w) || code.includes(w))) {
-                        if (!suggestions.some(s => s.name.toUpperCase() === name)) {
-                            suggestions.push({ name: name, code: code });
-                        }
-                    }
-                }
-
-                // Limit to top 5 suggestions to avoid noise
-                return suggestions.slice(0, 5);
-            },
-
-            formatStockResponse: function (m) {
-                // Try to find in context string
-                const contextLines = warehouseContext.split('\n');
-                let foundLine = contextLines.find(l => l.toUpperCase().includes(m.name));
-
-                if (foundLine) {
-                    const val = foundLine.split(':')[1]?.trim() || "0 TON";
-                    return `### DATA RILL: ${m.name} (${m.code})\n- **STATUS STOK**: ${val}\n- **LOKASI**: Cek Dashboard RM untuk peta bin rill.\n- **CATATAN**: Gunakan jurnal MB1B jika ingin memindahkan stok ini. GGMU!`;
-                }
-                return `Material **${m.name}** terdaftar di database, tapi saat ini sedang **KOSONG** (0 TON) di dashboard pusat.`;
-            },
-            formatGlobalSnapshot: function () {
-                const contextLines = warehouseContext.split('\n');
-                const stats = contextLines.find(l => l.includes("DATA DASHBOARD LIVE")) ? "Data Sync Active" : "No Data";
-                // Simple extraction for total stock from context if possible
-                const totalLine = contextLines.find(l => l.includes("GUDANG TERISI"));
-
-                return `### GLOBAL SNAPSHOT (REAL-TIME)\n- **STATUS**: **${stats}**\n- **DETAIL**: ${totalLine || 'Lihat Dashboard Live'}\n- **OTORITAS**: Full Akses Admin Pusat Granted. GGMU!`;
+                res += `\nApakah ada lagi yang bisa saya bantu arahkan, Pak Bos? **GGMU!**`;
+                return res;
             }
         };
 
         async function callGemini(query) {
-            console.log("Admin Pusat Router v7.0: Semantic Analysis...");
+            console.log("Navigator Engine: Searching Knowledge Graph...");
 
-            const intent = SemanticLibrarian.mapIntent(query);
-            const timeInfo = SemanticLibrarian.resolveDate(query);
+            const matches = DataNavigator.search(query);
 
-            const systemPrompt = `Kamu adalah ADMIN PUSAT V8.0. Otoritas tertinggi SMART WAREHOUSE.
-            Tugasmu: Menganalisis DATA KONTEKS berdasarkan DIAGNOSA LIBRARIAN.
+            if (matches) {
+                return DataNavigator.formatResponse(query, matches);
+            }
 
-            --- DIAGNOSA LIBRARIAN ---
-            - INTENT USER: ${intent}
-            - TIMEFRAME: ${timeInfo}
-            - ORIGINAL QUERY: ${query}
+            // If no exact match, use AI to speculate or explain
+            const systemPrompt = `Kamu adalah ADMIN A1 DATA NAVIGATOR. 
+            Tugasmu adalah membantu user menemukan lokasi data di SMART WAREHOUSE.
+            
+            BERIKUT ADALAH PETA SISTEM (KNOWLEDGE GRAPH):
+            ${JSON.stringify(SYSTEM_MAP)}
 
-            --- RULE ANALYST (STRICT) ---
-            1. Jika pertanyaan bersifat UMUM atau AMBIGU (misal: cuma sebut "SBM"), jangan menebak satu data saja. 
-               SEBUTKAN DAFTAR KANDIDAT yang ada di konteks (misal: SBM Brasil, SBM Argentina, dsb) dengan format: "Mungkin maksud Pak Bos salah satu dari ini?".
-            2. Jika intent adalah STOCK/UNLOADING dan sudah spesifik, berikan angka riil (TON) dan status Vessel/Silo.
-            3. Jika user tanya "kemarin" atau "3 hari", filter data di "RECORD MOISTURE" & "TRUCK" sesuai timeframe tersebut.
-            4. Gunakan gaya Admin (Tegas, Teknis, Profesional).
-            5. GGMU!
-
-            --- DATA KONTEKS OPERASIONAL ---
-            ${warehouseContext}
+            INSTRUKSI:
+            1. Jika user mencari sesuatu yang mirip dengan kata kunci di PETA SISTEM, arahkan ke menu tersebut.
+            2. Gunakan tone "Conciege/Pelayan Mewah": "Data dengan kata kunci [X] ada di menu A dan B, Pak Bos mau yang mana?".
+            3. Jika tidak ada yang cocok sama sekali, beri tahu dengan sopan dan sarankan cek menu GLOBAL SEARCH.
+            4. Jangan tampilkan status teknis engine. Fokus saja pada navigasi data.
+            5. Akrabkan dengan GGMU!
+            
+            USER QUERY: "${query}"
             `;
 
             try {
@@ -1092,7 +925,7 @@ ${sensitiveContext}
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ role: "user", parts: [{ text: systemPrompt }] }],
-                        generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+                        generationConfig: { temperature: 0.1, maxOutputTokens: 1024 }
                     })
                 });
 
@@ -1101,9 +934,7 @@ ${sensitiveContext}
                 return data.candidates[0].content.parts[0].text;
 
             } catch (err) {
-                console.error("Router Fail:", err);
-                const localRes = LocalAdminPusat.processQuery(query);
-                return `**IDENTIFIKASI SEMANTIK ADMIN PUSAT:**\n\nIzin Pak Bos, Brain Pusat sedang sinkronisasi. Hasil scan manual:\n\n${localRes}\n\nGGMU!`;
+                return `Izin Pak Bos, sepertinya data tersebut belum terpetakan spesifik di navigasi saya. Namun Pak Bos bisa coba cek menu **GLOBAL SEARCH** di Homepage untuk pencarian lebih luas. **GGMU!**`;
             }
         }
 
