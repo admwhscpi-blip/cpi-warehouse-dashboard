@@ -16,7 +16,7 @@
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2942/2942544.png">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2942/2942544.png">
 
-    <title>WHSMART v20.0.1 - MOBILE APP MODE</title>
+    <title>WHSMART v20.0.2 - MOBILE APP MODE</title>
     <script src="js/update-manager.js"></script>
 
     <!-- UI LIBS -->
@@ -771,6 +771,38 @@
             color: var(--muted);
             margin-top: 2px;
         }
+
+        /* v20.0.2: Absence Lock Styles */
+        .absensi-section {
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .absensi-section.locked {
+            opacity: 0.3;
+            pointer-events: none;
+            filter: grayscale(1);
+            position: relative;
+        }
+
+        .absensi-section.locked::after {
+            content: '🔒 LOCKED (RM01 ONLY)';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-5deg);
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-family: 'Orbitron';
+            font-size: 0.7rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            white-space: nowrap;
+        }
     </style>
 </head>
 
@@ -826,7 +858,7 @@
     <!-- APP BAR (v18.25 MOBILE OPTIMIZED) -->
     <div class="app-bar">
         <div class="brand-logo" onclick="handleLogoClick()">SMART <span>WAREHOUSE</span></div>
-        <div class="app-sub">v19.9 Deployment Intelligence - SAT SET GGMU!</div>
+        <div class="app-sub">v20.0.2 Deployment Intelligence - SAT SET GGMU!</div>
     </div>
 
     <div class="container">
@@ -973,7 +1005,7 @@
                             <option value="3">SHIFT 3</option>
                         </select></div>
                     <div class="field-group"><label>SLOC</label>
-                        <select id="setup_sloc">
+                        <select id="setup_sloc" onchange="checkAbsenceLock()">
                             <option value="" disabled selected>-- PILIH SLOC --</option>
                             <option value="RW01">RW01</option>
                             <option value="RW03">RW03</option>
@@ -1551,6 +1583,19 @@
             document.getElementById('abs-count-a').textContent = vals.filter(v => v.status === 'A').length;
         }
 
+        // v20.0.2: Absence Locking Logic
+        function checkAbsenceLock() {
+            const sloc = document.getElementById('setup_sloc').value;
+            const absenceSection = document.querySelector('.absensi-section');
+            if (sloc && sloc !== 'RM01') {
+                absenceSection.classList.add('locked');
+                console.log("Absence Locked: SLOC is not RM01");
+            } else {
+                absenceSection.classList.remove('locked');
+                console.log("Absence Active: RM01 detected");
+            }
+        }
+
         // ===== STAPEL FUNCTIONS =====
         let stapelHistory = []; // Track what's been saved this session
 
@@ -1691,7 +1736,10 @@
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('screen-' + screenId).classList.add('active');
             if (screenId === 'tasks') loadTaskQueue();
-            if (screenId === 'setup') renderAbsensi();
+            if (screenId === 'setup') {
+                renderAbsensi();
+                checkAbsenceLock();
+            }
             if (screenId === 'stapel') renderStapelButtons();
             if (screenId === 'form') {
                 const s = JSON.parse(localStorage.getItem('WHSMART_SESSION') || '{}');
