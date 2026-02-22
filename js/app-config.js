@@ -2,8 +2,10 @@ const CONFIG = {
     API_URL: "https://script.google.com/macros/s/AKfycbwnStVw3UhKxgQDuTfufSlNMaTrf4ZpXC0FPAp6AK96t-YIJQNcJ1h0rtkbM2XlxPCr/exec",
     BIN_SWEEPING_API_URL: "https://script.google.com/macros/s/AKfycbynVL7SFG8TBeTbu2PjO2eGIgM1JkQcV8nT3zsoi6zWc4cArJ23VQfTgjtLyyTZCQFM/exec",
     DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbxDerZpvftORq993r2EfGnG7gpALFWsXxA21mWe-xMzHCE-5wmJpDJXKNl29hgW-GQz/exec",
+    // v20.2.0: Analytics V2 URL (same deployment as entry-downtime, uses getAnalyticsV2 action)
+    ANALYTICS_V2_URL: "https://script.google.com/macros/s/AKfycby1R9-9baIGSVmwXHEj4tsDiPVxOlAqv-5Q1d2n9zoYya8vBBSNneLB5auVmiJf3GOr/exec?action=getAnalyticsV2",
     BKK_API_URL: "https://script.google.com/macros/s/AKfycbw-YyDZiZFi7wrs9X6a1Bnp05E_cWHY15Cw-cKRfbO2lWoXkJMPysEe2uh1AJBsvXkN/exec?action=getData",
-    BKK_DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycby-tuUqN0Nmb1F52RfNXZVV90-2QoEd0sz3QtYOAYpOYRmOydAjF1hp3Z4GG8DAEWw/exec?action=getDowntimeQuery",
+    BKK_DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbzuZHDXEdLE7v5hkRniOi4NY5N0PfQjKDGnkJDNIgJgd547WlshjoeP9pGHG6yPOi7y/exec?action=getDowntimeQuery",
     OVERTIME_API_URL: "https://script.google.com/macros/s/AKfycbwjxJVAhHSpYY9taTQ5SR7A00M3pQfHdm9lXO33Zr88EDS1awbrFj2xkpeN0rOGomaI/exec",
 
 

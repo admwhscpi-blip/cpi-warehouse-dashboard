@@ -28,6 +28,33 @@ const MUAT_HEADERS = [
   "Status Validasi", "Validator", "SYSTEM_VERSION"              // P, Q, R (Index 15-17)
 ];
 
+// v20.2.0 Helper: Format time cell to HH:MM string
+function fmtTime(val) {
+  if (!val) return null;
+  if (val instanceof Date) {
+    return Utilities.formatDate(val, Session.getScriptTimeZone(), "HH:mm");
+  }
+  let s = String(val).trim();
+  if (s.includes(':')) return s;
+  return null;
+}
+
+// v20.2.0 Helper: Calculate duration in minutes between two time cells
+function calcDurMin(startVal, endVal) {
+  const toMin = (v) => {
+    if (!v) return null;
+    if (v instanceof Date) { return v.getHours() * 60 + v.getMinutes(); }
+    let s = String(v).trim();
+    if (s.includes(':')) { let p = s.split(':'); return parseInt(p[0]) * 60 + parseInt(p[1]); }
+    return null;
+  };
+  const s = toMin(startVal), e = toMin(endVal);
+  if (s === null || e === null) return null;
+  let diff = e - s;
+  if (diff < 0) diff += 1440; // day wrap
+  return String(diff);
+}
+
 function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   forceMuatHeaders();
@@ -219,6 +246,252 @@ function doGet(e) {
       pendingCoords: Array.from(pendingCoords).sort(),
       materials: materials
     })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // ===== ACTION: getAnalyticsV2 (v20.2.0 Migrasi Analitik Maret 2026+) =====
+  if (e && e.parameter.action === 'getAnalyticsV2') {
+    try {
+      const bSheet = ss.getSheetByName(SHEET_NAME);        // DATA BONGKARAN
+      const mSheet2 = ss.getSheetByName(MUAT_SHEET_NAME);  // DATA MUAT
+      const absSheet = ss.getSheetByName("ABSENSI KULI");
+      const stSheet = ss.getSheetByName("DATA STAPEL");
+
+      // ----- 1. MINE DATA BONGKARAN → dailyActivity + template -----
+      const dailyMap = {};  // tanggal → {muat, bongkar, st_*, prod_*}
+      const templateRows = [];
+
+      if (bSheet && bSheet.getLastRow() > 1) {
+        const bData = bSheet.getDataRange().getValues();
+        const bH = bData[0].map(h => String(h).toUpperCase());
+        const bIdx = {
+          tanggal: bH.indexOf("TANGGAL"),
+          material: bH.indexOf("MATERIAL"),
+          netto: bH.findIndex(h => h.includes("NETTO")),
+          gudang: bH.findIndex(h => h.includes("GUDANG")),
+          tim: bH.findIndex(h => h.includes("TIM KERJA")),
+          jenisKuli: bH.findIndex(h => h.includes("JENIS KULI")),
+          startPanggil: bH.findIndex(h => h.includes("START PANGGIL")),
+          truckReady: bH.findIndex(h => h.includes("TRUCK READY")),
+          startBongkar: bH.findIndex(h => h.includes("START BONGKAR")),
+          holdQC: bH.findIndex(h => h.includes("HOLD QC")),
+          restartQC: bH.findIndex(h => h.includes("RE-START")),
+          manuverAkhir: bH.findIndex(h => h.includes("MANUVER")),
+          finish: bH.findIndex(h => h.includes("FINISH")),
+          nopol: bH.indexOf("NOPOL"),
+          lokasiSimpan: bH.findIndex(h => h.includes("LOKASI SIMPAN"))
+        };
+
+        for (let i = 1; i < bData.length; i++) {
+          const row = bData[i];
+          let tgl = row[bIdx.tanggal];
+          if (!tgl) continue;
+          if (tgl instanceof Date) tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          else tgl = String(tgl).trim();
+
+          const netto = Number(row[bIdx.netto]) || 0;
+          const tim = String(row[bIdx.tim] || "").toUpperCase().trim();
+          const material = String(row[bIdx.material] || "");
+          const gudang = String(row[bIdx.gudang >= 0 ? bIdx.gudang : 2] || "");
+          
+          // Template row (per-truck detail)
+          templateRows.push({
+            TANGGAL: tgl,
+            JENIS_RM: material,
+            KEGIATAN: "BONGKAR",
+            LOKASI: gudang,
+            NOPOL: String(row[bIdx.nopol >= 0 ? bIdx.nopol : 6] || ""),
+            START_PANGGIL: fmtTime(row[bIdx.startPanggil]),
+            TRUCK_READY: fmtTime(row[bIdx.truckReady]),
+            START_BONGKAR: fmtTime(row[bIdx.startBongkar]),
+            HOLD_QC: fmtTime(row[bIdx.holdQC]),
+            RESTART_QC: fmtTime(row[bIdx.restartQC]),
+            MANUVER_AKHIR: fmtTime(row[bIdx.manuverAkhir]),
+            FINISH_TIME: fmtTime(row[bIdx.finish]),
+            DURASI_BONGKAR: calcDurMin(row[bIdx.startBongkar], row[bIdx.finish]),
+            PB_START: fmtTime(row[bIdx.startPanggil]),
+            TUNGGU_QC: fmtTime(row[bIdx.holdQC])
+          });
+
+          // Daily aggregation
+          if (!dailyMap[tgl]) dailyMap[tgl] = { 
+            tanggal: tgl, bongkar: 0, muat: 0, 
+            st_badrun: 0, st_kartono: 0, st_kulhar: 0,
+            prod_badrun: 0, prod_kartono: 0, prod_kulhar: 0, 
+            _bCount: { BADRUN: 0, KARTONO: 0, KULHAR: 0 },
+            _bNetto: { BADRUN: 0, KARTONO: 0, KULHAR: 0 }
+          };
+          dailyMap[tgl].bongkar += netto;
+
+          // Productivity per-tim aggregation
+          if (tim === "BADRUN") { dailyMap[tgl]._bNetto.BADRUN += netto; dailyMap[tgl]._bCount.BADRUN++; }
+          else if (tim === "KARTONO") { dailyMap[tgl]._bNetto.KARTONO += netto; dailyMap[tgl]._bCount.KARTONO++; }
+          else { dailyMap[tgl]._bNetto.KULHAR += netto; dailyMap[tgl]._bCount.KULHAR++; }
+        }
+      }
+
+      // ----- 2. MINE DATA MUAT → add muat to dailyMap -----
+      if (mSheet2 && mSheet2.getLastRow() > 1) {
+        const mData = mSheet2.getDataRange().getValues();
+        const mH = mData[0].map(h => String(h).toUpperCase());
+        const mTanggal = mH.indexOf("TANGGAL") >= 0 ? mH.indexOf("TANGGAL") : 1;
+        const mNetto = mH.findIndex(h => h.includes("NETTO"));
+        const mKat = mH.indexOf("KATEGORI") >= 0 ? mH.indexOf("KATEGORI") : 3;
+        const mMaterial = mH.indexOf("MATERIAL") >= 0 ? mH.indexOf("MATERIAL") : 5;
+
+        for (let i = 1; i < mData.length; i++) {
+          let tgl = mData[i][mTanggal];
+          if (!tgl) continue;
+          if (tgl instanceof Date) tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          else tgl = String(tgl).trim();
+
+          const netto = Number(mData[i][mNetto >= 0 ? mNetto : 6]) || 0;
+          if (!dailyMap[tgl]) dailyMap[tgl] = { 
+            tanggal: tgl, bongkar: 0, muat: 0, 
+            st_badrun: 0, st_kartono: 0, st_kulhar: 0,
+            prod_badrun: 0, prod_kartono: 0, prod_kulhar: 0,
+            _bCount: { BADRUN: 0, KARTONO: 0, KULHAR: 0 },
+            _bNetto: { BADRUN: 0, KARTONO: 0, KULHAR: 0 }
+          };
+          dailyMap[tgl].muat += netto;
+
+          // MUAT template entries
+          templateRows.push({
+            TANGGAL: tgl, JENIS_RM: String(mData[i][mMaterial] || ""), KEGIATAN: "MUAT",
+            LOKASI: "-", DURASI_BONGKAR: null, PB_START: null, TUNGGU_QC: null
+          });
+        }
+      }
+
+      // ----- 3. MINE DATA STAPEL → add to dailyMap -----
+      if (stSheet && stSheet.getLastRow() > 1) {
+        const sData = stSheet.getDataRange().getValues();
+        const sH = sData[0].map(h => String(h).toUpperCase());
+        const sTgl = sH.indexOf("TANGGAL") >= 0 ? sH.indexOf("TANGGAL") : 1;
+        const sTim = sH.indexOf("TIM") >= 0 ? sH.indexOf("TIM") : 3;
+        const sKat = sH.indexOf("KATEGORI") >= 0 ? sH.indexOf("KATEGORI") : 4;
+        const sNetto = sH.findIndex(h => h.includes("NETTO"));
+
+        for (let i = 1; i < sData.length; i++) {
+          let tgl = sData[i][sTgl];
+          if (!tgl) continue;
+          if (tgl instanceof Date) tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          else tgl = String(tgl).trim();
+
+          const tim = String(sData[i][sTim] || "").toUpperCase().trim();
+          const netto = Number(sData[i][sNetto >= 0 ? sNetto : 5]) || 0;
+
+          if (!dailyMap[tgl]) dailyMap[tgl] = {
+            tanggal: tgl, bongkar: 0, muat: 0,
+            st_badrun: 0, st_kartono: 0, st_kulhar: 0,
+            prod_badrun: 0, prod_kartono: 0, prod_kulhar: 0,
+            _bCount: { BADRUN: 0, KARTONO: 0, KULHAR: 0 },
+            _bNetto: { BADRUN: 0, KARTONO: 0, KULHAR: 0 }
+          };
+
+          if (tim === "BADRUN") dailyMap[tgl].st_badrun += netto;
+          else if (tim === "KARTONO") dailyMap[tgl].st_kartono += netto;
+          else dailyMap[tgl].st_kulhar += netto;
+        }
+      }
+
+      // ----- 4. MINE ABSENSI KULI → kuliBorong & kuliHarian -----
+      let kuliBorong = { dateHeaders: [], rows: [] };
+      let kuliHarian = { dateHeaders: [], rows: [] };
+
+      if (absSheet && absSheet.getLastRow() > 1) {
+        const aData = absSheet.getDataRange().getValues();
+        const aH = aData[0].map(h => String(h).toUpperCase());
+        const aTgl = aH.indexOf("TANGGAL") >= 0 ? aH.indexOf("TANGGAL") : 1;
+        const aTim = aH.indexOf("TIM") >= 0 ? aH.indexOf("TIM") : 3;
+        const aKat = aH.indexOf("KATEGORI") >= 0 ? aH.indexOf("KATEGORI") : 4;
+        const aNama = aH.indexOf("NAMA") >= 0 ? aH.indexOf("NAMA") : 5;
+        const aStatus = aH.indexOf("STATUS") >= 0 ? aH.indexOf("STATUS") : 6;
+
+        // Group by kategori → {dates, people}
+        const borongMap = {}; // nama → { tim, dates: { tgl: status } }
+        const harianMap = {};
+        const allBorongDates = new Set();
+        const allHarianDates = new Set();
+
+        for (let i = 1; i < aData.length; i++) {
+          const row = aData[i];
+          let tgl = row[aTgl];
+          if (!tgl) continue;
+          if (tgl instanceof Date) tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          else tgl = String(tgl).trim();
+
+          const nama = String(row[aNama] || "").trim();
+          const tim = String(row[aTim] || "").trim();
+          const kat = String(row[aKat] || "").toUpperCase().trim();
+          const status = String(row[aStatus] || "H").toUpperCase().trim();
+          const isHadir = (status === "H");
+
+          if (kat === "BORONG") {
+            allBorongDates.add(tgl);
+            if (!borongMap[nama]) borongMap[nama] = { tim: tim, dates: {} };
+            borongMap[nama].dates[tgl] = isHadir ? "v" : "";
+          } else {
+            allHarianDates.add(tgl);
+            if (!harianMap[nama]) harianMap[nama] = { tim: tim, dates: {} };
+            harianMap[nama].dates[tgl] = isHadir ? "v" : "";
+          }
+        }
+
+        // Convert to old format: dateHeaders + rows[{tim, absensi[]}]
+        const borongDates = Array.from(allBorongDates).sort();
+        const harianDates = Array.from(allHarianDates).sort();
+
+        kuliBorong.dateHeaders = borongDates;
+        Object.entries(borongMap).forEach(([nama, d]) => {
+          kuliBorong.rows.push({ tim: d.tim, nama: nama, absensi: borongDates.map(dt => d.dates[dt] || "") });
+        });
+
+        kuliHarian.dateHeaders = harianDates;
+        Object.entries(harianMap).forEach(([nama, d]) => {
+          kuliHarian.rows.push({ tim: d.tim, nama: nama, absensi: harianDates.map(dt => d.dates[dt] || "") });
+        });
+
+        // ----- Inject manpower into productivity (prod_xxx = netto / hadir count) -----
+        // Count hadir per day per tim category
+        for (let i = 1; i < aData.length; i++) {
+          let tgl = aData[i][aTgl];
+          if (!tgl) continue;
+          if (tgl instanceof Date) tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          else tgl = String(tgl).trim();
+          
+          const tim = String(aData[i][aTim] || "").toUpperCase().trim();
+          const status = String(aData[i][aStatus] || "H").toUpperCase().trim();
+          if (status !== "H") continue;
+
+          if (dailyMap[tgl]) {
+            if (tim === "BADRUN") dailyMap[tgl]._bCount.BADRUN++;
+            else if (tim === "KARTONO") dailyMap[tgl]._bCount.KARTONO++;
+            else dailyMap[tgl]._bCount.KULHAR++;
+          }
+        }
+      }
+
+      // ----- 5. FINALIZE dailyActivity: calculate productivity -----
+      const dailyActivity = Object.values(dailyMap).map(d => {
+        // Productivity = Total Netto Bongkar per Tim / Jumlah Hadir per Tim
+        d.prod_badrun = d._bCount.BADRUN > 0 ? Math.round(d._bNetto.BADRUN / d._bCount.BADRUN) : 0;
+        d.prod_kartono = d._bCount.KARTONO > 0 ? Math.round(d._bNetto.KARTONO / d._bCount.KARTONO) : 0;
+        d.prod_kulhar = d._bCount.KULHAR > 0 ? Math.round(d._bNetto.KULHAR / d._bCount.KULHAR) : 0;
+        delete d._bCount; delete d._bNetto;
+        return d;
+      });
+
+      return ContentService.createTextOutput(JSON.stringify({
+        dailyActivity: dailyActivity,
+        template: templateRows,
+        kuliBorong: kuliBorong,
+        kuliHarian: kuliHarian
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({
+        error: err.toString(), dailyActivity: [], template: [], kuliBorong: { dateHeaders: [], rows: [] }, kuliHarian: { dateHeaders: [], rows: [] }
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
   }
 
   // v19.4: Action for Manual Risip Filtering (Crosscheck)
@@ -618,6 +891,34 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify({success: true, count: rows.length}));
     }
 
+    // ACTION: SAVE STAPEL (v20.2.0)
+    if (raw.action === "saveStapel") {
+      const STAPEL_SHEET = "DATA STAPEL";
+      const STAPEL_HEADERS = ["Timestamp", "Tanggal", "Shift", "Tim", "Kategori", "Netto Stapel (Kg)", "Krani Pencatat"];
+      
+      let stSheet = ss.getSheetByName(STAPEL_SHEET);
+      if (!stSheet) {
+        stSheet = ss.insertSheet(STAPEL_SHEET);
+        stSheet.getRange(1, 1, 1, STAPEL_HEADERS.length)
+          .setValues([STAPEL_HEADERS])
+          .setFontWeight("bold")
+          .setBackground("#fce5cd")
+          .setHorizontalAlignment("center");
+        stSheet.setFrozenRows(1);
+      }
+      
+      stSheet.appendRow([
+        new Date(),              // A: Timestamp
+        raw.tanggal || '-',      // B: Tanggal
+        raw.shift || '-',        // C: Shift
+        raw.tim || '-',          // D: Tim
+        raw.kategori || '-',     // E: Kategori (BORONG/HARIAN)
+        Number(raw.netto) || 0,  // F: Netto Stapel (Kg)
+        raw.krani_pencatat || '-' // G: Krani Pencatat
+      ]);
+      
+      return ContentService.createTextOutput(JSON.stringify({success: true}));
+    }
   } catch(err) {
     return ContentService.createTextOutput(JSON.stringify({success:false, error: err.toString()}));
   }

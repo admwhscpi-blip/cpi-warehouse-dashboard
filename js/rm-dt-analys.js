@@ -17,6 +17,9 @@ const AnalysApp = {
     currentSumMuatPeriod: 'weekly',
     currentTungguQCPeriod: 'daily',
     apiUrl: CONFIG.DOWNTIME_API_URL,
+    apiV2Url: CONFIG.ANALYTICS_V2_URL,
+    dataOld: null,  // ≤ Feb 2026
+    dataV2: null,   // ≥ Mar 2026
 
     init: function () {
         console.log("Analytics Engine V3 (Real Data Mode) Starting...");
@@ -36,10 +39,19 @@ const AnalysApp = {
         if (statusText) statusText.innerHTML = '<div class="status-dot" style="background:#f59e0b; box-shadow:0 0 8px #f59e0b;"></div> SYNCING...';
 
         try {
-            const response = await fetch(this.apiUrl);
-            this.data = await response.json();
+            // Fetch BOTH sources in parallel
+            const [resOld, resV2] = await Promise.all([
+                fetch(this.apiUrl).then(r => r.json()).catch(() => null),
+                this.apiV2Url ? fetch(this.apiV2Url).then(r => r.json()).catch(() => null) : Promise.resolve(null)
+            ]);
 
-            // INIT GLOBAL FILTER
+            this.dataOld = resOld;
+            this.dataV2 = resV2;
+
+            // Default to old data initially (will be swapped by initGlobalFilter if needed)
+            this.data = resOld || resV2 || { dailyActivity: [], template: [], kuliBorong: {}, kuliHarian: {} };
+
+            // INIT GLOBAL FILTER (merged months from both sources)
             this.initGlobalFilter();
 
             // Render All
@@ -59,24 +71,35 @@ const AnalysApp = {
         // Collect all distinct months from all data sources for robustness
         let months = new Set();
 
-        // 1. Ops
-        (this.data.dailyActivity || []).forEach(i => { if (i.tanggal) months.add(i.tanggal.substring(0, 7)); });
+        // From OLD data
+        if (this.dataOld) {
+            (this.dataOld.dailyActivity || []).forEach(i => { if (i.tanggal) months.add(i.tanggal.substring(0, 7)); });
+            ['kuliBorong', 'kuliHarian'].forEach(k => {
+                if (this.dataOld[k] && this.dataOld[k].dateHeaders) {
+                    this.dataOld[k].dateHeaders.forEach(h => {
+                        let d = this.normalizeDate(h);
+                        if (d) months.add(d.substring(0, 7));
+                    });
+                }
+            });
+            (this.dataOld.template || []).forEach(i => {
+                let d = this.normalizeDate(i['TANGGAL']);
+                if (d) months.add(d.substring(0, 7));
+            });
+        }
 
-        // 2. Absensi Headers (convert to YYYY-MM)
-        ['kuliBorong', 'kuliHarian'].forEach(k => {
-            if (this.data[k] && this.data[k].dateHeaders) {
-                this.data[k].dateHeaders.forEach(h => {
-                    let d = this.normalizeDate(h);
-                    if (d) months.add(d.substring(0, 7));
-                });
-            }
-        });
-
-        // 3. Template (QC)
-        (this.data.template || []).forEach(i => {
-            let d = this.normalizeDate(i['TANGGAL']);
-            if (d) months.add(d.substring(0, 7));
-        });
+        // From V2 data
+        if (this.dataV2) {
+            (this.dataV2.dailyActivity || []).forEach(i => { if (i.tanggal) months.add(i.tanggal.substring(0, 7)); });
+            ['kuliBorong', 'kuliHarian'].forEach(k => {
+                if (this.dataV2[k] && this.dataV2[k].dateHeaders) {
+                    this.dataV2[k].dateHeaders.forEach(h => {
+                        let d = this.normalizeDate(h);
+                        if (d) months.add(d.substring(0, 7));
+                    });
+                }
+            });
+        }
 
         // FILTER: Remove Errors. Keep 2023+, Exclude Dec 2024.
         const currentY = new Date().getFullYear();
@@ -95,11 +118,11 @@ const AnalysApp = {
             // 2. SPECIFIC REQUEST: Remove Dec 2024
             if (y === 2024 && mon === 12) return false;
 
-            // 3. Remove Future Years
-            if (y > currentY) return false;
+            // 3. Remove Far Future Years (allow current + 1)
+            if (y > currentY + 1) return false;
 
-            // 4. Remove Future Months in Current Year
-            if (y === currentY && mon > currentM) return false;
+            // 4. Remove Far Future Months (allow up to currentMonth + 1 for staging)
+            if (y === currentY && mon > currentM + 1) return false;
 
             return true;
         }).sort().reverse();
@@ -115,13 +138,109 @@ const AnalysApp = {
             if (select.options.length > 0) {
                 select.value = select.options[0].value;
                 this.currentMonth = select.value;
+                // v20.2.2: Set correct data source for initial month (may merge)
+                this.data = this.buildDataForMonth(this.currentMonth);
             }
         }
     },
 
+    // v20.2.2 CUTOVER DATE: Feb 19, 2026
+    V2_CUTOVER: '2026-02-19',
+
+    buildDataForMonth: function (month) {
+        const cutMonth = this.V2_CUTOVER.substring(0, 7); // '2026-02'
+
+        // Pure old (before cutover month)
+        if (month < cutMonth) {
+            return this.dataOld || { dailyActivity: [], template: [], kuliBorong: {}, kuliHarian: {} };
+        }
+        // Pure V2 (after cutover month)
+        if (month > cutMonth) {
+            return this.dataV2 || { dailyActivity: [], template: [], kuliBorong: {}, kuliHarian: {} };
+        }
+        // MIXED MONTH (Feb 2026): old < Feb19, V2 >= Feb19
+        if (!this.dataOld && !this.dataV2) return { dailyActivity: [], template: [], kuliBorong: {}, kuliHarian: {} };
+        if (!this.dataOld) return this.dataV2;
+        if (!this.dataV2) return this.dataOld;
+
+        return this.mergeDataSources(this.dataOld, this.dataV2, this.V2_CUTOVER);
+    },
+
+    mergeDataSources: function (old, v2, cutover) {
+        const merged = {};
+
+        // 1. dailyActivity: old dates < cutover, v2 dates >= cutover
+        const oldDA = (old.dailyActivity || []).filter(d => d.tanggal && d.tanggal < cutover);
+        const newDA = (v2.dailyActivity || []).filter(d => d.tanggal && d.tanggal >= cutover);
+        merged.dailyActivity = [...oldDA, ...newDA].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+
+        // 2. template: same logic
+        const normDate = (r) => {
+            let d = r['TANGGAL'];
+            if (!d) return null;
+            return this.normalizeDate(d);
+        };
+        const oldTpl = (old.template || []).filter(r => { let d = normDate(r); return d && d < cutover; });
+        const newTpl = (v2.template || []).filter(r => { let d = normDate(r); return d && d >= cutover; });
+        merged.template = [...oldTpl, ...newTpl];
+
+        // 3. kuliBorong: merge dateHeaders + rows
+        merged.kuliBorong = this.mergeAbsensi(old.kuliBorong, v2.kuliBorong, cutover);
+
+        // 4. kuliHarian: merge dateHeaders + rows
+        merged.kuliHarian = this.mergeAbsensi(old.kuliHarian, v2.kuliHarian, cutover);
+
+        return merged;
+    },
+
+    mergeAbsensi: function (oldAbs, newAbs, cutover) {
+        oldAbs = oldAbs || { dateHeaders: [], rows: [] };
+        newAbs = newAbs || { dateHeaders: [], rows: [] };
+
+        // Normalize old dateHeaders (could be "dd MMM" format) to ISO
+        const normOldHeaders = (oldAbs.dateHeaders || []).map(h => this.normalizeDate(h) || h);
+        const normNewHeaders = (newAbs.dateHeaders || []).map(h => this.normalizeDate(h) || h);
+
+        // Filter by cutover
+        const keepOldIdx = normOldHeaders.map((h, i) => ({ h, i })).filter(x => x.h < cutover);
+        const keepNewIdx = normNewHeaders.map((h, i) => ({ h, i })).filter(x => x.h >= cutover);
+
+        const mergedHeaders = [...keepOldIdx.map(x => oldAbs.dateHeaders[x.i]), ...keepNewIdx.map(x => newAbs.dateHeaders[x.i])];
+
+        // Merge rows by nama
+        const peopleMap = {};
+        (oldAbs.rows || []).forEach(r => {
+            const key = r.nama || r.no;
+            if (!peopleMap[key]) peopleMap[key] = { tim: r.tim, nama: r.nama || r.no, absensi: [] };
+            keepOldIdx.forEach(x => {
+                peopleMap[key].absensi.push(r.absensi ? r.absensi[x.i] || '' : '');
+            });
+        });
+        (newAbs.rows || []).forEach(r => {
+            const key = r.nama || r.no;
+            if (!peopleMap[key]) {
+                // Person only in V2 — pad old dates with empty
+                peopleMap[key] = { tim: r.tim, nama: r.nama || r.no, absensi: keepOldIdx.map(() => '') };
+            }
+            keepNewIdx.forEach(x => {
+                peopleMap[key].absensi.push(r.absensi ? r.absensi[x.i] || '' : '');
+            });
+        });
+        // Pad old-only people with empty for new dates
+        Object.values(peopleMap).forEach(p => {
+            while (p.absensi.length < mergedHeaders.length) p.absensi.push('');
+        });
+
+        return { dateHeaders: mergedHeaders, rows: Object.values(peopleMap) };
+    },
+
     handleGlobalFilterChange: function (val) {
         this.currentMonth = val;
+        // v20.2.2: Build merged/single-source data for selected month
+        this.data = this.buildDataForMonth(val);
         this.renderAllCharts();
+        this.renderKPIs();
+        this.initMaterialFeed();
     },
 
     renderAllCharts: function () {

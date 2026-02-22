@@ -167,20 +167,58 @@ function getDowntimeQuery(ssId, e) {
   var targetYear = parseInt(e.parameter.year);   
   var matFilter = (e.parameter.material || "").toUpperCase();
   
-  // ======== V12.0: DYNAMIC SHEET SELECTION ========
-  var isNewFormat = (targetYear > 2026) || (targetYear === 2026 && targetMonth >= 2);
-  var sheetName = isNewFormat ? "DT NEW" : "DOWNTIME";
-  var sheet = ss.getSheetByName(sheetName);
-  
-  if (!sheet) return createOutput({data: [], materials: [], status: "error", message: "Sheet " + sheetName + " not found"}, e);
-  
-  var lastRow = sheet.getLastRow();
-  var startRow = isNewFormat ? 4 : 5; 
-  var totalRowsToScan = Math.max(0, lastRow - startRow + 1);
-  
-  if (totalRowsToScan <= 0) return createOutput({data: [], materials: [], status: "empty_sheet"}, e);
+  // ======== V12.1: DYNAMIC SHEET SELECTION + FEB 2026 MIX ========
+  var isFebMix = (targetYear === 2026 && targetMonth === 2);
+  var isMarch26Plus = (targetYear > 2026) || (targetYear === 2026 && targetMonth >= 3);
 
-  var rawData = sheet.getRange(startRow, 1, totalRowsToScan, 25).getValues();
+  var rawData = [];
+
+  if (isFebMix) {
+    // FEB 2026: Mix DOWNTIME (1-16) + DT NEW (19+)
+    var oldSheet = ss.getSheetByName("DOWNTIME");
+    var newSheet = ss.getSheetByName("DT NEW");
+
+    // Old sheet rows (date <= Feb 16)
+    if (oldSheet && oldSheet.getLastRow() > 4) {
+      var oldRows = oldSheet.getRange(5, 1, oldSheet.getLastRow() - 4, 25).getValues();
+      for (var oi = 0; oi < oldRows.length; oi++) {
+        var od = parseDate(oldRows[oi][0]);
+        if (od && od.getFullYear() === 2026 && (od.getMonth() + 1) === 2 && od.getDate() <= 16) {
+          oldRows[oi]._source = 'old';
+          rawData.push(oldRows[oi]);
+        }
+      }
+    }
+    // New sheet rows (date >= Feb 19, March format with TRUCK READY)
+    if (newSheet && newSheet.getLastRow() > 3) {
+      var newRows = newSheet.getRange(4, 1, newSheet.getLastRow() - 3, 25).getValues();
+      for (var ni = 0; ni < newRows.length; ni++) {
+        var nd = parseDate(newRows[ni][0]);
+        if (nd && nd.getFullYear() === 2026 && (nd.getMonth() + 1) === 2 && nd.getDate() >= 19) {
+          newRows[ni]._source = 'new';
+          rawData.push(newRows[ni]);
+        }
+      }
+    }
+  } else {
+    // Single-sheet selection (original logic)
+    var isNewFormatSheet = isMarch26Plus || (targetYear === 2026 && targetMonth >= 3);
+    var sheetName = isNewFormatSheet ? "DT NEW" : "DOWNTIME";
+    var sheet = ss.getSheetByName(sheetName);
+
+    if (!sheet) return createOutput({data: [], materials: [], status: "error", message: "Sheet " + sheetName + " not found"}, e);
+
+    var lastRow = sheet.getLastRow();
+    var startRow = isNewFormatSheet ? 4 : 5;
+    var totalRowsToScan = Math.max(0, lastRow - startRow + 1);
+
+    if (totalRowsToScan <= 0) return createOutput({data: [], materials: [], status: "empty_sheet"}, e);
+
+    rawData = sheet.getRange(startRow, 1, totalRowsToScan, 25).getValues();
+    // Tag all rows with source
+    var tagSrc = isNewFormatSheet ? 'new' : 'old';
+    for (var ti = 0; ti < rawData.length; ti++) { rawData[ti]._source = tagSrc; }
+  }
   var dailyAgg = {}; 
   var materials = new Set();
   
@@ -262,8 +300,9 @@ function getDowntimeQuery(ssId, e) {
     var rowDate, type, rowNetto, rawMat, truckType, actualShift, rowWorkers;
     var startTs, endTs, mStart, mEnd, qStart, qEnd;
 
-    var isNewFormat = (targetYear > 2026) || (targetYear === 2026 && targetMonth >= 2);
-    var isMarch26 = (targetYear > 2026) || (targetYear === 2026 && targetMonth >= 3);
+    // V12.1: Per-row format detection (supports Feb mix)
+    var isNewFormat = isMarch26Plus || (rawData[i]._source === 'new');
+    var isMarch26 = isMarch26Plus || (rawData[i]._source === 'new'); // DT NEW Feb uses March format
     
     if (isNewFormat) {
       rowDate = parseDate(rawData[i][0]);
@@ -575,7 +614,12 @@ function getDowntimeQuery(ssId, e) {
   }
   
   var finalIdle = 0, finalOff = 0;
-  if (isNewFormat) {
+  // V12.1: Determine which idle/off methods were used
+  var hasNewIdleOff = (totalIdleNew > 0 || totalOffNew > 0); // DT NEW rows contributed
+  var hasLegacyTrucks = (intake71Trucks.length > 0);          // DOWNTIME rows contributed
+
+  if (hasNewIdleOff && !hasLegacyTrucks) {
+    // PURE NEW (March+ or Feb with only DT NEW data)
     finalIdle = totalIdleNew;
     finalOff = totalOffNew;
     var totalUsed = i71ActiveTotalGenerated + finalIdle + finalOff;
@@ -583,21 +627,20 @@ function getDowntimeQuery(ssId, e) {
        var scale = totalMonthMin / totalUsed;
        finalIdle *= scale; finalOff *= scale;
     }
-  } else {
+  } else if (hasLegacyTrucks && !hasNewIdleOff) {
+    // PURE OLD (Jan and before)
     var idleLegacy = 0, offLegacy = 0;
-    if (intake71Trucks.length > 0) {
-      intake71Trucks.sort(function(a, b) { return a.start - b.start; });
-      offLegacy += intake71Trucks[0].start;
-      for (var j = 0; j < intake71Trucks.length - 1; j++) {
-        var gap = intake71Trucks[j+1].start - intake71Trucks[j].end;
-        if (gap > 0) {
-          if (intake71Trucks[j].mat === intake71Trucks[j+1].mat && intake71Trucks[j].code === intake71Trucks[j+1].code) idleLegacy += gap;
-          else offLegacy += gap;
-        }
+    intake71Trucks.sort(function(a, b) { return a.start - b.start; });
+    offLegacy += intake71Trucks[0].start;
+    for (var j = 0; j < intake71Trucks.length - 1; j++) {
+      var gap = intake71Trucks[j+1].start - intake71Trucks[j].end;
+      if (gap > 0) {
+        if (intake71Trucks[j].mat === intake71Trucks[j+1].mat && intake71Trucks[j].code === intake71Trucks[j+1].code) idleLegacy += gap;
+        else offLegacy += gap;
       }
-      var lastEnd = intake71Trucks[intake71Trucks.length - 1].end;
-      if (totalMonthMin > lastEnd) offLegacy += (totalMonthMin - lastEnd);
-    } else { offLegacy = totalMonthMin; }
+    }
+    var lastEnd = intake71Trucks[intake71Trucks.length - 1].end;
+    if (totalMonthMin > lastEnd) offLegacy += (totalMonthMin - lastEnd);
 
     var rawTotal = i71ActiveTotalGenerated + idleLegacy + offLegacy;
     if (rawTotal > totalMonthMin) {
@@ -618,6 +661,29 @@ function getDowntimeQuery(ssId, e) {
         sdObj.off = Math.max(0, 480 - sdObj.active - sdObj.idle);
       });
     });
+  } else if (hasNewIdleOff && hasLegacyTrucks) {
+    // FEB MIX: Both sources contributed
+    // Legacy idle/off from old trucks
+    var idleLegacy2 = 0, offLegacy2 = 0;
+    intake71Trucks.sort(function(a, b) { return a.start - b.start; });
+    for (var j2 = 0; j2 < intake71Trucks.length - 1; j2++) {
+      var gap2 = intake71Trucks[j2+1].start - intake71Trucks[j2].end;
+      if (gap2 > 0) {
+        if (intake71Trucks[j2].mat === intake71Trucks[j2+1].mat && intake71Trucks[j2].code === intake71Trucks[j2+1].code) idleLegacy2 += gap2;
+        else offLegacy2 += gap2;
+      }
+    }
+    // Combine: new idle/off + legacy idle/off
+    finalIdle = totalIdleNew + idleLegacy2;
+    finalOff = totalOffNew + offLegacy2;
+    var totalUsedMix = i71ActiveTotalGenerated + finalIdle + finalOff;
+    if (totalUsedMix > totalMonthMin) {
+       var scaleMix = totalMonthMin / totalUsedMix;
+       finalIdle *= scaleMix; finalOff *= scaleMix;
+    }
+  } else {
+    // No data at all
+    finalOff = totalMonthMin;
   }
 
   // ======== BUILD RESULT ========
@@ -630,7 +696,7 @@ function getDowntimeQuery(ssId, e) {
   });
   
   var i71DailyArr = Object.values(i71DailyDetail).sort(function(a,b) { return a.date.localeCompare(b.date); }).map(function(dd) {
-    if (!isNewFormat) {
+    if (!hasNewIdleOff && hasLegacyTrucks) {
        var dObj = dailyAgg[dd.date];
        if (dObj) {
          dd.idleMin = dObj.shiftData["1"].idle + dObj.shiftData["2"].idle + dObj.shiftData["3"].idle;
@@ -663,9 +729,9 @@ function getDowntimeQuery(ssId, e) {
       intakeSubTypes: intakeSubTypes,
       dailyDetail: i71DailyArr,
       workerStats: workerStats,
-      // NEW: For March 2026+ 6-stage display
-      isMarch26: isMarch26,
-      i71_v2: isMarch26 ? {
+      // V12.1: 6-stage display for March+ AND Feb DT NEW rows
+      isMarch26: isMarch26Plus || isFebMix,
+      i71_v2: (isMarch26Plus || isFebMix) ? {
         man_awal: Math.round(i71Total_dP),
         wait_qc: Math.round(i71Total_dTready),
         bongkar_awal: Math.round(i71Total_dB),

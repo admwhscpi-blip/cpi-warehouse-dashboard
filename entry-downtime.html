@@ -866,6 +866,13 @@
                             *Termasuk KOORDINATOR</div>
                     </div>
                 </div>
+                <div class="selection-card" onclick="openStapelScreen()">
+                    <div class="selection-icon">📐</div>
+                    <div class="selection-content">
+                        <div class="selection-title">STAPEL</div>
+                        <div class="selection-desc">Input netto hasil stapel per tim.</div>
+                    </div>
+                </div>
             </div>
 
 
@@ -908,6 +915,20 @@
                     style="color:var(--muted); font-size:0.7rem; margin-top:10px; opacity:0.6; display:none;">
                     *Jika tombol tidak muncul, gunakan menu Browser (⋮) -> Tambahkan ke Layar Utama
                 </p>
+            </div>
+        </div>
+
+        <!-- SCREEN: STAPEL INPUT -->
+        <div id="screen-stapel" class="screen">
+            <button class="btn-back" onclick="switchScreen('role')">← BALIK KE HOME</button>
+            <div class="form-card">
+                <div class="section-header">📐 INPUT STAPEL SHIFT INI</div>
+                <p
+                    style="font-size:0.55rem; color:var(--muted); margin:5px 0 15px; text-align:center; line-height:1.4;">
+                    Pilih Tim → Input Netto Hasil Stapel (Kg)
+                </p>
+                <div id="stapel-tim-buttons" class="selection-grid"></div>
+                <div id="stapel-history" style="margin-top:15px;"></div>
             </div>
         </div>
 
@@ -1435,9 +1456,9 @@
         }
 
         const CONFIG = {
-            // v20.1.0 DEPLOYMENT (ABSENSI KULI)
-            API_URL: "https://script.google.com/macros/s/AKfycbxCXgq5YKDa2ArcUsCuaAqIdg4Pfjp7rR9vUxW89Z9-1VrXAbB0D55e-kJ7dgEHBMCY/exec",
-            SOURCE_DATA_URL: "https://script.google.com/macros/s/AKfycbxCXgq5YKDa2ArcUsCuaAqIdg4Pfjp7rR9vUxW89Z9-1VrXAbB0D55e-kJ7dgEHBMCY/exec",
+            // v20.2.0 DEPLOYMENT (STAPEL + ANALYTICS V2)
+            API_URL: "https://script.google.com/macros/s/AKfycby1R9-9baIGSVmwXHEj4tsDiPVxOlAqv-5Q1d2n9zoYya8vBBSNneLB5auVmiJf3GOr/exec",
+            SOURCE_DATA_URL: "https://script.google.com/macros/s/AKfycby1R9-9baIGSVmwXHEj4tsDiPVxOlAqv-5Q1d2n9zoYya8vBBSNneLB5auVmiJf3GOr/exec",
             GLOBAL_STOCK_URL: "https://script.google.com/macros/s/AKfycbwnStVw3UhKxgQDuTfufSlNMaTrf4ZpXC0FPAp6AK96t-YIJQNcJ1h0rtkbM2XlxPCr/exec"
         };
 
@@ -1529,11 +1550,148 @@
             document.getElementById('abs-count-a').textContent = vals.filter(v => v.status === 'A').length;
         }
 
+        // ===== STAPEL FUNCTIONS =====
+        let stapelHistory = []; // Track what's been saved this session
+
+        function openStapelScreen() {
+            const session = JSON.parse(localStorage.getItem('WHSMART_SESSION') || '{}');
+            if (!session.tim_borong && !session.tim_harian) {
+                Swal.fire('Setup Dulu!', 'Kamu harus SETUP AWAL SHIFT dulu sebelum input stapel.', 'warning');
+                return;
+            }
+            switchScreen('stapel');
+        }
+
+        function renderStapelButtons() {
+            const session = JSON.parse(localStorage.getItem('WHSMART_SESSION') || '{}');
+            const container = document.getElementById('stapel-tim-buttons');
+            if (!container) return;
+
+            const today = new Date();
+            const tanggal = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+            const krani = session.krani || session.coordinator || '-';
+            const shift = session.shift || '?';
+
+            // STEP 1: Show session card (Krani) — click to expand
+            container.innerHTML = `
+            <div class="selection-card" onclick="expandStapelSession()" style="grid-column: span 2;">
+                <div class="selection-icon">👤</div>
+                <div class="selection-content">
+                    <div class="selection-title">${krani}</div>
+                    <div class="selection-desc">Shift ${shift} — ${tanggal}</div>
+                    <div class="selection-desc" style="color:var(--accent); font-size:0.5rem; margin-top:4px;">▶ Klik untuk input stapel</div>
+                </div>
+            </div>`;
+            renderStapelHistory();
+        }
+
+        function expandStapelSession() {
+            const session = JSON.parse(localStorage.getItem('WHSMART_SESSION') || '{}');
+            const container = document.getElementById('stapel-tim-buttons');
+            if (!container) return;
+
+            const krani = session.krani || session.coordinator || '-';
+
+            let html = `
+            <div style="grid-column: span 2; text-align:center; margin-bottom:5px;">
+                <div style="font-size:0.5rem; color:var(--muted); letter-spacing:2px;">PENCATAT</div>
+                <div style="font-family:'Orbitron'; font-size:0.9rem; color:var(--accent); font-weight:700; margin:4px 0;">${krani}</div>
+                <button onclick="renderStapelButtons()" style="background:none; border:none; color:var(--muted); font-size:0.55rem; cursor:pointer; text-decoration:underline;">← Kembali</button>
+            </div>`;
+
+            if (session.tim_borong) {
+                html += `
+                <div class="selection-card" onclick="openStapelInput('${session.tim_borong}', 'BORONG')">
+                    <div class="selection-icon">💪</div>
+                    <div class="selection-content">
+                        <div class="selection-title">TIM BORONG: ${session.tim_borong}</div>
+                        <div class="selection-desc">Klik untuk input netto stapel</div>
+                    </div>
+                </div>`;
+            }
+            if (session.tim_harian) {
+                html += `
+                <div class="selection-card" onclick="openStapelInput('${session.tim_harian}', 'HARIAN')">
+                    <div class="selection-icon">🔧</div>
+                    <div class="selection-content">
+                        <div class="selection-title">TIM HARIAN: ${session.tim_harian}</div>
+                        <div class="selection-desc">Klik untuk input netto stapel</div>
+                    </div>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        async function openStapelInput(tim, kategori) {
+            const { value: netto } = await Swal.fire({
+                title: `NETTO STAPEL: ${tim}`,
+                text: `Kategori: ${kategori}`,
+                input: 'number',
+                inputPlaceholder: 'Masukkan Netto (Kg)',
+                showCancelButton: true,
+                confirmButtonText: 'SIMPAN STAPEL',
+                inputValidator: (value) => {
+                    if (!value || value <= 0) return 'Netto harus diisi dan lebih dari 0!';
+                }
+            });
+
+            if (netto) {
+                await saveStapel(tim, kategori, parseInt(netto));
+            }
+        }
+
+        async function saveStapel(tim, kategori, netto) {
+            const session = JSON.parse(localStorage.getItem('WHSMART_SESSION') || '{}');
+            const today = new Date();
+            const tanggal = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            Swal.fire({ title: 'Menyimpan Stapel...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            try {
+                await fetch(CONFIG.API_URL, {
+                    method: 'POST', mode: 'no-cors',
+                    body: JSON.stringify({
+                        action: 'saveStapel',
+                        tanggal: tanggal,
+                        shift: session.shift || '?',
+                        tim: tim,
+                        kategori: kategori,
+                        netto: netto,
+                        krani_pencatat: session.krani || session.coordinator || '-'
+                    })
+                });
+
+                stapelHistory.push({ tim, kategori, netto, waktu: today.toLocaleTimeString('id-ID') });
+                renderStapelHistory();
+
+                Swal.fire('Stapel Tersimpan! ✅', `${tim} (${kategori}): ${netto.toLocaleString()} Kg`, 'success');
+            } catch (e) {
+                Swal.fire('Error', 'Gagal simpan stapel. Coba lagi.', 'error');
+            }
+        }
+
+        function renderStapelHistory() {
+            const container = document.getElementById('stapel-history');
+            if (!container || stapelHistory.length === 0) {
+                if (container) container.innerHTML = '';
+                return;
+            }
+            let html = '<div style="font-size:0.6rem; color:var(--accent); font-family:\'Orbitron\'; margin-bottom:8px; letter-spacing:1px;">RIWAYAT SHIFT INI</div>';
+            stapelHistory.forEach(h => {
+                html += `<div style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:5px; border-left:3px solid var(--success);">
+                    <span style="font-size:0.65rem; color:#fff;">${h.tim} (${h.kategori})</span>
+                    <span style="font-family:'Orbitron'; font-size:0.7rem; color:var(--success);">${h.netto.toLocaleString()} KG</span>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
         function switchScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('screen-' + screenId).classList.add('active');
             if (screenId === 'tasks') loadTaskQueue();
             if (screenId === 'setup') renderAbsensi();
+            if (screenId === 'stapel') renderStapelButtons();
             if (screenId === 'form') {
                 const s = JSON.parse(localStorage.getItem('WHSMART_SESSION') || '{}');
                 document.getElementById('display_shift').value = s.shift || '1';
