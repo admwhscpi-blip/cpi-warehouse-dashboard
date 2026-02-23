@@ -1,0 +1,108 @@
+function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  
+  // Berdasarkan gambar sheet yang diberikan:
+  // G: NO (Indeks 6) - Kemungkinan ID Sequence
+  // H: Jenis Truck (Indeks 7)
+  // I: Aging Status (Indeks 8)
+  // J: Description / Material (Indeks 9)
+  // M: Total Netto (Indeks 12)
+  // N: ARRIVAL DATE (Indeks 13)
+  // O: ARRIVAL TIME (Indeks 14)
+  
+  var startRow = 43; // Baris awal data
+  var lastRow = sheet.getLastRow();
+  
+  if(lastRow < startRow) {
+    return createResponse({
+      lastUpdate: new Date().toLocaleString(),
+      placement: [],
+      monitoring: []
+    }, e.parameter.callback);
+  }
+  
+  // Ambil data sampai kolom O (15 kolom)
+  var dataRange = sheet.getRange(startRow, 1, lastRow - startRow + 1, 15).getValues();
+  
+  var monitoring = [];
+  
+  for (var i = 0; i < dataRange.length; i++) {
+    var row = dataRange[i];
+    
+    // 1. FILTER: Lewati baris jika Jenis Truck (H) atau Material (J) kosong
+    var jenisTruck = row[7] ? row[7].toString().trim() : ""; // Kolom H
+    var material = row[9] ? row[9].toString().trim() : "";   // Kolom J
+    
+    if (!jenisTruck && !material) continue; // Jangan diproses jika kosong
+    
+    var agingStatus = row[8] ? row[8].toString().trim() : ""; // Kolom I
+    var netto = parseFloat(row[12]) || 0; // Kolom M
+    
+    // 2. SEQUENCE: Gunakan kolom G (Indeks 6) sebagai fallback jika B (1) kosong
+    var sequence = row[1] ? row[1].toString().trim() : (row[6] ? row[6].toString().trim() : "Data Row " + (startRow + i));
+    
+    // 3. ARRIVAL DATA (N & O)
+    var rawArrivalDate = row[13]; 
+    var arrivalDateFormatted = "";
+    if (rawArrivalDate) {
+       if (Object.prototype.toString.call(rawArrivalDate) === '[object Date]') {
+          var yyyy = rawArrivalDate.getFullYear();
+          var mm = ("0" + (rawArrivalDate.getMonth() + 1)).slice(-2);
+          var dd = ("0" + rawArrivalDate.getDate()).slice(-2);
+          arrivalDateFormatted = dd + "." + mm + "." + yyyy;
+       } else {
+          arrivalDateFormatted = rawArrivalDate.toString().trim();
+       }
+    }
+    
+    var rawArrivalTime = row[14];
+    var arrivalTimeFormatted = "";
+    if (rawArrivalTime) {
+       if (Object.prototype.toString.call(rawArrivalTime) === '[object Date]') {
+          var hh = ("0" + rawArrivalTime.getHours()).slice(-2);
+          var mins = ("0" + rawArrivalTime.getMinutes()).slice(-2);
+          arrivalTimeFormatted = hh + ":" + mins;
+       } else {
+          var parts = rawArrivalTime.toString().split(":");
+          if (parts.length >= 2) {
+             arrivalTimeFormatted = parts[0] + ":" + parts[1];
+          } else {
+             arrivalTimeFormatted = rawArrivalTime.toString().trim();
+          }
+       }
+    }
+
+    monitoring.push({
+      "sequence": sequence,
+      "tglMasuk": arrivalDateFormatted || "00.00.0000",
+      "material": material,
+      "netto": netto,
+      "truckType": jenisTruck,
+      "agingStatus": agingStatus,
+      "jamMasuk": arrivalTimeFormatted || "00:00",
+      "arrivalDate": arrivalDateFormatted,
+      "arrivalTime": arrivalTimeFormatted
+    });
+  }
+  
+  // Data placement (Sesuaikan jika diperlukan)
+  var placementData = []; // Isi jika ada data acuan penempatan
+  
+  var result = {
+    lastUpdate: new Date().toLocaleString(),
+    placement: placementData,
+    monitoring: monitoring
+  };
+  
+  return createResponse(result, e.parameter.callback);
+}
+
+function createResponse(data, callbackName) {
+  var JSONString = JSON.stringify(data);
+  if (callbackName) {
+    JSONString = callbackName + '(' + JSONString + ')';
+    return ContentService.createTextOutput(JSONString).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  } else {
+    return ContentService.createTextOutput(JSONString).setMimeType(ContentService.MimeType.JSON);
+  }
+}

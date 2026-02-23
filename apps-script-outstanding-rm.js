@@ -1,8 +1,21 @@
 /**
- * SMART WAREHOUSE V2.0 - OUTSTANDING RM (PRECISION VERSION)
+ * SMART WAREHOUSE V2.0 - OUTSTANDING RM (FIXED COLUMN MAPPING)
  * -----------------------------------------------
  * Spreadsheet ID: 1Ze745HDK0KAob9bwzOleux1NzHwU_5yRmnYKxjQ34Cc
  * Sheet Name: PENEMPATAN BONGKARAN
+ * 
+ * COLUMN MAP (from Row 43):
+ *   D  = Combined text (NoPolisi + Date + Status)  [col 4]
+ *   F  = Material (short/partial)                   [col 6]
+ *   G  = Netto per truck (individual tonnage)       [col 7]
+ *   H  = Jenis Truck                                [col 8]
+ *   I  = Aging Status                               [col 9]
+ *   J  = (color bar / indicator)                    [col 10]
+ *   K  = Description (Unique) = Full Material Name  [col 11]
+ *   L  = Jumlah Truck (count, formula)              [col 12]
+ *   M  = Total Netto (sum, formula)                 [col 13]
+ *   N  = ARRIVAL DATE                               [col 14]
+ *   O  = ARRIVAL TIME                               [col 15]
  * -----------------------------------------------
  */
 
@@ -36,48 +49,137 @@ function getOutstandingData() {
         option2: { gudang: String(r[5]), lot: String(r[6]), qty: r[7] }
     }));
 
-    // 2. DATA MONITORING OUTSTANDING (Baris 43-146, Kolom D-N)
-    const lastRow = 146;
-    const rangeMonitoring = sheet.getRange(43, 4, lastRow - 43 + 1, 11).getValues();
-    const monitoring = rangeMonitoring.filter(r => r[0] !== "" || r[2] !== "").map(r => {
+    // 2. DATA MONITORING OUTSTANDING (Baris 43+, Kolom D-O = 12 columns)
+    //    Range: col 4 (D) to col 15 (O) = 12 columns
+    const lastRow = sheet.getLastRow();
+    const dataEndRow = Math.min(lastRow, 200); // Safety cap
+    const numRows = dataEndRow - 43 + 1;
+    if (numRows <= 0) return { placement: placement, monitoring: [], lastUpdate: new Date().toLocaleString() };
 
-        const seq = String(r[0]);
-        let tgl = r[1]; // Kolom E
+    const rangeMonitoring = sheet.getRange(43, 4, numRows, 12).getValues();
+    // Index map (0-based from col D):
+    //   0 = D (combined text)
+    //   1 = E (date/empty)
+    //   2 = F (material short)
+    //   3 = G (netto per truck)
+    //   4 = H (jenis truck)
+    //   5 = I (aging status)
+    //   6 = J (indicator)
+    //   7 = K (description unique / full material)
+    //   8 = L (jumlah truck)
+    //   9 = M (total netto)
+    //  10 = N (arrival date)
+    //  11 = O (arrival time)
 
-        // Fallback: Jika Kolom E kosong, coba cari tanggal di Kolom D (Sequence)
-        if (!tgl || String(tgl).trim() === "") {
-            const dateMatch = seq.match(/\d{2}[\./]\d{2}[\./]\d{4}/);
-            if (dateMatch) tgl = dateMatch[0];
+    let lastMaterial = "";  // To carry forward material name for child rows
+
+    const monitoring = [];
+
+    for (let idx = 0; idx < rangeMonitoring.length; idx++) {
+        const r = rangeMonitoring[idx];
+
+        // Skip completely empty rows
+        const colD = String(r[0] || "").trim();
+        const colH = String(r[4] || "").trim();
+        const colI = String(r[5] || "").trim();
+        if (colD === "" && colH === "" && colI === "") continue;
+
+        // === MATERIAL ===
+        // Primary: Column K (Description Unique - full material name)
+        // Fallback: Column F (short/partial material name)
+        let material = String(r[7] || "").trim();   // Col K
+        if (material === "") {
+            material = String(r[2] || "").trim();     // Col F as fallback
         }
-
-        if (tgl instanceof Date) {
-            tgl = Utilities.formatDate(tgl, "GMT+7", "dd/MM/yyyy");
+        // If still empty, inherit from last known material (hierarchical structure)
+        if (material !== "") {
+            lastMaterial = material;
         } else {
-            tgl = String(tgl || "");
+            material = lastMaterial;
         }
 
-        // Jam Masuk (Kolom N = Index 10)
-        let jam = r[10];
-        if (jam instanceof Date) {
-            jam = Utilities.formatDate(jam, "GMT+7", "HH:mm");
-        } else if (typeof jam === 'number') {
-            let hours = Math.floor(jam * 24);
-            let minutes = Math.round((jam * 24 - hours) * 60);
-            jam = (hours < 10 ? "0" + hours : hours) + ":" + (minutes < 10 ? "0" + minutes : minutes);
+        // === NETTO / TONNAGE ===
+        // ALWAYS use Column G (individual truck netto per row)
+        let netto = r[3];  // Col G = individual tonnage
+        if (typeof netto !== 'number') {
+            netto = parseFloat(netto) || 0;
+        }
+
+        // === SEQUENCE ===
+        // Extract from Column D - try to get a sequence number
+        // Col D typically contains: "B 9308 UEK 23.02.2026 To be scaled..."
+        // OR it might just be a number (for individual truck tonnage rows)
+        let sequence = colD;
+
+        // If Col D looks like a plate + date string, try to extract from it
+        // Some patterns: The sequence might be embedded or it could be a pure number
+        // For tonnage-only rows, Col D IS the tonnage (e.g., "8.8", "10.06")
+        // For summary rows, Col D has "B 9308 UEK 23.02.2026 ..."
+
+        // Also check: the Jumlah Truck (Col L) > 0 means it's a summary row
+        const jumlahTruck = r[8] || 0;
+
+        // === TRUCK TYPE ===
+        const truckType = String(r[4] || "").trim();  // Col H
+
+        // === AGING STATUS ===
+        const agingStatus = String(r[5] || "").trim();  // Col I
+
+        // === DATES & TIMES ===
+        // Arrival Date (Col N)
+        let arrivalDate = r[10];
+        if (arrivalDate instanceof Date) {
+            arrivalDate = Utilities.formatDate(arrivalDate, "GMT+7", "dd.MM.yyyy");
         } else {
-            jam = String(jam || "00:00");
+            arrivalDate = String(arrivalDate || "");
         }
 
-        return {
-            sequence: seq,
-            tglMasuk: tgl,
-            material: String(r[2]),     // Kolom F
-            netto: r[3],                // Kolom G
-            truckType: String(r[4]),    // Kolom H
-            agingStatus: String(r[5]),  // Kolom I
-            jamMasuk: jam               // Kolom N
-        };
-    });
+        // Arrival Time (Col O)
+        let arrivalTime = r[11];
+        if (arrivalTime instanceof Date) {
+            arrivalTime = Utilities.formatDate(arrivalTime, "GMT+7", "HH:mm");
+        } else if (typeof arrivalTime === 'number') {
+            // Time stored as fraction of day
+            let hours = Math.floor(arrivalTime * 24);
+            let minutes = Math.round((arrivalTime * 24 - hours) * 60);
+            arrivalTime = (hours < 10 ? "0" + hours : hours) + ":" + (minutes < 10 ? "0" + minutes : minutes);
+        } else {
+            arrivalTime = String(arrivalTime || "");
+        }
+
+        // === TGL MASUK / JAM MASUK (extract from Col D or use Arrival fields) ===
+        let tglMasuk = arrivalDate;
+        let jamMasuk = arrivalTime;
+
+        // If arrivalDate is empty, try to extract date from Col D text
+        if (!tglMasuk || tglMasuk.trim() === "" || tglMasuk === "0" || tglMasuk === "00.00.0000") {
+            const dateMatch = colD.match(/(\d{2})[\./](\d{2})[\./](\d{4})/);
+            if (dateMatch) {
+                tglMasuk = dateMatch[0];
+            }
+        }
+
+        // If Col E has a date value
+        let colE = r[1];
+        if (colE instanceof Date) {
+            if (!tglMasuk || tglMasuk.trim() === "") {
+                tglMasuk = Utilities.formatDate(colE, "GMT+7", "dd.MM.yyyy");
+            }
+        }
+
+        monitoring.push({
+            sequence: sequence,
+            tglMasuk: tglMasuk,
+            material: material,
+            netto: netto,
+            truckType: truckType,
+            agingStatus: agingStatus,
+            jamMasuk: jamMasuk,
+            arrivalDate: arrivalDate,
+            arrivalTime: arrivalTime,
+            jumlahTruck: jumlahTruck
+        });
+    }
 
     return {
         placement: placement,

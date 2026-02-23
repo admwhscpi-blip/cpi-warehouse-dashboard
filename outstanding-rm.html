@@ -603,12 +603,57 @@
         .modal-content {
             background: #0a0a0a;
             border: 1px solid var(--glass-border);
-            width: 80%;
-            max-width: 800px;
-            max-height: 80vh;
+            width: 95%;
+            max-width: 1200px;
+            max-height: 85vh;
             border-radius: 8px;
             padding: 25px;
             overflow-y: auto;
+        }
+
+        /* MODAL TABLE OVERRIDES */
+        .modal-content .data-table-aligned {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .modal-content .data-table-aligned th,
+        .modal-content .data-table-aligned td {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            vertical-align: middle;
+        }
+
+        /* Column widths for modal drill-down table */
+        .modal-content .data-table-aligned th:nth-child(1),
+        .modal-content .data-table-aligned td:nth-child(1) {
+            width: 12%;
+        }
+
+        .modal-content .data-table-aligned th:nth-child(2),
+        .modal-content .data-table-aligned td:nth-child(2) {
+            width: 22%;
+        }
+
+        .modal-content .data-table-aligned th:nth-child(3),
+        .modal-content .data-table-aligned td:nth-child(3) {
+            width: 12%;
+        }
+
+        .modal-content .data-table-aligned th:nth-child(4),
+        .modal-content .data-table-aligned td:nth-child(4) {
+            width: 14%;
+        }
+
+        .modal-content .data-table-aligned th:nth-child(5),
+        .modal-content .data-table-aligned td:nth-child(5) {
+            width: 16%;
+        }
+
+        .modal-content .data-table-aligned th:nth-child(6),
+        .modal-content .data-table-aligned td:nth-child(6) {
+            width: 24%;
         }
 
         .modal-header {
@@ -858,7 +903,21 @@
     </div>
 
     <script>
-        const RM_API_URL = "https://script.google.com/macros/s/AKfycbxb9d_eFQnv8cyAniRXOjogslUFo0b8LXrN1UBZ8qsDi1x5T-mrqfRpgybuG176y37a/exec";
+        const RM_API_URL = "https://script.google.com/macros/s/AKfycby1bRxG2y3CFk-M3spQvt5KL5ywRPibCa69JBizz4eMUNcLJytnQMd1MwF4i_ViWry4/exec";
+
+        // Extract plate number from Col D text
+        // e.g. "B 9308 UEK 23.02.2026 To be scaled..." → "B 9308 UEK"
+        function extractPlate(raw) {
+            if (!raw) return '-';
+            const s = String(raw).trim();
+            // Match plate pattern: 1-2 letters, space, 4 digits, space, 1-3 letters
+            const m = s.match(/^([A-Z]{1,2})\s+(\d{3,4})\s+([A-Z]{1,3})/i);
+            if (m) return m[0].toUpperCase();
+            // Fallback: take text before the first date pattern (dd.mm.yyyy)
+            const dateIdx = s.search(/\d{2}[\.\/-]\d{2}[\.\/-]\d{4}/);
+            if (dateIdx > 0) return s.substring(0, dateIdx).trim();
+            return s;
+        }
 
         const state = {
             data: null,
@@ -929,21 +988,37 @@
             const inap = m.filter(i => (i.agingStatus || '').toUpperCase().includes('INAP'));
             const today = m.filter(i => !(i.agingStatus || '').toUpperCase().includes('INAP'));
 
-            // Logic for Pre-Inap (Container only, today only, and reaching limit)
+            // Logic for Pre-Inap
             const now = new Date();
             const preInap = m.filter(i => {
-                if (!((i.truckType || '').toUpperCase().includes('CONTAINER') && (i.agingStatus || '').toUpperCase().includes('HARI INI'))) return false;
-                if (!i.tglMasuk || !i.jamMasuk) return false;
-                try {
-                    const tp = i.tglMasuk.split(/[/.]/);
-                    const jp = (i.jamMasuk || "00:00").split(':');
-                    if (tp.length === 3 && jp.length >= 2) {
-                        const entry = new Date(parseInt(tp[2]), parseInt(tp[1]) - 1, parseInt(tp[0]), parseInt(jp[0]), parseInt(jp[1]));
-                        const diff = (entry.getTime() + (24 * 60 * 60 * 1000)) - now.getTime();
-                        return (diff > 0 && diff < (24 * 60 * 60 * 1000)); // Within 24 hours of entry
-                    }
-                } catch (e) { }
-                return false;
+                let isContainer = (i.truckType || '').toUpperCase().includes('CONTAINER');
+
+                if (isContainer) {
+                    if (!i.arrivalDate || !i.arrivalTime) return false;
+                    try {
+                        const tp = i.arrivalDate.split(/[/.]/);
+                        const jp = i.arrivalTime.split(':');
+                        if (tp.length === 3 && jp.length >= 2) {
+                            const entry = new Date(parseInt(tp[2]), parseInt(tp[1]) - 1, parseInt(tp[0]), parseInt(jp[0]), parseInt(jp[1]));
+                            const diff = (entry.getTime() + (24 * 60 * 60 * 1000)) - now.getTime();
+                            return (diff > 0 && diff < (24 * 60 * 60 * 1000)); // Within 24 hours of entry
+                        }
+                    } catch (e) { }
+                    return false;
+                } else {
+                    if (!(i.agingStatus || '').toUpperCase().includes('HARI INI')) return false;
+                    if (!i.tglMasuk) return false;
+                    try {
+                        const tp = i.tglMasuk.split(/[/.]/);
+                        const jp = (i.jamMasuk || "00:00").split(':');
+                        if (tp.length === 3 && jp.length >= 2) {
+                            const entry = new Date(parseInt(tp[2]), parseInt(tp[1]) - 1, parseInt(tp[0]), parseInt(jp[0]), parseInt(jp[1]));
+                            const diff = (entry.getTime() + (24 * 60 * 60 * 1000)) - now.getTime();
+                            return (diff > 0 && diff < (24 * 60 * 60 * 1000));
+                        }
+                    } catch (e) { }
+                    return false;
+                }
             });
 
             document.getElementById('count-today').innerHTML = `${today.length} <small style="font-size:0.7rem; color:#fbbf24;">(${preInap.length} Pra-Inap)</small>`;
@@ -1021,7 +1096,7 @@
             else if (type === 'TODAY') { title.innerText = "INPUTAN HARI INI (RECORDS)"; filtered = m.filter(i => !(i.agingStatus || '').toUpperCase().includes('INAP')); }
             else if (type === 'INAP') { title.innerText = "MOBIL INAP (> 24 JAM)"; filtered = m.filter(i => (i.agingStatus || '').toUpperCase().includes('INAP')); }
 
-            let html = '<table class="data-table-aligned" style="width:100%;"><thead><tr><th>No Sequence</th><th>Material</th><th>Truck Type</th><th>Tonnage</th><th>Status</th><th>PRA-INAP (Countdown)</th></tr></thead><tbody>';
+            let html = '<table class="data-table-aligned" style="width:100%;"><thead><tr><th>No Polisi</th><th>Material</th><th>Truck Type</th><th>Tonnage</th><th>Status</th><th>PRA-INAP (Countdown)</th></tr></thead><tbody>';
 
             const now = new Date();
 
@@ -1030,15 +1105,23 @@
                 let reminderHtml = "";
 
                 // FEATURE: Pre-Inap Countdown (24H Limit)
-                if (type === 'CONTAINER' && (i.agingStatus || '').toUpperCase().includes('HARI INI')) {
-                    if (i.tglMasuk && i.jamMasuk) {
+                let isContainer = (i.truckType || '').toUpperCase().includes('CONTAINER');
+
+                if (isContainer) {
+                    let aDate = i.arrivalDate;
+                    let aTime = i.arrivalTime;
+
+                    if (!aDate && !aTime) {
+                        reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">ARRIVAL DATE & TIME KOSONG</span>`;
+                    } else if (!aDate) {
+                        reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">ARRIVAL DATE KOSONG</span>`;
+                    } else if (!aTime) {
+                        reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">ARRIVAL TIME KOSONG</span>`;
+                    } else {
                         try {
-                            // Parse entry time from API (Format DD/MM/YYYY or DD.MM.YYYY and HH:mm)
-                            const tParts = i.tglMasuk.split(/[/.]/);
-                            const jParts = (i.jamMasuk || "00:00").split(':');
-                            // Ensure date parts exist
+                            const tParts = aDate.split(/[/.]/);
+                            const jParts = aTime.split(':');
                             if (tParts.length === 3 && jParts.length >= 2) {
-                                // Day Month Year conversion safety
                                 const d = parseInt(tParts[0]);
                                 const m = parseInt(tParts[1]) - 1;
                                 const y = parseInt(tParts[2]);
@@ -1046,19 +1129,50 @@
                                 const mm = parseInt(jParts[1]);
 
                                 const entryDate = new Date(y, m, d, hh, mm);
-
                                 const diffMs = (entryDate.getTime() + (24 * 60 * 60 * 1000)) - now.getTime();
                                 const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
                                 const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
 
                                 if (diffMs > 0) {
-                                    reminderHtml = `<span style="color:#fbbf24; font-weight:700; font-size:0.8rem;">${diffHrs}j ${diffMins}m LAGI</span>`;
+                                    reminderHtml = `<span style="color:#fbbf24; font-weight:700; font-size:0.8rem;">${diffHrs} JAM ${diffMins} MENIT LAGI</span>`;
                                 } else {
-                                    reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.8rem;">SOON INAP</span>`;
+                                    reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.8rem;">SUDAH INAP</span>`;
                                 }
+                            } else {
+                                reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">FORMAT TGL/JAM SALAH</span>`;
                             }
                         } catch (e) {
-                            console.warn("Time calc failed for", i.sequence);
+                            reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">ERROR PARSING</span>`;
+                        }
+                    }
+                } else {
+                    // NON-CONTAINER
+                    if ((i.agingStatus || '').toUpperCase().includes('HARI INI')) {
+                        if (i.tglMasuk) {
+                            try {
+                                const tParts = i.tglMasuk.split(/[/.]/);
+                                const jParts = (i.jamMasuk || "00:00").split(':');
+                                if (tParts.length === 3 && jParts.length >= 2) {
+                                    const d = parseInt(tParts[0]);
+                                    const m = parseInt(tParts[1]) - 1;
+                                    const y = parseInt(tParts[2]);
+                                    const hh = parseInt(jParts[0]);
+                                    const mm = parseInt(jParts[1]);
+
+                                    const entryDate = new Date(y, m, d, hh, mm);
+                                    const diffMs = (entryDate.getTime() + (24 * 60 * 60 * 1000)) - now.getTime();
+                                    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+                                    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+                                    if (diffMs > 0) {
+                                        reminderHtml = `<span style="color:#fbbf24; font-weight:700; font-size:0.8rem;">${diffHrs} JAM ${diffMins} MENIT LAGI</span>`;
+                                    } else {
+                                        reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.8rem;">SOON INAP</span>`;
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn("Time calc failed for", i.sequence);
+                            }
                         }
                     }
                 }
@@ -1067,10 +1181,10 @@
 
                 html += `
                     <tr>
-                        <td style="font-family:'Orbitron'; font-size:0.75rem; letter-spacing:0.5px;">${i.sequence}</td>
-                        <td style="color:var(--neon-blue); font-weight:700;">${i.material}</td>
-                        <td style="font-size:0.8rem;">${i.truckType}</td>
-                        <td style="font-weight:700;">${ton.toLocaleString()} TON</td>
+                        <td style="font-family:'Rajdhani'; font-size:0.95rem; font-weight:700; letter-spacing:0.5px;">${extractPlate(i.sequence)}</td>
+                        <td style="color:var(--neon-blue); font-weight:700; font-size:0.9rem;">${i.material}</td>
+                        <td style="font-size:0.85rem;">${i.truckType}</td>
+                        <td style="font-weight:700; font-size:0.95rem;">${ton.toLocaleString()} TON</td>
                         <td><span class="status-badge ${statusClass}">${i.agingStatus}</span></td>
                         <td style="text-align:center;">${reminderHtml || '-'}</td>
                     </tr>
