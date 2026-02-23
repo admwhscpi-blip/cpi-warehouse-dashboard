@@ -589,6 +589,18 @@ function getDowntimeQuery(ssId, e) {
         
         // Update last valid finish for next gaps
         if (epochFinish) lastValidFinish = epochFinish;
+        
+        if (truckType) {
+          if (!intakeTruckTypes[truckType]) intakeTruckTypes[truckType] = { trucks: 0, netto: 0, duration: 0, validDurCount: 0, min: 9999, max: 0 };
+          intakeTruckTypes[truckType].trucks++;
+          intakeTruckTypes[truckType].netto += rowNetto;
+          if (durationMins > 0) {
+            intakeTruckTypes[truckType].duration += durationMins;
+            intakeTruckTypes[truckType].validDurCount++;
+            if (durationMins < intakeTruckTypes[truckType].min) intakeTruckTypes[truckType].min = durationMins;
+            if (durationMins > intakeTruckTypes[truckType].max) intakeTruckTypes[truckType].max = durationMins;
+          }
+        }
       }
     } // END IF IS I71
 
@@ -600,6 +612,38 @@ function getDowntimeQuery(ssId, e) {
       var dd = directDailyAgg[dateKey];
       dd.netto += rowNetto;
       dd.trucks++;
+      
+      var baseEpochDG = new Date(rowDate.getFullYear(), rowDate.getMonth(), rowDate.getDate()).getTime();
+      var getEpochAtTimeDG = function(val) {
+         if (val === null || val === undefined || val === "" || val === "-") return null;
+         if (val instanceof Date) {
+            var clockStr = Utilities.formatDate(val, ssTZ, "HH:mm:ss");
+            var p = clockStr.split(":");
+            var mins = (parseInt(p[0]) * 60) + parseInt(p[1]) + (parseInt(p[2]) / 60);
+            return baseEpochDG + (mins * 60000);
+         }
+         var minutes = parseTime(val); 
+         return baseEpochDG + (minutes * 60000);
+      };
+      var epPanggil = getEpochAtTimeDG(startTs);
+      var epFinish = getEpochAtTimeDG(endTs);
+      var durDG = 0;
+      if (epPanggil !== null && epFinish !== null) {
+        if (epFinish < epPanggil) epFinish += 24 * 3600000;
+        durDG = (epFinish - epPanggil) / 60000;
+      }
+      
+      if (truckType) {
+        if (!directTruckTypes[truckType]) directTruckTypes[truckType] = { trucks: 0, netto: 0, duration: 0, validDurCount: 0, min: 9999, max: 0 };
+        directTruckTypes[truckType].trucks++;
+        directTruckTypes[truckType].netto += rowNetto;
+        if (durDG > 0) {
+          directTruckTypes[truckType].duration += durDG;
+          directTruckTypes[truckType].validDurCount++;
+          if (durDG < directTruckTypes[truckType].min) directTruckTypes[truckType].min = durDG;
+          if (durDG > directTruckTypes[truckType].max) directTruckTypes[truckType].max = durDG;
+        }
+      }
     }
   } // END MAIN SCAN FOR LOOP
 

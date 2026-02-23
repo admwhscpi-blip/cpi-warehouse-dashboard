@@ -1441,39 +1441,34 @@
                         <div class="logic-split">
                             <div class="logic-item-box">
                                 <span class="logic-step-num">STEP 01</span>
-                                <span class="logic-name">MANUVER AWAL</span>
+                                <span class="logic-name">WAIT PANGGIL</span>
                                 <span class="logic-formula">($M - L$)</span>
-                                <span class="logic-desc-small">DURASI UNIT MASUK HINGGA TRUCK READY.</span>
+                                <span class="logic-desc-small">DURASI KRANI PANGGIL UNIT HINGGA TRUCK READY.</span>
                             </div>
                             <div class="logic-item-box">
                                 <span class="logic-step-num">STEP 02</span>
-                                <span class="logic-name">TUNGGU QC TIBA</span>
+                                <span class="logic-name">ACTIVE BONGKAR</span>
                                 <span class="logic-formula">($N - M$)</span>
-                                <span class="logic-desc-small">WAKTU TUNGGU QC SEBELUM BONGKAR.</span>
+                                <span class="logic-desc-small">DURASI MURNI UNIT MENUANG MUATAN.</span>
                             </div>
                             <div class="logic-item-box">
                                 <span class="logic-step-num">STEP 03</span>
-                                <span class="logic-name">BONGKAR AWAL</span>
+                                <span class="logic-name">QC PROCESS</span>
                                 <span class="logic-formula">($O - N$)</span>
-                                <span class="logic-desc-small">PENUANGAN MUATAN TAHAP PERTAMA.</span>
+                                <span class="logic-desc-small">DURASI PENGECEKAN MUTU/SAMPLING OLEH QC.</span>
                             </div>
                             <div class="logic-item-box">
                                 <span class="logic-step-num">STEP 04</span>
-                                <span class="logic-name">HOLD QC (SAMPLE)</span>
+                                <span class="logic-name">MANUVER AKHIR</span>
                                 <span class="logic-formula">($P - O$)</span>
-                                <span class="logic-desc-small">DURASI SAMPLING ATAU CEK MUTU.</span>
+                                <span class="logic-desc-small">UNIT SELESAI BONGKAR DAN PERSIAPAN KELUAR.</span>
                             </div>
                             <div class="logic-item-box">
                                 <span class="logic-step-num">STEP 05</span>
-                                <span class="logic-name">BONGKAR LANJUT</span>
+                                <span class="logic-name">FINISH DELAY</span>
                                 <span class="logic-formula">($Q - P$)</span>
-                                <span class="logic-desc-small">PENYELESAIAN PENUANGAN MUATAN.</span>
-                            </div>
-                            <div class="logic-item-box">
-                                <span class="logic-step-num">STEP 06</span>
-                                <span class="logic-name">MANUVER AKHIR</span>
-                                <span class="logic-formula">($R - Q$)</span>
-                                <span class="logic-desc-small">UNIT SELESAI HINGGA KELUAR AREA.</span>
+                                <span class="logic-desc-small">JEDA DARI PERSIAPAN HINGGA BENAR-BENAR KELUAR
+                                    SISTEM.</span>
                             </div>
                         </div>
                     </div>
@@ -1664,10 +1659,12 @@
                 <!-- MICRO CHART -->
                 <div id="chart-active-breakdown" style="height:150px; margin-top:10px;"></div>
                 <div
-                    style="margin-top:10px; font-size:0.85rem; color:#aaa; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                    <div>NET BONGKAR: <span id="micro-net" style="color:#fff; font-weight:bold;">-</span></div>
-                    <div>DT MANUVER: <span id="micro-man" style="color:#fff; font-weight:bold;">-</span></div>
-                    <div>QC CHECK: <span id="micro-qc" style="color:#fff; font-weight:bold;">-</span></div>
+                    style="margin-top:10px; font-size:0.75rem; color:#aaa; display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                    <div>WAIT PANGGIL: <span id="micro-wait" style="color:#fff; font-weight:bold;">-</span></div>
+                    <div>ACTIVE BONGKAR: <span id="micro-bongkar" style="color:#fff; font-weight:bold;">-</span></div>
+                    <div>QC PROCESS: <span id="micro-qc" style="color:#fff; font-weight:bold;">-</span></div>
+                    <div>MANUVER AKHIR: <span id="micro-manuver" style="color:#fff; font-weight:bold;">-</span></div>
+                    <div>FINISH DELAY: <span id="micro-finish" style="color:#fff; font-weight:bold;">-</span></div>
                 </div>
             </div>
 

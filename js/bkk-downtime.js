@@ -234,33 +234,44 @@ const BKKDowntimeApp = {
         // V12.2: Perfect 100% Math
         den = i71.totalMonthMin || totalTime || 1;
 
-        let manTime, qcTime, waitQcTime, bongkarLanjut, manAkhir;
         let activeTotalWorking;
         let activeSeries, activeLabels, activeColors;
 
-        if (i71.isMarch26 && i71.i71_v2) {
-            const v2 = i71.i71_v2;
-            // netMin is already declared at line 191
-            netMin = v2.bongkar_awal;
-            manTime = v2.man_awal;
-            qcTime = v2.hold_qc;
-            waitQcTime = v2.wait_qc;
-            bongkarLanjut = v2.bongkar_lanjut;
-            manAkhir = v2.man_akhir;
-            activeTotalWorking = i71.activeTotal || (netMin + manTime + qcTime + waitQcTime + bongkarLanjut + manAkhir);
+        let wt = 0, bk = 0, qct = 0, mnv = 0, fn = 0;
+        let hasNewBreakdown = false;
 
-            activeSeries = [manTime, waitQcTime, netMin, qcTime, bongkarLanjut, manAkhir];
-            activeLabels = ['Man. Awal', 'Wait QC', 'Bongkar 1', 'Hold QC', 'Bongkar 2', 'Man. Akhir'];
-            activeColors = ['#2979ff', '#ffcc00', '#00e5ff', '#651fff', '#00ff88', '#ff003c'];
+        if (this.aggregatedData) {
+            this.aggregatedData.forEach(d => {
+                const shifts = d.shiftData || {};
+                ["1", "2", "3"].forEach(id => {
+                    const s = shifts[id];
+                    if (s && (s.wt !== undefined || s.bk !== undefined || s.qct !== undefined || s.mnv !== undefined || s.fn !== undefined)) {
+                        hasNewBreakdown = true;
+                        wt += (s.wt || 0);
+                        bk += (s.bk || 0);
+                        qct += (s.qct || 0);
+                        mnv += (s.mnv || 0);
+                        fn += (s.fn || 0);
+                    }
+                });
+            });
+        }
 
-            // Update text labels specifically for 6-stage display if they exist
-            // For now, we'll keep the core 3 summary as they are, but update the chart.
-            setVal('micro-net', fmt(netMin + bongkarLanjut) + 'm');
-            setVal('micro-man', fmt(manTime + manAkhir) + 'm');
-            setVal('micro-qc', fmt(qcTime + waitQcTime) + 'm');
+        if (hasNewBreakdown || (i71.isMarch26 && i71.i71_v2)) {
+            activeTotalWorking = i71.activeTotal || (wt + bk + qct + mnv + fn);
+
+            activeSeries = [wt, bk, qct, mnv, fn];
+            activeLabels = ['Wait Panggil', 'Active Bongkar', 'QC Process', 'Manuver Akhir', 'Finish Delay'];
+            activeColors = ['#ffea00', '#00e5ff', '#651fff', '#ff003c', '#ff9100'];
+
+            setVal('micro-wait', fmt(wt) + 'm');
+            setVal('micro-bongkar', fmt(bk) + 'm');
+            setVal('micro-qc', fmt(qct) + 'm');
+            setVal('micro-manuver', fmt(mnv) + 'm');
+            setVal('micro-finish', fmt(fn) + 'm');
         } else {
-            manTime = i71.manuverTotal || 0;
-            qcTime = i71.qcTotal || 0;
+            let manTime = i71.manuverTotal || 0;
+            let qcTime = i71.qcTotal || 0;
             netMin = i71.netDischarge || 0;
             activeTotalWorking = i71.activeTotal || (netMin + manTime + qcTime);
 
@@ -268,9 +279,11 @@ const BKKDowntimeApp = {
             activeLabels = ['Net Bongkar', 'Manuver', 'QC Check'];
             activeColors = ['#00e5ff', '#2979ff', '#651fff'];
 
-            setVal('micro-net', fmt(netMin) + 'm');
-            setVal('micro-man', fmt(manTime) + 'm');
+            setVal('micro-wait', '-');
+            setVal('micro-bongkar', fmt(netMin) + 'm');
             setVal('micro-qc', fmt(qcTime) + 'm');
+            setVal('micro-manuver', fmt(manTime) + 'm');
+            setVal('micro-finish', '-');
         }
 
         setVal('val-active-min', fmt(activeTotalWorking) + ' MIN');
@@ -600,10 +613,10 @@ const BKKDowntimeApp = {
 
         // Prepare Data
         const i71 = this.intake71Data || {};
-        const dailyDetail = i71.dailyDetail || [];
-        const subTypes = i71.intakeSubTypes || {};
-        const workers = i71.workerStats || {};
-        const directTrucks = this.directGudangData.truckTypes || {};
+        const dailyDetail = (i71 && i71.dailyDetail) ? i71.dailyDetail : [];
+        const subTypes = (i71 && i71.intakeSubTypes) ? i71.intakeSubTypes : {};
+        const workers = (i71 && i71.workerStats) ? i71.workerStats : {};
+        const directTrucks = (this.directGudangData && this.directGudangData.truckTypes) ? this.directGudangData.truckTypes : {};
 
         // Helper: Find max/min
         let maxOutput = { val: 0, date: '-', detail: {} };
@@ -803,10 +816,15 @@ const BKKDowntimeApp = {
     },
 
     renderTruckAnalysis: function (path) {
+        console.log("renderTruckAnalysis HIT for path:", path);
         // V11.2 Fix: Use specific source for direct path
-        const truckData = (path === 'direct') ? (this.directGudangData.truckTypes || {}) : (this.truckTypeData || {});
+        const truckData = (path === 'direct') ? (this.directGudangData && this.directGudangData.truckTypes ? this.directGudangData.truckTypes : {}) : (this.truckTypeData || {});
+        console.log("truckData retrieved:", truckData, "keys:", Object.keys(truckData));
         const container = document.getElementById('truck-list-' + path);
-        if (!container) return;
+        if (!container) {
+            console.log("Container NOT FOUND for path:", path);
+            return;
+        }
 
         let html = "";
         const entries = Object.entries(truckData);
