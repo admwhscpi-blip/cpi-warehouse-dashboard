@@ -25,7 +25,7 @@ const MUAT_HEADERS = [
   "Timestamp", "Tanggal", "Shift", "Kategori", "Nopol",        // A, B, C, D, E (Index 0-4)
   "Material", "Netto (Kg)", "Jumlah Bag", "Tim Harian", "Jumlah Kuli", // F, G, H, I, J (Index 5-9)
   "Nama Krani", "Bongkar Stapel", "Start Muat", "Finish", "OTW Pabrik", // K, L, M, N, O (Index 10-14)
-  "Status Validasi", "Validator", "SYSTEM_VERSION"              // P, Q, R (Index 15-17)
+  "Status Validasi", "Validator", "SYSTEM_VERSION", "Gudang Muat"       // P, Q, R, S (Index 15-18)
 ];
 
 // v20.2.0 Helper: Format time cell to HH:MM string
@@ -300,6 +300,7 @@ function doGet(e) {
             KEGIATAN: "BONGKAR",
             LOKASI: gudang,
             NOPOL: String(row[bIdx.nopol >= 0 ? bIdx.nopol : 6] || ""),
+            REAL_BONGKAR_MT: netto,
             START_PANGGIL: fmtTime(row[bIdx.startPanggil]),
             TRUCK_READY: fmtTime(row[bIdx.truckReady]),
             START_BONGKAR: fmtTime(row[bIdx.startBongkar]),
@@ -337,6 +338,7 @@ function doGet(e) {
         const mNetto = mH.findIndex(h => h.includes("NETTO"));
         const mKat = mH.indexOf("KATEGORI") >= 0 ? mH.indexOf("KATEGORI") : 3;
         const mMaterial = mH.indexOf("MATERIAL") >= 0 ? mH.indexOf("MATERIAL") : 5;
+        const mGudang = mH.indexOf("GUDANG MUAT") >= 0 ? mH.indexOf("GUDANG MUAT") : 18; // S=18
 
         for (let i = 1; i < mData.length; i++) {
           let tgl = mData[i][mTanggal];
@@ -357,7 +359,9 @@ function doGet(e) {
           // MUAT template entries
           templateRows.push({
             TANGGAL: tgl, JENIS_RM: String(mData[i][mMaterial] || ""), KEGIATAN: "MUAT",
-            LOKASI: "-", DURASI_BONGKAR: null, PB_START: null, TUNGGU_QC: null
+            REAL_BONGKAR_MT: netto,
+            LOKASI: String(mData[i][mGudang >= 0 ? mGudang : 18] || "RM"), 
+            DURASI_BONGKAR: null, PB_START: null, TUNGGU_QC: null
           });
         }
       }
@@ -802,7 +806,9 @@ function doPost(e) {
         raw.finish || '-',          // N=13: Finish
         raw.otw_pabrik || '-',      // O=14: OTW Pabrik
         "",                         // P=15: Status Validasi
-        ""                          // Q=16: Validator
+        "",                         // Q=16: Validator
+        "v20.0.3 ABSOLUTE-SYNC",    // R=17: SYSTEM_VERSION
+        raw.gudang || 'RM'          // S=18: Gudang Muat (Default RM)
       ]);
       return ContentService.createTextOutput(JSON.stringify({success:true}));
     }

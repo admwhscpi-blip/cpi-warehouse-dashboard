@@ -1220,6 +1220,11 @@
                         </select>
                     </div>
                 </div>
+                <div class="field-group"><label>Lokasi Gudang Muat</label>
+                    <select id="muat_gudang">
+                        <option value="" disabled selected>-- PILIH GUDANG MUAT --</option>
+                    </select>
+                </div>
                 <div class="field-group"><label>Nama Krani Muat</label>
                     <input type="text" id="muat_krani" placeholder="Isi Nama Krani...">
                 </div>
@@ -1490,8 +1495,8 @@
 
         const CONFIG = {
             // v20.2.0 DEPLOYMENT (STAPEL + ANALYTICS V2)
-            API_URL: "https://script.google.com/macros/s/AKfycby1R9-9baIGSVmwXHEj4tsDiPVxOlAqv-5Q1d2n9zoYya8vBBSNneLB5auVmiJf3GOr/exec",
-            SOURCE_DATA_URL: "https://script.google.com/macros/s/AKfycby1R9-9baIGSVmwXHEj4tsDiPVxOlAqv-5Q1d2n9zoYya8vBBSNneLB5auVmiJf3GOr/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbw1PJPdD3d8QKE3RLZTzR76INGMI-kd1anfRbZqH1-cyilaAkk6uFu215pmqKWYNZEE/exec",
+            SOURCE_DATA_URL: "https://script.google.com/macros/s/AKfycbw1PJPdD3d8QKE3RLZTzR76INGMI-kd1anfRbZqH1-cyilaAkk6uFu215pmqKWYNZEE/exec",
             GLOBAL_STOCK_URL: "https://script.google.com/macros/s/AKfycbwnStVw3UhKxgQDuTfufSlNMaTrf4ZpXC0FPAp6AK96t-YIJQNcJ1h0rtkbM2XlxPCr/exec"
         };
 
@@ -1838,6 +1843,14 @@
                     if (gdSel && gdSel.options.length <= 1) {
                         stockRes.warehouses.forEach(w => {
                             gdSel.appendChild(new Option(w, w));
+                        });
+                    }
+
+                    // v20.0.3: Populate Gudang Muat
+                    const muatGdSel = document.getElementById('muat_gudang');
+                    if (muatGdSel && muatGdSel.options.length <= 1) {
+                        stockRes.warehouses.forEach(w => {
+                            muatGdSel.appendChild(new Option(w, w));
                         });
                     }
                 }
@@ -2417,6 +2430,7 @@
             const timHarian = document.getElementById('muat_tim_harian').value;
             const jumlahKuli = document.getElementById('muat_jumlah_kuli').value;
             const namaKrani = document.getElementById('muat_krani').value;
+            const gudangMuat = document.getElementById('muat_gudang').value;
 
             const jumlahBag = document.getElementById('muat_jumlah_bag').value;
             const netto = document.getElementById('muat_netto').value; // v19.3
@@ -2424,6 +2438,7 @@
             // Validation
             const missing = [];
             if (!tanggal) missing.push('Tanggal');
+            if (!gudangMuat) missing.push('Lokasi Gudang Muat');
             if (!material) missing.push('Material');
             if (!jumlahKuli) missing.push('Jumlah Kuli');
             if (!namaKrani) missing.push('Nama Krani Muat');
@@ -2450,6 +2465,7 @@
                 shift: shift,
                 kategori_risip: document.getElementById('muat_kategori').value, // v19.4
                 nopol: document.getElementById('muat_nopol').value,             // v19.4
+                gudang: gudangMuat,
                 material: material,
                 tim_harian: timHarian,
                 jumlah_kuli: jumlahKuli,

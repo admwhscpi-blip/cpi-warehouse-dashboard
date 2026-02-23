@@ -38,32 +38,57 @@ const AnalysApp = {
         const statusText = document.querySelector('.status-pill');
         if (statusText) statusText.innerHTML = '<div class="status-dot" style="background:#f59e0b; box-shadow:0 0 8px #f59e0b;"></div> SYNCING...';
 
+        // 1. FAST LOAD FROM CACHE
         try {
-            // Fetch BOTH sources in parallel
+            const cachedOld = localStorage.getItem('rm_dt_data_old');
+            const cachedV2 = localStorage.getItem('rm_dt_data_v2');
+            if (cachedOld || cachedV2) {
+                this.dataOld = cachedOld ? JSON.parse(cachedOld) : null;
+                this.dataV2 = cachedV2 ? JSON.parse(cachedV2) : null;
+                this.data = this.dataOld || this.dataV2 || { dailyActivity: [], template: [], kuliBorong: {}, kuliHarian: {} };
+                this.initGlobalFilter();
+                this.renderAllCharts();
+                this.renderKPIs();
+                this.initMaterialFeed();
+                if (statusText) statusText.innerHTML = '<div class="status-dot"></div> SYSTEM CACHED';
+            }
+        } catch (e) { console.warn("Cache read error", e); }
+
+        // 2. FETCH LATEST IN BACKGROUND
+        try {
             const [resOld, resV2] = await Promise.all([
                 fetch(this.apiUrl).then(r => r.json()).catch(() => null),
                 this.apiV2Url ? fetch(this.apiV2Url).then(r => r.json()).catch(() => null) : Promise.resolve(null)
             ]);
 
-            this.dataOld = resOld;
-            this.dataV2 = resV2;
+            let changed = false;
+            // UPDATE CACHE IF CHANGED
+            if (resOld && JSON.stringify(resOld) !== localStorage.getItem('rm_dt_data_old')) {
+                localStorage.setItem('rm_dt_data_old', JSON.stringify(resOld));
+                this.dataOld = resOld;
+                changed = true;
+            }
+            if (resV2 && JSON.stringify(resV2) !== localStorage.getItem('rm_dt_data_v2')) {
+                localStorage.setItem('rm_dt_data_v2', JSON.stringify(resV2));
+                this.dataV2 = resV2;
+                changed = true;
+            }
 
-            // Default to old data initially (will be swapped by initGlobalFilter if needed)
-            this.data = resOld || resV2 || { dailyActivity: [], template: [], kuliBorong: {}, kuliHarian: {} };
-
-            // INIT GLOBAL FILTER (merged months from both sources)
-            this.initGlobalFilter();
-
-            // Render All
-            this.renderAllCharts();
-            this.renderKPIs();
-            this.initMaterialFeed();
-
+            // RE-RENDER IF THERE WAS A CHANGE
+            if (changed || (!this.dataOld && !this.dataV2)) {
+                this.data = this.dataOld || this.dataV2 || { dailyActivity: [], template: [], kuliBorong: {}, kuliHarian: {} };
+                this.initGlobalFilter();
+                this.renderAllCharts();
+                this.renderKPIs();
+                this.initMaterialFeed();
+            }
             if (statusText) statusText.innerHTML = '<div class="status-dot"></div> SYSTEM ONLINE';
         } catch (err) {
             console.error("FETCH ERROR:", err);
-            if (statusText) statusText.innerHTML = '<div class="status-dot" style="background:#ef4444; box-shadow:0 0 8px #ef4444;"></div> ERROR';
-            alert("Connection Failed: " + err.message);
+            if (!this.dataOld && !this.dataV2) {
+                if (statusText) statusText.innerHTML = '<div class="status-dot" style="background:#ef4444; box-shadow:0 0 8px #ef4444;"></div> ERROR';
+                alert("Connection Failed: " + err.message);
+            }
         }
     },
 
@@ -255,17 +280,6 @@ const AnalysApp = {
 
     // ... (KPI Logic Unchanged) ...
     renderKPIs: function () {
-        // KPI Logic needs to filter by CURRENT Month? 
-        // User asked to "Global Month Filter", implied KPI should also follow?
-        // Usually KPI is "Total" or "Current". 
-        // Let's make KPI respect the filter for "Total Volume" to be useful
-        // or keep it Global. 
-        // Request: "otomatis grafik menampilkan data di range... sesuai yang dipilih"
-        // Implied -> Charts. KPIs usually show dashboard aggregate. 
-        // I will keep KPIs Global for now unless specified, but Charts will use filter.
-
-        // 1. TOTAL VOLUME (GLOBAL SUM for now, or filtered?)
-        // Let's just keep original KPI logic for now to avoid confusion unless requested.
         let totalVol = 0;
         let sumBongkar = 0;
         let sumMuat = 0;
@@ -275,92 +289,101 @@ const AnalysApp = {
         const selectedMonth = this.currentMonth;
 
         opsData.forEach(i => {
-            // Apply Global Filter to KPIs? User requested breakdown. 
-            // Usually KPIs show Total for the selected period.
             if (i.tanggal && i.tanggal.startsWith(selectedMonth)) {
                 let b = Number(i.bongkar) || 0;
                 let m = Number(i.muat) || 0;
                 let s = (Number(i.st_badrun) || 0) + (Number(i.st_kartono) || 0) + (Number(i.st_kulhar) || 0);
-
-                sumBongkar += b;
-                sumMuat += m;
-                sumStapel += s;
+                sumBongkar += b; sumMuat += m; sumStapel += s;
                 totalVol += (b + m + s);
             }
         });
 
         this.animateValue('kpi-total-vol', 0, totalVol, 2000, " KG");
-        // Breakdown
         if (document.getElementById('kpi-vol-bongkar')) document.getElementById('kpi-vol-bongkar').innerText = sumBongkar.toLocaleString();
         if (document.getElementById('kpi-vol-muat')) document.getElementById('kpi-vol-muat').innerText = sumMuat.toLocaleString();
         if (document.getElementById('kpi-vol-stapel')) document.getElementById('kpi-vol-stapel').innerText = sumStapel.toLocaleString();
 
-        // 2. TOTAL MANPOWER (Latest available day in selected month)
-        // Find latest date in opsData for selected month
-        let latestDate = null;
-        opsData.forEach(d => {
-            if (d.tanggal && d.tanggal.startsWith(selectedMonth)) {
-                if (!latestDate || d.tanggal > latestDate) latestDate = d.tanggal;
-            }
-        });
+        // 2. TOTAL ATTENDANCE (Strictly V2 logic >= 19 Feb 2026) -> Changed to Manual per request
+        document.getElementById('kpi-total-attn').innerHTML = "46 <span class='text-sm text-gray-500'>ORG</span>";
+        document.getElementById('kpi-attn-date').innerText = 'MANUAL';
+        document.getElementById('kpi-attn-borong').innerText = "20";
+        document.getElementById('kpi-attn-harian').innerText = "26";
 
-        let totalManpower = 0;
-        if (latestDate) {
-            let d = opsData.find(x => x.tanggal === latestDate);
-            if (d) {
-                // Assuming logic: Total people active today? 
-                // Or sum of absensi "Hadir"? 
-                // Quickest proxy: Sum of Productivity Counts if available (not ideal).
-                // Better: Check Absensi Data for that date.
-                // Let's use the explicit "Total Kuli" from request if available, 
-                // else sum attendance from arrays for valid headers.
-
-                // Fallback: Just user requested "Total Kuli Saat Ini". 
-                // I will sum attendance from Absensi Data for the latest date found.
-                totalManpower = this.calculateTotalManpower(selectedMonth);
-            }
-        }
-        // If totalManpower is still 0 (maybe opsData loop failed), try one more time directly
-        if (totalManpower === 0) totalManpower = this.calculateTotalManpower(selectedMonth);
-
-        document.getElementById('kpi-total-attn').innerHTML = totalManpower + " <span class='text-sm text-gray-500'>ORG</span>";
-
-        // 3. TOP PRODUCTIVITY
-
-        // 3. TOP PRODUCTIVITY
+        // 3. TOP PRODUCTIVITY (Rank all teams)
         let teams = { 'BADRUN': 0, 'KARTONO': 0, 'KULHAR': 0 };
         let counts = { 'BADRUN': 0, 'KARTONO': 0, 'KULHAR': 0 };
         opsData.forEach(d => {
-            teams['BADRUN'] += parseInt(d.prod_badrun || 0); counts['BADRUN']++;
-            teams['KARTONO'] += parseInt(d.prod_kartono || 0); counts['KARTONO']++;
-            teams['KULHAR'] += parseInt(d.prod_kulhar || 0); counts['KULHAR']++;
+            if (d.tanggal && d.tanggal >= '2026-02-19') { // Strict constraint to new data
+                teams['BADRUN'] += parseInt(d.prod_badrun || 0); counts['BADRUN']++;
+                teams['KARTONO'] += parseInt(d.prod_kartono || 0); counts['KARTONO']++;
+                teams['KULHAR'] += parseInt(d.prod_kulhar || 0); counts['KULHAR']++;
+            }
         });
+
+        // If no data > Feb 19, fallback to global month selection for backwards compatibility
+        if (counts['BADRUN'] === 0 && counts['KARTONO'] === 0 && counts['KULHAR'] === 0) {
+            opsData.forEach(d => {
+                if (d.tanggal && d.tanggal.startsWith(selectedMonth)) {
+                    teams['BADRUN'] += parseInt(d.prod_badrun || 0); counts['BADRUN']++;
+                    teams['KARTONO'] += parseInt(d.prod_kartono || 0); counts['KARTONO']++;
+                    teams['KULHAR'] += parseInt(d.prod_kulhar || 0); counts['KULHAR']++;
+                }
+            });
+        }
+
         let avgScores = [];
         for (let t in teams) {
             if (counts[t] > 0) avgScores.push({ name: t, avg: Math.round(teams[t] / counts[t]) });
         }
         avgScores.sort((a, b) => b.avg - a.avg);
-        if (avgScores.length > 0) {
-            let top = avgScores[0];
-            document.getElementById('kpi-top-team').innerText = top.name;
-            this.animateValue('kpi-top-val', 0, top.avg, 2000, "");
+
+        const prodList = document.getElementById('kpi-prod-list');
+        if (prodList) {
+            if (avgScores.length > 0) {
+                let listHtml = '';
+                let colors = ['var(--accent)', 'var(--primary)', 'var(--secondary)'];
+                avgScores.forEach((team, idx) => {
+                    let color = colors[idx % colors.length];
+                    listHtml += `
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="width:30px; height:30px; background:${color}; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; box-shadow:0 0 10px ${color}66; color:#fff;">
+                                #${idx + 1}
+                            </div>
+                            <div style="font-weight:700; font-size:0.9rem; color:#fff;">${team.name}</div>
+                        </div>
+                        <div style="font-size:0.8rem; color:#94a3b8; font-family:'Orbitron';">
+                            <span style="color:${color}; font-weight:700;">${team.avg.toLocaleString()}</span> kg/org
+                        </div>
+                    </div>`;
+                });
+                prodList.innerHTML = listHtml;
+            } else {
+                prodList.innerHTML = '<div style="color:var(--text-muted); font-size:0.8rem;">No data for selection</div>';
+            }
         }
 
         // 4. QC WAIT
         let qcItems = this.data.template || [];
         let totalWait = 0; let waitCount = 0;
         qcItems.forEach(row => {
-            let t1 = this.parseTime(row['PB_START']);
-            let t2 = this.parseTime(row['TUNGGU_QC']);
-            if (t1 && t2) {
-                let diff = t1 - t2;
-                if (diff < 0) diff += 1440;
-                totalWait += diff; waitCount++;
+            if (row['TANGGAL'] && this.normalizeDate(row['TANGGAL'])?.startsWith(selectedMonth)) {
+                let t1 = this.parseTime(row['PB_START']);
+                let t2 = this.parseTime(row['TUNGGU_QC']);
+                if (t1 && t2) {
+                    let diff = t1 - t2;
+                    if (diff < 0) diff += 1440;
+                    totalWait += diff; waitCount++;
+                }
             }
         });
         let metricsWait = waitCount > 0 ? Math.round(totalWait / waitCount) : 0;
-        document.getElementById('kpi-qc-wait').innerText = metricsWait + " m";
-        document.getElementById('kpi-qc-bar').style.width = Math.min((metricsWait / 15) * 100, 100) + "%";
+        if (document.getElementById('kpi-qc-wait')) {
+            document.getElementById('kpi-qc-wait').innerText = metricsWait + " m";
+            document.getElementById('kpi-qc-bar').style.width = Math.min((metricsWait / 15) * 100, 100) + "%";
+        }
+
+        this.generateCalendar();
     },
 
     animateValue: function (id, start, end, duration, suffix = "") {
@@ -787,12 +810,6 @@ const AnalysApp = {
 
     // Helper for Manpower
     calculateTotalManpower: function (targetMonth) {
-        // We want the "Latest" or "Current" manpower count.
-        // It's best to find the most recent date in the selected month that has data.
-
-        let maxTotal = 0;
-
-        // Collect all dates from headers
         let allDates = new Set();
         let sources = [this.data.kuliBorong, this.data.kuliHarian];
 
@@ -800,24 +817,34 @@ const AnalysApp = {
             if (src && src.dateHeaders) {
                 src.dateHeaders.forEach(h => {
                     let iso = this.normalizeDate(h);
-                    if (iso && iso.startsWith(targetMonth)) allDates.add(iso);
+                    // MUST be >= Feb 19, 2026 per user strict instruction
+                    if (iso && iso >= '2026-02-19' && iso.startsWith(targetMonth)) allDates.add(iso);
                 });
             }
         });
 
-        // Sort dates descending (latest first)
+        // If no strict dates, rollback to any date in targetMonth to avoid unbroken UI
+        if (allDates.size === 0) {
+            sources.forEach(src => {
+                if (src && src.dateHeaders) {
+                    src.dateHeaders.forEach(h => {
+                        let iso = this.normalizeDate(h);
+                        if (iso && iso.startsWith(targetMonth)) allDates.add(iso);
+                    });
+                }
+            });
+        }
+
         let sortedDates = Array.from(allDates).sort().reverse();
 
-        // Iterate to find first date with valid data
         for (let date of sortedDates) {
-            let dailyTotal = 0;
-            // Count for this date
+            let borong = 0;
+            let harian = 0;
+
             const countSource = (src) => {
                 if (!src || !src.dateHeaders) return 0;
                 let idx = -1;
-                src.dateHeaders.forEach((h, i) => {
-                    if (this.normalizeDate(h) === date) idx = i;
-                });
+                src.dateHeaders.forEach((h, i) => { if (this.normalizeDate(h) === date) idx = i; });
                 if (idx === -1) return 0;
                 let count = 0;
                 src.rows.forEach(r => {
@@ -830,15 +857,15 @@ const AnalysApp = {
                 return count;
             };
 
-            dailyTotal += countSource(this.data.kuliBorong);
-            dailyTotal += countSource(this.data.kuliHarian);
+            borong = countSource(this.data.kuliBorong);
+            harian = countSource(this.data.kuliHarian);
 
-            if (dailyTotal > 0) {
-                return dailyTotal; // Return latest valid count
+            if (borong + harian > 0) {
+                return { total: borong + harian, borong: borong, harian: harian, date: date };
             }
         }
 
-        return 0;
+        return { total: 0, borong: 0, harian: 0, date: '-' };
     },
 
     // UTILS
@@ -949,6 +976,253 @@ const AnalysApp = {
             });
             if (select.options.length > 0) select.value = select.options[0].value;
         }
+    },
+
+    // ==========================================
+    // CALENDAR MODULE (PORTED FROM BKK-DOWNTIME)
+    // ==========================================
+    generateCalendar: function () {
+        const grid = document.getElementById('calendar-grid-v15');
+        const monthLabel = document.getElementById('cal-month-year');
+        if (!grid) return;
+
+        let [year, month] = this.currentMonth.split('-');
+        let d = new Date(year, parseInt(month) - 1, 1);
+
+        let monthNameText = d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }).toUpperCase();
+        if (monthLabel) monthLabel.innerText = monthNameText;
+
+        // Prepare volume map per day
+        let volMap = {};
+        (this.data.dailyActivity || []).forEach(row => {
+            if (row.tanggal && row.tanggal.startsWith(this.currentMonth)) {
+                let dayNum = parseInt(row.tanggal.split('-')[2]);
+                let b = Number(row.bongkar) || 0;
+                let m = Number(row.muat) || 0;
+                let s = (Number(row.st_badrun) || 0) + (Number(row.st_kartono) || 0) + (Number(row.st_kulhar) || 0);
+                volMap[dayNum] = b + m + s;
+            }
+        });
+
+        // Render Calendar
+        let html = '';
+        ['MIN', 'SEN', 'SEL', 'RAB', 'KAM', 'JUM', 'SAB'].forEach(d => {
+            html += `<div style="font-family:'Orbitron'; font-size:0.6rem; text-align:center; color:var(--text-muted); padding:5px; text-transform:uppercase; letter-spacing:1px;">${d}</div>`;
+        });
+
+        let firstDay = new Date(year, parseInt(month) - 1, 1).getDay();
+        let daysInMonth = new Date(year, parseInt(month), 0).getDate();
+
+        for (let i = 0; i < firstDay; i++) {
+            html += `<div class="bento-card" style="opacity:0.2; pointer-events:none; min-height:60px;"></div>`;
+        }
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            let hasData = volMap[i] > 0;
+            let valTon = hasData ? (volMap[i] / 1000) : 0;
+            let valTonStr = valTon.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+            let displayVolHtml = hasData ? `<span class="cyber-value" style="color:#00f3ff; font-family:'Orbitron'; text-shadow:0 0 5px rgba(0,243,255,0.5);">${valTonStr}</span> <span class="cyber-unit" style="color:#fce7f3; text-shadow:0 0 8px #ec4899;">TON</span>` : "-";
+            let isoDate = `${year}-${month}-${String(i).padStart(2, '0')}`;
+
+            let bgStyle = hasData ? 'background: linear-gradient(145deg, rgba(6, 182, 212, 0.08), rgba(0,0,0,0.5)); border: 1px solid rgba(6, 182, 212, 0.3); box-shadow: 0 0 10px rgba(6, 182, 212, 0.1); cursor:pointer;' : 'opacity:0.4; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); cursor:default; min-height:60px; pointer-events:none;';
+            let hoverClass = hasData ? 'onmouseover="this.style.boxShadow=\'0 0 20px rgba(6,182,212,0.4)\'; this.style.borderColor=\'var(--primary)\'; this.style.transform=\'scale(1.05)\'" onmouseout="this.style.boxShadow=\'0 0 10px rgba(6,182,212,0.1)\'; this.style.borderColor=\'rgba(6,182,212,0.3)\'; this.style.transform=\'scale(1)\'"' : '';
+
+            // Premium top accent if has data
+            let accent = hasData ? `<div style="position:absolute; top:0; left:0; width:100%; height:3px; background:linear-gradient(90deg, transparent, var(--primary), transparent); opacity:0.8;"></div>` : '';
+
+            html += `
+            <div class="bento-card" style="padding:4px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; border-radius:6px; ${bgStyle} transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);" ${hoverClass} onclick="${hasData ? `AnalysApp.showShiftAnalysis('${isoDate}', ${i})` : ''}">
+                ${accent}
+                <div style="font-family:'Orbitron'; font-size:0.8rem; font-weight:800; color:${hasData ? '#fff' : '#555'}; text-shadow: ${hasData ? '0 0 5px rgba(255,255,255,0.5)' : 'none'}; padding-left:2px;">${i}</div>
+                <div style="font-family:'Rajdhani'; font-size:0.75rem; font-weight:700; color:var(--primary); text-align:right; margin-top:4px; text-shadow:0 0 5px rgba(6,182,212,0.4);">${displayVolHtml}</div>
+            </div>
+            `;
+        }
+
+        let styleInject = `
+        <style>
+            @keyframes cyber-pulse {
+                0% { opacity: 0.8; text-shadow: 0 0 5px currentColor; filter: brightness(1); }
+                50% { opacity: 1; text-shadow: 0 0 15px currentColor, 0 0 30px currentColor; filter: brightness(1.3); }
+                100% { opacity: 0.8; text-shadow: 0 0 5px currentColor; filter: brightness(1); }
+            }
+            .cyber-value { animation: cyber-pulse 2s infinite ease-in-out; }
+            .cyber-unit { font-size: 0.55rem; vertical-align: super; font-weight: 800; animation: cyber-pulse 1.5s infinite alternate; letter-spacing: 1px; }
+            .table-row-hover { border-bottom:1px dashed rgba(255,255,255,0.05); transition: background 0.3s; }
+            .table-row-hover:hover { background: rgba(255,255,255,0.05); }
+        </style>
+        `;
+
+        grid.innerHTML = styleInject + html;
+
+        // Auto-select first date with data
+        let targetAuto = Object.keys(volMap).find(k => volMap[k] > 0);
+        if (targetAuto) {
+            let iso = `${year}-${month}-${String(targetAuto).padStart(2, '0')}`;
+            this.showShiftAnalysis(iso, targetAuto);
+        } else {
+            let dash = document.getElementById('analysis-content-v15');
+            if (dash) dash.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-muted);"><i class="fas fa-satellite-dish" style="font-size:2rem; margin-bottom:10px; opacity:0.5;"></i><br>NO DATA CAPTURED THIS MONTH</div>`;
+        }
+    },
+
+    showShiftAnalysis: function (isoDate, dayNum) {
+        document.getElementById('selected-date-label').innerText = `${dayNum} ${document.getElementById('cal-month-year').innerText}`;
+
+        let container = document.getElementById('analysis-content-v15');
+
+        let related = (this.data.template || []).filter(r => this.normalizeDate(r['TANGGAL']) === isoDate);
+        let dailyRec = (this.data.dailyActivity || []).find(r => r.tanggal === isoDate) || {};
+
+        let bMats = {};
+        let mMats = {};
+
+        let totalDayVol = 0;
+
+        related.forEach(r => {
+            let keg = (r['KEGIATAN'] || r['JENIS KEGIATAN'] || '').toUpperCase();
+            let mat = (r['JENIS_RM'] || r['JENIS RM'] || r['MATERIAL'] || 'UNKNOWN').toUpperCase();
+
+            // Handle various NETTO column names
+            let rawVal = r['NETTO TS'] || r['NETTO_TS'] || r['NETTO'] || r['REAL_BONGKAR_MT'] || 0;
+            let val = parseFloat(String(rawVal).replace(/,/g, '')) || 0;
+
+            if (keg.includes('BONGKAR')) {
+                if (!bMats[mat]) bMats[mat] = 0;
+                bMats[mat] += val;
+                totalDayVol += val; // Adding real bongkar MT
+            }
+            else if (keg.includes('MUAT')) {
+                let lok = (r['LOKASI'] || r['SLOC'] || 'UNKNOWN').toUpperCase();
+                let key = `${mat} | ${lok}`;
+                if (!mMats[key]) mMats[key] = 0;
+                mMats[key] += val;
+                totalDayVol += val; // Adding real muat MT
+            } else {
+                totalDayVol += val;
+            }
+        });
+
+        let stBadrun = Number(dailyRec.st_badrun) || 0;
+        let stKartono = Number(dailyRec.st_kartono) || 0;
+        let stKulhar = Number(dailyRec.st_kulhar) || 0;
+        let totalStapel = stBadrun + stKartono + stKulhar;
+        totalDayVol += totalStapel;
+
+        if (totalDayVol === 0 && stBadrun === 0 && stKartono === 0 && stKulhar === 0 && Object.keys(bMats).length === 0 && Object.keys(mMats).length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-muted);">No Operational Details Found for ${isoDate}</div>`;
+            return;
+        }
+
+        let html = '<div style="display:flex; flex-direction:column; gap:15px; padding-bottom:10px;">';
+
+        html += `
+        <div style="background:rgba(6, 182, 212, 0.1); border:1px solid rgba(6, 182, 212, 0.3); border-radius:12px; padding:15px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 0 15px rgba(6,182,212,0.15);">
+            <div style="font-family:'Orbitron'; color:#fff; font-size:0.8rem;">TOTAL HARIAN</div>
+            <div style="font-family:'Orbitron'; color:var(--primary); font-size:1.4rem; font-weight:800; text-shadow:0 0 10px rgba(6,182,212,0.5);">${(totalDayVol / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} TON</div>
+        </div>
+        `;
+
+        // 1. BONGKARAN
+        html += `
+        <div style="background:linear-gradient(135deg, rgba(15,23,42,0.9), rgba(0,0,0,0.8)); border-radius:8px; padding:10px; border-left:3px solid var(--primary); box-shadow:0 2px 10px rgba(0,0,0,0.3); position:relative;">
+            <div style="font-family:'Orbitron'; font-size:0.75rem; color:var(--primary); margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px; display:flex; align-items:center; gap:6px; text-shadow:0 0 5px rgba(6,182,212,0.5);">
+                <i class="fas fa-truck-loading" class="cyber-value"></i> BONGKARAN
+            </div>
+            <table style="width:100%; font-family:'Inter', sans-serif; font-size:0.7rem; border-collapse:collapse;">
+        `;
+        let bTotal = 0;
+        let bKeys = Object.keys(bMats);
+        if (bKeys.length > 0) {
+            bKeys.forEach(m => {
+                bTotal += bMats[m];
+                html += `
+                <tr class="table-row-hover">
+                    <td style="padding:4px 2px; color:#cbd5e1; font-weight:500;">${m}</td>
+                    <td style="padding:4px 2px; text-align:right; color:#06b6d4; font-weight:700; font-family:'Rajdhani';" class="cyber-value">${(bMats[m] / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} <span class="cyber-unit" style="color:#00f3ff; font-weight:600;">TON</span></td>
+                </tr>`;
+            });
+            html += `
+            <tr style="border-top:1px dashed rgba(6,182,212,0.3); background:rgba(6,182,212,0.05);">
+                <td style="padding:6px 2px; color:#fff; font-weight:700; font-family:'Orbitron'; font-size:0.65rem; letter-spacing:1px;">SUBTOTAL</td>
+                <td style="padding:6px 2px; text-align:right; color:#00f3ff; font-weight:800; font-family:'Rajdhani'; font-size:0.9rem;" class="cyber-value">${(bTotal / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} <span class="cyber-unit" style="color:#00f3ff;">TON</span></td>
+            </tr>`;
+        } else {
+            html += `<tr><td style="padding:4px 2px; color:var(--text-muted); font-style:italic; font-size:0.65rem;">Tidak ada data bongkar</td></tr>`;
+        }
+        html += `</table></div>`;
+
+        // 2. MUAT
+        html += `
+        <div style="background:linear-gradient(135deg, rgba(15,23,42,0.9), rgba(0,0,0,0.8)); border-radius:8px; padding:10px; border-left:3px solid var(--secondary); box-shadow:0 2px 10px rgba(0,0,0,0.3); position:relative;">
+            <div style="font-family:'Orbitron'; font-size:0.75rem; color:var(--secondary); margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px; display:flex; align-items:center; gap:6px; text-shadow:0 0 5px rgba(16,185,129,0.5);">
+                <i class="fas fa-dolly" class="cyber-value"></i> MUAT
+            </div>
+            <table style="width:100%; font-family:'Inter', sans-serif; font-size:0.7rem; border-collapse:collapse;">
+        `;
+        let mTotal = 0;
+        let mKeys = Object.keys(mMats);
+        if (mKeys.length > 0) {
+            mKeys.forEach(k => {
+                let pts = k.split(' | ');
+                mTotal += mMats[k];
+                html += `
+                <tr class="table-row-hover">
+                    <td style="padding:4px 2px;">
+                        <span style="color:#cbd5e1; font-weight:500;">${pts[0]}</span>
+                        <span style="color:var(--secondary); font-size:0.6rem; margin-left:6px;"><i class="fas fa-map-marker-alt"></i> ${pts[1]}</span>
+                    </td>
+                    <td style="padding:4px 2px; text-align:right; color:var(--secondary); font-weight:700; font-family:'Rajdhani';" class="cyber-value">${(mMats[k] / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} <span class="cyber-unit" style="color:#a7f3d0; font-weight:600;">TON</span></td>
+                </tr>`;
+            });
+            html += `
+            <tr style="border-top:1px dashed rgba(16,185,129,0.3); background:rgba(16,185,129,0.05);">
+                <td style="padding:6px 2px; color:#fff; font-weight:700; font-family:'Orbitron'; font-size:0.65rem; letter-spacing:1px;">SUBTOTAL</td>
+                <td style="padding:6px 2px; text-align:right; color:#10b981; font-weight:800; font-family:'Rajdhani'; font-size:0.9rem;" class="cyber-value">${(mTotal / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} <span class="cyber-unit" style="color:#a7f3d0;">TON</span></td>
+            </tr>`;
+        } else {
+            html += `<tr><td style="padding:4px 2px; color:var(--text-muted); font-style:italic; font-size:0.65rem;">Tidak ada data muat</td></tr>`;
+        }
+        html += `</table></div>`;
+
+        // 3. STAPEL
+        html += `
+        <div style="background:linear-gradient(135deg, rgba(15,23,42,0.9), rgba(0,0,0,0.8)); border-radius:8px; padding:10px; border-left:3px solid var(--accent); box-shadow:0 2px 10px rgba(0,0,0,0.3); position:relative;">
+            <div style="font-family:'Orbitron'; font-size:0.75rem; color:var(--accent); margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:4px; display:flex; align-items:center; gap:6px; text-shadow:0 0 5px rgba(139,92,246,0.5);">
+                <i class="fas fa-layer-group" class="cyber-value"></i> STAPEL
+            </div>
+            <table style="width:100%; font-family:'Inter', sans-serif; font-size:0.7rem; border-collapse:collapse;">
+        `;
+        if (totalStapel > 0) {
+            html += `
+            <tr class="table-row-hover">
+                <td style="padding:4px 2px; color:#cbd5e1; font-weight:500;">BADRUN</td>
+                <td style="padding:4px 2px; text-align:right; color:var(--accent); font-weight:700; font-family:'Rajdhani';" class="cyber-value">${(stBadrun / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} <span class="cyber-unit" style="color:#ddd6fe; font-weight:600;">TON</span></td>
+            </tr>
+            <tr class="table-row-hover">
+                <td style="padding:4px 2px; color:#cbd5e1; font-weight:500;">KARTONO</td>
+                <td style="padding:4px 2px; text-align:right; color:var(--accent); font-weight:700; font-family:'Rajdhani';" class="cyber-value">${(stKartono / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} <span class="cyber-unit" style="color:#ddd6fe; font-weight:600;">TON</span></td>
+            </tr>
+            <tr class="table-row-hover">
+                <td style="padding:4px 2px; color:#cbd5e1; font-weight:500;">KULHAR</td>
+                <td style="padding:4px 2px; text-align:right; color:var(--accent); font-weight:700; font-family:'Rajdhani';" class="cyber-value">${(stKulhar / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} <span class="cyber-unit" style="color:#ddd6fe; font-weight:600;">TON</span></td>
+            </tr>`;
+            html += `
+            <tr style="border-top:1px dashed rgba(139,92,246,0.3); background:rgba(139,92,246,0.05);">
+                <td style="padding:6px 2px; color:#fff; font-weight:700; font-family:'Orbitron'; font-size:0.65rem; letter-spacing:1px;">SUBTOTAL</td>
+                <td style="padding:6px 2px; text-align:right; color:#8b5cf6; font-weight:800; font-family:'Rajdhani'; font-size:0.9rem;" class="cyber-value">${(totalStapel / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} <span class="cyber-unit" style="color:#ddd6fe;">TON</span></td>
+            </tr>`;
+        } else {
+            html += `<tr><td style="padding:4px 2px; color:var(--text-muted); font-style:italic; font-size:0.65rem;">Tidak ada data stapel</td></tr>`;
+        }
+        html += `</table></div>`;
+
+        html += '</div>';
+
+        container.innerHTML = html;
+        container.style.animation = 'none';
+        container.offsetHeight; // trigger reflow
+        container.style.animation = 'fadeIn 0.5s ease-out forwards';
     }
 };
 

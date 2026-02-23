@@ -95,6 +95,7 @@
             letter-spacing: 2px;
             background: linear-gradient(90deg, #fff, var(--primary));
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
         }
@@ -228,6 +229,22 @@
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
         }
 
+        .chart-title {
+            font-family: 'Orbitron';
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-title i {
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+        }
+
         .value-display {
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
@@ -243,11 +260,15 @@
         }
 
         .kpi-value-lg {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
+            font-family: 'Orbitron';
+            font-weight: 700;
             background: linear-gradient(180deg, #fff, #94a3b8);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-family: 'Orbitron';
+            line-height: 1;
+            margin-top: 10px;
             filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.2));
         }
 
@@ -466,15 +487,10 @@
 
             <div class="col-3 bento-card">
                 <div class="card-title"><b>TOP PRODUCTIVITY</b><span>Team Performance</span></div>
-                <div style="display:flex; align-items:center; gap:15px; margin-top:10px;">
-                    <div
-                        style="width:50px; height:50px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; box-shadow:0 0 15px rgba(139,92,246,0.4); font-size:1.2rem;">
-                        #1</div>
-                    <div>
-                        <div style="font-weight:700; font-size:1.2rem; color:#fff;" id="kpi-top-team">-</div>
-                        <div style="font-size:0.8rem; color:#94a3b8;">Avg: <span class="text-violet"
-                                id="kpi-top-val">-</span> kg/org</div>
-                    </div>
+                <div id="kpi-prod-list"
+                    style="display:flex; flex-direction:column; gap:8px; margin-top:10px; overflow-y:auto; flex-grow:1; padding-right:5px;">
+                    <!-- Auto-populated by JS -->
+                    <div style="color:var(--text-muted); font-size:0.8rem;">Loading...</div>
                 </div>
             </div>
 
@@ -494,9 +510,9 @@
                 </div>
             </div>
 
-            <!-- ROW 2: MAIN CHART & MATERIAL FEED -->
+            <!-- ROW 2: MAIN CHART -->
             <!-- OPS DAILY (WIDER & TALLER) -->
-            <div class="col-8 row-2 bento-card">
+            <div class="col-12 row-2 bento-card">
                 <div class="bento-header">
                     <div class="card-title"><b>OPERATIONAL DAILY VOLUME</b><span>Material Movement Analysis</span></div>
                     <div class="slicer-group">
@@ -510,35 +526,56 @@
                 </div>
             </div>
 
-            <!-- MATERIAL DURATION FEED -->
-            <div class="col-4 row-2 bento-card">
-                <div class="bento-header">
-                    <div class="card-title"><b>MATERIAL DURATION</b><span>Process Timeline</span></div>
-                </div>
-                <div style="margin-bottom:15px;">
-                    <input type="text" id="material-search" class="cyber-input" placeholder="Search Material..."
-                        onkeyup="AnalysApp.filterMaterialFeed()">
-                </div>
-                <!-- STATS ROW -->
-                <div
-                    style="display:flex; justify-content:space-between; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid var(--border-subtle);">
-                    <div style="text-align:center;">
-                        <div style="font-size:0.65rem; color:#94a3b8;">MIN</div>
-                        <div class="value-display text-cyan" id="mat-min" style="font-size:1.2rem;">-</div>
+            <!-- V15: CALENDAR ANALYTICS SECTION -->
+            <div class="col-12 bento-card" style="padding:0; background:transparent; border:none; box-shadow:none;">
+                <div id="calendar-analytics-section" style="display:grid; grid-template-columns: 460px 1fr; gap:16px;">
+                    <!-- CALENDAR BOX -->
+                    <div class="bento-card" style="padding:20px;">
+                        <div class="bento-header" style="margin-bottom:5px;">
+                            <span
+                                style="display:flex; align-items:center; gap:10px; font-family:'Orbitron'; font-size:0.85rem; color:var(--text-muted);">
+                                <i class="fas fa-calendar-alt" style="color:var(--primary); font-size:1.1rem;"></i>
+                                RM DAILY CALENDAR
+                            </span>
+                            <span id="cal-month-year"
+                                style="font-size:0.8rem; color:var(--text-muted); font-family:'Orbitron';">MONTH
+                                YYYY</span>
+                        </div>
+                        <div id="calendar-grid-v15"
+                            style="display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; margin-top:15px;">
+                            <!-- Grid generated by JS -->
+                            <div
+                                style="grid-column: span 7; text-align:center; padding:40px; color:var(--text-muted); font-family:'Orbitron'; font-size:0.8rem;">
+                                <i class="fas fa-circle-notch fa-spin"></i> GENERATING CALENDAR ENGINE...
+                            </div>
+                        </div>
                     </div>
-                    <div style="text-align:center;">
-                        <div style="font-size:0.65rem; color:#94a3b8;">AVG</div>
-                        <div class="value-display text-orange" id="mat-avg" style="font-size:1.2rem;">-</div>
-                    </div>
-                    <div style="text-align:center;">
-                        <div style="font-size:0.65rem; color:#94a3b8;">MAX</div>
-                        <div class="value-display text-violet" id="mat-max" style="font-size:1.2rem;">-</div>
-                    </div>
-                </div>
-                <!-- FEED LIST -->
-                <div class="material-feed" id="material-matches">
-                    <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.8rem;">
-                        Waiting for input...
+
+                    <!-- ANALYSIS BOX -->
+                    <div class="bento-card" style="padding:20px; display:flex; flex-direction:column;">
+                        <div class="bento-header"
+                            style="margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:10px;">
+                            <span
+                                style="display:flex; align-items:center; gap:10px; font-family:'Orbitron'; font-size:0.85rem; color:var(--text-muted);">
+                                <i class="fas fa-microchip" style="color:var(--primary); font-size:1.1rem;"></i>
+                                DAILY ANALYSIS COMMAND
+                            </span>
+                            <span id="selected-date-label"
+                                style="font-size:0.75rem; color:var(--primary); font-family:'Orbitron';">SELECT
+                                DATE</span>
+                        </div>
+                        <div id="analysis-content-v15"
+                            style="overflow-y:auto; flex-grow:1; max-height:400px; padding-right:5px;">
+                            <div style="text-align:center; padding:80px 20px; color:#444; font-family:'Orbitron';">
+                                <i class="fas fa-mouse-pointer"
+                                    style="font-size:2.5rem; margin-bottom:15px; opacity:0.3;"></i><br>
+                                <span
+                                    style="font-size:0.7rem; letter-spacing:2px; display:block; margin-bottom:10px;">WAITING
+                                    FOR TARGET DATE</span>
+                                <span style="font-size:0.6rem; color:#666; font-family:'Outfit';">SILAKAN PILIH TANGGAL
+                                    PADA KALENDER UNTUK MELIHAT RINCIAN</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -605,6 +642,39 @@
                 </div>
                 <div class="chart-container-full">
                     <canvas id="chart-tungguQC"></canvas>
+                </div>
+            </div>
+
+            <!-- MATERIAL DURATION FEED (MOVED TO BOTTOM) -->
+            <div class="col-12 bento-card">
+                <div class="bento-header">
+                    <div class="card-title"><b>MATERIAL DURATION</b><span>Process Timeline</span></div>
+                </div>
+                <div style="margin-bottom:15px;">
+                    <input type="text" id="material-search" class="cyber-input" placeholder="Search Material..."
+                        onkeyup="AnalysApp.filterMaterialFeed()">
+                </div>
+                <!-- STATS ROW -->
+                <div
+                    style="display:flex; justify-content:space-between; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid var(--border-subtle);">
+                    <div style="text-align:center;">
+                        <div style="font-size:0.65rem; color:#94a3b8;">MIN</div>
+                        <div class="value-display text-cyan" id="mat-min" style="font-size:1.2rem;">-</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.65rem; color:#94a3b8;">AVG</div>
+                        <div class="value-display text-orange" id="mat-avg" style="font-size:1.2rem;">-</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.65rem; color:#94a3b8;">MAX</div>
+                        <div class="value-display text-violet" id="mat-max" style="font-size:1.2rem;">-</div>
+                    </div>
+                </div>
+                <!-- FEED LIST -->
+                <div class="material-feed" id="material-matches">
+                    <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.8rem;">
+                        Waiting for input...
+                    </div>
                 </div>
             </div>
 
