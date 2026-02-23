@@ -278,7 +278,12 @@ function doGet(e) {
           manuverAkhir: bH.findIndex(h => h.includes("MANUVER")),
           finish: bH.findIndex(h => h.includes("FINISH")),
           nopol: bH.indexOf("NOPOL"),
-          lokasiSimpan: bH.findIndex(h => h.includes("LOKASI SIMPAN"))
+          lokasiSimpan: bH.findIndex(h => h.includes("LOKASI SIMPAN")),
+          truck: bH.findIndex(h => h.includes("TRUCK")),
+          arrivalDate: bH.findIndex(h => h.includes("ARRIVAL DATE")),
+          arrivalTime: bH.findIndex(h => h.includes("ARRIVAL TIME")),
+          qcTime: bH.findIndex(h => h.includes("QC SAMPLING 1 TIME")),
+          timbangTime: bH.findIndex(h => h.includes("TIME TIMBANG MASUK"))
         };
 
         for (let i = 1; i < bData.length; i++) {
@@ -297,10 +302,15 @@ function doGet(e) {
           templateRows.push({
             TANGGAL: tgl,
             JENIS_RM: material,
+            JENIS_TRUCK: String(row[bIdx.truck >= 0 ? bIdx.truck : 7] || ""),
             KEGIATAN: "BONGKAR",
             LOKASI: gudang,
             NOPOL: String(row[bIdx.nopol >= 0 ? bIdx.nopol : 6] || ""),
             REAL_BONGKAR_MT: netto,
+            ARRIVAL_DATE: String(row[bIdx.arrivalDate >= 0 ? bIdx.arrivalDate : 23] || ""),
+            ARRIVAL_TIME: fmtTime(row[bIdx.arrivalTime >= 0 ? bIdx.arrivalTime : 24]),
+            QC_SAMPLING_1: fmtTime(row[bIdx.qcTime >= 0 ? bIdx.qcTime : 25]),
+            TIME_TIMBANG_MASUK: fmtTime(row[bIdx.timbangTime >= 0 ? bIdx.timbangTime : 26]),
             START_PANGGIL: fmtTime(row[bIdx.startPanggil]),
             TRUCK_READY: fmtTime(row[bIdx.truckReady]),
             START_BONGKAR: fmtTime(row[bIdx.startBongkar]),

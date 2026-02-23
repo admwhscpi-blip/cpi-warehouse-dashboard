@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRACKING CONTAINER // SMART WAREHOUSE</title>
+
+    <!-- FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CHART.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020617;
+            /* Very Dark Slate */
+            --bg-card: rgba(15, 23, 42, 0.65);
+            /* Glassy Slate */
+            --primary: #06b6d4;
+            /* Cyan Neon */
+            --secondary: #f97316;
+            /* Orange Neon */
+            --accent: #8b5cf6;
+            /* Violet Neon */
+            --danger: #ef4444;
+            /* Red Neon */
+            --success: #10b981;
+            /* Green Neon */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-glow: rgba(6, 182, 212, 0.4);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --neon-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(6, 182, 212, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.05), transparent 25%),
+                linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: rgba(2, 6, 23, 0.85);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 12px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 100;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .navbar::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0.5;
+            animation: scanline 4s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% {
+                background-position: -100% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .brand-text {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.4rem;
+            letter-spacing: 3px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 20px var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .brand-text i {
+            color: var(--primary);
+        }
+
+        .status-pill {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+            padding: 6px 16px;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+            letter-spacing: 1px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .dashboard-container {
+            padding: 25px;
+            flex-grow: 1;
+            overflow-y: auto;
+            max-width: 1920px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        /* CARD COMPONENT - GLASSMORPHISM */
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .glass-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5), 0 0 25px rgba(6, 182, 212, 0.15);
+            transform: translateY(-3px);
+            z-index: 10;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-title b {
+            font-family: 'Orbitron';
+            color: #fff;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title b i {
+            color: var(--primary);
+        }
+
+        /* FORM ELEMENTS */
+        .cyber-select {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--primary);
+            color: #fff;
+            font-family: 'Orbitron';
+            font-size: 0.9rem;
+            padding: 8px 20px;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+            font-weight: 700;
+            letter-spacing: 1px;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .cyber-select:hover {
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.4);
+            border-color: #fff;
+        }
+
+        /* 1 YEAR CALENDAR GRID */
+        .year-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            width: 100%;
+        }
+
+        .month-block {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 10px;
+            transition: 0.3s;
+        }
+
+        .month-block:hover {
+            border-color: rgba(6, 182, 212, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .month-name {
+            font-family: 'Orbitron';
+            color: var(--text-muted);
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+        }
+
+        .day-header {
+            font-size: 0.55rem;
+            color: #64748b;
+            text-align: center;
+            font-family: 'Orbitron';
+            margin-bottom: 2px;
+        }
+
+        .day-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            color: rgba(255, 255, 255, 0.15);
+            /* Dimmed for NO DATA */
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .day-cell:hover:not(.empty) {
+            background: rgba(6, 182, 212, 0.1);
+            color: rgba(255, 255, 255, 0.5);
+            border-color: rgba(6, 182, 212, 0.3);
+        }
+
+        .day-cell.empty {
+            background: transparent;
+            border-color: transparent;
+            cursor: default;
+        }
+
+        .day-cell.has-data {
+            color: #fff;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.1);
+            animation: breathe 3s infinite alternate;
+        }
+
+        @keyframes breathe {
+            from {
+                box-shadow: 0 0 5px rgba(16, 185, 129, 0.2);
+            }
+
+            to {
+                box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+            }
+        }
+
+        .day-cell.has-data:hover {
+            background: rgba(16, 185, 129, 0.3);
+            transform: scale(1.15);
+            z-index: 2;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.8) !important;
+            animation: none;
+        }
+
+        .day-cell.active {
+            background: var(--primary) !important;
+            color: #000 !important;
+            box-shadow: 0 0 20px var(--primary) !important;
+            border-color: #fff !important;
+            transform: scale(1.15);
+            z-index: 3;
+            animation: none;
+        }
+
+        /* Data dots inside day cell */
+        .day-dot {
+            width: 4px;
+            height: 4px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 2px;
+            box-shadow: 0 0 5px #fff;
+        }
+
+        /* ANALYTICS PANEL */
+        .panel-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .kpi-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-box::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 2px;
+            height: 100%;
+        }
+
+        .kpi-box.cyan::after {
+            background: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .kpi-box.orange::after {
+            background: var(--secondary);
+            box-shadow: 0 0 15px var(--secondary);
+        }
+
+        .kpi-box.violet::after {
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        .kpi-box.green::after {
+            background: var(--success);
+            box-shadow: 0 0 15px var(--success);
+        }
+
+        .kpi-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .kpi-value {
+            font-family: 'Orbitron';
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .chart-wrapper {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 15px;
+            flex-grow: 1;
+            min-height: 250px;
+            position: relative;
+        }
+
+        .chart-title {
+            font-family: 'Orbitron';
+            font-size: 0.75rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        /* DETAILS LIST */
+        .details-list {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .detail-item {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.2s;
+        }
+
+        .detail-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+        }
+
+        .truck-id {
+            font-family: 'Orbitron';
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 3px;
+        }
+
+        .truck-meta {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .time-badge {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'Orbitron';
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #475569;
+            font-family: 'Orbitron';
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.2;
+        }
+
+        /* ANIMATIONS FOR LUXURY FEEL */
+        .fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1400px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+
+            .year-calendar-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .year-calendar-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- HEADER -->
+    <nav class="navbar"
+        style="border-bottom: 1px solid rgba(0, 243, 255, 0.2); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);">
+        <a href="homepage-v1.html" style="text-decoration:none; display: flex; align-items: center; gap: 10px;">
+            <div
+                style="font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem; letter-spacing: 2px; color: #fff; text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 15px rgba(0, 243, 255, 0.8);">
+                <span style="color: #00f3ff;">SMART</span> WAREHOUSE
+                <span
+                    style="font-weight: 300; opacity: 0.7; font-size: 0.8rem; color: #00f3ff; margin-left: 5px;">V2.0</span>
+            </div>
+        </a>
+
+        <div
+            style="font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1rem; letter-spacing: 3px; color: var(--text-muted); text-transform: uppercase;">
+            <i class="fas fa-truck-loading" style="color: var(--primary); margin-right: 8px;"></i>
+            TRACKING CONTAINER
+        </div>
+        <div style="display:flex; align-items:center; gap:15px;">
+            <div
+                style="font-size:0.8rem; color:var(--text-muted); font-weight:600; font-family:'Orbitron'; letter-spacing:1px;">
+                SELECT YEAR:</div>
+            <select id="year-filter" class="cyber-select" onchange="TrackingApp.handleYearChange(this.value)">
+                <!-- Auto populated -->
+                <option value="2026">2026</option>
+            </select>
+        </div>
+
+        <div class="status-pill">
+            <div class="status-dot"></div>
+            <span id="system-status">SYSTEM ONLINE</span>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+
+        <!-- TOP ROW: CALENDAR & METRICS -->
+        <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 25px; align-items: stretch;">
+
+            <!-- LEFT: 1 YEAR CALENDAR -->
+            <div class="glass-card fade-in-up" style="animation-delay: 0.1s; display: flex; flex-direction: column;">
+                <div class="card-header">
+                    <div class="card-title">
+                        <b><i class="fas fa-calendar-alt"></i> CONTAINER ACTIVITY LOG</b>
+                        <span>Click any date to view tracking details</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-family:'Orbitron'; font-size:1.5rem; font-weight:900; color:var(--primary); line-height:1;"
+                            id="header-year-display">2026</div>
+                        <div style="font-size:0.65rem; color:var(--text-muted); letter-spacing:2px;">ANNUAL OVERVIEW
+                        </div>
+                    </div>
+                </div>
+
+                <div class="year-calendar-grid" id="year-calendar-container">
+                    <div
+                        style="grid-column: 1 / -1; text-align:center; padding:50px; color:var(--text-muted); font-family:'Orbitron';">
+                        <i class="fas fa-circle-notch fa-spin"
+                            style="font-size:2rem; margin-bottom:15px; color:var(--primary);"></i><br>
+                        INITIALIZING CALENDAR ENGINE...
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: ANALYTICS PANEL -->
+            <div class="glass-card fade-in-up" style="animation-delay: 0.2s; display: flex; flex-direction: column;">
+                <div class="card-header" style="margin-bottom:15px; padding-bottom:10px;">
+                    <div class="card-title">
+                        <b><i class="fas fa-microchip"></i> DAILY TARGET METRICS</b>
+                        <span id="selected-date-label">SELECT A DATE ON THE LEFT</span>
+                    </div>
+                </div>
+
+                <div id="daily-metrics-container"
+                    style="flex-grow: 1; display: flex; align-items: center; justify-content: center;">
+                    <div class="empty-state">
+                        <i class="fas fa-mouse-pointer"></i><br>
+                        <span style="font-size:0.8rem; letter-spacing:2px; display:block; margin-bottom:5px;">AWAITING
+                            SELECTION</span>
+                        <span style="font-size:0.65rem;">Silakan klik tanggal pada kalender untuk melihat rincian
+                            performa bongkar kontainer hari itu.</span>
+                    </div>
+                </div>
+
+                <!-- Un-hidden by JS when a date is selected -->
+                <div id="daily-data-view" style="display:none; flex-direction:column; gap:15px;">
+                    <div class="kpi-grid">
+                        <div class="kpi-box cyan">
+                            <div class="kpi-label">TOTAL CONTAINER</div>
+                            <div class="kpi-value" id="kpi-total-cont">0</div>
+                        </div>
+                        <div class="kpi-box orange">
+                            <div class="kpi-label">AVG BONGKAR DUR</div>
+                            <div class="kpi-value" id="kpi-avg-dur" style="font-size: 1.4rem;">0<span
+                                    style="font-size:0.5em; color:var(--text-muted);">m</span></div>
+                        </div>
+                        <div class="kpi-box violet" style="border-right: 2px solid var(--danger);">
+                            <div class="kpi-label" style="color:var(--danger);">TRUK INAP (>=24H)</div>
+                            <div class="kpi-value" id="kpi-inap">0</div>
+                        </div>
+                        <div class="kpi-box green" style="border-right: 2px solid var(--success);">
+                            <div class="kpi-label" style="color:var(--success);">TIDAK INAP (&lt;24H)</div>
+                            <div class="kpi-value" id="kpi-tidak-inap">0</div>
+                        </div>
+                    </div>
+
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px; margin-top:5px;">
+                        <span
+                            style="font-family:'Orbitron'; font-size:0.75rem; color:var(--primary); letter-spacing:1px;"><i
+                                class="fas fa-list"></i> TRANSACTION LOGS</span>
+                        <span style="color:var(--text-muted); font-size: 0.65rem;" id="log-count">0 RECORDS</span>
+                    </div>
+
+                    <!-- Mini Table Container -->
+                    <div style="max-height: 350px; overflow-y: auto; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 10px;"
+                        id="tracking-logs">
+                        <!-- Logs injected by JS -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!-- /TOP ROW -->
+
+        <!-- BOTTOM ROW: CHARTS -->
+        <div id="chart-grid" style="display: none; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 5px;">
+            <!-- CHART 1 -->
+            <div class="glass-card fade-in-up" style="animation-delay: 0.3s; display: flex; flex-direction: column;">
+                <div class="chart-title">TIME COMPARISON ANALYSIS</div>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="timeComparisonChart"></canvas>
+                </div>
+            </div>
+
+            <!-- CHART 2 -->
+            <div class="glass-card fade-in-up" style="animation-delay: 0.4s; display: flex; flex-direction: column;">
+                <div class="chart-title">RASIO INAP VS TIDAK INAP</div>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- /.dashboard-container -->
+
+    <script src="js/app-config.js"></script>
+    <script src="js/rm-tracking-container.js"></script>
+</body>
+
+</html>

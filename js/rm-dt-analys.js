@@ -38,7 +38,11 @@ const AnalysApp = {
         const statusText = document.querySelector('.status-pill');
         if (statusText) statusText.innerHTML = '<div class="status-dot" style="background:#f59e0b; box-shadow:0 0 8px #f59e0b;"></div> SYNCING...';
 
-        // 1. FAST LOAD FROM CACHE
+        // FORCE CLEAR CACHE TO PULL FRESH DATA FROM NEW APIS
+        localStorage.removeItem('rm_dt_data_old');
+        localStorage.removeItem('rm_dt_data_v2');
+
+        // 1. FAST LOAD FROM CACHE (Bypassed initially to ensure fresh data)
         try {
             const cachedOld = localStorage.getItem('rm_dt_data_old');
             const cachedV2 = localStorage.getItem('rm_dt_data_v2');
@@ -61,17 +65,16 @@ const AnalysApp = {
                 this.apiV2Url ? fetch(this.apiV2Url).then(r => r.json()).catch(() => null) : Promise.resolve(null)
             ]);
 
-            let changed = false;
+            let changed = true; // Force re-render after fetch
+
             // UPDATE CACHE IF CHANGED
-            if (resOld && JSON.stringify(resOld) !== localStorage.getItem('rm_dt_data_old')) {
+            if (resOld) {
                 localStorage.setItem('rm_dt_data_old', JSON.stringify(resOld));
                 this.dataOld = resOld;
-                changed = true;
             }
-            if (resV2 && JSON.stringify(resV2) !== localStorage.getItem('rm_dt_data_v2')) {
+            if (resV2) {
                 localStorage.setItem('rm_dt_data_v2', JSON.stringify(resV2));
                 this.dataV2 = resV2;
-                changed = true;
             }
 
             // RE-RENDER IF THERE WAS A CHANGE
