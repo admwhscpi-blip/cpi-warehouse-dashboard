@@ -903,7 +903,7 @@
     </div>
 
     <script>
-        const RM_API_URL = "https://script.google.com/macros/s/AKfycby1bRxG2y3CFk-M3spQvt5KL5ywRPibCa69JBizz4eMUNcLJytnQMd1MwF4i_ViWry4/exec";
+        const RM_API_URL = "https://script.google.com/macros/s/AKfycbylENkbtktI6I1GPQi1vF4w4yu4jiAcjiWFYnhQ5ZJwO53CAXOf2NhBLJcClEeHMYaZ/exec";
 
         // Extract plate number from Col D text
         // e.g. "B 9308 UEK 23.02.2026 To be scaled..." → "B 9308 UEK"
@@ -917,6 +917,90 @@
             const dateIdx = s.search(/\d{2}[\.\/-]\d{2}[\.\/-]\d{4}/);
             if (dateIdx > 0) return s.substring(0, dateIdx).trim();
             return s;
+        }
+
+        // ====== ROBUST DATE/TIME PARSER ======
+        // Returns a Date object from arrival date + time fields, or null on failure.
+        // Handles: dd.MM.yyyy, dd/MM/yyyy, yyyy-MM-dd, ISO strings
+        // Time: HH:mm, HH:mm:ss, H:mm
+        function parseEntryDate(item) {
+            const isContainer = (item.truckType || '').toUpperCase().includes('CONTAINER');
+            const rawDate = isContainer ? (item.arrivalDate || '') : (item.tglMasuk || '');
+            const rawTime = isContainer ? (item.arrivalTime || '') : (item.jamMasuk || '00:00');
+
+            if (!rawDate || rawDate.trim() === '' || rawDate === '0' || rawDate === '00.00.0000') return null;
+
+            let day, month, year;
+            const dateStr = String(rawDate).trim();
+
+            // Try dd.MM.yyyy or dd/MM/yyyy
+            let dm = dateStr.match(/^(\d{1,2})[\.\/](\d{1,2})[\.\/](\d{4})$/);
+            if (dm) {
+                day = parseInt(dm[1]);
+                month = parseInt(dm[2]) - 1;
+                year = parseInt(dm[3]);
+            } else {
+                // Try yyyy-MM-dd or ISO
+                dm = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+                if (dm) {
+                    year = parseInt(dm[1]);
+                    month = parseInt(dm[2]) - 1;
+                    day = parseInt(dm[3]);
+                } else {
+                    // Last resort: try native Date parse
+                    const fallback = new Date(dateStr);
+                    if (!isNaN(fallback.getTime())) {
+                        day = fallback.getDate();
+                        month = fallback.getMonth();
+                        year = fallback.getFullYear();
+                    } else {
+                        return null;
+                    }
+                }
+            }
+
+            // Parse time
+            let hh = 0, mm = 0;
+            const timeStr = String(rawTime).trim();
+            if (timeStr) {
+                // Try HH:mm or HH:mm:ss or H:mm
+                const tm = timeStr.match(/^(\d{1,2}):(\d{2})/);
+                if (tm) {
+                    hh = parseInt(tm[1]);
+                    mm = parseInt(tm[2]);
+                } else {
+                    // Try HH.mm (dot separator)
+                    const tmDot = timeStr.match(/^(\d{1,2})\.(\d{2})$/);
+                    if (tmDot) {
+                        hh = parseInt(tmDot[1]);
+                        mm = parseInt(tmDot[2]);
+                    }
+                }
+            }
+
+            const result = new Date(year, month, day, hh, mm);
+            if (isNaN(result.getTime())) return null;
+            return result;
+        }
+
+        // Calculate elapsed & remaining vs 24h from entry date
+        // Returns { elapsedMs, remainingMs, remainHrs, remainMins, overHrs, overMins, isInap }
+        // overHrs/overMins = how much PAST the 24h limit (not total elapsed)
+        function calcInap(entryDate, now) {
+            if (!entryDate) return null;
+            const limitMs = 24 * 60 * 60 * 1000;
+            const elapsedMs = now.getTime() - entryDate.getTime();
+            const remainingMs = (entryDate.getTime() + limitMs) - now.getTime();
+            const overMs = Math.max(0, -remainingMs); // how much past 24h
+            return {
+                elapsedMs,
+                remainingMs,
+                remainHrs: Math.floor(Math.max(0, remainingMs) / (1000 * 60 * 60)),
+                remainMins: Math.floor((Math.max(0, remainingMs) % (1000 * 60 * 60)) / (1000 * 60)),
+                overHrs: Math.floor(overMs / (1000 * 60 * 60)),
+                overMins: Math.floor((overMs % (1000 * 60 * 60)) / (1000 * 60)),
+                isInap: remainingMs <= 0
+            };
         }
 
         const state = {
@@ -977,6 +1061,7 @@
 
         function renderTier2() {
             const m = state.data.monitoring || [];
+            const now = new Date();
 
             // 1. Split Container & Others
             const containers = m.filter(i => (i.truckType || '').toUpperCase().includes('CONTAINER'));
@@ -984,45 +1069,38 @@
             document.getElementById('count-container').innerText = containers.length;
             document.getElementById('count-other').innerText = others.length;
 
-            // 2. Today vs Inap vs Pre-Inap
-            const inap = m.filter(i => (i.agingStatus || '').toUpperCase().includes('INAP'));
-            const today = m.filter(i => !(i.agingStatus || '').toUpperCase().includes('INAP'));
+            // 2. CLIENT-SIDE Inap vs Today (computed from arrival date+time, not backend agingStatus)
+            //    A truck is truly INAP only when 24 hours have elapsed since entry.
+            let inapCount = 0;
+            let todayCount = 0;
+            let preInapCount = 0;
 
-            // Logic for Pre-Inap
-            const now = new Date();
-            const preInap = m.filter(i => {
-                let isContainer = (i.truckType || '').toUpperCase().includes('CONTAINER');
+            m.forEach(i => {
+                const entryDate = parseEntryDate(i);
+                const info = calcInap(entryDate, now);
 
-                if (isContainer) {
-                    if (!i.arrivalDate || !i.arrivalTime) return false;
-                    try {
-                        const tp = i.arrivalDate.split(/[/.]/);
-                        const jp = i.arrivalTime.split(':');
-                        if (tp.length === 3 && jp.length >= 2) {
-                            const entry = new Date(parseInt(tp[2]), parseInt(tp[1]) - 1, parseInt(tp[0]), parseInt(jp[0]), parseInt(jp[1]));
-                            const diff = (entry.getTime() + (24 * 60 * 60 * 1000)) - now.getTime();
-                            return (diff > 0 && diff < (24 * 60 * 60 * 1000)); // Within 24 hours of entry
-                        }
-                    } catch (e) { }
-                    return false;
+                if (info && info.isInap) {
+                    // 24h has truly passed -> INAP
+                    inapCount++;
+                } else if (info && !info.isInap) {
+                    // Still within 24h
+                    todayCount++;
+                    // Pre-Inap: remaining < 24h but > 0
+                    if (info.remainingMs > 0 && info.remainingMs < (24 * 60 * 60 * 1000)) {
+                        preInapCount++;
+                    }
                 } else {
-                    if (!(i.agingStatus || '').toUpperCase().includes('HARI INI')) return false;
-                    if (!i.tglMasuk) return false;
-                    try {
-                        const tp = i.tglMasuk.split(/[/.]/);
-                        const jp = (i.jamMasuk || "00:00").split(':');
-                        if (tp.length === 3 && jp.length >= 2) {
-                            const entry = new Date(parseInt(tp[2]), parseInt(tp[1]) - 1, parseInt(tp[0]), parseInt(jp[0]), parseInt(jp[1]));
-                            const diff = (entry.getTime() + (24 * 60 * 60 * 1000)) - now.getTime();
-                            return (diff > 0 && diff < (24 * 60 * 60 * 1000));
-                        }
-                    } catch (e) { }
-                    return false;
+                    // Cannot parse date, fall back to backend status
+                    if ((i.agingStatus || '').toUpperCase().includes('INAP')) {
+                        inapCount++;
+                    } else {
+                        todayCount++;
+                    }
                 }
             });
 
-            document.getElementById('count-today').innerHTML = `${today.length} <small style="font-size:0.7rem; color:#fbbf24;">(${preInap.length} Pra-Inap)</small>`;
-            document.getElementById('count-inap').innerText = inap.length;
+            document.getElementById('count-today').innerHTML = `${todayCount} <small style="font-size:0.7rem; color:#fbbf24;">(${preInapCount} Pra-Inap)</small>`;
+            document.getElementById('count-inap').innerText = inapCount;
 
             // 3. Destinations
             const dests = { rm: 0, samping: 0, gebang: 0, cpo: 0 };
@@ -1086,6 +1164,16 @@
             const title = document.getElementById('modal-title');
             const body = document.getElementById('modal-body');
             const m = state.data.monitoring || [];
+            const nowFilter = new Date();
+
+            // Helper: check if item is truly INAP (24h elapsed) using client-side logic
+            function isItemInap(item) {
+                const entry = parseEntryDate(item);
+                const info = calcInap(entry, nowFilter);
+                if (info) return info.isInap;
+                // Fallback to backend status if date can't be parsed
+                return (item.agingStatus || '').toUpperCase().includes('INAP');
+            }
 
             let filtered = [];
             if (type === 'CONTAINER') {
@@ -1093,8 +1181,8 @@
                 filtered = m.filter(i => (i.truckType || '').toUpperCase().includes('CONTAINER'));
             }
             else if (type === 'OTHER') { title.innerText = "LOCAL TRUCK LIST (NON-CONTAINER)"; filtered = m.filter(i => !(i.truckType || '').toUpperCase().includes('CONTAINER')); }
-            else if (type === 'TODAY') { title.innerText = "INPUTAN HARI INI (RECORDS)"; filtered = m.filter(i => !(i.agingStatus || '').toUpperCase().includes('INAP')); }
-            else if (type === 'INAP') { title.innerText = "MOBIL INAP (> 24 JAM)"; filtered = m.filter(i => (i.agingStatus || '').toUpperCase().includes('INAP')); }
+            else if (type === 'TODAY') { title.innerText = "INPUTAN HARI INI (BELUM 24 JAM)"; filtered = m.filter(i => !isItemInap(i)); }
+            else if (type === 'INAP') { title.innerText = "MOBIL INAP (> 24 JAM)"; filtered = m.filter(i => isItemInap(i)); }
 
             let html = '<table class="data-table-aligned" style="width:100%;"><thead><tr><th>No Polisi</th><th>Material</th><th>Truck Type</th><th>Tonnage</th><th>Status</th><th>PRA-INAP (Countdown)</th></tr></thead><tbody>';
 
@@ -1104,80 +1192,48 @@
                 const ton = parseFloat(i.netto) || 0;
                 let reminderHtml = "";
 
-                // FEATURE: Pre-Inap Countdown (24H Limit)
-                let isContainer = (i.truckType || '').toUpperCase().includes('CONTAINER');
+                // ====== COUNTDOWN LOGIC USING parseEntryDate ======
+                const isContainer = (i.truckType || '').toUpperCase().includes('CONTAINER');
+                const entryDate = parseEntryDate(i);
 
-                if (isContainer) {
-                    let aDate = i.arrivalDate;
-                    let aTime = i.arrivalTime;
-
-                    if (!aDate && !aTime) {
-                        reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">ARRIVAL DATE & TIME KOSONG</span>`;
-                    } else if (!aDate) {
-                        reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">ARRIVAL DATE KOSONG</span>`;
-                    } else if (!aTime) {
-                        reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">ARRIVAL TIME KOSONG</span>`;
+                if (entryDate) {
+                    const info = calcInap(entryDate, now);
+                    if (info.isInap) {
+                        // Past 24h → show how much OVER the 24h limit
+                        reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.8rem;">LEWAT ${info.overHrs} JAM ${info.overMins} MENIT</span>`;
                     } else {
-                        try {
-                            const tParts = aDate.split(/[/.]/);
-                            const jParts = aTime.split(':');
-                            if (tParts.length === 3 && jParts.length >= 2) {
-                                const d = parseInt(tParts[0]);
-                                const m = parseInt(tParts[1]) - 1;
-                                const y = parseInt(tParts[2]);
-                                const hh = parseInt(jParts[0]);
-                                const mm = parseInt(jParts[1]);
-
-                                const entryDate = new Date(y, m, d, hh, mm);
-                                const diffMs = (entryDate.getTime() + (24 * 60 * 60 * 1000)) - now.getTime();
-                                const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-                                const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-                                if (diffMs > 0) {
-                                    reminderHtml = `<span style="color:#fbbf24; font-weight:700; font-size:0.8rem;">${diffHrs} JAM ${diffMins} MENIT LAGI</span>`;
-                                } else {
-                                    reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.8rem;">SUDAH INAP</span>`;
-                                }
-                            } else {
-                                reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">FORMAT TGL/JAM SALAH</span>`;
-                            }
-                        } catch (e) {
-                            reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">ERROR PARSING</span>`;
-                        }
+                        // Within 24h → show countdown remaining
+                        reminderHtml = `<span style="color:#fbbf24; font-weight:700; font-size:0.8rem;">${info.remainHrs} JAM ${info.remainMins} MENIT LAGI</span>`;
                     }
                 } else {
-                    // NON-CONTAINER
-                    if ((i.agingStatus || '').toUpperCase().includes('HARI INI')) {
-                        if (i.tglMasuk) {
-                            try {
-                                const tParts = i.tglMasuk.split(/[/.]/);
-                                const jParts = (i.jamMasuk || "00:00").split(':');
-                                if (tParts.length === 3 && jParts.length >= 2) {
-                                    const d = parseInt(tParts[0]);
-                                    const m = parseInt(tParts[1]) - 1;
-                                    const y = parseInt(tParts[2]);
-                                    const hh = parseInt(jParts[0]);
-                                    const mm = parseInt(jParts[1]);
-
-                                    const entryDate = new Date(y, m, d, hh, mm);
-                                    const diffMs = (entryDate.getTime() + (24 * 60 * 60 * 1000)) - now.getTime();
-                                    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-                                    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-                                    if (diffMs > 0) {
-                                        reminderHtml = `<span style="color:#fbbf24; font-weight:700; font-size:0.8rem;">${diffHrs} JAM ${diffMins} MENIT LAGI</span>`;
-                                    } else {
-                                        reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.8rem;">SOON INAP</span>`;
-                                    }
-                                }
-                            } catch (e) {
-                                console.warn("Time calc failed for", i.sequence);
-                            }
+                    // Cannot parse entry date → show appropriate error
+                    if (isContainer) {
+                        const aDate = i.arrivalDate || '';
+                        const aTime = i.arrivalTime || '';
+                        if (!aDate && !aTime) {
+                            reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">ARRIVAL DATE & TIME KOSONG</span>`;
+                        } else if (!aDate) {
+                            reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">ARRIVAL DATE KOSONG</span>`;
+                        } else if (!aTime) {
+                            reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">ARRIVAL TIME KOSONG</span>`;
+                        } else {
+                            reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">FORMAT TGL/JAM SALAH (${aDate} ${aTime})</span>`;
+                        }
+                    } else {
+                        // Non-container without parseable date
+                        if (!i.tglMasuk) {
+                            reminderHtml = `<span style="color:#64748b; font-size:0.65rem;">-</span>`;
+                        } else {
+                            reminderHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.65rem;">FORMAT TGL/JAM SALAH</span>`;
                         }
                     }
                 }
 
-                const statusClass = (i.agingStatus || '').toUpperCase().includes('INAP') ? 'status-inap' : 'status-today';
+                // STATUS: SUDAH INAP or BELUM INAP (client-side 24h logic)
+                const computedInfo = entryDate ? calcInap(entryDate, now) : null;
+                const isComputedInap = computedInfo ? computedInfo.isInap : (i.agingStatus || '').toUpperCase().includes('INAP');
+                const statusText = isComputedInap ? 'SUDAH INAP' : 'BELUM INAP';
+                const statusClass = isComputedInap ? 'status-inap' : 'status-today';
 
                 html += `
                     <tr>
@@ -1185,7 +1241,7 @@
                         <td style="color:var(--neon-blue); font-weight:700; font-size:0.9rem;">${i.material}</td>
                         <td style="font-size:0.85rem;">${i.truckType}</td>
                         <td style="font-weight:700; font-size:0.95rem;">${ton.toLocaleString()} TON</td>
-                        <td><span class="status-badge ${statusClass}">${i.agingStatus}</span></td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                         <td style="text-align:center;">${reminderHtml || '-'}</td>
                     </tr>
                 `;

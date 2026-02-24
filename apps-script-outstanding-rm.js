@@ -56,7 +56,9 @@ function getOutstandingData() {
     const numRows = dataEndRow - 43 + 1;
     if (numRows <= 0) return { placement: placement, monitoring: [], lastUpdate: new Date().toLocaleString() };
 
-    const rangeMonitoring = sheet.getRange(43, 4, numRows, 12).getValues();
+    const monRange = sheet.getRange(43, 4, numRows, 12);
+    const rangeMonitoring = monRange.getValues();          // For numeric/formula values
+    const rangeDisplay = monRange.getDisplayValues();      // For exact text (dates/times as shown)
     // Index map (0-based from col D):
     //   0 = D (combined text)
     //   1 = E (date/empty)
@@ -126,25 +128,24 @@ function getOutstandingData() {
         const agingStatus = String(r[5] || "").trim();  // Col I
 
         // === DATES & TIMES ===
-        // Arrival Date (Col N)
-        let arrivalDate = r[10];
-        if (arrivalDate instanceof Date) {
-            arrivalDate = Utilities.formatDate(arrivalDate, "GMT+7", "dd.MM.yyyy");
-        } else {
-            arrivalDate = String(arrivalDate || "");
-        }
+        // Use getDisplayValues() to get EXACT text as shown in spreadsheet.
+        // This completely avoids timezone conversion bugs with Date objects.
+        const disp = rangeDisplay[idx];
 
-        // Arrival Time (Col O)
-        let arrivalTime = r[11];
-        if (arrivalTime instanceof Date) {
-            arrivalTime = Utilities.formatDate(arrivalTime, "GMT+7", "HH:mm");
-        } else if (typeof arrivalTime === 'number') {
-            // Time stored as fraction of day
-            let hours = Math.floor(arrivalTime * 24);
-            let minutes = Math.round((arrivalTime * 24 - hours) * 60);
-            arrivalTime = (hours < 10 ? "0" + hours : hours) + ":" + (minutes < 10 ? "0" + minutes : minutes);
-        } else {
-            arrivalTime = String(arrivalTime || "");
+        // Arrival Date (Col N) - use display value directly
+        let arrivalDate = String(disp[10] || "").trim();
+
+        // Arrival Time (Col O) - use display value directly
+        // Display format may be "H:mm:ss" or "HH:mm:ss" or "HH:mm"
+        let arrivalTime = String(disp[11] || "").trim();
+        // Normalize time: "0:05:08" → "00:05", "11:33:00" → "11:33"
+        if (arrivalTime) {
+            const timeParts = arrivalTime.split(':');
+            if (timeParts.length >= 2) {
+                let h = parseInt(timeParts[0]) || 0;
+                let m = parseInt(timeParts[1]) || 0;
+                arrivalTime = (h < 10 ? "0" + h : String(h)) + ":" + (m < 10 ? "0" + m : String(m));
+            }
         }
 
         // === TGL MASUK / JAM MASUK (extract from Col D or use Arrival fields) ===
@@ -159,12 +160,10 @@ function getOutstandingData() {
             }
         }
 
-        // If Col E has a date value
-        let colE = r[1];
-        if (colE instanceof Date) {
-            if (!tglMasuk || tglMasuk.trim() === "") {
-                tglMasuk = Utilities.formatDate(colE, "GMT+7", "dd.MM.yyyy");
-            }
+        // If Col E has a date display value
+        let colEdisp = String(disp[1] || "").trim();
+        if (colEdisp && (!tglMasuk || tglMasuk.trim() === "")) {
+            tglMasuk = colEdisp;
         }
 
         monitoring.push({
