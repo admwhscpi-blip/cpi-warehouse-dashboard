@@ -45,8 +45,8 @@ const TrackingApp = {
     },
 
     fetchData: async function () {
-        const statusText = document.getElementById('system-status');
-        if (statusText) statusText.parentElement.innerHTML = '<div class="status-dot" style="background:#f59e0b; box-shadow:0 0 8px #f59e0b;"></div> <span id="system-status">SYNCING...</span>';
+        const statusPill = document.querySelector('.status-pill');
+        if (statusPill) statusPill.innerHTML = '<div class="status-dot" style="background:#f59e0b; box-shadow:0 0 8px #f59e0b;"></div> <span id="system-status">SYNCING...</span>';
 
         try {
             // Fetch from New API (Since data is only >= 19 Feb 2026)
@@ -55,14 +55,16 @@ const TrackingApp = {
                 this.allData = res.template;
                 this.processContainerData();
                 this.renderCalendars();
+                this.initInapSlicers();
+                this.renderInapAnalysis();
 
-                if (statusText) statusText.parentElement.innerHTML = '<div class="status-dot"></div> <span id="system-status">SYSTEM ONLINE</span>';
+                if (statusPill) statusPill.innerHTML = '<div class="status-dot"></div> <span id="system-status">SYSTEM ONLINE</span>';
             } else {
                 throw new Error("Invalid API Data");
             }
         } catch (err) {
             console.error("FETCH ERROR:", err);
-            if (statusText) statusText.parentElement.innerHTML = '<div class="status-dot" style="background:#ef4444; box-shadow:0 0 8px #ef4444;"></div> <span id="system-status">CONNECTION ERROR</span>';
+            if (statusPill) statusPill.innerHTML = '<div class="status-dot" style="background:#ef4444; box-shadow:0 0 8px #ef4444;"></div> <span id="system-status">CONNECTION ERROR</span>';
         }
     },
 
@@ -248,55 +250,92 @@ const TrackingApp = {
         return (h * 60) + m; // Total minutes from midnight
     },
 
+    /**
+     * Robust date+time parser — same logic as outstanding-rm.
+     * Supports: dd.MM.yyyy, dd/MM/yyyy, yyyy-MM-dd, ISO for dates
+     *           HH:mm, HH:mm:ss, H:mm, HH.mm for times
+     * Returns a Date object in local timezone, or null if parsing fails.
+     */
+    parseDateTimeStr: function (dateStr, timeStr) {
+        if (!dateStr || String(dateStr).trim() === '') return null;
+        let day, month, year;
+        const ds = String(dateStr).trim();
+
+        // Try dd.MM.yyyy or dd/MM/yyyy
+        let dm = ds.match(/^(\d{1,2})[\./](\d{1,2})[\./](\d{4})$/);
+        if (dm) {
+            day = parseInt(dm[1]); month = parseInt(dm[2]) - 1; year = parseInt(dm[3]);
+        } else {
+            // Try yyyy-MM-dd or ISO
+            dm = ds.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+            if (dm) {
+                year = parseInt(dm[1]); month = parseInt(dm[2]) - 1; day = parseInt(dm[3]);
+            } else {
+                // Last resort: native Date parse (but force local timezone)
+                const fb = new Date(ds + 'T00:00:00');
+                if (!isNaN(fb.getTime())) {
+                    day = fb.getDate(); month = fb.getMonth(); year = fb.getFullYear();
+                } else { return null; }
+            }
+        }
+
+        // Parse time
+        let hh = 0, mm = 0;
+        const ts = String(timeStr || '').trim();
+        if (ts) {
+            const tm = ts.match(/^(\d{1,2}):(\d{2})/);
+            if (tm) { hh = parseInt(tm[1]); mm = parseInt(tm[2]); }
+            else {
+                const tmDot = ts.match(/^(\d{1,2})\.(\d{2})$/);
+                if (tmDot) { hh = parseInt(tmDot[1]); mm = parseInt(tmDot[2]); }
+            }
+        }
+
+        const result = new Date(year, month, day, hh, mm);
+        if (isNaN(result.getTime())) return null;
+        return result;
+    },
+
     calculateMetrics: function (data) {
         let total = data.length;
         let sumBongkar = 0; let countBongkar = 0;
-        let countInap = 0; let countTidakInap = 0;
+        let countInap = 0; let countTidakInap = 0; let countNoData = 0;
 
         data.forEach(row => {
             // Durasi Bongkar
             let dur = Number(row['DURASI_BONGKAR']);
             if (!isNaN(dur) && dur > 0) { sumBongkar += dur; countBongkar++; }
 
-            // Hitungan Inap
-            let tglBongkarRaw = row['TANGGAL'] || '';
-            let tglBongkar = tglBongkarRaw.substring(0, 10);
-            let arrDateRaw = row['ARRIVAL_DATE'] || tglBongkarRaw;
-            let arrDate = arrDateRaw.substring(0, 10);
+            // Hitungan Inap — robust parsing
+            // Arrival IN: Col X (date) & Col Y (time) — text from SAP
+            let arrDateStr = String(row['ARRIVAL_DATE'] || '').trim();
+            let arrTimeStr = String(row['ARRIVAL_TIME'] || '').trim();
+            // Bongkar OUT: Col A (tanggal) & Col U (finish)
+            let finDateStr = String(row['TANGGAL'] || '').trim();
+            let finTimeStr = String(row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '').trim();
 
-            let arrTime = row['ARRIVAL_TIME'] || row['PB_START'] || '--:--';
-            let finishTime = row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '--:--';
+            // Check if arrival data exists (must have both date AND time)
+            let hasArrival = arrDateStr && arrDateStr !== '-' && arrTimeStr && arrTimeStr !== '-';
+            let hasFinish = finDateStr && finDateStr !== '-' && finTimeStr && finTimeStr !== '-';
 
-            let arrStr = arrTime !== '--:--' ? arrTime : '00:00';
-            let finStr = finishTime !== '--:--' ? finishTime : '00:00';
+            if (!hasArrival || !hasFinish) {
+                countNoData++;
+                return;
+            }
 
-            try {
-                let dArr = new Date(arrDate);
-                if (arrStr.includes(':')) {
-                    let pts = arrStr.split(':');
-                    dArr.setHours(parseInt(pts[0], 10), parseInt(pts[1], 10), 0);
-                }
+            let dArr = this.parseDateTimeStr(arrDateStr, arrTimeStr);
+            let dFin = this.parseDateTimeStr(finDateStr, finTimeStr);
 
-                let dFin = new Date(tglBongkar);
-                if (finStr.includes(':')) {
-                    let pts = finStr.split(':');
-                    dFin.setHours(parseInt(pts[0], 10), parseInt(pts[1], 10), 0);
-                }
-
-                // If cross midnight same day
-                if (dFin < dArr && tglBongkar === arrDate) {
-                    dFin.setDate(dFin.getDate() + 1);
-                }
-
+            if (dArr && dFin) {
+                if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
                 let diffMs = dFin.getTime() - dArr.getTime();
                 let durH = diffMs / (1000 * 60 * 60);
 
-                if (durH >= 24) {
-                    countInap++;
-                } else if (durH >= 0) {
-                    countTidakInap++;
-                }
-            } catch (e) { }
+                if (durH >= 24) countInap++;
+                else if (durH >= 0) countTidakInap++;
+            } else {
+                countNoData++;
+            }
         });
 
         const avgBongkar = countBongkar > 0 ? Math.round(sumBongkar / countBongkar) : 0;
@@ -304,12 +343,13 @@ const TrackingApp = {
         let avgM = Math.floor(avgBongkar % 60);
         let avgDurHtml = `${avgH}<span style="font-size:0.5em; color:var(--text-muted); margin:0 2px;">h</span>${avgM}<span style="font-size:0.5em; color:var(--text-muted); margin-left:2px;">m</span>`;
 
-        // Update DOM
+        // Update DOM — total = inap + tidak inap + no data
         this.animateValue('kpi-total-cont', 0, total, 1000, '');
         const domAvgDur = document.getElementById('kpi-avg-dur');
         if (domAvgDur) domAvgDur.innerHTML = avgDurHtml;
         this.animateValue('kpi-inap', 0, countInap, 1000, '');
         this.animateValue('kpi-tidak-inap', 0, countTidakInap, 1000, '');
+        this.animateValue('kpi-no-data', 0, countNoData, 1000, '');
     },
 
     animateValue: function (id, start, end, duration, suffix = "") {
@@ -434,45 +474,45 @@ const TrackingApp = {
 
             let inapCount = 0;
             let tdkInapCount = 0;
+            let noDataCount = 0;
 
             data.forEach(row => {
-                let tglBongkarRaw = row['TANGGAL'] || '';
-                let tglBongkar = tglBongkarRaw.substring(0, 10);
-                let arrDateRaw = row['ARRIVAL_DATE'] || tglBongkarRaw;
-                let arrDate = arrDateRaw.substring(0, 10);
-                let arrTime = row['ARRIVAL_TIME'] || row['PB_START'] || '';
-                let finishTime = row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '';
+                let arrDateStr = String(row['ARRIVAL_DATE'] || '').trim();
+                let arrTimeStr = String(row['ARRIVAL_TIME'] || '').trim();
+                let finDateStr = String(row['TANGGAL'] || '').trim();
+                let finTimeStr = String(row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '').trim();
 
-                if (arrTime && finishTime !== '' && arrTime !== 'No Data' && finishTime !== 'No Data') {
-                    try {
-                        let dArr = new Date(arrDate);
-                        if (arrTime.includes(':')) {
-                            let pts = arrTime.split(':');
-                            dArr.setHours(parseInt(pts[0], 10), parseInt(pts[1], 10), 0);
-                        }
-                        let dFin = new Date(tglBongkar);
-                        if (finishTime.includes(':')) {
-                            let pts = finishTime.split(':');
-                            dFin.setHours(parseInt(pts[0], 10), parseInt(pts[1], 10), 0);
-                        }
-                        if (dFin < dArr && tglBongkar === arrDate) dFin.setDate(dFin.getDate() + 1);
-                        let diffMs = dFin.getTime() - dArr.getTime();
-                        let durH = diffMs / (1000 * 60 * 60);
+                let hasArrival = arrDateStr && arrDateStr !== '-' && arrTimeStr && arrTimeStr !== '-';
+                let hasFinish = finDateStr && finDateStr !== '-' && finTimeStr && finTimeStr !== '-';
 
-                        if (durH >= 24) inapCount++;
-                        else if (durH >= 0) tdkInapCount++;
-                    } catch (e) { }
+                if (!hasArrival || !hasFinish) {
+                    noDataCount++;
+                    return;
+                }
+
+                let dArr = this.parseDateTimeStr(arrDateStr, arrTimeStr);
+                let dFin = this.parseDateTimeStr(finDateStr, finTimeStr);
+
+                if (dArr && dFin) {
+                    if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
+                    let diffMs = dFin.getTime() - dArr.getTime();
+                    let durH = diffMs / (1000 * 60 * 60);
+
+                    if (durH >= 24) inapCount++;
+                    else if (durH >= 0) tdkInapCount++;
+                } else {
+                    noDataCount++;
                 }
             });
 
             this.charts['typeComp'] = new Chart(ctxType.getContext('2d'), {
                 type: 'doughnut',
                 data: {
-                    labels: ['TIDAK INAP (<24H)', 'INAP (>=24H)'],
+                    labels: ['TIDAK INAP (<24H)', 'INAP (>=24H)', 'DATA TIDAK LENGKAP'],
                     datasets: [{
-                        data: [tdkInapCount, inapCount],
-                        backgroundColor: ['#10b981', '#ef4444'],
-                        borderColor: ['#34d399', '#f87171'],
+                        data: [tdkInapCount, inapCount, noDataCount],
+                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                        borderColor: ['#34d399', '#f87171', '#fbbf24'],
                         borderWidth: 2,
                         hoverOffset: 15,
                         hoverBorderColor: '#fff'
@@ -522,71 +562,64 @@ const TrackingApp = {
         data.forEach((row, i) => {
             let truckLine = row['JENIS_TRUCK'] || row['JENIS_RM'] || 'CONTAINER';
             let nopol = row['NOPOL'] || 'N/A';
-            let tglBongkarRaw = row['TANGGAL'] || '';
-            let tglBongkar = tglBongkarRaw.substring(0, 10);
-            let arrDateRaw = row['ARRIVAL_DATE'] || tglBongkarRaw;
-            let arrDate = arrDateRaw.substring(0, 10);
 
-            let arrTime = row['ARRIVAL_TIME'] || row['PB_START'] || '';
-            let startBongkar = row['START_BONGKAR'] || '';
-            let finishTime = row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '';
+            // Arrival IN: strictly Col X (ARRIVAL_DATE) & Col Y (ARRIVAL_TIME) only
+            // These are SAP data — NO fallbacks to TANGGAL or PB_START
+            let arrDateStr = row['ARRIVAL_DATE'] || '';
+            let arrTimeStr = row['ARRIVAL_TIME'] || '';
+            // Bongkar OUT: Col A (TANGGAL) & Col U (FINISH_TIME)
+            let finDateStr = row['TANGGAL'] || '';
+            let finTimeStr = row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '';
 
-            if (arrTime.trim() === '') arrTime = 'No Data';
-            if (startBongkar.trim() === '') startBongkar = 'No Data';
-            if (finishTime.trim() === '') finishTime = 'No Data';
-
-            let arrStr = arrTime !== 'No Data' ? arrTime : '00:00';
-            let finStr = finishTime !== 'No Data' ? finishTime : '00:00';
+            // Display labels
+            let arrDateDisplay = String(arrDateStr).trim() || '-';
+            let arrTimeDisplay = String(arrTimeStr).trim() || 'No Data';
+            let finDateDisplay = String(finDateStr).trim() || '-';
+            let finTimeDisplay = String(finTimeStr).trim() || 'No Data';
 
             let statusInap = 'OK';
             let colorInap = 'var(--success)';
             let durasiHtml = '';
 
-            try {
-                // Construct Date objects
-                let dArr = new Date(arrDate);
-                if (arrStr.includes(':')) {
-                    let pts = arrStr.split(':');
-                    dArr.setHours(parseInt(pts[0], 10), parseInt(pts[1], 10), 0);
-                }
+            // Check data completeness FIRST
+            let hasArrival = arrTimeDisplay !== 'No Data' && arrDateDisplay !== '-';
+            let hasFinish = finTimeDisplay !== 'No Data' && finDateDisplay !== '-';
 
-                let dFin = new Date(tglBongkar);
-                if (finStr.includes(':')) {
-                    let pts = finStr.split(':');
-                    dFin.setHours(parseInt(pts[0], 10), parseInt(pts[1], 10), 0);
-                }
+            if (!hasArrival || !hasFinish) {
+                // Missing data — no fake values
+                durasiHtml = `<span style="color:#f59e0b;">-</span>`;
+                statusInap = 'DATA TIDAK LENGKAP';
+                colorInap = '#f59e0b';
+            } else {
+                // Parse using robust helper
+                let dArr = this.parseDateTimeStr(arrDateStr, arrTimeStr);
+                let dFin = this.parseDateTimeStr(finDateStr, finTimeStr);
 
-                if (isNaN(dArr.getTime()) || isNaN(dFin.getTime())) {
-                    throw "Invalid time format";
-                }
+                if (dArr && dFin) {
+                    // If finish < arrival, must have crossed midnight
+                    if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
 
-                // If finish time is earlier than arrival time on the SAME day, add 1 day to finish (crossed midnight)
-                if (dFin < dArr && tglBongkar === arrDate) {
-                    dFin.setDate(dFin.getDate() + 1);
-                }
+                    let diffMs = dFin.getTime() - dArr.getTime();
+                    let diffMins = Math.floor(diffMs / (1000 * 60));
+                    let h = Math.floor(diffMins / 60);
+                    let m = diffMins % 60;
 
-                let diffMs = dFin.getTime() - dArr.getTime();
-                let diffMins = Math.floor(diffMs / (1000 * 60));
-                let h = Math.floor(diffMins / 60);
-                let m = diffMins % 60;
-
-                if (diffMs < 0 || arrTime === 'No Data' || finishTime === 'No Data') {
-                    // Fallback if data is missing or weird
-                    durasiHtml = `<span style="color:#ef4444;">-</span>`;
-                    statusInap = 'N/A';
-                    colorInap = '#64748b';
-                } else {
-                    if (h >= 24) {
-                        statusInap = 'INAP';
-                        colorInap = 'var(--danger)';
+                    if (diffMs < 0) {
+                        durasiHtml = `<span style="color:#f59e0b;">-</span>`;
+                        statusInap = 'DATA TIDAK LENGKAP';
+                        colorInap = '#f59e0b';
+                    } else {
+                        if (h >= 24) {
+                            statusInap = 'INAP';
+                            colorInap = 'var(--danger)';
+                        }
+                        durasiHtml = `<span style="font-size:0.85rem; color:#fff;">${h}</span><span style="font-size:0.55rem; color:#64748b; margin:0 3px;">h</span><span style="font-size:0.85rem; color:#fff;">${m}</span><span style="font-size:0.55rem; color:#64748b;">m</span>`;
                     }
-                    durasiHtml = `<span style="font-size:0.85rem; color:#fff;">${h}</span><span style="font-size:0.55rem; color:#64748b; margin:0 3px;">h</span><span style="font-size:0.85rem; color:#fff;">${m}</span><span style="font-size:0.55rem; color:#64748b;">m</span>`;
+                } else {
+                    durasiHtml = `<span style="color:#f59e0b;">-</span>`;
+                    statusInap = 'DATA TIDAK LENGKAP';
+                    colorInap = '#f59e0b';
                 }
-            } catch (e) {
-                console.warn("Time parse error", e);
-                durasiHtml = `<span style="color:#ef4444;">-</span>`;
-                statusInap = 'N/A';
-                colorInap = '#64748b';
             }
 
             html += `
@@ -596,12 +629,12 @@ const TrackingApp = {
                         <span style="font-size:0.6rem; color:#64748b;">${truckLine.substring(0, 15)}</span>
                     </td>
                     <td style="padding: 8px 4px; color: #94a3b8;">
-                        <span style="color:#0ea5e9;">${arrDate}</span><br>
-                        <span style="font-family:'Orbitron'; font-size:0.6rem; color:${arrTime === 'No Data' ? '#ef4444' : '#fff'};">${arrTime}</span>
+                        <span style="color:#0ea5e9;">${arrDateDisplay}</span><br>
+                        <span style="font-family:'Orbitron'; font-size:0.6rem; color:${arrTimeDisplay === 'No Data' ? '#ef4444' : '#fff'};">${arrTimeDisplay}</span>
                     </td>
                     <td style="padding: 8px 4px; color: #94a3b8;">
-                        <span style="color:#10b981;">${tglBongkar}</span><br>
-                        <span style="font-family:'Orbitron'; font-size:0.6rem; color:${finishTime === 'No Data' ? '#ef4444' : 'var(--accent)'};">OUT: ${finishTime}</span>
+                        <span style="color:#10b981;">${finDateDisplay}</span><br>
+                        <span style="font-family:'Orbitron'; font-size:0.6rem; color:${finTimeDisplay === 'No Data' ? '#ef4444' : 'var(--accent)'};">OUT: ${finTimeDisplay}</span>
                     </td>
                     <td style="padding: 8px 4px; text-align: right; color: #fff; font-family: 'Orbitron'; font-weight: 900;">
                         ${durasiHtml}
@@ -617,6 +650,561 @@ const TrackingApp = {
 
         html += '</tbody></table>';
         container.innerHTML = html;
+    },
+
+    // ====================================================================
+    // SECTION 3 & 4: INAP CORRELATION ANALYSIS + DETAIL
+    // ====================================================================
+
+    initInapSlicers: function () {
+        const monthSel = document.getElementById('inap-month-filter');
+        const yearSel = document.getElementById('inap-year-filter');
+        if (!monthSel || !yearSel) return;
+
+        const months = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+        const now = new Date();
+
+        // Month
+        monthSel.innerHTML = '<option value="ALL">SEMUA BULAN</option>';
+        months.forEach((m, i) => {
+            let opt = document.createElement('option');
+            opt.value = i;
+            opt.text = m;
+            if (i === now.getMonth()) opt.selected = true;
+            monthSel.appendChild(opt);
+        });
+
+        // Year
+        yearSel.innerHTML = '';
+        let currY = now.getFullYear();
+        for (let y = currY + 1; y >= 2026; y--) {
+            let opt = document.createElement('option');
+            opt.value = y;
+            opt.text = y;
+            if (y === currY) opt.selected = true;
+            yearSel.appendChild(opt);
+        }
+    },
+
+    renderInapAnalysis: function () {
+        const monthSel = document.getElementById('inap-month-filter');
+        const yearSel = document.getElementById('inap-year-filter');
+        if (!monthSel || !yearSel) return;
+
+        const selMonth = monthSel.value; // 'ALL' or 0-11
+        const selYear = parseInt(yearSel.value);
+        const isAllMonths = selMonth === 'ALL';
+        const selMonthInt = isAllMonths ? -1 : parseInt(selMonth);
+
+        // Filter container data for selected year (and optionally month)
+        const filtered = this.containerData.filter(row => {
+            let tgl = this.normalizeDate(row['TANGGAL']);
+            if (!tgl) return false;
+            let d = new Date(tgl + 'T00:00:00');
+            if (d.getFullYear() !== selYear) return false;
+            if (!isAllMonths && d.getMonth() !== selMonthInt) return false;
+            return true;
+        });
+
+        // Group by day (or month if ALL)
+        let labels = [];
+        let dailyMap = {};
+
+        if (isAllMonths) {
+            // Group by month
+            const mNames = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AGT', 'SEP', 'OKT', 'NOV', 'DES'];
+            for (let m = 0; m < 12; m++) {
+                let key = mNames[m];
+                labels.push(key);
+                dailyMap[key] = { inap: 0, tidakInap: 0, total: 0, ft20: 0, ft40: 0 };
+            }
+            filtered.forEach(row => {
+                let tgl = this.normalizeDate(row['TANGGAL']);
+                let d = new Date(tgl + 'T00:00:00');
+                let key = mNames[d.getMonth()];
+                let status = this._getInapStatus(row);
+                dailyMap[key].total++;
+                if (status === 'INAP') dailyMap[key].inap++;
+                else dailyMap[key].tidakInap++;
+                let truck = String(row['JENIS_TRUCK'] || '').toUpperCase();
+                if (truck.includes('20')) dailyMap[key].ft20++;
+                else dailyMap[key].ft40++;
+            });
+        } else {
+            // Group by day of month
+            let daysInMonth = new Date(selYear, selMonthInt + 1, 0).getDate();
+            for (let day = 1; day <= daysInMonth; day++) {
+                let key = String(day);
+                labels.push(key);
+                dailyMap[key] = { inap: 0, tidakInap: 0, total: 0, ft20: 0, ft40: 0 };
+            }
+            filtered.forEach(row => {
+                let tgl = this.normalizeDate(row['TANGGAL']);
+                let d = new Date(tgl + 'T00:00:00');
+                let key = String(d.getDate());
+                if (!dailyMap[key]) return;
+                let status = this._getInapStatus(row);
+                dailyMap[key].total++;
+                if (status === 'INAP') dailyMap[key].inap++;
+                else dailyMap[key].tidakInap++;
+                let truck = String(row['JENIS_TRUCK'] || '').toUpperCase();
+                if (truck.includes('20')) dailyMap[key].ft20++;
+                else dailyMap[key].ft40++;
+            });
+        }
+
+        // Build chart data arrays
+        let dInap = labels.map(k => dailyMap[k].inap);
+        let dTidakInap = labels.map(k => dailyMap[k].tidakInap);
+        let dTotal = labels.map(k => dailyMap[k].total);
+        let d20ft = labels.map(k => dailyMap[k].ft20);
+        let d40ft = labels.map(k => dailyMap[k].ft40);
+
+        // Render chart
+        const ctx = document.getElementById('inapCorrelationChart');
+        if (!ctx) return;
+        if (this.charts['inapCorr']) this.charts['inapCorr'].destroy();
+
+        const ctxC = ctx.getContext('2d');
+        // Gradient for Inap bars
+        let gradInap = ctxC.createLinearGradient(0, 0, 0, 380);
+        gradInap.addColorStop(0, 'rgba(239, 68, 68, 0.9)');
+        gradInap.addColorStop(1, 'rgba(239, 68, 68, 0.15)');
+        // Gradient for Tidak Inap bars
+        let gradOk = ctxC.createLinearGradient(0, 0, 0, 380);
+        gradOk.addColorStop(0, 'rgba(16, 185, 129, 0.9)');
+        gradOk.addColorStop(1, 'rgba(16, 185, 129, 0.15)');
+
+        this.charts['inapCorr'] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'INAP (≥24H)',
+                        data: dInap,
+                        backgroundColor: gradInap,
+                        borderColor: '#ef4444',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        order: 2
+                    },
+                    {
+                        label: 'TIDAK INAP (<24H)',
+                        data: dTidakInap,
+                        backgroundColor: gradOk,
+                        borderColor: '#10b981',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        order: 3
+                    },
+                    {
+                        label: 'TOTAL CONTAINER',
+                        data: dTotal,
+                        type: 'line',
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.08)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#06b6d4',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 1.5,
+                        pointHoverRadius: 7,
+                        order: 1
+                    },
+                    {
+                        label: '40FT',
+                        data: d40ft,
+                        type: 'line',
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'transparent',
+                        borderWidth: 1.5,
+                        borderDash: [5, 4],
+                        tension: 0.3,
+                        pointRadius: 2,
+                        pointBackgroundColor: '#f59e0b',
+                        order: 0
+                    },
+                    {
+                        label: '20FT',
+                        data: d20ft,
+                        type: 'line',
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'transparent',
+                        borderWidth: 1.5,
+                        borderDash: [3, 3],
+                        tension: 0.3,
+                        pointRadius: 2,
+                        pointBackgroundColor: '#8b5cf6',
+                        order: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1200,
+                    easing: 'easeInOutQuart'
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: { display: false },
+                        ticks: {
+                            color: '#64748b',
+                            font: { size: 9, family: "'Outfit', sans-serif" }
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
+                        ticks: {
+                            color: '#64748b',
+                            font: { size: 9, family: "'Outfit', sans-serif" },
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#94a3b8',
+                            font: { size: 10, family: "'Outfit', sans-serif", weight: 600 },
+                            usePointStyle: true,
+                            pointStyle: 'rectRounded',
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(2,6,23,0.95)',
+                        titleColor: '#06b6d4',
+                        bodyColor: '#e2e8f0',
+                        borderColor: 'rgba(6,182,212,0.4)',
+                        borderWidth: 1,
+                        padding: 12,
+                        titleFont: { family: "'Orbitron', sans-serif", size: 11 },
+                        bodyFont: { family: "'Outfit', sans-serif", size: 11 },
+                        callbacks: {
+                            afterBody: function (ctx) {
+                                let idx = ctx[0].dataIndex;
+                                let total = dTotal[idx];
+                                let inap = dInap[idx];
+                                if (total === 0) return '';
+                                let pct = Math.round((inap / total) * 100);
+                                return `\nRasio Inap: ${pct}%  |  40ft: ${d40ft[idx]}  20ft: ${d20ft[idx]}`;
+                            }
+                        }
+                    }
+                }
+            },
+            plugins: [{
+                id: 'glowLines',
+                beforeDraw: chart => {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(6, 182, 212, 0.3)';
+                    ctx.shadowBlur = 12;
+                },
+                afterDraw: chart => { chart.ctx.restore(); }
+            }]
+        });
+
+        // Insight strip
+        let totalAll = filtered.length;
+        let totalInap = filtered.filter(r => this._getInapStatus(r) === 'INAP').length;
+        let total40 = filtered.filter(r => String(r['JENIS_TRUCK'] || '').toUpperCase().includes('40')).length;
+        let total20 = totalAll - total40;
+        let pctInap = totalAll > 0 ? Math.round((totalInap / totalAll) * 100) : 0;
+
+        // Find peak day
+        let peakKey = labels[0] || '-';
+        let peakVal = 0;
+        labels.forEach(k => { if (dailyMap[k].total > peakVal) { peakVal = dailyMap[k].total; peakKey = k; } });
+
+        let peakInapKey = labels[0] || '-';
+        let peakInapVal = 0;
+        labels.forEach(k => { if (dailyMap[k].inap > peakInapVal) { peakInapVal = dailyMap[k].inap; peakInapKey = k; } });
+
+        const strip = document.getElementById('inap-insight-strip');
+        if (strip) {
+            strip.innerHTML = [
+                { label: 'TOTAL', val: totalAll, color: '#06b6d4' },
+                { label: 'INAP', val: totalInap, color: '#ef4444' },
+                { label: 'RASIO INAP', val: pctInap + '%', color: pctInap > 20 ? '#ef4444' : '#10b981' },
+                { label: '40FT', val: total40, color: '#f59e0b' },
+                { label: '20FT', val: total20, color: '#8b5cf6' },
+                { label: 'PEAK VOLUME', val: peakKey + ' (' + peakVal + ')', color: '#06b6d4' },
+                { label: 'PEAK INAP', val: peakInapKey + ' (' + peakInapVal + ')', color: '#ef4444' }
+            ].map(i => `<div style="background:rgba(0,0,0,0.3); border:1px solid ${i.color}30; border-radius:8px; padding:8px 14px; display:flex; flex-direction:column; align-items:center; min-width:90px;">
+                <span style="font-size:0.55rem; color:#64748b; letter-spacing:1px; text-transform:uppercase;">${i.label}</span>
+                <span style="font-family:'Orbitron'; font-size:0.85rem; font-weight:700; color:${i.color};">${i.val}</span>
+            </div>`).join('');
+        }
+
+        // Also render the detail section
+        this.renderInapDetail(filtered);
+    },
+
+    /**
+     * Helper: determine INAP status for a single row.
+     * DATA TIDAK LENGKAP treated as TIDAK INAP (temporary)
+     */
+    _getInapStatus: function (row) {
+        let arrDateStr = String(row['ARRIVAL_DATE'] || '').trim();
+        let arrTimeStr = String(row['ARRIVAL_TIME'] || '').trim();
+        let finDateStr = String(row['TANGGAL'] || '').trim();
+        let finTimeStr = String(row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '').trim();
+
+        let hasArrival = arrDateStr && arrDateStr !== '-' && arrTimeStr && arrTimeStr !== '-';
+        let hasFinish = finDateStr && finDateStr !== '-' && finTimeStr && finTimeStr !== '-';
+
+        if (!hasArrival || !hasFinish) return 'TIDAK INAP'; // temporary: incomplete = tidak inap
+
+        let dArr = this.parseDateTimeStr(arrDateStr, arrTimeStr);
+        let dFin = this.parseDateTimeStr(finDateStr, finTimeStr);
+
+        if (dArr && dFin) {
+            if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
+            let diffMs = dFin.getTime() - dArr.getTime();
+            let durH = diffMs / (1000 * 60 * 60);
+            return durH >= 24 ? 'INAP' : 'TIDAK INAP';
+        }
+        return 'TIDAK INAP';
+    },
+
+    /**
+     * Get duration in hours for a single row (for detail table)
+     */
+    _getDurationHours: function (row) {
+        let arrDateStr = String(row['ARRIVAL_DATE'] || '').trim();
+        let arrTimeStr = String(row['ARRIVAL_TIME'] || '').trim();
+        let finDateStr = String(row['TANGGAL'] || '').trim();
+        let finTimeStr = String(row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '').trim();
+
+        let hasArrival = arrDateStr && arrDateStr !== '-' && arrTimeStr && arrTimeStr !== '-';
+        let hasFinish = finDateStr && finDateStr !== '-' && finTimeStr && finTimeStr !== '-';
+        if (!hasArrival || !hasFinish) return null;
+
+        let dArr = this.parseDateTimeStr(arrDateStr, arrTimeStr);
+        let dFin = this.parseDateTimeStr(finDateStr, finTimeStr);
+        if (dArr && dFin) {
+            if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
+            return (dFin.getTime() - dArr.getTime()) / (1000 * 60 * 60);
+        }
+        return null;
+    },
+
+    renderInapDetail: function (filtered) {
+        // --- MINI DONUT ---
+        let totalInap = 0;
+        let totalTidakInap = 0;
+        let inapRows = [];
+
+        filtered.forEach(row => {
+            let status = this._getInapStatus(row);
+            if (status === 'INAP') { totalInap++; inapRows.push(row); }
+            else totalTidakInap++;
+        });
+
+        // Render donut
+        const donutCtx = document.getElementById('inapDetailDonut');
+        if (donutCtx) {
+            if (this.charts['inapDonut2']) this.charts['inapDonut2'].destroy();
+
+            const total = totalInap + totalTidakInap;
+            const pctInap = total > 0 ? Math.round((totalInap / total) * 100) : 0;
+
+            this.charts['inapDonut2'] = new Chart(donutCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['INAP', 'TIDAK INAP'],
+                    datasets: [{
+                        data: [totalInap, totalTidakInap],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.85)',
+                            'rgba(16, 185, 129, 0.85)'
+                        ],
+                        borderColor: ['#f87171', '#34d399'],
+                        borderWidth: 2,
+                        hoverOffset: 10,
+                        hoverBorderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    cutout: '72%',
+                    animation: { animateRotate: true, duration: 1200 },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(2,6,23,0.95)',
+                            titleColor: '#06b6d4',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(6,182,212,0.4)',
+                            borderWidth: 1
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'centerText',
+                    afterDraw: function (chart) {
+                        const ctx = chart.ctx;
+                        const w = chart.width;
+                        const h = chart.height;
+                        ctx.save();
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.font = "bold 28px 'Orbitron', sans-serif";
+                        ctx.fillStyle = pctInap > 20 ? '#ef4444' : '#10b981';
+                        ctx.shadowColor = pctInap > 20 ? 'rgba(239,68,68,0.5)' : 'rgba(16,185,129,0.5)';
+                        ctx.shadowBlur = 15;
+                        ctx.fillText(pctInap + '%', w / 2, h / 2 - 6);
+                        ctx.font = "600 9px 'Outfit', sans-serif";
+                        ctx.fillStyle = '#64748b';
+                        ctx.shadowBlur = 0;
+                        ctx.fillText('RASIO INAP', w / 2, h / 2 + 18);
+                        ctx.restore();
+                    }
+                }]
+            });
+
+            // Custom legend
+            const legend = document.getElementById('inap-donut-legend');
+            if (legend) {
+                legend.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <div style="width:10px; height:10px; border-radius:2px; background:#ef4444;"></div>
+                        <span style="font-size:0.65rem; color:#94a3b8;">INAP: <b style="color:#ef4444;">${totalInap}</b></span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <div style="width:10px; height:10px; border-radius:2px; background:#10b981;"></div>
+                        <span style="font-size:0.65rem; color:#94a3b8;">TIDAK INAP: <b style="color:#10b981;">${totalTidakInap}</b></span>
+                    </div>
+                `;
+            }
+        }
+
+        // --- DETAIL TABLE ---
+        const detailContainer = document.getElementById('inap-detail-table');
+        const detailCount = document.getElementById('inap-detail-count');
+        if (!detailContainer) return;
+
+        if (detailCount) detailCount.textContent = inapRows.length + ' CONTAINER INAP';
+
+        if (inapRows.length === 0) {
+            detailContainer.innerHTML = `
+                <div style="text-align:center; padding:40px; color:#475569;">
+                    <i class="fas fa-check-circle" style="font-size:2rem; color:#10b981; margin-bottom:10px;"></i><br>
+                    <span style="font-family:'Orbitron'; font-size:0.75rem; letter-spacing:2px; color:#10b981;">ZERO INAP</span><br>
+                    <span style="font-size:0.65rem; margin-top:5px; display:block;">Tidak ada container yang menginap pada periode ini</span>
+                </div>`;
+            return;
+        }
+
+        // Build correlation analysis
+        // Group inap rows by date to identify pattern
+        let dateGroups = {};
+        inapRows.forEach(row => {
+            let tgl = this.normalizeDate(row['TANGGAL']) || '-';
+            if (!dateGroups[tgl]) dateGroups[tgl] = [];
+            dateGroups[tgl].push(row);
+        });
+
+        let html = `
+        <table style="width:100%; border-collapse:collapse; font-size:0.65rem;">
+            <thead>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.1); color:var(--text-muted);">
+                    <th style="padding:8px 6px; text-align:left;">TGL BONGKAR</th>
+                    <th style="padding:8px 6px; text-align:left;">NOPOL</th>
+                    <th style="padding:8px 6px; text-align:left;">TIPE</th>
+                    <th style="padding:8px 6px; text-align:left;">ARRIVAL</th>
+                    <th style="padding:8px 6px; text-align:right;">DURASI</th>
+                    <th style="padding:8px 6px; text-align:left;">KORELASI / PENYEBAB</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        // Sort inap rows by date
+        inapRows.sort((a, b) => {
+            let da = this.normalizeDate(a['TANGGAL']) || '';
+            let db = this.normalizeDate(b['TANGGAL']) || '';
+            return da.localeCompare(db);
+        });
+
+        inapRows.forEach(row => {
+            let tgl = this.normalizeDate(row['TANGGAL']) || '-';
+            let nopol = row['NOPOL'] || '-';
+            let truckType = String(row['JENIS_TRUCK'] || '').replace(/container/gi, '').trim() || 'Container';
+            let arrDate = String(row['ARRIVAL_DATE'] || '-');
+            let arrTime = row['ARRIVAL_TIME'] || '-';
+            let durH = this._getDurationHours(row);
+            let durStr = durH !== null ? Math.floor(durH) + 'h ' + Math.round((durH % 1) * 60) + 'm' : '-';
+
+            // Correlation analysis
+            let correlations = [];
+            let sameDay = dateGroups[tgl] || [];
+            let totalSameDay = (this.dataByDate[tgl] || []).length;
+            let inapsOnDay = sameDay.length;
+
+            // 1. Volume correlation
+            if (totalSameDay >= 6) {
+                correlations.push(`<span style="color:#f59e0b;"><i class="fas fa-boxes"></i> Volume tinggi (${totalSameDay} container)</span>`);
+            }
+
+            // 2. Truck size correlation
+            let is40 = String(row['JENIS_TRUCK'] || '').toUpperCase().includes('40');
+            if (is40) {
+                correlations.push(`<span style="color:#8b5cf6;"><i class="fas fa-truck"></i> 40FT (bongkar lebih lama)</span>`);
+            }
+
+            // 3. Multiple inap on same day
+            if (inapsOnDay >= 2) {
+                correlations.push(`<span style="color:#ef4444;"><i class="fas fa-clone"></i> ${inapsOnDay} inap di tanggal ini</span>`);
+            }
+
+            // 4. Late arrival
+            if (arrTime !== '-' && arrTime !== 'null') {
+                let timeParts = arrTime.split(':');
+                if (timeParts.length >= 2) {
+                    let h = parseInt(timeParts[0]);
+                    if (h >= 18 || h < 4) {
+                        correlations.push(`<span style="color:#06b6d4;"><i class="fas fa-moon"></i> Arrival malam/dini hari</span>`);
+                    }
+                }
+            }
+
+            // 5. Duration over 36h is extreme
+            if (durH !== null && durH >= 36) {
+                correlations.push(`<span style="color:#ef4444; font-weight:700;"><i class="fas fa-exclamation-circle"></i> Ekstrem: >${Math.floor(durH)}h</span>`);
+            }
+
+            let corrHtml = correlations.length > 0
+                ? correlations.join('<br>')
+                : '<span style="color:#64748b;">Tidak teridentifikasi</span>';
+
+            html += `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.03); transition:0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.05)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding:8px 6px; color:#94a3b8;">${tgl}</td>
+                    <td style="padding:8px 6px;"><span style="color:#fff; font-family:'Orbitron'; font-weight:700; font-size:0.7rem;">${nopol}</span></td>
+                    <td style="padding:8px 6px; color:${is40 ? '#f59e0b' : '#8b5cf6'};">${truckType}</td>
+                    <td style="padding:8px 6px; color:#0ea5e9;">${arrDate}<br><span style="font-family:'Orbitron'; font-size:0.55rem;">${arrTime}</span></td>
+                    <td style="padding:8px 6px; text-align:right; font-family:'Orbitron'; font-weight:700; color:#ef4444;">${durStr}</td>
+                    <td style="padding:8px 6px; font-size:0.6rem; line-height:1.5;">${corrHtml}</td>
+                </tr>`;
+        });
+
+        html += '</tbody></table>';
+        detailContainer.innerHTML = html;
     }
 };
 

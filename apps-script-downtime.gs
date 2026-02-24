@@ -29,10 +29,14 @@ const MUAT_HEADERS = [
 ];
 
 // v20.2.0 Helper: Format time cell to HH:MM string
+// IMPORTANT: Do NOT use Utilities.formatDate for time-only cells!
+// Time-only cells have epoch date 1899-12-30 and formatDate causes timezone shifts.
 function fmtTime(val) {
   if (!val) return null;
   if (val instanceof Date) {
-    return Utilities.formatDate(val, Session.getScriptTimeZone(), "HH:mm");
+    let h = val.getHours();
+    let m = val.getMinutes();
+    return (h < 10 ? "0" + h : String(h)) + ":" + (m < 10 ? "0" + m : String(m));
   }
   let s = String(val).trim();
   if (s.includes(':')) return s;
@@ -307,7 +311,14 @@ function doGet(e) {
             LOKASI: gudang,
             NOPOL: String(row[bIdx.nopol >= 0 ? bIdx.nopol : 6] || ""),
             REAL_BONGKAR_MT: netto,
-            ARRIVAL_DATE: String(row[bIdx.arrivalDate >= 0 ? bIdx.arrivalDate : 23] || ""),
+            ARRIVAL_DATE: (function(v) { 
+              if (!v) return ""; 
+              if (v instanceof Date) { 
+                let dd = v.getDate(); let mm = v.getMonth()+1; let yy = v.getFullYear();
+                return (dd<10?"0"+dd:dd) + "." + (mm<10?"0"+mm:mm) + "." + yy;
+              }
+              return String(v).trim();
+            })(row[bIdx.arrivalDate >= 0 ? bIdx.arrivalDate : 23]),
             ARRIVAL_TIME: fmtTime(row[bIdx.arrivalTime >= 0 ? bIdx.arrivalTime : 24]),
             QC_SAMPLING_1: fmtTime(row[bIdx.qcTime >= 0 ? bIdx.qcTime : 25]),
             TIME_TIMBANG_MASUK: fmtTime(row[bIdx.timbangTime >= 0 ? bIdx.timbangTime : 26]),

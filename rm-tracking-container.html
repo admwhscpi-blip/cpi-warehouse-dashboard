@@ -673,7 +673,7 @@
 
                 <!-- Un-hidden by JS when a date is selected -->
                 <div id="daily-data-view" style="display:none; flex-direction:column; gap:15px;">
-                    <div class="kpi-grid">
+                    <div class="kpi-grid" style="grid-template-columns: 1fr 1fr 1fr;">
                         <div class="kpi-box cyan">
                             <div class="kpi-label">TOTAL CONTAINER</div>
                             <div class="kpi-value" id="kpi-total-cont">0</div>
@@ -683,11 +683,15 @@
                             <div class="kpi-value" id="kpi-avg-dur" style="font-size: 1.4rem;">0<span
                                     style="font-size:0.5em; color:var(--text-muted);">m</span></div>
                         </div>
-                        <div class="kpi-box violet" style="border-right: 2px solid var(--danger);">
-                            <div class="kpi-label" style="color:var(--danger);">TRUK INAP (>=24H)</div>
+                        <div class="kpi-box" style="border-right: 2px solid #f59e0b;">
+                            <div class="kpi-label" style="color:#f59e0b;">DATA TIDAK LENGKAP</div>
+                            <div class="kpi-value" id="kpi-no-data">0</div>
+                        </div>
+                        <div class="kpi-box violet" style="border-right: 2px solid var(--danger); grid-column: span 1;">
+                            <div class="kpi-label" style="color:var(--danger);">TRUK INAP (&gt;=24H)</div>
                             <div class="kpi-value" id="kpi-inap">0</div>
                         </div>
-                        <div class="kpi-box green" style="border-right: 2px solid var(--success);">
+                        <div class="kpi-box green" style="border-right: 2px solid var(--success); grid-column: span 1;">
                             <div class="kpi-label" style="color:var(--success);">TIDAK INAP (&lt;24H)</div>
                             <div class="kpi-value" id="kpi-tidak-inap">0</div>
                         </div>
@@ -727,6 +731,76 @@
                 <div class="chart-title">RASIO INAP VS TIDAK INAP</div>
                 <div style="position: relative; height: 300px; width: 100%;">
                     <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 3: INAP CORRELATION ANALYSIS (FULL WIDTH) -->
+        <!-- ============================================================ -->
+        <div class="glass-card fade-in-up" id="inap-analysis-section" style="animation-delay: 0.5s;">
+            <div class="card-header" style="margin-bottom:10px; padding-bottom:10px;">
+                <div class="card-title">
+                    <b><i class="fas fa-chart-area"></i> CONTAINER INAP CORRELATION ANALYSIS</b>
+                    <span>Analisa korelasi harian: Jumlah container, status inap, dan distribusi ukuran truck</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <select id="inap-month-filter" class="cyber-select" style="font-size:0.7rem; padding:6px 12px;"
+                        onchange="TrackingApp.renderInapAnalysis()">
+                    </select>
+                    <select id="inap-year-filter" class="cyber-select" style="font-size:0.7rem; padding:6px 12px;"
+                        onchange="TrackingApp.renderInapAnalysis()">
+                    </select>
+                </div>
+            </div>
+
+            <!-- Full landscape chart -->
+            <div
+                style="position: relative; height: 380px; width: 100%; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 15px; border: 1px solid rgba(255,255,255,0.03);">
+                <canvas id="inapCorrelationChart"></canvas>
+            </div>
+
+            <!-- Insight strip -->
+            <div id="inap-insight-strip" style="margin-top:12px; display:flex; gap:15px; flex-wrap:wrap;">
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- SECTION 4: INAP DETAIL (DONUT + TABLE) -->
+        <!-- ============================================================ -->
+        <div id="inap-detail-section"
+            style="display:grid; grid-template-columns: 320px 1fr; gap:25px; animation-delay:0.6s;" class="fade-in-up">
+
+            <!-- LEFT: Mini Donut Chart -->
+            <div class="glass-card"
+                style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <div
+                    style="font-family:'Orbitron'; font-size:0.7rem; color:var(--primary); letter-spacing:2px; margin-bottom:15px; text-align:center;">
+                    <i class="fas fa-chart-pie"></i> RASIO INAP
+                </div>
+                <div style="position:relative; width:220px; height:220px;">
+                    <canvas id="inapDetailDonut"></canvas>
+                </div>
+                <div id="inap-donut-legend"
+                    style="margin-top:15px; display:flex; gap:15px; flex-wrap:wrap; justify-content:center;">
+                </div>
+            </div>
+
+            <!-- RIGHT: Correlation Data Table -->
+            <div class="glass-card" style="display:flex; flex-direction:column; overflow:hidden;">
+                <div
+                    style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <span style="font-family:'Orbitron'; font-size:0.7rem; color:var(--danger); letter-spacing:2px;">
+                        <i class="fas fa-exclamation-triangle"></i> DATA CONTAINER INAP & KORELASI
+                    </span>
+                    <span id="inap-detail-count" style="font-size:0.65rem; color:var(--text-muted);"></span>
+                </div>
+                <div id="inap-detail-table" style="flex:1; overflow-y:auto; max-height:400px;">
+                    <div class="empty-state" style="padding:30px;">
+                        <i class="fas fa-filter" style="font-size:1.5rem;"></i><br>
+                        <span style="font-size:0.7rem; letter-spacing:1px;">Pilih bulan/tahun untuk melihat data
+                            container inap</span>
+                    </div>
                 </div>
             </div>
         </div>
