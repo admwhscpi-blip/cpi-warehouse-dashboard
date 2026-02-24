@@ -4,54 +4,790 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CPO DOWNTIME - SMART WAREHOUSE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500&display=swap"
+    <title>CPO COMMAND CENTER // DOWNTIME ANALYTICS</title>
+    <!-- FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CHARTS -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
+        :root {
+            --bg-dark: #020408;
+            --bg-panel: rgba(10, 15, 25, 0.90);
+            --neon-blue: #00f3ff;
+            --neon-green: #00ff88;
+            --neon-red: #ff003c;
+            --neon-gold: #ffcc00;
+            --neon-purple: #bc13fe;
+            --text-main: #ffffff;
+            --text-muted: #a8b2d1;
+            --glass-border: 1px solid rgba(0, 243, 255, 0.2);
+        }
+
         body {
-            background: #050505;
-            color: #fff;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             font-family: 'Rajdhani', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(circle at 10% 10%, rgba(0, 243, 255, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(188, 19, 254, 0.05) 0%, transparent 40%);
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(5, 7, 12, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 2px solid rgba(0, 243, 255, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-smart {
+            background: linear-gradient(90deg, #00f3ff, #3b82f6, #00f3ff, #8b5cf6);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 950;
+            filter: drop-shadow(0 0 10px rgba(0, 243, 255, 0.3));
+        }
+
+        .brand-cpo {
+            background: #ffffff;
+            color: #000;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        /* DASHBOARD LAYOUT */
+        .dashboard-container {
+            padding: 25px;
+            max-width: 1600px;
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
+            gap: 25px;
         }
 
-        h1 {
+        /* COINUNITY THEME OVERRIDES */
+        .coin-card {
+            background: #0f1115;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .coin-card:hover {
+            border-color: rgba(0, 243, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 243, 255, 0.1);
+        }
+
+        .coin-header {
             font-family: 'Orbitron';
-            color: #ff003c;
-            letter-spacing: 5px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 10px;
         }
 
-        .back-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            border: 1px solid #00f3ff;
-            color: #00f3ff;
-            text-decoration: none;
+        .coin-val-huge {
+            font-family: 'Orbitron';
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -1px;
+            line-height: 1;
+            background: linear-gradient(180deg, #fff 20%, #888 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .coin-label {
+            font-family: 'Rajdhani';
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* V15: CALENDAR ANALYTICS STYLES */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .cal-day-header {
+            font-family: 'Orbitron';
+            font-size: 0.6rem;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cal-cell {
+            aspect-ratio: 1/0.9;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 5px 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cal-cell:hover {
+            background: rgba(204, 255, 0, 0.05);
+            border-color: var(--neon-gold);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .cal-cell.active {
+            background: rgba(204, 255, 0, 0.1);
+            border-color: var(--neon-gold);
+            box-shadow: inset 0 0 15px rgba(204, 255, 0, 0.2), 0 0 20px rgba(204, 255, 0, 0.1);
+        }
+
+        .cal-cell.empty {
+            opacity: 0.1;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .cal-num {
             font-family: 'Orbitron';
             font-size: 0.8rem;
-            transition: 0.3s;
+            color: var(--text-muted);
+            font-weight: 700;
         }
 
-        .back-btn:hover {
-            background: #00f3ff;
+        .cal-vol {
+            font-family: 'Rajdhani';
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #fff;
+            text-align: right;
+            line-height: 1;
+        }
+
+        /* DATA GUIDE & ANALYSIS TABLE STYLES */
+        .guide-container {
+            background: rgba(5, 10, 20, 0.95);
+            border: 2px solid rgba(0, 243, 255, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-family: 'Orbitron', sans-serif;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 25px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 30px rgba(0, 243, 255, 0.1);
+        }
+
+        .guide-title {
+            font-size: 0.85rem;
+            color: var(--neon-gold);
+            letter-spacing: 3px;
+            font-weight: 900;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 204, 0, 0.3);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-family: 'Rajdhani';
+            font-size: 0.85rem;
+        }
+
+        .comparison-table th {
+            font-family: 'Orbitron';
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 10px 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .comparison-table td {
+            padding: 6px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: #ccc;
+        }
+
+        .comparison-table tr:hover td {
+            background: rgba(204, 255, 0, 0.02);
+        }
+
+        .comparison-table .metric-name {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .comparison-table .shift-val {
+            text-align: center;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .comparison-table .highlight {
+            color: var(--neon-gold);
+        }
+
+        .scanline-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scanline-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 243, 255, 0.05), transparent);
+            animation: scanning 4s linear infinite;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @keyframes scanning {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 200%;
+            }
+        }
+
+        .tank-badge {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            margin-right: 5px;
+        }
+
+        /* V16.8: COMPACT ZERO-COLLISION CLOCK WIDGET */
+        .clock-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 8px 25px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            border-radius: 40px;
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            min-width: 340px;
+            height: 65px;
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.1);
+        }
+
+        .clock-date-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 140px;
+            line-height: 1.1;
+        }
+
+        .clock-day {
+            font-size: 0.65rem;
+            color: var(--neon-blue);
+            letter-spacing: 2px;
+        }
+
+        .clock-date {
+            font-size: 1.3rem;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .clock-visual {
+            position: relative;
+            width: 55px;
+            height: 55px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .clock-circle {
+            position: absolute;
+            inset: 0;
+            border: 2px solid rgba(0, 243, 255, 0.1);
+            border-radius: 50%;
+        }
+
+        .clock-progress {
+            position: absolute;
+            inset: 0;
+            border: 2px solid transparent;
+            border-top: 2px solid var(--neon-blue);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-blue);
+            transition: transform 1s linear;
+        }
+
+        .clock-time-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 5;
+        }
+
+        .clock-ampm {
+            font-size: 0.45rem;
+            font-weight: 800;
+            color: var(--neon-blue);
+        }
+
+        .clock-time {
+            font-size: 1.4rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        /* Pulsing Live Update Icon */
+        .pulse-live {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #ff003c;
+            border-radius: 50%;
+            margin-right: 10px;
+            box-shadow: 0 0 0 rgba(255, 0, 60, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(255, 0, 60, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(255, 0, 60, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(255, 0, 60, 0);
+            }
+        }
+
+
+        .grand-totals-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* CONTROLS */
+        .modern-select {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid var(--neon-blue);
+            color: #fff;
+            font-family: 'Orbitron';
+            font-size: 0.9rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+        }
+
+        .modern-select option {
+            background-color: #0c121d;
+            color: #ffffff;
+            font-family: 'Orbitron', sans-serif;
+            padding: 10px;
+        }
+
+        .btn-run-v10 {
+            background: var(--neon-blue);
+            border: none;
             color: #000;
+            padding: 12px 30px;
+            font-family: 'Orbitron';
+            font-weight: 900;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-transform: uppercase;
+        }
+
+        .btn-run-v10:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.8);
+            background: #fff;
+        }
+
+        /* LOADING */
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .loading-screen.hidden {
+            display: none !important;
+        }
+
+        .loader-ring {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(0, 243, 255, 0.1);
+            border-top-color: var(--neon-blue);
+            border-radius: 50%;
+            animation: rotate 1s linear infinite;
+        }
+
+        @keyframes rotate {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* MOCK WARNING */
+        .mock-warning {
+            display: none;
+            background: rgba(255, 0, 60, 0.1);
+            border: 1px dashed var(--neon-red);
+            color: var(--neon-red);
+            padding: 10px;
+            text-align: center;
+            font-family: 'Orbitron';
+            font-size: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% {
+                border-color: rgba(255, 0, 60, 0.5);
+            }
+
+            50% {
+                border-color: rgba(255, 0, 60, 1);
+            }
+
+            100% {
+                border-color: rgba(255, 0, 60, 0.5);
+            }
         }
     </style>
 </head>
 
 <body>
-    <div style="font-size: 5rem; color: #ff003c; margin-bottom: 20px;">
-        <i class="fas fa-tools"></i>
+    <div id="loading" class="loading-screen">
+        <div class="loader-ring"></div>
+        <div style="font-family:'Orbitron'; color:var(--neon-blue); font-size:1rem; letter-spacing:4px;">INITIALIZING
+            CPO ANALYTICS ENGINE...</div>
     </div>
-    <h1>CPO-DOWNTIME</h1>
-    <p>HALAMAN KOSONG - DALAM PENGEMBANGAN</p>
-    <a href="homepage-v1.html" class="back-btn">KEMBALI KE HOME</a>
+
+    <header class="header">
+        <div style="display:flex; align-items:center; gap:25px; width: 100%;">
+            <a href="homepage-v1.html" class="logo-link" style="text-decoration:none;">
+                <div class="logo-text">
+                    <span class="brand-smart">SMART WAREHOUSE</span>
+                    <span class="brand-cpo">CPO DOWNTIME</span>
+                </div>
+            </a>
+            <div style="font-family:'Rajdhani'; font-size:0.9rem; letter-spacing:1px; color:#8892b0; margin-left:auto;">
+                <i id="api-status-icon" class="fas fa-satellite-dish"
+                    style="color:var(--neon-green); margin-right:5px; animation: pulse-glow 2s infinite;"></i>
+                SYNCED: <span id="last-sync-time" style="color:#00f3ff;">--:--:--</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+
+        <div id="mock-warning" class="mock-warning">
+            <i class="fas fa-exclamation-triangle"></i> ALERT: API URL NOT CONFIGURED YET. SHOWING SYSTEM MOCK DATA FOR
+            UI PREVIEW.
+        </div>
+
+        <!-- 1. CONTROL PANEL (SUPER DENSE V16.7 BKK STYLE) -->
+        <div class="coin-card scanline-card"
+            style="padding:8px 20px; background: rgba(10,15,25,0.9); border: 2px solid rgba(0,243,255,0.15); border-radius: 12px; box-shadow: 0 10px 50px rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: space-between;">
+
+            <div style="display:flex; align-items:center; gap:18px;">
+                <div
+                    style="font-family:'Orbitron'; color:#ccff00; font-size:1.1rem; font-weight:900; letter-spacing:2px; display:flex; align-items:center; white-space:nowrap; text-shadow: 0 0 15px rgba(204,255,0,0.3);">
+                    <span class="pulse-live"></span> CPO LIVE DATA
+                </div>
+
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <select id="select-month" class="modern-select"
+                        style="min-width:130px; font-size:0.8rem; padding: 6px 12px;">
+                        <option value="1">JANUARI</option>
+                        <option value="2">FEBRUARI</option>
+                        <option value="3">MARET</option>
+                        <option value="4">APRIL</option>
+                        <option value="5">MEI</option>
+                        <option value="6">JUNI</option>
+                        <option value="7">JULI</option>
+                        <option value="8">AGUSTUS</option>
+                        <option value="9">SEPTEMBER</option>
+                        <option value="10">OKTOBER</option>
+                        <option value="11">NOVEMBER</option>
+                        <option value="12">DESEMBER</option>
+                    </select>
+                    <select id="select-year" class="modern-select"
+                        style="min-width:90px; font-size:0.8rem; padding: 6px 12px;">
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026" selected>2026</option>
+                        <option value="2027">2027</option>
+                    </select>
+                </div>
+
+                <div style="width: 2px; height: 30px; background: rgba(0, 243, 255, 0.1);"></div>
+
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button class="btn-run-v10" onclick="CPODowntimeApp.applyFilters()"
+                        style="padding: 9px 18px; font-size: 0.8rem;">
+                        <i class="fas fa-sync-alt"></i> ANALYZE
+                    </button>
+
+                    <div
+                        style="font-family:'Orbitron'; font-size:0.6rem; color:#8892b0; text-align:left; margin-left: 10px;">
+                        SOURCE <br>
+                        <span style="color:var(--neon-blue);">CPO STOCK DB</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="clock-container" id="clock-widget">
+                <div class="clock-date-group">
+                    <div class="clock-day" id="widget-day">DAY</div>
+                    <div class="clock-date" id="widget-date">DATE</div>
+                </div>
+                <div class="clock-visual">
+                    <div class="clock-circle"></div>
+                    <div class="clock-progress" id="widget-sec-progress"></div>
+                    <div class="clock-time-group">
+                        <div class="clock-ampm" id="widget-ampm">AM</div>
+                        <div class="clock-time" id="widget-time">00:00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- METRICS ROW -->
+        <div class="grand-totals-grid" style="margin-bottom: 25px;">
+            <div class="coin-card" style="text-align:center;">
+                <div class="coin-label">TOTAL VOLUME TERIMA</div>
+                <div class="coin-val-huge" id="val-total-volume" style="color:var(--neon-blue);">-</div>
+                <div style="font-family:'Orbitron'; color:#666; margin-top:5px;">TON</div>
+            </div>
+            <div class="coin-card" style="text-align:center;">
+                <div class="coin-label">AVG BONGKAR DURASI</div>
+                <div class="coin-val-huge" id="val-avg-duration" style="color:var(--neon-red);">-</div>
+                <div style="font-family:'Orbitron'; color:#666; margin-top:5px;">AWAL s.d AKHIR</div>
+            </div>
+            <div class="coin-card" style="text-align:center;">
+                <div class="coin-label">RATA-RATA SUHU CPO</div>
+                <div class="coin-val-huge" id="val-avg-suhu" style="color:var(--neon-gold);">-</div>
+                <div style="font-family:'Orbitron'; color:#666; margin-top:5px;">CELSIUS</div>
+            </div>
+            <div class="coin-card" style="text-align:center;">
+                <div class="coin-label">TOTAL KENDARAAN</div>
+                <div class="coin-val-huge" id="val-truck-count" style="color:var(--neon-green);">-</div>
+                <div style="font-family:'Orbitron'; color:#666; margin-top:5px;">UNIT TRUCK</div>
+            </div>
+        </div>
+
+        <div class="guide-container scanline-card">
+            <div class="guide-title"><i class="fas fa-satellite-dish"></i> RINCIAN KOLOM DATA (DATA LAPANGAN) PENERIMAAN
+                CPO</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+                <div
+                    style="background: rgba(255,255,255,0.02); padding:10px; border-radius:6px; border-left:3px solid var(--neon-blue);">
+                    <div style="font-size:0.7rem; color:var(--neon-blue); font-weight:900;">[AWAL]</div>
+                    <div style="font-size:0.6rem; color:#ccc;">Waktu truk sampai dan mulai persiapan bongkar CPO.</div>
+                </div>
+                <div
+                    style="background: rgba(255,255,255,0.02); padding:10px; border-radius:6px; border-left:3px solid var(--neon-gold);">
+                    <div style="font-size:0.7rem; color:var(--neon-gold); font-weight:900;">[AKHIR]</div>
+                    <div style="font-size:0.6rem; color:#ccc;">Waktu truk selesai bongkar dan keluar.</div>
+                </div>
+                <div
+                    style="background: rgba(255,255,255,0.02); padding:10px; border-radius:6px; border-left:3px solid var(--neon-red);">
+                    <div style="font-size:0.7rem; color:var(--neon-red); font-weight:900;">[DURASI]</div>
+                    <div style="font-size:0.6rem; color:#ccc;">Selisih waktu AKHIR dikurangi AWAL. Menjadi acuan
+                        kecepatan.</div>
+                </div>
+            </div>
+
+            <div
+                style="margin-top:10px; padding: 12px; background: rgba(0, 243, 255, 0.03); border: 1px dashed rgba(0, 243, 255, 0.2); border-radius: 6px;">
+                <div style="font-size:0.6rem; color:var(--neon-blue); font-weight:950;"><i
+                        class="fas fa-terminal blink"></i> CATATAN LOGIKA SISTEM</div>
+                <div style="font-size:0.6rem; color:#888; margin-top:5px;">Sistem mengkalkulasi ulang DURASI berdasarkan
+                    AWAL dan AKHIR secara sinkronisasi realtime, untuk memastikan tidak ada anomali atau deviasi dari
+                    data mentah di Sheet PENERIMAAN. Analisis ini menggunakan kalender interaktif untuk detail
+                    komprehensif.</div>
+            </div>
+        </div>
+
+        <!-- CALENDAR ANALYTICS SECTION -->
+        <div id="calendar-analytics-section"
+            style="display:grid; grid-template-columns: 460px 1fr; gap:25px; margin-bottom: 25px;">
+            <!-- CALENDAR BOX -->
+            <div class="coin-card" style="padding:20px;">
+                <div class="coin-header">
+                    <span style="display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-calendar-alt" style="color:var(--neon-gold); font-size:1.1rem;"></i>
+                        CPO DAILY CALENDAR
+                    </span>
+                    <span id="cal-month-year"
+                        style="font-size:0.8rem; color:var(--text-muted); font-family:'Orbitron';">MONTH YYYY</span>
+                </div>
+                <div id="calendar-grid-v15" class="calendar-grid">
+                    <!-- Grid generated by JS -->
+                </div>
+            </div>
+            <!-- ANALYSIS BOX -->
+            <div class="coin-card" style="padding:20px; display:flex; flex-direction:column;">
+                <div class="coin-header"
+                    style="margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:10px;">
+                    <span style="display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-microchip" style="color:var(--neon-gold); font-size:1.1rem;"></i>
+                        DAILY ANALYSIS COMMAND
+                    </span>
+                    <span id="selected-date-label"
+                        style="font-size:0.75rem; color:var(--neon-blue); font-family:'Orbitron';">SELECT DATE</span>
+                </div>
+                <div id="analysis-content-v15"
+                    style="overflow-y:auto; flex-grow:1; max-height:400px; padding-right:5px;">
+                    <div style="text-align:center; padding:80px 20px; color:#444; font-family:'Orbitron';">
+                        <i class="fas fa-mouse-pointer"
+                            style="font-size:2.5rem; margin-bottom:15px; opacity:0.3;"></i><br>
+                        <span style="font-size:0.7rem; letter-spacing:2px; display:block; margin-bottom:10px;">WAITING
+                            FOR TARGET DATE</span>
+                        <span style="font-size:0.6rem; color:#888; font-family:'Rajdhani';">SILAKAN PILIH TANGGAL PADA
+                            KALENDER UNTUK MELIHAT RINCIAN</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHARTS ROW 1 -->
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:25px;">
+            <div class="coin-card">
+                <div class="coin-header">
+                    <span><i class="fas fa-chart-area" style="color:var(--neon-blue); margin-right:8px;"></i> TREN
+                        VOLUME HARIAN</span>
+                    <span style="font-size:0.7rem;">TONASE NETTO</span>
+                </div>
+                <div id="chart-daily-volume" style="width:100%;"></div>
+            </div>
+            <div class="coin-card">
+                <div class="coin-header">
+                    <span><i class="fas fa-chart-pie" style="color:var(--neon-purple); margin-right:8px;"></i>
+                        DISTRIBUSI SHIFT</span>
+                    <span style="font-size:0.7rem;">BERDASARKAN VOLUME</span>
+                </div>
+                <div id="chart-shift" style="width:100%;"></div>
+            </div>
+        </div>
+
+        <!-- CHARTS ROW 2 -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:25px;">
+            <div class="coin-card">
+                <div class="coin-header">
+                    <span><i class="fas fa-chart-bar" style="color:var(--neon-red); margin-right:8px;"></i> RATA-RATA
+                        DURASI HARIAN</span>
+                    <span style="font-size:0.7rem;">DALAM MENIT</span>
+                </div>
+                <div id="chart-daily-duration" style="width:100%;"></div>
+            </div>
+            <div class="coin-card">
+                <div class="coin-header">
+                    <span><i class="fas fa-database" style="color:var(--neon-green); margin-right:8px;"></i> DESTINASI
+                        TANKI</span>
+                    <span style="font-size:0.7rem;">FREKUENSI KENDARAAN</span>
+                </div>
+                <div id="chart-tank" style="width:100%;"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="js/app-config.js"></script>
+    <script src="js/cpo-downtime.js"></script>
 </body>
 
 </html>

@@ -349,87 +349,103 @@
     </div>
 
     <!-- SCRIPT -->
+    <script src="js/app-config.js"></script>
     <script>
-        const tanks = [
-            { name: "TK01", stock: 72863, cap: 150000, age: 70, remark: "PAKAI & SIRKULASI" },
-            { name: "TK02", stock: 96117, cap: 150000, age: 74, remark: "IDLE" },
-            { name: "TK03", stock: 103868, cap: 150000, age: 118, remark: "SIRKULASI" },
-            { name: "TK04", stock: 272430, cap: 500000, age: 43, remark: "IDLE" },
-            { name: "TK05", stock: 0, cap: 500000, age: 117, remark: "IDLE" },
-            { name: "TK06", stock: 199626, cap: 500000, age: 91, remark: "IDLE" },
-            { name: "TK07", stock: 501021, cap: 500000, age: 70, remark: "IDLE" }
-        ];
+        async function fetchAndRenderTanks() {
+            try {
+                // Fetch from the exact same API deployment, using the new getTankData action
+                const response = await fetch(CONFIG.CPO_DOWNTIME_API_URL + "?action=getTankData");
+                const json = await response.json();
 
-        // 1. Render Table
-        const tbody = document.getElementById('tank-table-body');
-        let htmlTable = '';
-        tanks.forEach(t => {
-            const pct = (t.stock / t.cap) * 100;
-            htmlTable += `
-                <tr>
-                    <td>${t.name}</td>
-                    <td style="color:${t.stock === 0 ? '#ef4444' : '#4ade80'}">${t.stock.toLocaleString()}</td>
-                    <td>${t.cap.toLocaleString()}</td>
-                    <td>
-                        <div class="percent-bar-bg">
-                            <div class="percent-bar-fill" style="width:${pct}%;"></div>
+                if (json.success && json.data) {
+                    renderTanks(json.data);
+                } else {
+                    console.error("Failed to load tank data:", json.message);
+                    alert("Gagal memuat data Tangki: " + (json.message || "Unknown error"));
+                }
+            } catch (error) {
+                console.error("Fetch error:", error);
+                alert("Gagal terhubung ke server Google Sheets.");
+            } finally {
+                // Hide loader
+                setTimeout(() => {
+                    const overlay = document.getElementById('loading-overlay');
+                    if (overlay) overlay.classList.add('hidden');
+                }, 500);
+            }
+        }
+
+        function renderTanks(tanks) {
+            // 1. Render Table
+            const tbody = document.getElementById('tank-table-body');
+            let htmlTable = '';
+            tanks.forEach(t => {
+                const pct = t.cap > 0 ? (t.stock / t.cap) * 100 : 0;
+                htmlTable += `
+                    <tr>
+                        <td>${t.name}</td>
+                        <td style="color:${t.stock === 0 ? '#ef4444' : '#4ade80'}">${t.stock.toLocaleString()}</td>
+                        <td>${t.cap.toLocaleString()}</td>
+                        <td>
+                            <div class="percent-bar-bg">
+                                <div class="percent-bar-fill" style="width:${pct}%;"></div>
+                            </div>
+                        </td>
+                        <td>${t.age}</td>
+                        <td style="color:${t.remark !== 'IDLE' ? '#fbbf24' : '#64748b'}">${t.remark}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = htmlTable;
+
+            // 2. Render Visuals
+            const r1 = document.getElementById('tank-row-1');
+            const r2 = document.getElementById('tank-row-2');
+            r1.innerHTML = '';
+            r2.innerHTML = '';
+
+            tanks.forEach((t, i) => {
+                const pctOrg = t.cap > 0 ? (t.stock / t.cap) * 100 : 0;
+                const pct = Math.min(100, Math.max(0, pctOrg)); // Clamp 0-100
+                const isLarge = t.cap >= 500000;
+
+                // Build Card
+                const card = `
+                    <div class="tank-unit">
+                        <!-- GRAPHIC ONLY, NO TEXT -->
+                        <div class="tank-visual ${isLarge ? 'size-large' : 'size-small'}">
+                            <div class="tank-shine"></div>
+                            <div class="tank-liquid" style="height:${pct}%"></div>
+                            <!-- Markers -->
+                            <div class="measure-line" style="bottom:25%"></div>
+                            <div class="measure-line" style="bottom:50%; width:30px"></div>
+                            <div class="measure-line" style="bottom:75%"></div>
                         </div>
-                    </td>
-                    <td>${t.age}</td>
-                    <td style="color:${t.remark !== 'IDLE' ? '#fbbf24' : '#64748b'}">${t.remark}</td>
-                </tr>
-            `;
-        });
-        tbody.innerHTML = htmlTable;
-
-        // 2. Render Visuals
-        const r1 = document.getElementById('tank-row-1');
-        const r2 = document.getElementById('tank-row-2');
-
-        tanks.forEach((t, i) => {
-            const pct = Math.min(100, Math.max(0, (t.stock / t.cap) * 100)); // Clamp 0-100
-            const isLarge = t.cap >= 500000;
-
-            // Build Card
-            const card = `
-                <div class="tank-unit">
-                    <!-- GRAPHIC ONLY, NO TEXT -->
-                    <div class="tank-visual ${isLarge ? 'size-large' : 'size-small'}">
-                        <div class="tank-shine"></div>
-                        <div class="tank-liquid" style="height:${pct}%"></div>
-                        <!-- Markers -->
-                        <div class="measure-line" style="bottom:25%"></div>
-                        <div class="measure-line" style="bottom:50%; width:30px"></div>
-                        <div class="measure-line" style="bottom:75%"></div>
-                    </div>
-                    
-                    <!-- INFO CARD BELOW -->
-                    <div class="tank-info-card" style="width:${isLarge ? '200px' : '140px'}">
-                        <div class="tank-name-label">${t.name}</div>
-                        <div class="tank-big-percent">${pct.toFixed(1)}%</div>
                         
-                        <div class="tank-data-row">
-                            <span>S: ${(t.stock / 1000).toLocaleString()} T</span>
-                            <span>C: ${(t.cap / 1000).toLocaleString()} T</span>
+                        <!-- INFO CARD BELOW -->
+                        <div class="tank-info-card" style="width:${isLarge ? '200px' : '140px'}">
+                            <div class="tank-name-label">${t.name}</div>
+                            <div class="tank-big-percent">${pct.toFixed(1)}%</div>
+                            
+                            <div class="tank-data-row">
+                                <span>S: ${(t.stock / 1000).toLocaleString()} T</span>
+                                <span>C: ${(t.cap / 1000).toLocaleString()} T</span>
+                            </div>
+                            <div class="tank-data-row" style="justify-content:center; margin-top:5px; color:#94a3b8;">
+                                Age: ${t.age} Days
+                            </div>
+                            ${t.remark !== 'IDLE' ? `<div class="remark-badge">${t.remark}</div>` : ''}
                         </div>
-                        <div class="tank-data-row" style="justify-content:center; margin-top:5px; color:#94a3b8;">
-                            Age: ${t.age} Days
-                        </div>
-                        
-                        ${t.remark !== 'IDLE' ? `<div class="remark-badge">${t.remark}</div>` : ''}
                     </div>
-                </div>
-            `;
+                `;
 
-            if (isLarge) r2.innerHTML += card;
-            else r1.innerHTML += card;
-        });
+                if (isLarge) r2.innerHTML += card;
+                else r1.innerHTML += card;
+            });
+        }
 
         window.onload = () => {
-            setTimeout(() => {
-                const overlay = document.getElementById('loading-overlay');
-                if (overlay) overlay.classList.add('hidden');
-            }, 1000);
+            fetchAndRenderTanks();
         };
     </script>
 </body>

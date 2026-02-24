@@ -42,5 +42,12 @@
             window.location.href = `login.html?redirect=${encodeURIComponent(window.location.href)}`;
             return;
         }
+
+        // INVENTORY Pages Protection (Same access as HR + HUB)
+        const isInventoryPage = path.includes('inventory');
+        if (isInventoryPage && role !== 'HR_ACCESS' && role !== 'FULL_ACCESS') {
+            window.location.href = `login.html?redirect=${encodeURIComponent(window.location.href)}`;
+            return;
+        }
     }
 })();

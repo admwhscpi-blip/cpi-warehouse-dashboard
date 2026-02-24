@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="auth-guard.js"></script>
+    <title>SMART WAREHOUSE V2.0 - CPO INVENTORY ACCURACY</title>
+
+    <!-- FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- HIGHCHARTS FOR PREMIUM VISUALIZATIONS -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+
+    <style>
+        :root {
+            --bg-base: #080810;
+            --bg-panel: rgba(14, 14, 25, 0.88);
+            --bg-panel-hover: rgba(20, 20, 38, 0.95);
+            --accent-green: #a3e635;
+            --accent-cyan: #22d3ee;
+            --accent-blue: #38bdf8;
+            --accent-purple: #c084fc;
+            --accent-red: #f87171;
+            --accent-gold: #fbbf24;
+            --accent-orange: #fb923c;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --border-glow: rgba(163, 230, 53, 0.2);
+            --border-light: rgba(255, 255, 255, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        *::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        *::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        *::-webkit-scrollbar-thumb {
+            background: rgba(163, 230, 53, 0.2);
+            border-radius: 10px;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            background-image:
+                radial-gradient(circle at 15% 10%, rgba(163, 230, 53, 0.04), transparent 50%),
+                radial-gradient(circle at 85% 90%, rgba(56, 189, 248, 0.03), transparent 50%);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 15px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* === PARTICLE BACKGROUND === */
+        #particles-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .page-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* === HEADER / NAVBAR === */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 22px;
+            background: rgba(10, 10, 18, 0.92);
+            border-radius: 16px;
+            backdrop-filter: blur(30px);
+            border: 1px solid var(--border-light);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Scanline effect on navbar */
+        .navbar::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(163, 230, 53, 0.04), transparent);
+            animation: scanline 6s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scanline {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 200%;
+            }
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 1.1rem;
+            box-shadow: 0 0 20px rgba(163, 230, 53, 0.3);
+            animation: logo-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes logo-pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(163, 230, 53, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 35px rgba(163, 230, 53, 0.6);
+            }
+        }
+
+        .brand-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            background: linear-gradient(90deg, #fff, var(--accent-green));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-sub {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 2px;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* CLOCK WIDGET */
+        .clock-widget {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 6px 18px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(163, 230, 53, 0.15);
+            border-radius: 30px;
+            font-family: 'Orbitron', sans-serif;
+            height: 52px;
+            box-shadow: 0 0 15px rgba(163, 230, 53, 0.08);
+        }
+
+        .clock-date-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            line-height: 1.1;
+        }
+
+        .clock-day {
+            font-size: 0.55rem;
+            color: var(--accent-green);
+            letter-spacing: 2px;
+        }
+
+        .clock-date {
+            font-size: 1rem;
+            font-weight: 900;
+            white-space: nowrap;
+            color: #fff;
+        }
+
+        .clock-divider {
+            width: 2px;
+            height: 28px;
+            background: rgba(163, 230, 53, 0.2);
+            border-radius: 2px;
+        }
+
+        .clock-time-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .clock-time {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: var(--accent-green);
+            text-shadow: 0 0 10px rgba(163, 230, 53, 0.4);
+            line-height: 1;
+        }
+
+        .clock-seconds {
+            font-size: 0.5rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .clock-progress-ring {
+            width: 42px;
+            height: 42px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .clock-progress-ring svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .clock-progress-ring .ring-bg {
+            fill: none;
+            stroke: rgba(163, 230, 53, 0.1);
+            stroke-width: 3;
+        }
+
+        .clock-progress-ring .ring-fill {
+            fill: none;
+            stroke: var(--accent-green);
+            stroke-width: 3;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s linear;
+            filter: drop-shadow(0 0 4px var(--accent-green));
+        }
+
+        /* SELECTS & BUTTONS */
+        .cyber-select {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-light);
+            color: var(--text-main);
+            padding: 8px 30px 8px 12px;
+            border-radius: 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            outline: none;
+            cursor: pointer;
+            transition: 0.3s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+
+        .cyber-select:hover {
+            border-color: rgba(163, 230, 53, 0.5);
+            box-shadow: 0 0 10px var(--border-glow);
+        }
+
+        .cyber-select option {
+            background: #0c121d;
+            color: #fff;
+        }
+
+        .cyber-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-light);
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .cyber-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-green);
+        }
+
+        /* === INFO BOX — DATA SOURCE LEGEND === */
+        .info-legend {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+            animation: fadeUp 0.8s ease-out 0.1s both;
+        }
+
+        .legend-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            padding: 16px 18px;
+            backdrop-filter: blur(15px);
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            transition: 0.4s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .legend-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            border-radius: 14px 14px 0 0;
+        }
+
+        .legend-card:nth-child(1)::before {
+            background: var(--accent-green);
+        }
+
+        .legend-card:nth-child(2)::before {
+            background: var(--accent-blue);
+        }
+
+        .legend-card:nth-child(3)::before {
+            background: var(--accent-purple);
+        }
+
+        .legend-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .legend-num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 900;
+            opacity: 0.15;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .legend-body {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .legend-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            color: var(--accent-green);
+            letter-spacing: 1px;
+        }
+
+        .legend-card:nth-child(2) .legend-label {
+            color: var(--accent-blue);
+        }
+
+        .legend-card:nth-child(3) .legend-label {
+            color: var(--accent-purple);
+        }
+
+        .legend-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .legend-desc {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        /* === STOCK COMPARISON TOP SECTION === */
+        .stock-comparison {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 25px;
+            animation: fadeUp 0.8s ease-out 0.2s both;
+        }
+
+        .stock-cards-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+            margin-bottom: 0;
+        }
+
+        .stock-big-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-light);
+            border-radius: 18px;
+            padding: 22px 24px;
+            backdrop-filter: blur(15px);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: 0.4s;
+            cursor: pointer;
+        }
+
+        .stock-big-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+            border-color: rgba(163, 230, 53, 0.3);
+        }
+
+        .stock-click-hint {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            opacity: 0.5;
+            margin-top: 6px;
+            position: relative;
+            z-index: 1;
+            transition: 0.3s;
+        }
+
+        .stock-big-card:hover .stock-click-hint {
+            opacity: 1;
+            color: var(--accent-green);
+        }
+
+        .stock-today-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.6rem;
+            color: var(--accent-green);
+            background: rgba(163, 230, 53, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(163, 230, 53, 0.2);
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .stock-today-badge .pulse-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(163, 230, 53, 0.5);
+            }
+
+            50% {
+                opacity: 0.6;
+                box-shadow: 0 0 0 4px rgba(163, 230, 53, 0);
+            }
+        }
+
+        .stock-big-card::after {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            filter: blur(50px);
+            opacity: 0.15;
+            z-index: 0;
+        }
+
+        .stock-big-card:nth-child(1)::after {
+            background: var(--accent-green);
+        }
+
+        .stock-big-card:nth-child(2)::after {
+            background: var(--accent-blue);
+        }
+
+        .stock-big-card:nth-child(3)::after {
+            background: var(--accent-purple);
+        }
+
+        .stock-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stock-value {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 2.6rem;
+            font-weight: 700;
+            line-height: 1;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stock-big-card:nth-child(1) .stock-value {
+            color: var(--accent-green);
+        }
+
+        .stock-big-card:nth-child(2) .stock-value {
+            color: var(--accent-blue);
+        }
+
+        .stock-big-card:nth-child(3) .stock-value {
+            color: var(--accent-purple);
+        }
+
+        .stock-unit {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            font-weight: 400;
+        }
+
+        .stock-sub {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* CONNECTOR LINES */
+        .connectors-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+            margin-top: -1px;
+        }
+
+        .connector-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            padding: 8px 0;
+        }
+
+        .connector-line {
+            width: 2px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.08);
+            position: relative;
+        }
+
+        .connector-badge {
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            border: 1px solid;
+            white-space: nowrap;
+            animation: badge-glow 3s ease infinite;
+        }
+
+        .connector-badge.green {
+            background: rgba(163, 230, 53, 0.1);
+            color: var(--accent-green);
+            border-color: rgba(163, 230, 53, 0.3);
+        }
+
+        .connector-badge.yellow {
+            background: rgba(251, 191, 36, 0.1);
+            color: var(--accent-gold);
+            border-color: rgba(251, 191, 36, 0.3);
+        }
+
+        .connector-badge.red {
+            background: rgba(248, 113, 113, 0.1);
+            color: var(--accent-red);
+            border-color: rgba(248, 113, 113, 0.3);
+        }
+
+        @keyframes badge-glow {
+
+            0%,
+            100% {
+                filter: brightness(1);
+            }
+
+            50% {
+                filter: brightness(1.2);
+            }
+        }
+
+        .connector-label {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            font-family: 'Orbitron', sans-serif;
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+
+        /* === GLASS PANELS === */
+        .glass-panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-light);
+            border-radius: 18px;
+            padding: 22px;
+            backdrop-filter: blur(15px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(163, 230, 53, 0.03), transparent);
+            animation: scanline 8s linear infinite;
+            pointer-events: none;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            z-index: 2;
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 1px;
+        }
+
+        .panel-title i {
+            color: var(--accent-green);
+        }
+
+        /* === DASHBOARD LAYOUT === */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 3fr 1.2fr;
+            gap: 20px;
+        }
+
+        .charts-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .chart-container-inner {
+            width: 100%;
+            min-height: 350px;
+            position: relative;
+        }
+
+        .chart-container-medium {
+            width: 100%;
+            min-height: 320px;
+        }
+
+        .chart-container-small {
+            width: 100%;
+            min-height: 300px;
+        }
+
+        /* === VARIANCE BY TANK LIST === */
+        .variance-row {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 14px;
+        }
+
+        .var-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+        }
+
+        .var-name {
+            color: #fff;
+            font-weight: 600;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .var-val {
+            color: var(--text-dim);
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .var-bar-bg {
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .var-bar-fill {
+            position: absolute;
+            left: 0;
+            height: 100%;
+            border-radius: 3px;
+            transition: 1.2s cubic-bezier(0.1, 0.8, 0.1, 1);
+        }
+
+        /* === ACCURACY CARDS === */
+        .accuracy-cards-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+            animation: fadeUp 0.8s ease-out 0.3s both;
+        }
+
+        .acc-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            padding: 16px 18px;
+            position: relative;
+            overflow: hidden;
+            transition: 0.3s;
+        }
+
+        .acc-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .acc-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+        }
+
+        .acc-card:nth-child(1)::after {
+            background: var(--accent-green);
+        }
+
+        .acc-card:nth-child(2)::after {
+            background: var(--accent-blue);
+        }
+
+        .acc-card:nth-child(3)::after {
+            background: var(--accent-purple);
+        }
+
+        .acc-card:nth-child(4)::after {
+            background: var(--accent-gold);
+        }
+
+        .acc-title {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        .acc-value {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .acc-unit {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .acc-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-light);
+            color: var(--text-dim);
+        }
+
+        .diff-badge {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.7rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .diff-badge.positive {
+            background: rgba(163, 230, 53, 0.12);
+            color: var(--accent-green);
+        }
+
+        .diff-badge.negative {
+            background: rgba(248, 113, 113, 0.12);
+            color: var(--accent-red);
+        }
+
+        /* === TANK INSIGHT CARD === */
+        .insight-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            transition: 0.3s;
+        }
+
+        .insight-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .insight-tank {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .insight-status {
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.6rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .insight-status.stable {
+            background: rgba(163, 230, 53, 0.15);
+            color: var(--accent-green);
+        }
+
+        .insight-status.fluctuative {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--accent-gold);
+        }
+
+        .insight-status.deviant {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--accent-red);
+        }
+
+        .insight-reason {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            line-height: 1.4;
+        }
+
+        /* === LOADING === */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-base);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner-ring {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(163, 230, 53, 0.1);
+            border-top: 3px solid var(--accent-green);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* === DETAIL MODAL === */
+        .detail-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(12px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .detail-modal-overlay.active {
+            display: flex;
+        }
+
+        .detail-modal {
+            width: 90%;
+            max-width: 800px;
+            background: rgba(12, 12, 22, 0.98);
+            border: 1px solid rgba(163, 230, 53, 0.25);
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 0 60px rgba(163, 230, 53, 0.08);
+            animation: fadeUp 0.4s ease-out;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .detail-modal-close {
+            position: absolute;
+            top: 18px;
+            right: 22px;
+            color: var(--accent-red);
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: 0.3s;
+            z-index: 5;
+        }
+
+        .detail-modal-close:hover {
+            transform: scale(1.2);
+            text-shadow: 0 0 10px var(--accent-red);
+        }
+
+        .detail-modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: var(--accent-green);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .detail-modal-date {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            margin-bottom: 20px;
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 6px;
+        }
+
+        .detail-table th {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+            padding: 10px 12px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .detail-table th:first-child {
+            text-align: left;
+        }
+
+        .detail-table td {
+            padding: 10px 12px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.02);
+            color: #fff;
+        }
+
+        .detail-table tr td:first-child {
+            text-align: left;
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .detail-table tr td:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        .detail-table tr.total-row td {
+            background: rgba(163, 230, 53, 0.06);
+            border-top: 1px solid rgba(163, 230, 53, 0.15);
+            font-weight: 800;
+            font-size: 1.05rem;
+        }
+
+        .detail-table .val-green {
+            color: var(--accent-green);
+        }
+
+        .detail-table .val-blue {
+            color: var(--accent-blue);
+        }
+
+        .detail-table .val-purple {
+            color: var(--accent-purple);
+        }
+
+        .detail-table .val-red {
+            color: var(--accent-red);
+        }
+
+        .detail-table .val-yellow {
+            color: var(--accent-gold);
+        }
+
+        .detail-bar-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-mini-bar {
+            height: 4px;
+            border-radius: 2px;
+            transition: width 0.8s ease;
+        }
+
+        /* === ANIMATIONS === */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .anim-fadeup {
+            animation: fadeUp 0.8s ease-out both;
+        }
+
+        .anim-fadeup-1 {
+            animation-delay: 0.1s;
+        }
+
+        .anim-fadeup-2 {
+            animation-delay: 0.2s;
+        }
+
+        .anim-fadeup-3 {
+            animation-delay: 0.3s;
+        }
+
+        .anim-fadeup-4 {
+            animation-delay: 0.4s;
+        }
+
+        .anim-fadeup-5 {
+            animation-delay: 0.5s;
+        }
+
+        .anim-fadeup-6 {
+            animation-delay: 0.6s;
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 1050px) {
+            .info-legend {
+                grid-template-columns: 1fr;
+            }
+
+            .stock-cards-row {
+                grid-template-columns: 1fr;
+            }
+
+            .connectors-row {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-split {
+                grid-template-columns: 1fr;
+            }
+
+            .accuracy-cards-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .clock-widget {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- PARTICLE CANVAS -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- LOADING -->
+    <div id="loader">
+        <div class="spinner-ring"></div>
+        <div style="font-family: 'Orbitron'; letter-spacing: 3px; font-size: 0.8rem; color: var(--accent-green);">
+            SYNCING CPO INVENTORY...</div>
+    </div>
+
+    <div class="page-content">
+
+        <!-- ================ NAVBAR ================ -->
+        <nav class="navbar">
+            <div class="brand-section">
+                <div class="logo-icon"><i class="fas fa-atom"></i></div>
+                <div>
+                    <div class="brand-text">CPO INVENTORY ACCURACY</div>
+                    <div class="brand-sub">ANALYTICS & VARIANCE MODULE</div>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <!-- LIVE CLOCK -->
+                <div class="clock-widget">
+                    <div class="clock-date-group">
+                        <div class="clock-day" id="clock-day">SELASA</div>
+                        <div class="clock-date" id="clock-date">24 FEB 2026</div>
+                    </div>
+                    <div class="clock-divider"></div>
+                    <div class="clock-progress-ring">
+                        <svg viewBox="0 0 40 40">
+                            <circle class="ring-bg" cx="20" cy="20" r="17"></circle>
+                            <circle class="ring-fill" id="clock-ring" cx="20" cy="20" r="17" stroke-dasharray="106.81"
+                                stroke-dashoffset="0"></circle>
+                        </svg>
+                    </div>
+                    <div class="clock-time-group">
+                        <div class="clock-time" id="clock-time">15:35</div>
+                        <div class="clock-seconds" id="clock-secs">: 58</div>
+                    </div>
+                </div>
+
+                <!-- FILTERS -->
+                <select id="monthFilter" class="cyber-select">
+                    <option value="ALL">ALL DATA</option>
+                </select>
+
+                <select id="tankFilter" class="cyber-select">
+                    <option value="ALL">ALL TANKS</option>
+                    <option value="0">TK01</option>
+                    <option value="1">TK02</option>
+                    <option value="2">TK03</option>
+                    <option value="3">TK04</option>
+                    <option value="4">TK05</option>
+                    <option value="5">TK06</option>
+                    <option value="6">TK07</option>
+                </select>
+
+                <a href="homepage-v1.html" class="cyber-btn">
+                    <i class="fas fa-home"></i> HUB
+                </a>
+            </div>
+        </nav>
+
+        <!-- ================ INFO LEGEND ================ -->
+        <div class="info-legend">
+            <div class="legend-card">
+                <div class="legend-num">01</div>
+                <div class="legend-body">
+                    <div class="legend-label">DATA PENERIMAAN & USAGE REAL</div>
+                    <div class="legend-title">LOGBOOK STOCK (MANUAL/REAL)</div>
+                    <div class="legend-desc">Stok berdasarkan mutasi dokumen (LPB vs Bon Pemakaian). Data dicatat
+                        harian secara manual dari logbook operasional.</div>
+                </div>
+            </div>
+            <div class="legend-card">
+                <div class="legend-num">02</div>
+                <div class="legend-body">
+                    <div class="legend-label">CEK AKTUAL (RUMUS VOLUME)</div>
+                    <div class="legend-title">PHYSICAL TANK STOCK (ACTUAL)</div>
+                    <div class="legend-desc">Stok hasil sounding atau sensor yang dikonversi ke Volume/Kg. Mengukur
+                        isi tangki secara fisik langsung.</div>
+                </div>
+            </div>
+            <div class="legend-card">
+                <div class="legend-num">03</div>
+                <div class="legend-body">
+                    <div class="legend-label">DATA SAP (CHRONOS/FLOW METER)</div>
+                    <div class="legend-title">SAP SYSTEM STOCK</div>
+                    <div class="legend-desc">Saldo buku yang terpotong otomatis oleh sistem terintegrasi. Data dari
+                        SAP berbasis flow meter/Chronos.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================ STOCK COMPARISON + CONNECTORS ================ -->
+        <div class="stock-comparison">
+            <div style="text-align:center; margin-bottom: 2px;">
+                <div class="stock-today-badge">
+                    <div class="pulse-dot"></div>
+                    <span>LIVE TODAY</span>
+                    <span id="stock-today-date" style="color:#fff;">—</span>
+                    <span style="opacity:0.5;">• AUTO-UPDATE 09:00 WIB</span>
+                </div>
+            </div>
+            <div class="stock-cards-row">
+                <div class="stock-big-card" onclick="openStockDetail('data')">
+                    <div class="stock-label">TOTAL DATA STOCK</div>
+                    <div class="stock-value" id="total-data">0 <span class="stock-unit">KG</span></div>
+                    <div class="stock-sub">LOGBOOK / MANUAL</div>
+                    <div class="stock-click-hint"><i class="fas fa-search-plus"></i> KLIK UNTUK DETAIL TK01-TK07</div>
+                </div>
+                <div class="stock-big-card" onclick="openStockDetail('aktual')">
+                    <div class="stock-label">TOTAL CEK AKTUAL</div>
+                    <div class="stock-value" id="total-aktual">0 <span class="stock-unit">KG</span></div>
+                    <div class="stock-sub">PHYSICAL / SOUNDING</div>
+                    <div class="stock-click-hint"><i class="fas fa-search-plus"></i> KLIK UNTUK DETAIL TK01-TK07</div>
+                </div>
+                <div class="stock-big-card" onclick="openStockDetail('sap')">
+                    <div class="stock-label">TOTAL SAP SYSTEM</div>
+                    <div class="stock-value" id="total-sap">0 <span class="stock-unit">KG</span></div>
+                    <div class="stock-sub">SAP / CHRONOS</div>
+                    <div class="stock-click-hint"><i class="fas fa-search-plus"></i> KLIK UNTUK DETAIL TK01-TK07</div>
+                </div>
+            </div>
+
+            <div class="connectors-row">
+                <div class="connector-item">
+                    <div class="connector-line"></div>
+                    <div class="connector-badge green" id="diff-data-aktual">Δ 0 KG</div>
+                    <div class="connector-label">DATA vs AKTUAL</div>
+                </div>
+                <div class="connector-item">
+                    <div class="connector-line"></div>
+                    <div class="connector-badge green" id="diff-aktual-sap">Δ 0 KG</div>
+                    <div class="connector-label">AKTUAL vs SAP</div>
+                </div>
+                <div class="connector-item">
+                    <div class="connector-line"></div>
+                    <div class="connector-badge green" id="diff-data-sap">Δ 0 KG</div>
+                    <div class="connector-label">DATA vs SAP</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================ ACCURACY METRICS ================ -->
+        <div class="accuracy-cards-row">
+            <div class="acc-card">
+                <div class="acc-title">SELISIH AKTUAL vs DATA</div>
+                <div class="acc-value" id="card-aktual-gap">0 <span class="acc-unit">KG</span></div>
+                <div class="acc-footer">
+                    <span>Variansi Fisik Akumulasi</span>
+                    <i class="fas fa-balance-scale-right" style="color:var(--accent-green);"></i>
+                </div>
+            </div>
+            <div class="acc-card">
+                <div class="acc-title">SELISIH SAP vs DATA</div>
+                <div class="acc-value" id="card-sap-gap">0 <span class="acc-unit">KG</span></div>
+                <div class="acc-footer">
+                    <span>Variansi Sistem Akumulasi</span>
+                    <i class="fas fa-server" style="color:var(--accent-blue);"></i>
+                </div>
+            </div>
+            <div class="acc-card">
+                <div class="acc-title">AKURASI AKTUAL</div>
+                <div class="acc-value" id="card-aktual-acc" style="color:var(--accent-purple);">0%</div>
+                <div class="acc-footer">
+                    <span>Tingkat Akurasi Fisik</span>
+                    <i class="fas fa-check-circle" style="color:var(--accent-purple);"></i>
+                </div>
+            </div>
+            <div class="acc-card">
+                <div class="acc-title">AKURASI SAP</div>
+                <div class="acc-value" id="card-sap-acc" style="color:var(--accent-gold);">0%</div>
+                <div class="acc-footer">
+                    <span>Tingkat Akurasi Sistem</span>
+                    <i class="fas fa-check-double" style="color:var(--accent-gold);"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================ CHART ROW 1: TIMELINE + VARIANCE LIST ================ -->
+        <div class="charts-row anim-fadeup anim-fadeup-3">
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-chart-area"></i> INVENTORY DISCREPANCY TIMELINE</div>
+                </div>
+                <div class="chart-container-inner" id="chart-timeline"></div>
+            </div>
+            <div class="glass-panel" style="display:flex; flex-direction:column;">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-balance-scale"></i> VARIANCE BY TANK</div>
+                </div>
+                <div id="tank-variance-list" style="overflow-y:auto; flex-grow:1; padding-right:8px;"></div>
+            </div>
+        </div>
+
+        <!-- ================ CHART ROW 2: DELTA ANALYSIS + ACCURACY HEATMAP ================ -->
+        <div class="charts-split anim-fadeup anim-fadeup-4" style="margin-top:20px;">
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-exchange-alt"></i> DAILY DELTA ANALYSIS</div>
+                </div>
+                <div class="chart-container-medium" id="chart-delta"></div>
+            </div>
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-th-large"></i> PER-TANK ACCURACY COMPARISON</div>
+                </div>
+                <div class="chart-container-medium" id="chart-tank-accuracy"></div>
+            </div>
+        </div>
+
+        <!-- ================ CHART ROW 3: VARIANCE TREND + TANK INSIGHTS ================ -->
+        <div class="charts-row anim-fadeup anim-fadeup-5" style="margin-top:20px;">
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-chart-bar"></i> VARIANCE CONTRIBUTION TREND BY TANK</div>
+                </div>
+                <div class="chart-container-inner" id="chart-variance-trend"></div>
+            </div>
+            <div class="glass-panel" style="display:flex; flex-direction:column;">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-microscope"></i> TANK STABILITY ANALYSIS</div>
+                </div>
+                <div id="tank-insights-list" style="overflow-y:auto; flex-grow:1; padding-right:8px;"></div>
+            </div>
+        </div>
+
+        <!-- ================ CHART ROW 4: RADAR + CUMULATIVE ================ -->
+        <div class="charts-split anim-fadeup anim-fadeup-6" style="margin-top:20px; margin-bottom:30px;">
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-satellite-dish"></i> TANK STABILITY RADAR</div>
+                </div>
+                <div class="chart-container-small" id="chart-radar"></div>
+            </div>
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-wave-square"></i> CUMULATIVE DEVIATION TREND</div>
+                </div>
+                <div class="chart-container-small" id="chart-cumulative"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- DETAIL MODAL -->
+    <div class="detail-modal-overlay" id="stockDetailModal">
+        <div class="detail-modal">
+            <div class="detail-modal-close" onclick="closeStockDetail()"><i class="fas fa-times"></i></div>
+            <div class="detail-modal-title" id="modal-title">DETAIL RINCIAN</div>
+            <div class="detail-modal-date" id="modal-date">—</div>
+            <table class="detail-table">
+                <thead>
+                    <tr>
+                        <th>TANGKI</th>
+                        <th>DATA STOCK</th>
+                        <th>CEK AKTUAL</th>
+                        <th>SAP SYSTEM</th>
+                        <th>Δ AKTUAL</th>
+                        <th>Δ SAP</th>
+                    </tr>
+                </thead>
+                <tbody id="modal-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MAIN LOGIC -->
+    <script src="js/app-config.js"></script>
+    <script src="js/cpo-inventory.js"></script>
+</body>
+
+</html>
