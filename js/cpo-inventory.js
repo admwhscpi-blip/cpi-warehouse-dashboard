@@ -784,39 +784,81 @@ function renderCumulativeChart(data, tankFilter) {
 }
 
 // ============================
-// TANK VARIANCE BARS
+// TANK VARIANCE BARS (NOW 7 CHARTS)
 // ============================
 function renderTankVarianceBars(data) {
-    const listEl = document.getElementById('tank-variance-list');
-    listEl.innerHTML = '';
     if (data.length === 0) return;
 
-    const variances = Array(7).fill(0);
-    data.forEach(r => {
-        for (let i = 0; i < 7; i++) {
-            variances[i] += Math.abs((Number(r.cek_aktual[i]) || 0) - (Number(r.data_stock[i]) || 0));
-        }
-    });
+    const categories = data.map(r => r.tanggal.substring(0, 5));
 
-    const maxVar = Math.max(...variances);
+    for (let t = 0; t < 7; t++) {
+        const deltaAktualData = []; // Data vs Aktual (Aktual - Data)
+        const deltaSapData = [];    // Data vs SAP (SAP - Data)
+        const deltaSapAktual = [];  // Aktual vs SAP (SAP - Aktual)
 
-    variances.forEach((val, i) => {
-        const pct = maxVar > 0 ? (val / maxVar) * 100 : 0;
-        let color = '#34d399';
-        if (pct > 50) color = '#fbbf24';
-        if (pct > 80) color = '#f87171';
+        data.forEach(r => {
+            const d = Number(r.data_stock[t]) || 0;
+            const a = Number(r.cek_aktual[t]) || 0;
+            const s = Number(r.sap[t]) || 0;
 
-        listEl.innerHTML += `
-            <div class="variance-row">
-                <div class="var-header">
-                    <span class="var-name">${TANK_LABELS[i]}</span>
-                    <span class="var-val">${(val / data.length).toLocaleString('en-US', { maximumFractionDigits: 0 })} KG Avg</span>
-                </div>
-                <div class="var-bar-bg">
-                    <div class="var-bar-fill" style="width: ${pct}%; background: ${color};"></div>
-                </div>
-            </div>`;
-    });
+            deltaAktualData.push(a - d);
+            deltaSapData.push(s - d);
+            deltaSapAktual.push(s - a);
+        });
+
+        Highcharts.chart(`chart-tk0${t + 1}-var`, {
+            chart: { type: 'column', backgroundColor: 'transparent' },
+            title: { text: null },
+            xAxis: {
+                categories,
+                labels: { style: { fontSize: '0.65rem' } }
+            },
+            yAxis: {
+                title: { text: null },
+                plotLines: [{ value: 0, color: 'rgba(255,255,255,0.2)', width: 1 }],
+                labels: { style: { fontSize: '0.65rem' } }
+            },
+            legend: {
+                enabled: true,
+                itemStyle: { fontSize: '0.65rem' }
+            },
+            plotOptions: {
+                column: {
+                    borderRadius: 3,
+                    borderWidth: 0,
+                    groupPadding: 0.1,
+                    pointPadding: 0.05
+                }
+            },
+            tooltip: {
+                shared: true,
+                style: { fontSize: '0.75rem' },
+                formatter: function () {
+                    let s = `<b>${this.x}</b><br/>`;
+                    this.points.forEach(p => {
+                        const arrow = p.y > 0 ? '▲' : (p.y < 0 ? '▼' : '●');
+                        const prefix = p.y > 0 ? '+' : '';
+                        s += `<span style="color:${p.series.color}">${arrow}</span> ${p.series.name}: <b>${prefix}${p.y.toLocaleString()} KG</b><br/>`;
+                    });
+                    return s;
+                }
+            },
+            series: [{
+                name: 'DATA vs AKTUAL',
+                data: deltaAktualData,
+                color: '#38bdf8'
+            }, {
+                name: 'DATA vs SAP',
+                data: deltaSapData,
+                color: '#c084fc'
+            }, {
+                name: 'AKTUAL vs SAP',
+                data: deltaSapAktual,
+                color: '#a3e635'
+            }],
+            credits: { enabled: false }
+        });
+    }
 }
 
 // ============================

@@ -1361,19 +1361,67 @@
             </div>
         </div>
 
-        <!-- ================ CHART ROW 1: TIMELINE + VARIANCE LIST ================ -->
-        <div class="charts-row anim-fadeup anim-fadeup-3">
+        <!-- ================ CHART ROW 1: TIMELINE ================ -->
+        <div class="charts-grid anim-fadeup anim-fadeup-3">
             <div class="glass-panel">
                 <div class="panel-header">
                     <div class="panel-title"><i class="fas fa-chart-area"></i> INVENTORY DISCREPANCY TIMELINE</div>
                 </div>
                 <div class="chart-container-inner" id="chart-timeline"></div>
             </div>
-            <div class="glass-panel" style="display:flex; flex-direction:column;">
-                <div class="panel-header">
-                    <div class="panel-title"><i class="fas fa-balance-scale"></i> VARIANCE BY TANK</div>
+        </div>
+
+        <!-- ================ TANK VARIANCE CHARTS (7 TANKS) ================ -->
+        <div class="anim-fadeup anim-fadeup-3"
+            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px;">
+            <div class="glass-panel" style="padding: 16px;">
+                <div class="panel-header" style="margin-bottom: 12px;">
+                    <div class="panel-title" style="font-size: 0.7rem;"><i class="fas fa-database"></i> TK01 VARIANCE
+                    </div>
                 </div>
-                <div id="tank-variance-list" style="overflow-y:auto; flex-grow:1; padding-right:8px;"></div>
+                <div id="chart-tk01-var" style="height: 280px; width: 100%;"></div>
+            </div>
+            <div class="glass-panel" style="padding: 16px;">
+                <div class="panel-header" style="margin-bottom: 12px;">
+                    <div class="panel-title" style="font-size: 0.7rem;"><i class="fas fa-database"></i> TK02 VARIANCE
+                    </div>
+                </div>
+                <div id="chart-tk02-var" style="height: 280px; width: 100%;"></div>
+            </div>
+            <div class="glass-panel" style="padding: 16px;">
+                <div class="panel-header" style="margin-bottom: 12px;">
+                    <div class="panel-title" style="font-size: 0.7rem;"><i class="fas fa-database"></i> TK03 VARIANCE
+                    </div>
+                </div>
+                <div id="chart-tk03-var" style="height: 280px; width: 100%;"></div>
+            </div>
+            <div class="glass-panel" style="padding: 16px;">
+                <div class="panel-header" style="margin-bottom: 12px;">
+                    <div class="panel-title" style="font-size: 0.7rem;"><i class="fas fa-database"></i> TK04 VARIANCE
+                    </div>
+                </div>
+                <div id="chart-tk04-var" style="height: 280px; width: 100%;"></div>
+            </div>
+            <div class="glass-panel" style="padding: 16px;">
+                <div class="panel-header" style="margin-bottom: 12px;">
+                    <div class="panel-title" style="font-size: 0.7rem;"><i class="fas fa-database"></i> TK05 VARIANCE
+                    </div>
+                </div>
+                <div id="chart-tk05-var" style="height: 280px; width: 100%;"></div>
+            </div>
+            <div class="glass-panel" style="padding: 16px;">
+                <div class="panel-header" style="margin-bottom: 12px;">
+                    <div class="panel-title" style="font-size: 0.7rem;"><i class="fas fa-database"></i> TK06 VARIANCE
+                    </div>
+                </div>
+                <div id="chart-tk06-var" style="height: 280px; width: 100%;"></div>
+            </div>
+            <div class="glass-panel" style="padding: 16px;">
+                <div class="panel-header" style="margin-bottom: 12px;">
+                    <div class="panel-title" style="font-size: 0.7rem;"><i class="fas fa-database"></i> TK07 VARIANCE
+                    </div>
+                </div>
+                <div id="chart-tk07-var" style="height: 280px; width: 100%;"></div>
             </div>
         </div>
 
