@@ -34,6 +34,10 @@ function doGet(e) {
         else if (action === "getSOBKKData") {
             return getSOBKKData(ssId, e);
         }
+        // ============ TAMBAHAN BARU: TES WS DATA ============
+        else if (action === "getTesWSData") {
+            return getTesWSData(ssId, e);
+        }
         // =======================================================
         else {
             return getOutstandingBKKTurbo(ssId, e);
@@ -234,6 +238,148 @@ function getSOBKKData(ssId, e) {
             keteranganStatus: String(row[11] || "").trim(), // L: KETERANGAN STATUS (SUSUT/OVERFISIK)
             dokumentasi: String(row[12] || "").trim(),      // M: DOKUMENTASI
             keterangan: String(row[13] || "").trim()        // N: KETERANGAN
+        });
+    }
+
+    return createOutput({
+        success: true,
+        data: formattedData,
+        count: formattedData.length,
+        timestamp: new Date().toISOString()
+    }, e);
+}
+
+// =====================================================================
+// FUNGSI BARU: GET TES WS DATA DARI SHEET "TES WS"
+// Membaca kolom B:O mulai baris 3
+// Kolom: TANGGAL | JENIS TIMBANGAN | JAMA SCALE | AREA | METODE |
+//        KAPASITAS | STANDAR | AKTUAL | SISTEM | SELISIH KG |
+//        DEVIASI PERSENTASI | STATUS | KETERANGA | KESIMPULAN
+// =====================================================================
+function getTesWSData(ssId, e) {
+    var ss = SpreadsheetApp.openById(ssId);
+    var sheet = ss.getSheetByName("TES WS");
+
+    if (!sheet) {
+        return createOutput({
+            success: false,
+            error: "Sheet 'TES WS' tidak ditemukan!"
+        }, e);
+    }
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 3) {
+        return createOutput({
+            success: true,
+            data: [],
+            count: 0,
+            timestamp: new Date().toISOString()
+        }, e);
+    }
+
+    // Range: B3:O{lastRow} → kolom 2 (B), 14 kolom (B sampai O)
+    var dataRange = sheet.getRange(3, 2, lastRow - 2, 14);
+    var values = dataRange.getValues();
+
+    var formattedData = [];
+
+    // Helper: format tanggal
+    var formatDateCell = function (val) {
+        if (!val || val === "") return "";
+        if (val instanceof Date) {
+            if (isNaN(val.getTime())) return "";
+            var dd = val.getDate();
+            var mm = val.getMonth() + 1;
+            var yy = val.getFullYear();
+            return (dd < 10 ? "0" + dd : dd) + "/" + (mm < 10 ? "0" + mm : mm) + "/" + yy;
+        }
+        return String(val).trim();
+    };
+
+    // Helper: parse angka (hapus "kg", "Kg", koma, spasi, handle #ERROR!)
+    var parseNumWS = function (val) {
+        if (val === null || val === undefined || val === "") return 0;
+        if (typeof val === "number") return val;
+        var s = String(val).trim();
+        // Handle #ERROR!, #REF!, #VALUE! dll
+        if (s.indexOf("#") === 0) return 0;
+        // Hapus suffix kg/Kg/KG
+        s = s.replace(/\s*kg\s*$/i, "").trim();
+        if (s === "" || s === "-") return 0;
+        // Handle format angka Indonesia: 3.213 atau 3,213
+        // Jika ada titik dan koma, titik = ribuan, koma = desimal
+        var hasDot = s.indexOf(".") !== -1;
+        var hasComma = s.indexOf(",") !== -1;
+        if (hasDot && hasComma) {
+            var lastDot = s.lastIndexOf(".");
+            var lastComma = s.lastIndexOf(",");
+            if (lastComma > lastDot) {
+                s = s.replace(/\./g, "").replace(",", ".");
+            } else {
+                s = s.replace(/,/g, "");
+            }
+        } else if (hasComma && !hasDot) {
+            var parts = s.split(",");
+            if (parts.length === 2 && parts[1].length === 3) {
+                s = s.replace(/,/g, "");
+            } else {
+                s = s.replace(",", ".");
+            }
+        } else if (hasDot && !hasComma) {
+            var dotParts = s.split(".");
+            if (dotParts.length === 2 && dotParts[1].length === 3 && dotParts[0].length >= 2) {
+                s = s.replace(/\./g, "");
+            } else if (dotParts.length > 2) {
+                s = s.replace(/\./g, "");
+            }
+        }
+        var num = parseFloat(s);
+        return isNaN(num) ? 0 : num;
+    };
+
+    // Helper: parse persentase
+    var parsePctWS = function (val) {
+        if (val === null || val === undefined || val === "") return 0;
+        if (typeof val === "number") {
+            // Jika sudah dalam format desimal (misal 0.1662 = 16.62%)
+            if (Math.abs(val) < 1) return val * 100;
+            return val;
+        }
+        var s = String(val).trim();
+        if (s.indexOf("#") === 0) return 0;
+        s = s.replace(/%/g, "").replace(/,/g, ".").trim();
+        if (s === "" || s === "-") return 0;
+        var num = parseFloat(s);
+        return isNaN(num) ? 0 : num;
+    };
+
+    for (var i = 0; i < values.length; i++) {
+        var row = values[i];
+        var dateCell = row[0]; // Kolom B = TANGGAL
+
+        // Lewati baris kosong
+        if (!dateCell || dateCell === "") continue;
+
+        var standarVal = row[6]; // Kolom H = STANDAR
+        var standarStr = String(standarVal || "").trim();
+        var isStandarError = standarStr.indexOf("#") === 0;
+
+        formattedData.push({
+            tanggal: formatDateCell(dateCell),              // B: TANGGAL
+            jenisTimbangan: String(row[1] || "").trim(),    // C: JENIS TIMBANGAN
+            jamaScale: String(row[2] || "").trim(),         // D: JAMA SCALE
+            area: String(row[3] || "").trim(),              // E: AREA
+            metode: String(row[4] || "").trim(),            // F: METODE
+            kapasitas: parseNumWS(row[5]),                  // G: KAPASITAS
+            standar: isStandarError ? 0 : parseNumWS(row[6]), // H: STANDAR (handle #ERROR!)
+            standarRaw: standarStr,                          // H: raw value for display
+            aktual: parseNumWS(row[7]),                     // I: AKTUAL
+            sistem: parseNumWS(row[8]),                     // J: SISTEM
+            selisihKg: parseNumWS(row[9]),                  // K: SELISIH KG
+            deviasiPersentasi: parsePctWS(row[10]),         // L: DEVIASI PERSENTASI
+            status: String(row[11] || "").trim(),           // M: STATUS
+            keterangan: String(row[12] || "").trim(),       // N: KETERANGA
+            kesimpulan: String(row[13] || "").trim()        // O: KESIMPULAN
         });
     }
 

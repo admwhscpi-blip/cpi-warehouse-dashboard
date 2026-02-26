@@ -560,6 +560,206 @@
                 padding: 20px 16px !important;
             }
         }
+
+        /* ========== ENHANCED CHART CARD ========== */
+        .chart-card.ultra-modern {
+            background: linear-gradient(145deg, rgba(10, 15, 30, 0.7), rgba(15, 23, 42, 0.5));
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .chart-card.ultra-modern::before {
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #00f3ff, #ec4899, #9333ea, transparent);
+            opacity: 0.8;
+        }
+
+        .chart-card.ultra-modern:hover {
+            border-color: rgba(0, 243, 255, 0.5);
+            box-shadow: 0 12px 40px rgba(0, 243, 255, 0.2), 0 0 60px rgba(0, 243, 255, 0.05), inset 0 0 30px rgba(0, 243, 255, 0.03);
+            transform: translateY(-2px);
+        }
+
+        .chart-legend-custom {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .chart-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.72rem;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        .chart-legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            box-shadow: 0 0 6px currentColor;
+        }
+
+        /* ========== DETAIL TABLE 3 ========== */
+        .detail-section {
+            margin-top: 20px;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .detail-section.visible {
+            opacity: 1;
+            max-height: 2000px;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .detail-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: #00f3ff;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-safe {
+            background: rgba(52, 211, 153, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(52, 211, 153, 0.3);
+        }
+
+        .badge-offside {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            animation: pulse-glow 2s infinite;
+        }
+
+        .detail-close-btn {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .detail-close-btn:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .detail-panel {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(0, 243, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .detail-panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .detail-mini-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .detail-mini-table th {
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 0.62rem;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+            white-space: nowrap;
+        }
+
+        .detail-mini-table td {
+            padding: 5px 8px;
+            font-size: 0.72rem;
+            color: #e2e8f0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .detail-mini-table tr:hover td {
+            background: rgba(0, 243, 255, 0.04);
+        }
+
+        .td-highlight-bad {
+            color: #f87171 !important;
+            font-weight: 700 !important;
+        }
+
+        .td-highlight-good {
+            color: #34d399 !important;
+            font-weight: 700 !important;
+        }
+
+        .td-num {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+        }
     </style>
 </head>
 
@@ -767,18 +967,66 @@
                     <div class="chart-canvas-wrap"><canvas id="chart-gudang"></canvas></div>
                 </div>
 
-                <!-- Chart 3: Penerimaan vs Stock Akhir -->
-                <div class="chart-card full-width">
-                    <div class="chart-title"><span class="emoji">📦</span> PENERIMAAN VS STOCK AKHIR (PER RECORD)</div>
-                    <div class="chart-canvas-wrap" style="height:300px;"><canvas
-                            id="chart-penerimaan-vs-stock"></canvas></div>
+                <div class="chart-card full-width ultra-modern">
+                    <div class="chart-title"><span class="emoji">📈</span> ANALYSIS SBM — SELISIH SO vs TES WS TOLERANCE
+                    </div>
+                    <div class="chart-canvas-wrap" style="height:380px;"><canvas id="chart-prosentase"></canvas></div>
+                    <div class="chart-legend-custom">
+                        <div class="chart-legend-item">
+                            <div class="chart-legend-dot"
+                                style="background:#ff6b6b;box-shadow:0 0 8px rgba(255,107,107,0.6);"></div><span
+                                style="color:#ff6b6b;">SUSUT</span>
+                        </div>
+                        <div class="chart-legend-item">
+                            <div class="chart-legend-dot"
+                                style="background:#00e5ff;box-shadow:0 0 8px rgba(0,229,255,0.6);"></div><span
+                                style="color:#00e5ff;">OVERFISIK</span>
+                        </div>
+                        <div class="chart-legend-item">
+                            <div class="chart-legend-dot"
+                                style="background:#c084fc;border-radius:50%;box-shadow:0 0 8px rgba(192,132,252,0.6);">
+                            </div>% Selisih SO
+                        </div>
+                        <div class="chart-legend-item">
+                            <div class="chart-legend-dot"
+                                style="background:rgba(52,211,153,0.3);border:2px dashed #34d399;box-shadow:0 0 6px rgba(52,211,153,0.4);transform:rotate(45deg);">
+                            </div>% TES WS Toleransi
+                        </div>
+                        <div class="chart-legend-item" style="margin-left:auto;color:#64748b;font-size:0.65rem;">📌 Klik
+                            bar untuk detail</div>
+                    </div>
                 </div>
 
-                <!-- Chart 4: Quantity + Trend Prosentase -->
-                <div class="chart-card full-width">
-                    <div class="chart-title"><span class="emoji">📈</span> SELISIH QUANTITY & PROSENTASE (SUSUT /
-                        OVERFISIK)</div>
-                    <div class="chart-canvas-wrap" style="height:320px;"><canvas id="chart-prosentase"></canvas></div>
+                <!-- Detail Table 3: Interactive Detail -->
+                <div class="chart-card full-width ultra-modern" id="detail-section-wrapper" style="display:none;">
+                    <div class="detail-section visible" id="detail-section">
+                        <div class="detail-header">
+                            <div class="detail-title"><span class="emoji">🔍</span> DETAIL PERIODE: <span
+                                    id="detail-period-label">-</span></div>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <span class="detail-badge" id="detail-verdict-badge">-</span>
+                                <button class="detail-close-btn" onclick="closeDetailSection()">✕ TUTUP</button>
+                            </div>
+                        </div>
+                        <div class="detail-grid">
+                            <div class="detail-panel">
+                                <div class="detail-panel-title">📊 DATA STOCK OPNAME (SO)</div>
+                                <div class="table-scroll" style="max-height:300px;">
+                                    <table class="detail-mini-table" id="detail-so-table">
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="detail-panel">
+                                <div class="detail-panel-title">🔬 DATA TES WS (PENDUKUNG)</div>
+                                <div class="table-scroll" style="max-height:300px;">
+                                    <table class="detail-mini-table" id="detail-ws-table">
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -789,11 +1037,12 @@
         // ============================================
         // KONFIGURASI
         // ============================================
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoi276UtUJEAHxeXUyioD7JOh8JHTp300qTmXmlr2hiALnCHACFFyZltaezfoSl-M4/exec';
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwExQHdhQk_uwO679e2NZr1lEvcrTjHrPDlkRR08na3QGGgZf0W_r3l_oBdyTJrCRQW/exec';
 
         // Chart instances & global data store
         let chartInstances = {};
         let allSOData = []; // Data SO BKK mentah
+        let allTesWSData = []; // Data TES WS mentah
         let currentFilter = 'ALL'; // Filter aktif: ALL, SBM, PKM
 
         // ============================================
@@ -865,7 +1114,7 @@
             // Re-render with filtered data
             const filtered = filterSOData(allSOData, currentFilter);
             renderSOTable(filtered);
-            renderCharts(filtered);
+            renderCharts(filtered, allTesWSData);
         }
 
         // ============================================
@@ -878,9 +1127,10 @@
             errorDiv.style.display = 'none';
 
             try {
-                const [invRes, soRes] = await Promise.all([
+                const [invRes, soRes, wsRes] = await Promise.all([
                     fetch(APPS_SCRIPT_URL + '?action=getInventoryData').then(r => r.json()),
-                    fetch(APPS_SCRIPT_URL + '?action=getSOBKKData').then(r => r.json())
+                    fetch(APPS_SCRIPT_URL + '?action=getSOBKKData').then(r => r.json()),
+                    fetch(APPS_SCRIPT_URL + '?action=getTesWSData').then(r => r.json()).catch(() => ({ success: true, data: [] }))
                 ]);
 
                 if (!invRes.success) throw new Error(invRes.error || 'Gagal ambil data inventory');
@@ -888,11 +1138,12 @@
 
                 // Normalize gudang di data SO
                 allSOData = (soRes.data || []).map(d => ({ ...d, gudang: normalizeGudang(d.gudang) }));
+                allTesWSData = (wsRes.success ? wsRes.data : []) || [];
 
                 renderMasterDataTable(invRes.data || []);
                 const filtered = filterSOData(allSOData, currentFilter);
                 renderSOTable(filtered);
-                renderCharts(filtered);
+                renderCharts(filtered, allTesWSData);
 
                 // Update waktu
                 document.getElementById('last-update').textContent =
@@ -1012,7 +1263,7 @@
         // ============================================
         // RENDER CHARTS
         // ============================================
-        function renderCharts(data) {
+        function renderCharts(data, tesWSData) {
             // Destroy existing charts
             Object.values(chartInstances).forEach(c => { try { c.destroy(); } catch (e) { } });
             chartInstances = {};
@@ -1045,8 +1296,6 @@
             };
 
             // ---- ANALISA BENAR ----
-            // SUSUT = fisik kurang dari sistem → stock akhir = selisih yang HILANG (RUGI)
-            // OVERFISIK = fisik lebih dari sistem → stock akhir = selisih yang LEBIH (DITEMUKAN)
             const susutItems = data.filter(d => (d.keteranganStatus || '').toUpperCase().includes('SUSUT'));
             const overfisikItems = data.filter(d => (d.keteranganStatus || '').toUpperCase().includes('OVERFISIK'));
             const totalSusutKg = susutItems.reduce((s, d) => s + d.stockAkhir, 0);
@@ -1104,142 +1353,411 @@
                 options: { ...defOpt, plugins: { ...defOpt.plugins, legend: { display: false } } }
             });
 
-            // ---- Chart 3: Penerimaan vs Selisih (Stock Akhir) ----
-            // Stock Akhir = selisih. SUSUT → negatif (rugi), OVERFISIK → positif (lebih)
-            const labels3 = data.map(d => `#${d.no} ${d.gudang}`);
-            const selisihData = data.map(d => {
-                const isSusut = (d.keteranganStatus || '').toUpperCase().includes('SUSUT');
-                return isSusut ? -d.stockAkhir : d.stockAkhir; // Susut ditampilkan negatif
+            // ---- Chart 3 (ENHANCED): ANALYSIS SBM — SO vs TES WS ----
+            // FILTER: Hanya BK01, BK02, BK03 (SBM)
+            const sbmData = data.filter(d => {
+                const g = normalizeGudang(d.gudang);
+                return g === 'BK01' || g === 'BK02' || g === 'BK03';
             });
-            const selisihColors = data.map(d => {
-                return (d.keteranganStatus || '').toUpperCase().includes('SUSUT') ? C.rA : C.cA;
+
+            // Group SBM SO data by tanggalOpname for x-axis
+            const soByDate = {};
+            sbmData.forEach(d => {
+                const dt = d.tanggalOpname || 'N/A';
+                if (!soByDate[dt]) soByDate[dt] = [];
+                soByDate[dt].push(d);
             });
-            chartInstances.penerimaanVsStock = new Chart(document.getElementById('chart-penerimaan-vs-stock'), {
-                type: 'bar',
-                data: {
-                    labels: labels3,
-                    datasets: [
-                        { label: 'Penerimaan', data: data.map(d => d.penerimaan), backgroundColor: 'rgba(147,51,234,0.5)', borderColor: C.purple, borderWidth: 1, borderRadius: 4 },
-                        { label: 'Selisih (SUSUT=rugi / OVERFISIK=lebih)', data: selisihData, backgroundColor: selisihColors, borderColor: selisihColors.map(c => c.replace('0.7', '1')), borderWidth: 1, borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    ...defOpt, maintainAspectRatio: false,
-                    plugins: {
-                        ...defOpt.plugins, tooltip: {
-                            ...tooltip,
-                            callbacks: {
-                                label: ctx => {
-                                    const row = data[ctx.dataIndex];
-                                    if (ctx.datasetIndex === 0) return `Penerimaan: ${row.penerimaan.toLocaleString('id-ID')} kg`;
-                                    const isSusut = (row.keteranganStatus || '').toUpperCase().includes('SUSUT');
-                                    return `${isSusut ? '🔴 SUSUT (hilang)' : '🔵 OVERFISIK (lebih)'}: ${row.stockAkhir.toLocaleString('id-ID')} kg`;
+
+            // Sort dates chronologically
+            const sortedDates = Object.keys(soByDate).sort((a, b) => {
+                const da = parseDate(a), db = parseDate(b);
+                return da - db;
+            });
+
+            // Build aggregated data per date
+            const chartLabels = [];
+            const chartSelisih = [];  // bar: sum of selisih SO (kg)
+            const chartPctSO = [];    // line: average % SO
+            const chartPctWS = [];    // area: average % TES WS deviasi
+            const chartSOGroups = []; // raw SO rows per date (for detail table)
+            const chartWSGroups = []; // raw WS rows per date (for detail table)
+
+            // Helper: parse date flexibly
+            const parseDateFlex = (s) => {
+                if (!s) return null;
+                const p = s.split('/');
+                if (p.length === 3) return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+                try { return new Date(s); } catch { return null; }
+            };
+
+            // Pre-sort TES WS data by date for forward-coverage lookup
+            let sortedWSData = [];
+            if (tesWSData && tesWSData.length > 0) {
+                sortedWSData = [...tesWSData].filter(ws => {
+                    const d = parseDateFlex(ws.tanggal);
+                    return d && !isNaN(d.getTime());
+                }).sort((a, b) => {
+                    return parseDateFlex(a.tanggal) - parseDateFlex(b.tanggal);
+                });
+            }
+
+            sortedDates.forEach(dt => {
+                const soRows = soByDate[dt];
+                const soDate = parseDateFlex(dt);
+
+                // Aggregate SO selisih & percentage
+                let totalSelisih = 0;
+                let totalPct = 0;
+                soRows.forEach(d => {
+                    const isSusut = (d.keteranganStatus || '').toUpperCase().includes('SUSUT');
+                    totalSelisih += isSusut ? -d.stockAkhir : d.stockAkhir;
+                    totalPct += isSusut ? -d.prosentase : d.prosentase;
+                });
+                const avgPct = soRows.length > 0 ? totalPct / soRows.length : 0;
+
+                // Find matching TES WS data with forward-coverage logic:
+                // 1. First try: exact match within ±7 days
+                // 2. Fallback: use the LATEST test that occurred BEFORE the SO date
+                //    (last test "covers" until a new test is done)
+                let matchedWS = [];
+                if (sortedWSData.length > 0 && soDate) {
+                    const soTime = soDate.getTime();
+
+                    // Strategy 1: Match within ±7 days
+                    matchedWS = sortedWSData.filter(ws => {
+                        const wsDate = parseDateFlex(ws.tanggal);
+                        const diff = Math.abs(wsDate.getTime() - soTime);
+                        return diff <= 7 * 24 * 60 * 60 * 1000;
+                    });
+
+                    // Strategy 2 (forward-coverage): If no match, find the latest test BEFORE this SO date
+                    if (matchedWS.length === 0) {
+                        let latestBefore = [];
+                        let latestDate = null;
+                        for (let wi = sortedWSData.length - 1; wi >= 0; wi--) {
+                            const wsDate = parseDateFlex(sortedWSData[wi].tanggal);
+                            if (wsDate.getTime() <= soTime) {
+                                if (!latestDate || wsDate.getTime() === latestDate.getTime()) {
+                                    latestDate = wsDate;
+                                    latestBefore.push(sortedWSData[wi]);
+                                } else if (latestDate && wsDate.getTime() < latestDate.getTime()) {
+                                    break; // already passed the latest batch
                                 }
                             }
                         }
-                    },
-                    scales: {
-                        ...defOpt.scales,
-                        y: { ...defOpt.scales.y, ticks: { ...defOpt.scales.y.ticks, callback: v => { const abs = Math.abs(v); return (abs >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : (v / 1000).toFixed(0) + 'K'); } } }
+                        if (latestBefore.length > 0) matchedWS = latestBefore;
                     }
                 }
+
+                // Average TES WS deviasi persentasi for matched records
+                // PENTING: TES WS + = overfisik (searah SO +), TES WS - = susut (searah SO -)
+                let avgWS = null;
+                if (matchedWS.length > 0) {
+                    const validWS = matchedWS.filter(ws => ws.deviasiPersentasi !== 0);
+                    if (validWS.length > 0) {
+                        avgWS = validWS.reduce((s, ws) => s + ws.deviasiPersentasi, 0) / validWS.length;
+                    }
+                }
+
+                chartLabels.push(dt);
+                chartSelisih.push(totalSelisih);
+                chartPctSO.push(avgPct);
+                chartPctWS.push(avgWS);
+                chartSOGroups.push(soRows);
+                chartWSGroups.push(matchedWS);
             });
 
-            // ---- Chart 4: Quantity Bar + Prosentase Line (Mixed) ----
-            // Bar = stock akhir (kolom J), SUSUT negatif, OVERFISIK positif
-            // Line = prosentase (kolom K), SUSUT negatif, OVERFISIK positif
-            const labels4 = data.map(d => `#${d.no} ${d.gudang}`);
-            const qtyData = data.map(d => {
-                const isSusut = (d.keteranganStatus || '').toUpperCase().includes('SUSUT');
-                return isSusut ? -d.stockAkhir : d.stockAkhir;
-            });
-            const pctData = data.map(d => {
-                const isSusut = (d.keteranganStatus || '').toUpperCase().includes('SUSUT');
-                return isSusut ? -d.prosentase : d.prosentase;
-            });
-            const barColors = data.map(d => {
-                return (d.keteranganStatus || '').toUpperCase().includes('SUSUT')
-                    ? 'rgba(239,68,68,0.5)' : 'rgba(0,243,255,0.5)';
-            });
-            const barBorders = data.map(d => {
-                return (d.keteranganStatus || '').toUpperCase().includes('SUSUT') ? C.red : C.cyan;
-            });
+            // Store for onclick detail
+            window._chartDetailData = { labels: chartLabels, soGroups: chartSOGroups, wsGroups: chartWSGroups, pctSO: chartPctSO, pctWS: chartPctWS };
 
-            chartInstances.prosentase = new Chart(document.getElementById('chart-prosentase'), {
+            // ===== DISPLAY DATA (semua positif/ke atas) =====
+            // PENTING: chartSelisih, chartPctSO, chartPctWS TETAP ASLI untuk logika
+            // Display hanya pakai Math.abs supaya grafik rapi ke atas
+            const displaySelisih = chartSelisih.map(v => Math.abs(v));
+            const displayPctSO = chartPctSO.map(v => Math.abs(v));
+            const displayPctWS = chartPctWS.map(v => v != null ? Math.abs(v) : null);
+
+            // Tentukan arah tiap bar: SUSUT (negatif asli) atau OVERFISIK (positif asli)
+            const barDirections = chartSelisih.map(v => v < 0 ? 'SUSUT' : 'OVER');
+
+            // Bar colors: SUPER KONTRAS
+            // SUSUT = Vibrant Red-Orange dengan glow
+            // OVERFISIK = Electric Cyan-Blue dengan glow
+            const barColors = barDirections.map(d => d === 'SUSUT'
+                ? 'rgba(255,107,107,0.75)' : 'rgba(0,229,255,0.7)');
+            const barBorders = barDirections.map(d => d === 'SUSUT'
+                ? '#ff6b6b' : '#00e5ff');
+
+            // Chart area gradient for TES WS = Emerald Green
+            const canvasEl = document.getElementById('chart-prosentase');
+            const ctx4 = canvasEl.getContext('2d');
+            const wsGradPos = ctx4.createLinearGradient(0, 0, 0, 380);
+            wsGradPos.addColorStop(0, 'rgba(52,211,153,0.3)');
+            wsGradPos.addColorStop(0.4, 'rgba(52,211,153,0.12)');
+            wsGradPos.addColorStop(1, 'rgba(52,211,153,0.02)');
+
+            // Custom plugin: Label SUSUT/OVER di atas bar + glow effect
+            const barLabelPlugin = {
+                id: 'barLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    const barMeta = chart.getDatasetMeta(0);
+                    if (!barMeta || !barMeta.data) return;
+
+                    ctx.save();
+                    barMeta.data.forEach((bar, i) => {
+                        const dir = barDirections[i];
+                        const label = dir === 'SUSUT' ? 'SUSUT' : 'OVERFISIK';
+                        const color = dir === 'SUSUT' ? '#ff6b6b' : '#00e5ff';
+
+                        // Glow effect behind text
+                        ctx.shadowColor = color;
+                        ctx.shadowBlur = 6;
+                        ctx.fillStyle = color;
+                        ctx.font = 'bold 8px Inter, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText(label, bar.x, bar.y - 5);
+                        ctx.shadowBlur = 0;
+                    });
+                    ctx.restore();
+                }
+            };
+
+            chartInstances.prosentase = new Chart(canvasEl, {
                 data: {
-                    labels: labels4,
+                    labels: chartLabels,
                     datasets: [
                         {
                             type: 'bar',
-                            label: 'Selisih Quantity (kg)',
-                            data: qtyData,
+                            label: 'Selisih SO (kg)',
+                            data: displaySelisih,
                             backgroundColor: barColors,
                             borderColor: barBorders,
-                            borderWidth: 1.5, borderRadius: 6,
+                            borderWidth: 2, borderRadius: 12,
                             yAxisID: 'y',
-                            order: 2
+                            order: 3,
+                            barPercentage: 0.55,
+                            categoryPercentage: 0.8,
+                            hoverBackgroundColor: barDirections.map(d => d === 'SUSUT'
+                                ? 'rgba(255,107,107,0.95)' : 'rgba(0,229,255,0.95)'),
+                            hoverBorderWidth: 3
                         },
                         {
                             type: 'line',
-                            label: 'Prosentase (%)',
-                            data: pctData,
-                            borderColor: C.pink,
-                            backgroundColor: 'rgba(236,72,153,0.15)',
-                            borderWidth: 2.5, fill: false, tension: 0.35,
-                            pointBackgroundColor: barBorders,
-                            pointBorderColor: barBorders,
-                            pointRadius: 5, pointHoverRadius: 8,
+                            label: '% Selisih SO',
+                            data: displayPctSO,
+                            borderColor: '#c084fc',
+                            backgroundColor: 'transparent',
+                            borderWidth: 3.5, fill: false, tension: 0.35,
+                            pointBackgroundColor: barDirections.map(d => d === 'SUSUT' ? '#ff6b6b' : '#00e5ff'),
+                            pointBorderColor: '#1e1b4b',
+                            pointBorderWidth: 3,
+                            pointRadius: 7, pointHoverRadius: 13,
+                            pointStyle: 'circle',
                             yAxisID: 'y1',
                             order: 1
+                        },
+                        {
+                            type: 'line',
+                            label: '% TES WS (Toleransi)',
+                            data: displayPctWS,
+                            borderColor: '#34d399',
+                            backgroundColor: wsGradPos,
+                            borderWidth: 2.5, fill: true, tension: 0.35,
+                            borderDash: [8, 4],
+                            pointBackgroundColor: displayPctWS.map(v => v != null ? '#34d399' : 'transparent'),
+                            pointBorderColor: displayPctWS.map(v => v != null ? '#064e3b' : 'transparent'),
+                            pointBorderWidth: 2.5,
+                            pointRadius: displayPctWS.map(v => v != null ? 5 : 0),
+                            pointHoverRadius: displayPctWS.map(v => v != null ? 9 : 0),
+                            pointStyle: 'rectRot',
+                            yAxisID: 'y1',
+                            order: 2,
+                            spanGaps: false
                         }
                     ]
                 },
+                plugins: [barLabelPlugin],
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     interaction: { mode: 'index', intersect: false },
+                    onClick: (evt, elements) => {
+                        if (elements.length > 0) {
+                            const idx = elements[0].index;
+                            showDetailSection(idx);
+                        }
+                    },
                     plugins: {
-                        legend: {
-                            labels: {
-                                color: '#94a3b8', font: { family: 'Inter', size: 11 }, padding: 14,
-                                usePointStyle: true, pointStyle: 'rectRounded'
-                            }
-                        },
+                        legend: { display: false },
                         tooltip: {
                             ...tooltip,
                             callbacks: {
+                                title: ctx => `\ud83d\udcc5 TGL OPNAME: ${ctx[0].label}`,
                                 label: ctx => {
-                                    const row = data[ctx.dataIndex];
-                                    const isSusut = (row.keteranganStatus || '').toUpperCase().includes('SUSUT');
-                                    const icon = isSusut ? '🔴 SUSUT' : '🔵 OVERFISIK';
+                                    const i = ctx.dataIndex;
                                     if (ctx.datasetIndex === 0) {
-                                        return `${icon} Qty: ${row.stockAkhir.toLocaleString('id-ID')} kg`;
+                                        // Bar: tampil asli dari chartSelisih
+                                        const dir = barDirections[i];
+                                        const icon = dir === 'SUSUT' ? '\ud83d\udd34' : '\ud83d\udfe2';
+                                        return `${icon} ${dir === 'SUSUT' ? 'SUSUT' : 'OVERFISIK'}: ${Math.abs(chartSelisih[i]).toLocaleString('id-ID')} kg`;
+                                    } else if (ctx.datasetIndex === 1) {
+                                        const dir = barDirections[i];
+                                        const icon = dir === 'SUSUT' ? '\ud83d\udd34' : '\ud83d\udfe2';
+                                        return `${icon} % SO: ${Math.abs(chartPctSO[i]).toFixed(2)}% (${dir === 'SUSUT' ? 'SUSUT' : 'OVERFISIK'})`;
                                     } else {
-                                        return `${icon} Pct: ${row.prosentase.toFixed(2)}%`;
+                                        const v = chartPctWS[i]; // ASLI untuk tooltip
+                                        if (v == null) return '\u26a0\ufe0f TES WS: TANPA DATA PENDUKUNG';
+                                        const icon = v < 0 ? '\ud83d\udd34' : '\ud83d\udfe2';
+                                        return `${icon} % TES WS: ${Math.abs(v).toFixed(2)}% (${v < 0 ? 'SUSUT' : 'OVERFISIK'})`;
                                     }
+                                },
+                                afterBody: ctx => {
+                                    const idx = ctx[0].dataIndex;
+                                    const pSO = chartPctSO[idx]; // ASLI untuk logika
+                                    const pWS = chartPctWS[idx]; // ASLI untuk logika
+                                    if (pSO != null && pWS != null) {
+                                        const offside = Math.abs(pSO) > Math.abs(pWS);
+                                        return [offside ? '\u26a0\ufe0f OFFSIDE \u2014 |SO%| > |WS%| melebihi toleransi!' : '\u2705 AMAN \u2014 SO dalam batas toleransi WS'];
+                                    }
+                                    if (pWS == null) return ['\u2139\ufe0f Belum ada data TES WS pendukung'];
+                                    return [];
                                 }
                             }
                         }
                     },
                     scales: {
-                        x: { ticks: { color: '#64748b', font: { family: 'Inter', size: 9 }, maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                        x: {
+                            ticks: { color: '#94a3b8', font: { family: 'Inter', size: 9, weight: 700 }, maxRotation: 45 },
+                            grid: { color: 'rgba(255,255,255,0.03)', lineWidth: 0.5 },
+                            title: { display: true, text: 'TANGGAL OPNAME (SO)', color: '#475569', font: { family: 'Orbitron', size: 8, weight: 700 }, padding: { top: 8 } }
+                        },
                         y: {
                             type: 'linear', position: 'left',
-                            title: { display: true, text: 'QUANTITY (KG)', color: '#94a3b8', font: { family: 'Inter', size: 10, weight: 600 } },
+                            min: 0,
+                            title: { display: true, text: 'SELISIH SO (KG)', color: '#00e5ff', font: { family: 'Orbitron', size: 8, weight: 700 } },
                             ticks: {
-                                color: '#64748b', font: { family: 'Inter', size: 10 },
+                                color: '#00e5ff', font: { family: 'Rajdhani', size: 11, weight: 700 },
                                 callback: v => { const abs = Math.abs(v); return (abs >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : abs >= 1000 ? (v / 1000).toFixed(0) + 'K' : v); }
                             },
-                            grid: { color: 'rgba(255,255,255,0.06)' }
+                            grid: { color: 'rgba(0,229,255,0.05)', lineWidth: 0.5 }
                         },
                         y1: {
                             type: 'linear', position: 'right',
-                            title: { display: true, text: 'PROSENTASE (%)', color: '#ec4899', font: { family: 'Inter', size: 10, weight: 600 } },
-                            ticks: { color: '#ec4899', font: { family: 'Inter', size: 10 }, callback: v => v.toFixed(1) + '%' },
+                            min: 0,
+                            title: { display: true, text: 'PERSENTASE (%)', color: '#c084fc', font: { family: 'Orbitron', size: 8, weight: 700 } },
+                            ticks: {
+                                color: '#c084fc', font: { family: 'Rajdhani', size: 11, weight: 700 },
+                                callback: v => v.toFixed(1) + '%'
+                            },
                             grid: { drawOnChartArea: false }
                         }
+                    },
+                    animation: {
+                        duration: 1400,
+                        easing: 'easeOutQuart'
                     }
                 }
             });
+        }
+
+        // ============================================
+        // DETAIL SECTION: Show/Hide on chart click
+        // ============================================
+        function showDetailSection(idx) {
+            const dd = window._chartDetailData;
+            if (!dd) return;
+
+            const wrapper = document.getElementById('detail-section-wrapper');
+            const periodLabel = document.getElementById('detail-period-label');
+            const verdictBadge = document.getElementById('detail-verdict-badge');
+            const soTable = document.querySelector('#detail-so-table tbody') || document.getElementById('detail-so-table');
+            const wsTable = document.querySelector('#detail-ws-table tbody') || document.getElementById('detail-ws-table');
+
+            // Period info
+            const label = dd.labels[idx] || '-';
+            const soRows = dd.soGroups[idx] || [];
+            const wsRows = dd.wsGroups[idx] || [];
+            const pSO = dd.pctSO[idx];
+            const pWS = dd.pctWS[idx];
+
+            periodLabel.textContent = label;
+
+            // Verdict: offside or safe
+            // OFFSIDE = |SO%| melebihi |WS%| → SO lebih ekstrem dari toleransi WS
+            if (pSO != null && pWS != null) {
+                const offside = Math.abs(pSO) > Math.abs(pWS);
+                const dirSO = pSO < 0 ? 'SUSUT' : 'OVERFISIK';
+                const dirWS = pWS < 0 ? 'SUSUT' : 'OVERFISIK';
+                verdictBadge.className = 'detail-badge ' + (offside ? 'badge-offside' : 'badge-safe');
+                verdictBadge.innerHTML = offside
+                    ? '⚠️ OFFSIDE — SO ' + Math.abs(pSO).toFixed(2) + '% (' + dirSO + ') > WS ' + Math.abs(pWS).toFixed(2) + '% (' + dirWS + ')'
+                    : '✅ AMAN — SO ' + Math.abs(pSO).toFixed(2) + '% (' + dirSO + ') ≤ WS ' + Math.abs(pWS).toFixed(2) + '% (' + dirWS + ')';
+            } else {
+                verdictBadge.className = 'detail-badge badge-safe';
+                verdictBadge.innerHTML = 'ℹ️ Data TES WS belum tersedia untuk periode ini';
+            }
+
+            // Render SO detail table
+            let soHTML = '<thead><tr><th>No</th><th>Material</th><th>Gudang</th><th>Kapal</th><th>Periode</th><th>Penerimaan</th><th>Stock Akhir</th><th>%</th><th>Status</th></tr></thead><tbody>';
+            if (soRows.length === 0) {
+                soHTML += '<tr><td colspan="9" style="color:#64748b;text-align:center;padding:16px;">Tidak ada data SO</td></tr>';
+            } else {
+                soRows.forEach(r => {
+                    const isSusut = (r.keteranganStatus || '').toUpperCase().includes('SUSUT');
+                    const pctClass = isSusut ? 'td-highlight-bad' : 'td-highlight-good';
+                    const statusClass = isSusut ? 'status-susut' : 'status-overfisik';
+                    soHTML += `<tr>
+                        <td class="td-num" style="color:#a78bfa;">${r.no}</td>
+                        <td style="font-size:0.68rem;">${r.namaMaterial || '-'}</td>
+                        <td style="color:#fbbf24;font-weight:600;">${r.gudang || '-'}</td>
+                        <td style="font-size:0.68rem;color:#94a3b8;">${r.namaKapal || '-'}</td>
+                        <td class="td-num" style="font-size:0.68rem;color:#60a5fa;">${r.periodeAwal || '-'} ~ ${r.periodeAkhir || '-'}</td>
+                        <td class="td-num" style="color:#67e8f9;">${r.penerimaan > 0 ? r.penerimaan.toLocaleString('id-ID') : '-'}</td>
+                        <td class="td-num ${pctClass}">${r.stockAkhir > 0 ? r.stockAkhir.toLocaleString('id-ID') : '-'}</td>
+                        <td class="td-num ${pctClass}">${r.prosentase > 0 ? r.prosentase.toFixed(2) + '%' : '-'}</td>
+                        <td><span class="status-badge ${statusClass}">${r.keteranganStatus || '-'}</span></td>
+                    </tr>`;
+                });
+            }
+            soHTML += '</tbody>';
+            soTable.innerHTML = soHTML;
+
+            // Render TES WS detail table
+            let wsHTML = '<thead><tr><th>Tanggal</th><th>Timbangan</th><th>Area</th><th>Metode</th><th>Aktual</th><th>Sistem</th><th>Selisih</th><th>Deviasi %</th><th>Status</th><th>Ket</th></tr></thead><tbody>';
+            if (wsRows.length === 0) {
+                wsHTML += '<tr><td colspan="10" style="color:#64748b;text-align:center;padding:16px;">Tidak ada data TES WS matching</td></tr>';
+            } else {
+                wsRows.forEach(ws => {
+                    const isNotOke = (ws.status || '').toUpperCase().includes('NOT');
+                    const cls = isNotOke ? 'td-highlight-bad' : 'td-highlight-good';
+                    wsHTML += `<tr>
+                        <td class="td-num" style="color:#fbbf24;">${ws.tanggal || '-'}</td>
+                        <td style="font-size:0.68rem;">${ws.jenisTimbangan || '-'}</td>
+                        <td style="font-size:0.68rem;">${ws.area || '-'}</td>
+                        <td style="font-size:0.68rem;color:#60a5fa;">${ws.metode || '-'}</td>
+                        <td class="td-num">${ws.aktual > 0 ? ws.aktual.toLocaleString('id-ID') : '-'}</td>
+                        <td class="td-num">${ws.sistem > 0 ? ws.sistem.toLocaleString('id-ID') : '-'}</td>
+                        <td class="td-num ${cls}">${ws.selisihKg !== 0 ? ws.selisihKg.toLocaleString('id-ID') : '-'}</td>
+                        <td class="td-num ${cls}">${ws.deviasiPersentasi !== 0 ? ws.deviasiPersentasi.toFixed(2) + '%' : '-'}</td>
+                        <td><span class="status-badge ${isNotOke ? 'status-susut' : 'status-overfisik'}">${ws.status || '-'}</span></td>
+                        <td style="font-size:0.65rem;color:#94a3b8;">${ws.keterangan || '-'}</td>
+                    </tr>`;
+                });
+            }
+            wsHTML += '</tbody>';
+            wsTable.innerHTML = wsHTML;
+
+            // Show section with animation
+            wrapper.style.display = 'block';
+            setTimeout(() => {
+                wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+
+        function closeDetailSection() {
+            const wrapper = document.getElementById('detail-section-wrapper');
+            wrapper.style.display = 'none';
         }
 
         // ============================================
