@@ -1,0 +1,107 @@
+/* =========================================
+   GLOBAL MOBILE RESPONSIVE OVERRIDES
+   ========================================= */
+
+@media (max-width: 900px) {
+    /* --- GENERAL LAYOUT --- */
+    body {
+        overflow-x: hidden;
+    }
+
+    .dashboard-container, .main-content, .container, .page-content {
+        padding: 15px !important;
+    }
+
+    /* --- GRIDS & FLEXBOX --- */
+    .grid-main, .charts-grid, .charts-row, .charts-split, .stock-cards-row, .connectors-row, .accuracy-cards-row, .warehouse-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+
+    /* --- NAVBAR MODIFICATIONS --- */
+    .navbar {
+        flex-direction: column !important;
+        align-items: center !important;
+        padding: 15px !important;
+        height: auto !important;
+        text-align: center;
+    }
+
+    .brand-section, .logo-link {
+        margin-bottom: 15px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .nav-actions, .nav-links {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 10px !important;
+        align-items: center !important;
+    }
+
+    .nav-link, .cyber-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .clock-widget {
+        transform: scale(0.9);
+        margin: 10px 0;
+    }
+
+    /* --- SIDEBAR (IF PRESENT) --- */
+    .sidebar {
+        width: 100% !important;
+        height: auto !important;
+        position: relative !important;
+        padding: 15px !important;
+        border-right: none !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* --- HEADER TITLE CARDS --- */
+    .header-section h1, .page-title, .title-main {
+        font-size: 1.6rem !important;
+        text-align: center !important;
+    }
+
+    .header-section {
+        border-left: none !important;
+        border-bottom: 3px solid #00f3ff !important;
+        padding-left: 0 !important;
+        padding-bottom: 10px !important;
+        text-align: center;
+    }
+
+    /* --- CARDS & PANELS --- */
+    .glass-card, .cyber-card, .glass-panel, .info-legend, .legend-card {
+        padding: 15px !important;
+        width: 100% !important;
+        margin-bottom: 10px !important;
+    }
+
+    .info-legend {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* --- TYPOGRAPHY --- */
+    .stock-value, .m-val {
+        font-size: 2rem !important;
+    }
+
+    /* --- HIDDEN ELEMENTS FOR MOBILE (CLEANUP) --- */
+    .particle-canvas, #particles-canvas, .panglima-sequence, .hud-overlay-container, .hud-spinner-top-right, .hud-data-stream-left {
+        display: none !important;
+    }
+
+    /* --- TABLES (SCROLLABLE ON MOBILE) --- */
+    .scroll-area, .table-container, .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        white-space: nowrap !important;
+    }
+}
