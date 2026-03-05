@@ -354,7 +354,7 @@
                 </div>
                 <div class="input-col">
                     <label>Total Discrepancy (Amount)</label>
-                    <input type="number" id="input-amount" class="audit-input" placeholder="Ton balance">
+                    <input type="number" id="input-amount" class="audit-input" placeholder="KG balance">
                 </div>
                 <div class="input-col">
                     <label>Dev. Percent (%)</label>
@@ -364,47 +364,15 @@
 
             <!-- STEP 3: Reference Info -->
             <div class="input-group">
-                <label>Total Receipts (Penerimaan dalam Ton)</label>
+                <label>Total Receipts (Penerimaan dalam KG)</label>
                 <input type="number" id="input-receipts" class="audit-input" placeholder="Total reference volume">
             </div>
 
-            <!-- STEP 4: Factor A -->
-            <div class="input-group">
-                <label>Analysis Factor A (Data Kadar Air)</label>
-                <div class="status-container">
-                    <button class="status-btn active support"
-                        onclick="updateFactorStatus('A', 'support')">MENDUKUNG</button>
-                    <button class="status-btn" onclick="updateFactorStatus('A', 'validated')">NORMAL</button>
-                </div>
-                <div class="input-row" style="margin-bottom:0; gap:10px;">
-                    <div style="flex:2">
-                        <input type="text" id="input-reason-a" class="audit-input"
-                            placeholder="Brief reason (sensor kotor)">
-                    </div>
-                    <div style="flex:1" id="ui-impact-a">
-                        <input type="number" id="input-impact-a" class="audit-input" placeholder="Impact %">
-                    </div>
-                </div>
-            </div>
-
-            <!-- STEP 5: Factor B -->
-            <div class="input-group">
-                <label>Analysis Factor B (Tes Chronos / Validasi Timbangan)</label>
-                <div class="status-container">
-                    <button class="status-btn" onclick="updateFactorStatus('B', 'support')">MENDUKUNG</button>
-                    <button class="status-btn active validated"
-                        onclick="updateFactorStatus('B', 'validated')">NORMAL</button>
-                </div>
-                <div class="input-row" style="margin-bottom:0; gap:10px;">
-                    <div style="flex:2">
-                        <input type="text" id="input-reason-b" class="audit-input"
-                            placeholder="Brief reason (SOP timbangan)">
-                    </div>
-                    <div style="flex:1" id="ui-impact-b" style="display:none;">
-                        <input type="number" id="input-impact-b" class="audit-input" placeholder="Impact %">
-                    </div>
-                </div>
-            </div>
+            <!-- DYNAMIC FACTORS -->
+            <div id="factors-container"></div>
+            <button class="status-btn" onclick="addFactorUI()"
+                style="width: 100%; margin-bottom: 20px; border-color: var(--audit-primary); color: var(--audit-primary);">➕
+                TAMBAH FAKTOR ANALISIS</button>
 
             <!-- STEP 6: Plan -->
             <div class="input-group">
@@ -447,10 +415,11 @@
     <!-- SCRIPTS -->
     <script src="js/app-bap4a.js"></script>
     <script>
-        window.factorStatus = { A: 'support', B: 'validated' };
+        window.factorCount = 0;
+        window.factorStatus = {};
 
-        function updateFactorStatus(factor, status) {
-            window.factorStatus[factor] = status;
+        function updateFactorStatus(factorId, status, event) {
+            window.factorStatus[factorId] = status;
 
             // UI Toggle
             const container = event.target.parentElement;
@@ -459,11 +428,60 @@
             event.target.classList.add('active', status);
 
             // Handle Impact Visibility
-            const impactUi = document.getElementById(`ui-impact-${factor.toLowerCase()}`);
+            const impactUi = document.getElementById(`ui-impact-${factorId}`);
             if (impactUi) {
                 impactUi.style.display = (status === 'support') ? 'block' : 'none';
             }
         }
+
+        function removeFactorUI(factorId) {
+            const el = document.getElementById(`factor-group-${factorId}`);
+            if (el) el.remove();
+            delete window.factorStatus[factorId];
+            updateFactorLabels();
+        }
+
+        function addFactorUI() {
+            window.factorCount++;
+            const fId = window.factorCount;
+            window.factorStatus[fId] = 'support'; // default
+
+            const html = `
+            <div class="input-group" id="factor-group-${fId}" style="position: relative; padding: 15px; border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px; margin-bottom: 15px;">
+                <button onclick="removeFactorUI(${fId})" style="position: absolute; right: 10px; top: 10px; background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 1rem;">✖</button>
+                <label>Analysis Factor <span class="factor-letter-label"></span></label>
+                <input type="text" id="input-factor-name-${fId}" class="audit-input" placeholder="Nama Faktor (Misal: KADAR AIR)" style="margin-bottom: 15px;">
+                
+                <div class="status-container">
+                    <button class="status-btn active support" onclick="updateFactorStatus(${fId}, 'support', event)">MENDUKUNG</button>
+                    <button class="status-btn" onclick="updateFactorStatus(${fId}, 'validated', event)">NORMAL</button>
+                </div>
+                <div class="input-row" style="margin-bottom:0; gap:10px;">
+                    <div style="flex:2">
+                        <input type="text" id="input-reason-${fId}" class="audit-input" placeholder="Brief reason (Keterangan temuan)">
+                    </div>
+                    <div style="flex:1" id="ui-impact-${fId}">
+                        <input type="number" id="input-impact-${fId}" class="audit-input" placeholder="Impact %">
+                    </div>
+                </div>
+            </div>
+            `;
+
+            document.getElementById('factors-container').insertAdjacentHTML('beforeend', html);
+            updateFactorLabels();
+        }
+
+        function updateFactorLabels() {
+            const labels = document.querySelectorAll('.factor-letter-label');
+            labels.forEach((lbl, index) => {
+                lbl.innerText = String.fromCharCode(65 + index);
+            });
+        }
+
+        // Initialize 1 factor by default
+        document.addEventListener('DOMContentLoaded', () => {
+            addFactorUI();
+        });
     </script>
 </body>
 
