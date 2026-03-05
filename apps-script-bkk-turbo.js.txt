@@ -817,10 +817,25 @@ function getOutstandingBKKTurbo(ssId, e) {
 
   var truckData = [];
   for (var i = 21; i < allValues.length; i++) {
-    if (!allValues[i][2] && !allValues[i][3]) continue; 
+    if (!allValues[i][2] && !allValues[i][3]) continue;
+    // Column D (index 3) = combined: "G 8755 OF  05.03.2026 QC not yet performed"
+    var mixedStr = (allValues[i][3] || "").toString();
+    var dateMatch = mixedStr.match(/(\d{2}[-./]\d{2}[-./]\d{2,4})/);
+    var truckDate = dateMatch ? dateMatch[0] : "";
+    var parts = truckDate ? mixedStr.split(truckDate) : [mixedStr];
+    var truckSeq = (parts[0] || "").trim();
+    // Column G (index 6) = grade (NOT YET, FATTY, BRAZIL LO PRO, etc.)
+    var gradeVal = (allValues[i][6] || "").toString().trim();
+    if (!gradeVal) gradeVal = "NOT YET";
     truckData.push({
-      material: allValues[i][2], netto: allValues[i][4], type: allValues[i][5], aging: allValues[i][7],
-      nopol: (allValues[i][3] || "").toString().split(/\d{2}[-./]/)[1]?.trim() || allValues[i][3]
+      material: allValues[i][2],
+      sequence: truckSeq,
+      date: truckDate,
+      netto: allValues[i][4],
+      type: allValues[i][5],
+      grade: gradeVal,
+      aging: allValues[i][7],
+      nopol: mixedStr
     });
   }
 

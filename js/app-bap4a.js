@@ -101,11 +101,11 @@ const BAPGenerator = {
     },
 
     mapFactorNarrative: function (type, status, reason, pct, val, total) {
-        const factorLabel = type === "A" ? "Teknis/Peralatan" : "Administrasi/Operasional";
+        const factorLabel = type === "A" ? "Data Kadar Air" : "Tes Chronos / Validasi Timbangan";
         if (status === "support") {
-            return `Dinyatakan sebagai Penyebab Utama (Root Cause). Ditemukan kondisi ${reason} yang memberikan dampak sebesar ${pct}% dari total penerimaan (${total.toLocaleString()} Ton), atau setara dengan ${val.toLocaleString()} Ton. Hal ini menjelaskan sebagian dari total selisih yang terjadi.`;
+            return `Dinyatakan sebagai Penyebab Utama (Root Cause). Ditemukan kondisi terkait ${factorLabel} (${reason}) yang memberikan dampak sebesar ${pct}% dari total penerimaan (${total.toLocaleString()} Ton), atau setara dengan ${val.toLocaleString()} Ton. Hal ini menjelaskan sebagian dari total selisih yang terjadi.`;
         } else {
-            return `Dinyatakan Tervalidasi Normal. Hasil audit menunjukkan bahwa prosedur ${factorLabel} (${reason}) telah berjalan sesuai SOP dan bukan merupakan penyebab munculnya deviasi stok.`;
+            return `Dinyatakan Tervalidasi Normal. Hasil audit menunjukkan bahwa parameter ${factorLabel} (${reason}) telah sesuai standar / berada dalam batas toleransi wajar dan bukan merupakan penyebab munculnya deviasi stok.`;
         }
     },
 

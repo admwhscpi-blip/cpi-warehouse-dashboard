@@ -469,6 +469,98 @@
             color: #777;
         }
 
+        /* GRADE CARDS */
+        .grade-breakdown {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-content: flex-start;
+        }
+
+        .grade-card {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 80px;
+            flex: 1;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .grade-card .gc-count {
+            font-family: 'Share Tech Mono';
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .grade-card .gc-label {
+            font-family: 'Orbitron';
+            font-size: 0.65rem;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
+            text-align: center;
+        }
+
+        .grade-not-yet {
+            border: 1px solid rgba(255, 165, 0, 0.5);
+            background: rgba(255, 165, 0, 0.05);
+        }
+
+        .grade-not-yet .gc-count {
+            color: #ffa500;
+            text-shadow: 0 0 5px rgba(255, 165, 0, 0.5);
+        }
+
+        .grade-not-yet .gc-label {
+            color: rgba(255, 165, 0, 0.9);
+        }
+
+        .grade-fatty {
+            border: 1px solid rgba(0, 243, 255, 0.5);
+            background: rgba(0, 243, 255, 0.05);
+        }
+
+        .grade-fatty .gc-count {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
+        }
+
+        .grade-fatty .gc-label {
+            color: rgba(0, 243, 255, 0.9);
+        }
+
+        .grade-lo-pro {
+            border: 1px solid rgba(10, 255, 10, 0.5);
+            background: rgba(10, 255, 10, 0.05);
+        }
+
+        .grade-lo-pro .gc-count {
+            color: var(--neon-green);
+            text-shadow: 0 0 5px rgba(10, 255, 10, 0.5);
+        }
+
+        .grade-lo-pro .gc-label {
+            color: rgba(10, 255, 10, 0.9);
+        }
+
+        .grade-default {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .grade-default .gc-count {
+            color: #ddd;
+        }
+
+        .grade-default .gc-label {
+            color: #aaa;
+        }
+
         /* DECK 3: SILO FARM */
         .silo-deck {
             display: flex;
@@ -864,18 +956,28 @@
         <!-- 2. ANALYTICS (MIDDLE - NEW STRUCTURE) -->
         <div class="analytics-grid">
 
-            <!-- GROUP 1: CONTROL MATERIAL -->
+            <!-- GROUP 1: CONTROL MATERIAL & GRADE -->
             <div class="analytics-group">
-                <div class="group-title">KONTROL MATERIAL</div>
-                <div class="card" onclick="openDetail('PKM')">
-                    <div class="card-title">PKM TRUCKS <i class="fas fa-truck"></i></div>
-                    <div class="stat-val-big text-acid" id="val-pkm">0</div>
-                    <div class="stat-sub">WAITING UNLOADING</div>
+                <div class="group-title">KONTROL MATERIAL & GRADE</div>
+
+                <!-- PKM ROW -->
+                <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                    <div class="card" onclick="openDetail('PKM')" style="flex: 0 0 45%; margin-bottom: 0;">
+                        <div class="card-title">PKM TRUCKS <i class="fas fa-truck"></i></div>
+                        <div class="stat-val-big text-acid" id="val-pkm">0</div>
+                        <div class="stat-sub">WAITING UNLOADING</div>
+                    </div>
+                    <div class="grade-breakdown" id="grade-pkm" style="flex: 1;"></div>
                 </div>
-                <div class="card" onclick="openDetail('SBM')">
-                    <div class="card-title">SBM TRUCKS <i class="fas fa-truck-monster"></i></div>
-                    <div class="stat-val-big text-hot" id="val-sbm">0</div>
-                    <div class="stat-sub">WAITING UNLOADING</div>
+
+                <!-- SBM ROW -->
+                <div style="display: flex; gap: 10px;">
+                    <div class="card" onclick="openDetail('SBM')" style="flex: 0 0 45%; margin-bottom: 0;">
+                        <div class="card-title">SBM TRUCKS <i class="fas fa-truck-monster"></i></div>
+                        <div class="stat-val-big text-hot" id="val-sbm">0</div>
+                        <div class="stat-sub">WAITING UNLOADING</div>
+                    </div>
+                    <div class="grade-breakdown" id="grade-sbm" style="flex: 1;"></div>
                 </div>
             </div>
 
@@ -980,6 +1082,42 @@
             });
         }
 
+        // Parse combined nopol string into sequence + date (fallback for old API)
+        function transformTruckData(trucks) {
+            return trucks.map(t => {
+                // If sequence/date already exist from new API, keep them
+                if (t.sequence && t.date) return t;
+
+                // Parse from nopol field: "G 8755 OF  05.03.2026 QC not yet performed"
+                const nopolStr = (t.nopol || '').toString();
+                const dateMatch = nopolStr.match(/(\d{2}[-./]\d{2}[-./]\d{2,4})/);
+                const date = dateMatch ? dateMatch[0] : '';
+
+                let sequence = '';
+                let statusText = '';
+                if (date) {
+                    const parts = nopolStr.split(date);
+                    sequence = (parts[0] || '').trim();
+                    statusText = parts.length > 1 ? (parts[1] || '').trim() : '';
+                } else {
+                    sequence = nopolStr.trim();
+                }
+
+                // Grade: use existing grade field, or derive from statusText, or default
+                let grade = (t.grade || '').toString().trim();
+                if (!grade) {
+                    grade = 'NOT YET';
+                }
+
+                return {
+                    ...t,
+                    sequence: t.sequence || sequence,
+                    date: t.date || date,
+                    grade: grade.toUpperCase()
+                };
+            });
+        }
+
         async function init() {
             try {
                 const data = await fetchBKK();
@@ -995,6 +1133,11 @@
                         doh: m.doh,
                         usage: m.usageDaily
                     }));
+                }
+
+                // Transform truck data to ensure sequence/date/grade exist
+                if (data.trucks) {
+                    data.trucks = transformTruckData(data.trucks);
                 }
 
                 appData = data;
@@ -1020,22 +1163,48 @@
             renderTable(data.trucks || []);
         }
 
+        function getGradeCssClass(grade) {
+            const g = (grade || '').toUpperCase();
+            if (g.includes('NOT YET') || g.includes('NOT')) return 'grade-not-yet';
+            if (g.includes('FATTY') || g.includes('FAT')) return 'grade-fatty';
+            if (g.includes('LO PRO') || g.includes('LOPRO') || g.includes('BRAZIL')) return 'grade-lo-pro';
+            return 'grade-default';
+        }
+
+        function buildGradeBadges(gradeMap) {
+            let html = '';
+            const sorted = Object.entries(gradeMap).sort((a, b) => b[1] - a[1]);
+            sorted.forEach(([grade, count]) => {
+                const cssClass = getGradeCssClass(grade);
+                html += `<div class="grade-card ${cssClass}">
+                    <span class="gc-count">${count}</span>
+                    <span class="gc-label">${grade}</span>
+                </div>`;
+            });
+            return html;
+        }
+
         function renderKPI(trucks) {
             let pkm = 0, sbm = 0, today = 0, inap = 0;
             let kgPkm = 0, kgSbm = 0;
+            const gradePkm = {};
+            const gradeSbm = {};
 
             trucks.forEach(t => {
                 const m = (t.material || '').toUpperCase();
                 const a = (t.aging || '').toUpperCase();
                 const n = parseFloat(t.netto || 0);
+                const g = (t.grade || 'NOT YET').toUpperCase();
 
                 if (m.includes('PKM')) {
                     pkm++;
                     kgPkm += n;
+                    gradePkm[g] = (gradePkm[g] || 0) + 1;
                 }
                 if (m.includes('SBM') || m.includes('SOYA')) {
                     sbm++;
                     kgSbm += n;
+                    gradeSbm[g] = (gradeSbm[g] || 0) + 1;
                 }
 
                 if (a.includes('HARI INI')) {
@@ -1054,6 +1223,10 @@
             document.getElementById('val-kg-pkm').innerText = kgPkm.toLocaleString();
             document.getElementById('val-kg-sbm').innerText = kgSbm.toLocaleString();
             document.getElementById('val-total-label').innerText = ((kgPkm + kgSbm) / 1000).toLocaleString() + ' TONS';
+
+            // Grade breakdown badges
+            document.getElementById('grade-pkm').innerHTML = buildGradeBadges(gradePkm);
+            document.getElementById('grade-sbm').innerHTML = buildGradeBadges(gradeSbm);
         }
 
         function renderIntakes(intakes) {
