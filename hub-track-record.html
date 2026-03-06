@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CHARTS -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <title>EMPLOYEE TRACK RECORD DASHBOARD</title>
+
+    <style>
+        :root {
+            --bg-base: #020617;
+            /* Very dark slate, almost black */
+            --bg-gradient: radial-gradient(circle at 10% 0%, rgba(14, 165, 233, 0.15), transparent 40%),
+                radial-gradient(circle at 90% 100%, rgba(139, 92, 246, 0.15), transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05), transparent 60%);
+
+            --panel-bg: rgba(15, 23, 42, 0.6);
+            --panel-border: rgba(148, 163, 184, 0.1);
+
+            --primary: #0ea5e9;
+            /* Sky blue */
+            --primary-glow: rgba(14, 165, 233, 0.5);
+            --success: #10b981;
+            /* Emerald */
+            --warning: #f59e0b;
+            /* Amber */
+            --danger: #ef4444;
+            /* Red */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --card-inner: rgba(30, 41, 59, 0.6);
+        }
+
+        * {
+            font-family: 'Outfit', sans-serif;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            background-image: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        /* Nav & Headers */
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 15px 30px;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .hamburger {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        h1.title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .nav-tab-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .nav-tab-btn.active {
+            background: var(--card-inner);
+            color: var(--text-main);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        /* Dashboard Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        /* Glass Panels */
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            min-height: 400px;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .panel:hover {
+            transform: translateY(-5px);
+            border-color: rgba(14, 165, 233, 0.4);
+            box-shadow: 0 15px 40px rgba(14, 165, 233, 0.2);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 15px;
+            margin-bottom: 5px;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: 'Orbitron';
+            letter-spacing: 1px;
+        }
+
+        /* Specific Panels */
+        .summary-panel {
+            grid-column: 1 / span 2;
+            grid-row: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            min-height: auto;
+            padding: 15px;
+        }
+
+        .top-tracked-panel {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .timeline-panel {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        /* Summary Cards inside Summary Panel */
+        .sum-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .sum-card-title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .sum-card-val {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        /* Custom Dropdown/Filter styles */
+        .glass-select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .glass-select option {
+            background: var(--bg-base);
+        }
+
+        /* Employee Item */
+        .emp-item {
+            display: flex;
+            align-items: center;
+            background: var(--card-inner);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .emp-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 1.1rem;
+        }
+
+        .emp-info {
+            flex: 1;
+        }
+
+        .emp-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .emp-dept {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .emp-stats {
+            display: flex;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-val {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            margin-left: 20px;
+            border-left: 2px dashed rgba(255, 255, 255, 0.1);
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 25px;
+            background: var(--card-inner);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -27px;
+            top: 15px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .tl-date {
+            font-size: 0.75rem;
+            color: var(--primary);
+            font-family: 'Orbitron';
+            margin-bottom: 5px;
+        }
+
+        .tl-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .tl-reason {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* Utility */
+        .flex {
+            display: flex;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .w-full {
+            width: 100%;
+        }
+
+        /* Alert Box */
+        .alert-box {
+            flex: 1;
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .alert-icon {
+            font-size: 1.5rem;
+            color: var(--danger);
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-base);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Detail Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 6, 23, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-box {
+            background: var(--panel-bg);
+            border: 1px solid var(--primary-glow);
+            border-radius: 20px;
+            width: 750px;
+            max-width: 95%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 40px rgba(14, 165, 233, 0.3);
+            transform: translateY(20px);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .modal-title {
+            font-family: 'Orbitron';
+            font-size: 1.2rem;
+            color: var(--neon-cyan);
+            letter-spacing: 1px;
+        }
+
+        .modal-body {
+            padding: 0;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: 0.3s;
+            font-size: 1.2rem;
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+            transform: rotate(90deg);
+        }
+
+        .clickable-card {
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .clickable-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .clickable-card:hover::after {
+            width: 100%;
+        }
+
+        .clickable-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .styled-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .styled-table th {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--panel-border);
+            color: var(--primary);
+            font-family: 'Orbitron';
+            text-align: left;
+            background: rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+        }
+
+        .styled-table td {
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .styled-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+        <div style="margin-top:20px; font-family:'Orbitron';">FETCHING SP RECORDS...</div>
+    </div>
+
+    <!-- TOP NAV -->
+    <nav class="top-nav">
+        <div class="brand-section" onclick="window.location.href='homepage-v1.html'"
+            style="cursor:pointer; transition:0.3s;" onmouseover="this.style.opacity=0.8"
+            onmouseout="this.style.opacity=1">
+            <img src="assets/logo_cpi.png" alt="Smart Warehouse"
+                style="height:38px; margin-right:10px; filter: drop-shadow(0 0 8px rgba(14,165,233,0.5));">
+            <h1 class="title" style="font-size:1.1rem; line-height:1.1;">SMART WAREHOUSE<br><span
+                    style="color:var(--primary); font-size:0.75rem; letter-spacing: 2px;">TRACK RECORD</span></h1>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab-btn">Overview</button>
+            <button class="nav-tab-btn active">SP Tracking</button>
+            <button class="nav-tab-btn">Analytics</button>
+        </div>
+
+        <div class="nav-right">
+            <select class="glass-select" id="deptFilter" onchange="applyFilters()">
+                <option value="ALL">All Departments</option>
+            </select>
+            <div
+                style="display:flex; align-items:center; background:rgba(255,255,255,0.05); border:1px solid var(--panel-border); border-radius:8px; padding:6px 12px;">
+                <i class="fas fa-search" style="color:var(--text-muted); margin-right:8px;"></i>
+                <input type="text" id="searchInput" placeholder="Search Employee..." onkeyup="applyFilters()"
+                    style="background:transparent; border:none; outline:none; color:white; font-family:'Outfit';">
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN DASHBOARD -->
+    <div class="dashboard-grid">
+
+        <!-- 1. SUMMARY COUNTS -->
+        <div class="panel summary-panel" style="padding:15px;">
+            <div class="sum-card clickable-card" onclick="openDetailModal('TOTAL')">
+                <div class="sum-card-title">Total Employees (with SPs)</div>
+                <div class="sum-card-val" id="sumTotal">0</div>
+            </div>
+            <div class="sum-card clickable-card" onclick="openDetailModal('ACTIVE')">
+                <div class="sum-card-title">Active SPs</div>
+                <div class="sum-card-val" id="sumActive" style="color:var(--warning);">0</div>
+            </div>
+            <div class="sum-card clickable-card" onclick="openDetailModal('EXPIRED')">
+                <div class="sum-card-title">Expired SPs (History)</div>
+                <div class="sum-card-val" id="sumExpired" style="color:var(--success);">0</div>
+            </div>
+        </div>
+
+        <!-- 2. TOP TRACKED EMPLOYEES -->
+        <div class="panel top-tracked-panel">
+            <div class="panel-header">
+                <div class="panel-title"><i class="fas fa-users" style="color:var(--primary); margin-right:8px;"></i>Top
+                    Tracked Employees (Frequency)</div>
+            </div>
+            <div id="topEmployeesList" style="overflow-y:auto; padding-right:5px; flex-grow:1;">
+                <!-- JS populated -->
+            </div>
+        </div>
+
+        <!-- 3. SP HISTORY TIMELINE -->
+        <div class="panel timeline-panel">
+            <div class="panel-header">
+                <div class="panel-title"><i class="fas fa-history"
+                        style="color:var(--primary); margin-right:8px;"></i>Recent SP Issuance Timeline</div>
+            </div>
+            <div class="timeline" id="timelineList" style="overflow-y:auto; padding-right:5px; flex-grow:1;">
+                <!-- JS populated -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL POPUP -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Employee Details</div>
+                <i class="fas fa-times modal-close" onclick="closeDetailModal()"></i>
+            </div>
+            <div class="modal-body">
+                <table class="styled-table">
+                    <thead>
+                        <tr>
+                            <th>NIK</th>
+                            <th>NAMA KARYAWAN</th>
+                            <th>DEPARTEMEN</th>
+                            <th>STATUS SP TERAKHIR</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalTableBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN LOGIC -->
+    <script>
+        // JURAGAN: GANTI URL DI BAWAH INI DENGAN LINK WEB APP DARI APPS SCRIPT SETELAH DI-DEPLOY!
+        const SHEET_URL = "https://script.google.com/macros/s/AKfycbyp81HIi4VDgCB7xK6fRyGkw3v2LzASSLAWmsreGaafoaKaLYQF-jYc0CkBFM9Vt8kZWw/exec?action=getData"; // (GANTI INI!)
+
+        let allData = [];
+        let employeesMap = new Map(); // NIK -> { name, dept, sps: [] }
+        let chartInstance = null;
+
+        async function fetchGoogleSheetData() {
+            if (SHEET_URL.includes("XXXXXXXXXXXX")) {
+                document.getElementById('loadingOverlay').innerHTML = `
+                    <div style="color:var(--danger); text-align:center;">
+                        <i class="fas fa-exclamation-triangle" style="font-size:3rem; margin-bottom:20px;"></i>
+                        <h2 style="font-family:'Orbitron';">API URL BELUM DISETTING</h2>
+                        <p style="margin-top:10px; font-family:'Outfit';">Juragan, masukkan link Web App Apps Script ke variabel SHEET_URL<br>di file hub-track-record.html pada baris ke-532.</p>
+                    </div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(SHEET_URL);
+                const json = await response.json();
+
+                if (json.status === 'success' && json.data && json.data.records) {
+                    parseData(json.data.records);
+                } else {
+                    throw new Error(json.message || "Failed to parse API data.");
+                }
+            } catch (err) {
+                console.error("Error fetching data: ", err);
+                document.getElementById('loadingOverlay').innerHTML = `
+                    <div style="color:var(--danger); text-align:center;">
+                        <i class="fas fa-wifi-slash" style="font-size:3rem; margin-bottom:20px;"></i>
+                        <h2 style="font-family:'Orbitron';">CONNECTION ERROR</h2>
+                        <p style="margin-top:10px; font-family:'Outfit';">${err.message}</p>
+                    </div>`;
+            }
+        }
+
+        function parseData(rows) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            allData = [];
+            employeesMap.clear();
+            let departments = new Set();
+
+            rows.forEach(row => {
+                const nik = row.nik;
+                const nama = row.nama;
+                const bagian = row.bagian;
+                const ket = row.ket;
+
+                const tglSpStr = row.tglSp;
+                const tglSelesaiStr = row.tglSelesai;
+
+                const tglSp = tglSpStr ? new Date(tglSpStr) : null;
+                const tglSelesai = tglSelesaiStr ? new Date(tglSelesaiStr) : null;
+
+                // Active logic: end date >= today
+                let isActive = false;
+                let daysLeft = 0;
+
+                if (tglSelesai) {
+                    const diffTime = tglSelesai - today;
+                    daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (daysLeft >= 0) isActive = true;
+                }
+
+                if (tglSp && tglSp.getFullYear() > 1900) { // filter out dummy dates
+                    departments.add(bagian);
+
+                    const spRecord = {
+                        nik, nama, bagian, ket,
+                        tglSp, tglSelesai, isActive, daysLeft
+                    };
+
+                    allData.push(spRecord);
+
+                    if (!employeesMap.has(nik)) {
+                        employeesMap.set(nik, { nik, name: nama, dept: bagian, sps: [] });
+                    }
+                    employeesMap.get(nik).sps.push(spRecord);
+                }
+            });
+
+            // Populate Dept Filter
+            const filterEl = document.getElementById('deptFilter');
+            filterEl.innerHTML = '<option value="ALL">All Departments</option>';
+            Array.from(departments).sort().forEach(d => {
+                filterEl.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+
+            document.getElementById('loadingOverlay').style.display = 'none';
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const dept = document.getElementById('deptFilter').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            // Filter Employees
+            let filteredEmployees = Array.from(employeesMap.values()).filter(emp => {
+                const matchSearch = emp.name.toLowerCase().includes(search) || emp.nik.toString().includes(search);
+                const matchDept = dept === 'ALL' || emp.dept === dept;
+                return matchSearch && matchDept;
+            });
+
+            updateUI(filteredEmployees);
+        }
+
+        function updateUI(employees) {
+            // Aggregations
+            let totalEmp = employees.length;
+            let activeSpCount = 0;
+            let expiredSpCount = 0;
+
+            employees.forEach(emp => {
+                emp.sps.forEach(sp => {
+                    if (sp.isActive) {
+                        activeSpCount++;
+                    } else {
+                        expiredSpCount++;
+                    }
+                });
+            });
+
+            document.getElementById('sumTotal').innerText = totalEmp;
+            document.getElementById('sumActive').innerText = activeSpCount;
+            document.getElementById('sumExpired').innerText = expiredSpCount;
+
+            // Top Employees (By Frequency)
+            employees.sort((a, b) => b.sps.length - a.sps.length);
+            renderTopEmployees(employees.slice(0, 15)); // Show top 15
+
+            // Timeline (Most recent SPs)
+            let allSps = [];
+            employees.forEach(e => allSps.push(...e.sps));
+            allSps.sort((a, b) => b.tglSp - a.tglSp);
+            renderTimeline(allSps); // Show all filtered SPs in timeline
+        }
+
+        function getInitials(name) {
+            if (!name) return "U";
+            const parts = name.trim().split(" ");
+            if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return parts[0].substring(0, 2).toUpperCase();
+        }
+
+        function renderTopEmployees(emps) {
+            const list = document.getElementById('topEmployeesList');
+            if (emps.length === 0) {
+                list.innerHTML = `<div style="color:var(--text-muted); text-align:center; padding:20px;">No data found.</div>`;
+                return;
+            }
+
+            list.innerHTML = emps.map(emp => {
+                const activeCount = emp.sps.filter(s => s.isActive).length;
+                const statusBadge = activeCount > 0
+                    ? `<span class="badge badge-warning">ACTIVE SP</span>`
+                    : `<span class="badge badge-active">COMPLIANT</span>`;
+
+                return `
+                <div class="emp-item">
+                    <div class="emp-avatar" style="background:${stringToColor(emp.name)}">${getInitials(emp.name)}</div>
+                    <div class="emp-info">
+                        <div class="emp-name">${emp.name}</div>
+                        <div class="emp-dept">${emp.dept} | NIK: ${emp.nik}</div>
+                        <div style="margin-top:5px;">${statusBadge}</div>
+                    </div>
+                    <div class="emp-stats">
+                        <div class="stat-box">
+                            <span class="stat-val">${emp.sps.length}</span>
+                            <span class="stat-label">Total SPs</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-val" style="color:${activeCount > 0 ? 'var(--warning)' : 'inherited'}">${activeCount}</span>
+                            <span class="stat-label">Active</span>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderTimeline(sps) {
+            const list = document.getElementById('timelineList');
+            if (sps.length === 0) {
+                list.innerHTML = `<div style="color:var(--text-muted); padding:10px;">No recent records.</div>`;
+                return;
+            }
+
+            list.innerHTML = sps.map(sp => {
+                const badgeClass = sp.isActive ? 'badge-warning' : 'badge-active';
+                const statusText = sp.isActive ? 'ACTIVE' : 'EXPIRED';
+                return `
+                <div class="timeline-item">
+                    <div class="justify-between flex items-center">
+                        <div class="tl-date">${sp.tglSp.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                        <span class="badge ${badgeClass}">${statusText}</span>
+                    </div>
+                    <div class="tl-name">${sp.nama}</div>
+                    <div class="tl-reason"><i class="fas fa-info-circle"></i> ${sp.ket}</div>
+                    ${sp.isActive ? `<div style="font-size:0.75rem; color:var(--primary); margin-top:5px; font-family:'Orbitron';">Expires: ${sp.tglSelesai.toLocaleDateString('id-ID')}</div>` : ''}
+                </div>
+                `;
+            }).join('');
+        }
+
+        // MODAL LOGIC
+        let currentModalEmployees = [];
+
+        function openDetailModal(type) {
+            const dept = document.getElementById('deptFilter').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            // Re-filter basic list
+            let filteredEmployees = Array.from(employeesMap.values()).filter(emp => {
+                const matchSearch = emp.name.toLowerCase().includes(search) || emp.nik.toString().includes(search);
+                const matchDept = dept === 'ALL' || emp.dept === dept;
+                return matchSearch && matchDept;
+            });
+
+            let modalData = [];
+            let title = "";
+
+            if (type === 'TOTAL') {
+                title = "All Employees with SPs";
+                modalData = filteredEmployees;
+            } else if (type === 'ACTIVE') {
+                title = "Employees with Active SPs";
+                modalData = filteredEmployees.filter(emp => emp.sps.some(sp => sp.isActive));
+            } else if (type === 'EXPIRED') {
+                title = "Employees with Only Expired SPs";
+                modalData = filteredEmployees.filter(emp => emp.sps.some(sp => !sp.isActive) && !emp.sps.some(sp => sp.isActive));
+            }
+
+            document.getElementById('modalTitle').innerText = title;
+            renderModalTable(modalData);
+
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function (event) {
+            const modal = document.getElementById('detailModal');
+            if (event.target == modal) {
+                closeDetailModal();
+            }
+        }
+
+        function renderModalTable(emps) {
+            const tbody = document.getElementById('modalTableBody');
+            if (emps.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">No employees found in this category.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = emps.map(emp => {
+                // Determine last SP status
+                emp.sps.sort((a, b) => b.tglSp - a.tglSp);
+                const latestSp = emp.sps[0];
+                const statusBadge = latestSp.isActive
+                    ? `<span class="badge badge-warning">ACTIVE (${latestSp.daysLeft} days left)</span>`
+                    : `<span class="badge badge-active">EXPIRED</span>`;
+
+                return `
+                <tr>
+                    <td style="font-family:'Orbitron'; font-size:0.85rem; color:var(--text-muted);">${emp.nik}</td>
+                    <td style="font-weight:600;">${emp.name}</td>
+                    <td style="font-size:0.85rem;">${emp.dept}</td>
+                    <td>${statusBadge}</td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Helper to generate hash color
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+            return '#' + "00000".substring(0, 6 - c.length) + c;
+        }
+
+        window.onload = () => {
+            fetchGoogleSheetData();
+        };
+    </script>
+</body>
+
+</html>
