@@ -37,7 +37,7 @@
         }
 
         // HUB Pages Protection
-        const isHubPage = path.includes('material-audit') || path.includes('about-structure') || path.includes('bap4a') || path.includes('notulensi') || path.includes('op-') || path.includes('hub-sop-wi') || path.includes('knowledge-center');
+        const isHubPage = path.includes('material-audit') || path.includes('about-structure') || path.includes('bap4a') || path.includes('notulensi') || path.includes('op-') || path.includes('hub-sop-wi') || path.includes('knowledge-center') || path.includes('hub-track-record');
         if (isHubPage && role !== 'FULL_ACCESS') {
             window.location.href = `login.html?redirect=${encodeURIComponent(window.location.href)}`;
             return;
