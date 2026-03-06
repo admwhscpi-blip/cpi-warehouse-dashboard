@@ -8,9 +8,14 @@ const SimPage = {
     session: [], // Comparison Queue: Array of Objects { material, facility, startDate, endDate, dailyIn, dailyOut, color, baseStock }
     colors: ['#00f3ff', '#bc13fe', '#ff2a2a', '#ff9e0b', '#0aff0a', '#ffffff'],
     chartInstance: null,
-    hudChartInstance: null,
+    stockChartInstance: null,
+    movementChartInstance: null,
+    fluxChartInstance: null,
+    hudStockChartInstance: null,
+    hudMovementChartInstance: null,
     currentSlicer: 'daily', // daily, weekly, monthly
     isFullscreen: false,
+    analyticsFullscreen: false,
 
     init: async function () {
         console.log("SimPage Initializing...");
@@ -370,6 +375,26 @@ const SimPage = {
         const container = document.getElementById('table-panel-container');
         if (!container) return;
         container.classList.toggle('table-fullscreen');
+    },
+
+    toggleAnalyticsFullscreen: function () {
+        const el = document.getElementById('step-analytics');
+        if (!el) return;
+
+        this.analyticsFullscreen = !this.analyticsFullscreen;
+        el.classList.toggle('analytics-fullscreen');
+
+        // Handle overflow on body
+        if (this.analyticsFullscreen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+
+        // Re-render charts to fit new container size
+        setTimeout(() => {
+            this.renderCharts();
+        }, 300);
     },
 
     setSlicer: function (mode) {
@@ -832,6 +857,7 @@ const SimPage = {
     renderCharts: function () {
         this.renderStockChart();
         this.renderMovementChart();
+        this.renderFluxChart();
         this.renderSummaryBoxes();
     },
 
@@ -1106,14 +1132,7 @@ const SimPage = {
         const hudTextContainer = document.getElementById('hud-summary-movement-text');
         if (hudTextContainer) hudTextContainer.innerHTML = "<div style='color:#34d399'>LIVE ANALYTICS ACTIVE</div>";
 
-        // RENDER ADVANCED CHARTS
-        try {
-            console.log("Rendering Radar Chart...");
-            this.renderRadarChart();
-        } catch (e) {
-            console.error("Error in renderRadarChart:", e);
-        }
-
+        // RENDER FLUX CHART
         try {
             console.log("Rendering Flux Chart...");
             this.renderFluxChart();
@@ -1243,72 +1262,6 @@ const SimPage = {
                 <div style="color:#cbd5e1; font-size:0.85rem;">Sisa Space: <b style="color:#34d399">${(remainingSpace / 1000).toLocaleString()} T</b></div>
             `;
         }
-    },
-    renderRadarChart: function () {
-        const canvas = document.getElementById('radarChart');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-
-        const fullDates = this.getDateRange();
-        if (!fullDates || fullDates.length === 0) {
-            console.warn("renderRadarChart: No dates available.");
-            return;
-        }
-
-        const lastDate = fullDates[fullDates.length - 1];
-        const lastDateStr = lastDate.toISOString().split('T')[0];
-
-        // 1. Get Latest Stock per Facility
-        const facilityStocks = {};
-
-        let hasData = false;
-
-        this.session.forEach(s => {
-            const state = this.calculateStateAtDate(s, lastDateStr, lastDate);
-            if (!facilityStocks[s.material]) facilityStocks[s.material] = 0;
-            facilityStocks[s.material] += state.stock;
-            if (state.stock > 0) hasData = true;
-        });
-
-        const labels = Object.keys(facilityStocks);
-        const data = Object.values(facilityStocks).map(v => v / 1000); // In Ton
-
-        if (this.radarChartInstance) {
-            this.radarChartInstance.destroy();
-            this.radarChartInstance = null;
-        }
-
-        this.radarChartInstance = new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Stock Distribution (Ton)',
-                    data: data,
-                    backgroundColor: 'rgba(52, 211, 153, 0.2)',
-                    borderColor: '#34d399',
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#34d399',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: '#34d399'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    r: {
-                        angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        pointLabels: { color: '#cbd5e1', font: { size: 10 } },
-                        ticks: { display: false, backdropColor: 'transparent' }
-                    }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
     },
 
     renderFluxChart: function () {

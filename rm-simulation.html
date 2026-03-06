@@ -252,6 +252,24 @@
             max-height: none !important;
         }
 
+        /* FULL SCREEN ANALYTICS MODE */
+        .analytics-fullscreen {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 10000;
+            background: #050505 !important;
+            padding: 20px !important;
+            overflow-y: auto !important;
+            margin: 0 !important;
+        }
+
+        .analytics-fullscreen .glass-panel {
+            background: rgba(10, 15, 30, 0.9) !important;
+        }
+
         .fs-close-btn {
             display: none;
         }
@@ -1125,10 +1143,21 @@
 
         <!-- STEP 3: ANALYTICS & RESULTS -->
         <div id="step-analytics" class="step-container">
+            <!-- FULLSCREEN TOGGLE BUTTON -->
+            <div style="display:flex; justify-content:flex-end; margin-bottom:10px; gap:10px;">
+                <button class="btn-hud-primary" onclick="SimPage.goToStep(2)"
+                    style="border-color:#64748b; color:#64748b;">
+                    <i class="fas fa-arrow-left"></i> BACK TO EDITOR
+                </button>
+                <button class="btn-hud-primary" onclick="SimPage.toggleAnalyticsFullscreen()"
+                    style="border-color:#bc13fe; color:#bc13fe;">
+                    <i class="fas fa-expand-arrows-alt"></i> FULLSCREEN DASHBOARD
+                </button>
+            </div>
             <!-- ANALYTICS DASHBOARD GRID -->
             <!-- ANALYTICS DASHBOARD GRID -->
             <div
-                style="display:grid; grid-template-columns: 2fr 1fr; grid-template-rows: 250px 200px; gap:15px; align-content:start; margin-top:20px;">
+                style="display:grid; grid-template-columns: 2fr 1fr; grid-template-rows: 250px 350px; gap:15px; align-content:start; margin-top:20px;">
 
                 <!-- MAIN CHART: MOVEMENT (TOP LEFT) -->
                 <div class="glass-panel"
@@ -1215,25 +1244,16 @@
                 </div>
 
                 <!-- NEW ADVANCED CHARTS ROW -->
-                <div class="glass-panel"
-                    style="grid-column: 1 / span 2; grid-row: 3; height:300px; display:flex; gap:20px; border:1px solid #0aff0a; box-shadow:0 0 20px rgba(10,255,10,0.1); margin-top: 15px;">
-                    <!-- RADAR CHART: DISTRIBUTION -->
-                    <div style="flex:1; display:flex; flex-direction:column;">
-                        <div
-                            style="font-family:'Orbitron'; color:#0aff0a; font-size:0.9rem; margin-bottom:10px; padding:10px; border-bottom:1px solid rgba(10,255,10,0.3);">
-                            <i class="fas fa-satellite-dish"></i> STOCK DISTRIBUTION
-                        </div>
-                        <div style="flex:1; position:relative; padding:10px;">
-                            <canvas id="radarChart"></canvas>
-                        </div>
-                    </div>
+                <div id="advanced-charts-row" class="glass-panel"
+                    style="grid-column: 1 / span 2; grid-row: 3; height:350px; display:flex; gap:20px; border:1px solid #0aff0a; box-shadow:0 0 20px rgba(10,255,10,0.1); margin-top: 15px;">
 
                     <!-- BAR CHART: DAILY FLUX -->
-                    <div
-                        style="flex:2; display:flex; flex-direction:column; border-left:1px solid rgba(255,255,255,0.1); padding-left:20px;">
+                    <div style="flex:1; display:flex; flex-direction:column; padding:0;">
                         <div
-                            style="font-family:'Orbitron'; color:#ff9e0b; font-size:0.9rem; margin-bottom:10px; padding:10px; border-bottom:1px solid rgba(255,158,11,0.3);">
-                            <i class="fas fa-chart-bar"></i> DAILY NET FLUX (IN - OUT)
+                            style="font-family:'Orbitron'; color:#ff9e0b; font-size:1rem; margin-bottom:10px; padding:15px; border-bottom:1px solid rgba(255,158,11,0.3); display:flex; justify-content:space-between; align-items:center;">
+                            <span><i class="fas fa-chart-bar"></i> DAILY NET FLUX (IN - OUT)</span>
+                            <span style="font-family:'Rajdhani'; font-size:0.75rem; color:#64748b;">Analisa fluktuasi
+                                harian per material</span>
                         </div>
                         <div style="flex:1; position:relative; padding:10px;">
                             <canvas id="fluxChart"></canvas>
