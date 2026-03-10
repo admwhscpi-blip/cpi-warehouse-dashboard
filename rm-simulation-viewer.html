@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART WAREHOUSE - Simulation Viewer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/rm_stock_v2.css">
+    <link rel="stylesheet" href="css/sim_2050.css">
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --neon-blue: #00f3ff;
+            --neon-cyan: #06b6d4;
+            --neon-purple: #bc13fe;
+            --neon-red: #ff003c;
+            --neon-gold: #ffcc00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #020617;
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 10% 20%, rgba(188, 19, 254, 0.08) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.08) 0%, transparent 40%);
+        }
+
+        /* BRAND HEADER BAR */
+        .viewer-brand-bar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(2, 6, 23, 0.97);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(14, 165, 233, 0.3);
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .brand-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .brand-title {
+            font-family: 'Orbitron';
+            font-size: 1.3rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+            letter-spacing: 3px;
+            line-height: 1.1;
+        }
+
+        .brand-version {
+            display: inline-block;
+            font-size: 0.6rem;
+            color: #000;
+            background: var(--neon-cyan);
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-weight: 800;
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .brand-sub {
+            font-size: 0.55rem;
+            color: #475569;
+            letter-spacing: 2px;
+            font-family: 'Orbitron';
+            text-transform: uppercase;
+        }
+
+        /* CLOCK (matching homepage) */
+        .clock-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 6px 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            border-radius: 30px;
+            font-family: 'Orbitron';
+            color: #fff;
+            height: 50px;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.1);
+        }
+
+        .clock-date-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            line-height: 1.1;
+        }
+
+        .clock-day {
+            font-size: 0.55rem;
+            color: var(--neon-cyan);
+            letter-spacing: 2px;
+        }
+
+        .clock-date {
+            font-size: 1.1rem;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .clock-visual {
+            position: relative;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .clock-circle {
+            position: absolute;
+            inset: 0;
+            border: 2px solid rgba(14, 165, 233, 0.1);
+            border-radius: 50%;
+        }
+
+        .clock-progress {
+            position: absolute;
+            inset: 0;
+            border: 2px solid transparent;
+            border-top: 2px solid var(--neon-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-cyan);
+            transition: transform 1s linear;
+        }
+
+        .clock-time-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 5;
+        }
+
+        .clock-ampm {
+            font-size: 0.4rem;
+            font-weight: 800;
+            color: var(--neon-cyan);
+        }
+
+        .clock-time {
+            font-size: 1.2rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        /* INFO STRIP */
+        .info-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 243, 255, 0.15);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 20px 30px 0;
+        }
+
+        .info-cell {
+            padding: 15px 20px;
+            background: rgba(10, 15, 30, 0.8);
+        }
+
+        .info-cell-label {
+            font-family: 'Orbitron';
+            font-size: 0.6rem;
+            color: #64748b;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .info-cell-value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.3;
+        }
+
+        .viewer-container {
+            padding: 20px 30px;
+        }
+
+        .glass-panel {
+            background: rgba(10, 15, 30, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+
+        /* CHARTS - LARGER AND LANDSCAPE */
+        .chart-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid #334155;
+            color: white;
+            padding: 12px 15px;
+            border-radius: 6px;
+            font-family: 'Rajdhani';
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .slicer-group {
+            display: inline-flex;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            padding: 3px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .slicer-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 5px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-family: 'Rajdhani';
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .slicer-btn.active {
+            background: #bc13fe;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(188, 19, 254, 0.5);
+        }
+
+        /* CALENDAR CUSTOM */
+        @keyframes kelapKelip {
+            0% {
+                opacity: 1;
+                text-shadow: 0 0 15px #ff003c, 0 0 5px #ff003c;
+            }
+
+            50% {
+                opacity: 0.3;
+                text-shadow: none;
+            }
+
+            100% {
+                opacity: 1;
+                text-shadow: 0 0 15px #ff003c, 0 0 5px #ff003c;
+            }
+        }
+
+        .sim-cal-day.collapse-date {
+            animation: kelapKelip 1.5s infinite;
+            color: #ff003c !important;
+            border-color: #ff003c !important;
+            background: rgba(255, 0, 60, 0.1);
+            z-index: 2;
+            font-weight: 800;
+            height: auto;
+            min-height: 55px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 2px;
+        }
+
+        .collapse-desc {
+            display: block;
+            font-size: 0.5rem;
+            color: #ff003c;
+            line-height: 1;
+            margin-top: 3px;
+            font-family: 'Rajdhani';
+        }
+
+
+        /* DETAIL TABLE */
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Rajdhani';
+            font-size: 0.85rem;
+        }
+
+        .detail-table thead th {
+            position: sticky;
+            top: 0;
+            background: #0f172a;
+            padding: 10px 8px;
+            color: #00f3ff;
+            font-family: 'Orbitron';
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            border-bottom: 2px solid rgba(0, 243, 255, 0.3);
+            text-align: center;
+            z-index: 5;
+        }
+
+        .detail-table tbody td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+            color: #cbd5e1;
+        }
+
+        .detail-table tbody tr:hover {
+            background: rgba(0, 243, 255, 0.05);
+        }
+
+        /* FULLSCREEN TABLE MODE */
+        .table-fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 6, 23, 0.98);
+            z-index: 50000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .table-fullscreen-overlay.active {
+            display: block;
+        }
+
+        @keyframes neonFlow {
+            0% {
+                background-position: 100% 0
+            }
+
+            100% {
+                background-position: -100% 0
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- PASSWORD OVERLAY -->
+    <div id="password-overlay" class="viewer-password-overlay">
+        <div class="viewer-password-card">
+            <div
+                style="font-family:'Orbitron'; font-size:1.5rem; color:#00f3ff; margin-bottom:10px; text-shadow:0 0 20px rgba(0,243,255,0.5);">
+                🔐 SIMULATION VIEWER</div>
+            <div style="color:#94a3b8; font-size:0.9rem; margin-bottom:25px;">Masukkan password untuk melihat hasil
+                simulasi</div>
+            <div id="viewer-sim-name"
+                style="font-family:'Orbitron'; color:#FFE600; font-size:0.9rem; margin-bottom:15px;"></div>
+            <input type="password" id="viewer-password-input" class="control-input" placeholder="Password..."
+                style="text-align:center; font-size:1.1rem; margin-bottom:10px;"
+                onkeydown="if(event.key==='Enter') VP.authenticate()">
+            <div id="viewer-error" class="viewer-error-msg">❌ Password salah!</div>
+            <button onclick="VP.authenticate()"
+                style="width:100%; margin-top:15px; padding:15px; background:linear-gradient(135deg,#00f3ff,#00a8ff); color:#000; font-family:'Orbitron'; font-weight:700; font-size:1rem; border:none; border-radius:8px; cursor:pointer; box-shadow:0 0 20px rgba(0,243,255,0.3); letter-spacing:1px;">BUKA
+                SIMULASI</button>
+        </div>
+    </div>
+
+    <!-- ERROR PAGE -->
+    <div id="error-page" style="display:none; text-align:center; padding:80px 20px;">
+        <div style="font-family:'Orbitron'; font-size:2rem; color:#ef4444; margin-bottom:15px;">⚠️ LINK TIDAK VALID
+        </div>
+        <div style="color:#94a3b8;">Link simulasi ini sudah dihapus atau tidak ditemukan.</div>
+    </div>
+
+    <!-- VIEWER CONTENT -->
+    <div id="viewer-content" style="display:none;">
+
+        <!-- BRAND HEADER BAR -->
+        <div class="viewer-brand-bar">
+            <div class="brand-section">
+                <div><span class="brand-title">SMART<br>WAREHOUSE</span> <span class="brand-version">V2.0</span></div>
+                <div class="brand-sub">WAREHOUSE MANAGEMENT SYSTEM</div>
+            </div>
+            <div class="clock-container">
+                <div class="clock-date-group">
+                    <div class="clock-day" id="clock-day-name">-</div>
+                    <div class="clock-date" id="clock-date-text">-</div>
+                </div>
+                <div class="clock-visual">
+                    <div class="clock-circle"></div>
+                    <div class="clock-progress" id="clock-progress"></div>
+                    <div class="clock-time-group">
+                        <div class="clock-ampm" id="clock-ampm">-</div>
+                        <div class="clock-time" id="clock-time">-</div>
+                    </div>
+                </div>
+            </div>
+            <div style="flex-grow:1; display:flex; justify-content:center; align-items:center;">
+                <div
+                    style="font-family:'Orbitron'; font-size:1.6rem; font-weight:900; color:#00f3ff; text-shadow:0 0 20px rgba(0,243,255,0.6), 0 0 5px rgba(0,243,255,1); letter-spacing:2px; text-transform:uppercase;">
+                    SIMULASI RM STORAGE - WH CIREBON</div>
+            </div>
+        </div>
+
+        <!-- INFO STRIP (Points 2-5) -->
+        <div class="info-strip" id="info-strip">
+            <div class="info-cell">
+                <div class="info-cell-label">📅 PERIODE SIMULASI</div>
+                <div class="info-cell-value" id="info-period">-</div>
+            </div>
+            <div class="info-cell">
+                <div class="info-cell-label">🧪 MATERIAL PENENTU</div>
+                <div class="info-cell-value" id="info-materials">-</div>
+            </div>
+            <div class="info-cell">
+                <div class="info-cell-label">📄 DOKUMEN PORT SEMARANG</div>
+                <div class="info-cell-value" id="info-doc-smg">-</div>
+            </div>
+            <div class="info-cell">
+                <div class="info-cell-label">📄 DOKUMEN PORT JAKARTA</div>
+                <div class="info-cell-value" id="info-doc-jkt">-</div>
+            </div>
+        </div>
+
+        <div class="viewer-container">
+
+            <!-- 4 MAIN CHARTS (ALL LANDSCAPE) -->
+            <div class="chart-stack">
+                <!-- MOVEMENT (LANDSCAPE) -->
+                <div class="glass-panel"
+                    style="display:flex; flex-direction:column; padding:0; overflow:hidden; border:1px solid #bc13fe; box-shadow:0 0 20px rgba(188,19,254,0.1); height:350px; margin-bottom:0;">
+                    <div
+                        style="padding:15px; border-bottom:1px solid rgba(188,19,254,0.3); display:flex; justify-content:space-between; align-items:center;">
+                        <div
+                            style="font-family:'Orbitron'; color:#bc13fe; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+                            <i class="fas fa-chart-area"></i> MATERIAL MOVEMENT ANALYSIS
+                        </div>
+                        <div class="slicer-group" style="scale:0.9; transform-origin:right center;">
+                            <button class="slicer-btn active" id="slicer-daily"
+                                onclick="VP.setSlicer('daily')">D</button>
+                            <button class="slicer-btn" id="slicer-weekly" onclick="VP.setSlicer('weekly')">W</button>
+                            <button class="slicer-btn" id="slicer-monthly" onclick="VP.setSlicer('monthly')">M</button>
+                        </div>
+                    </div>
+                    <div style="flex:1; position:relative; padding:10px;"><canvas id="movementChart"></canvas></div>
+                </div>
+
+                <!-- STOCK vs CAPACITY (LANDSCAPE) -->
+                <div class="glass-panel"
+                    style="display:flex; flex-direction:column; padding:0; border:1px solid #00f3ff; box-shadow:0 0 20px rgba(0,243,255,0.1); height:350px; margin-bottom:0;">
+                    <div style="padding:15px; border-bottom:1px solid rgba(0,243,255,0.3);">
+                        <div
+                            style="font-family:'Orbitron'; color:#00f3ff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
+                            <i class="fas fa-layer-group"></i> STOCK LEVEL vs CAPACITY
+                        </div>
+                    </div>
+                    <div style="flex:1; position:relative; padding:10px;"><canvas id="stockChart"></canvas></div>
+                </div>
+
+                <!-- RANGKUMAN (LANDSCAPE) -->
+                <div class="glass-panel"
+                    style="display:flex; flex-direction:column; padding:0; border:1px solid #FFE600; box-shadow:0 0 20px rgba(255,230,0,0.1); background:rgba(20,20,30,0.8); overflow:hidden; margin-bottom:0;">
+                    <div
+                        style="padding:15px; border-bottom:1px solid rgba(255,230,0,0.3); background:rgba(255,230,0,0.05);">
+                        <div
+                            style="font-family:'Orbitron'; color:#FFE600; font-size:1.1rem; letter-spacing:2px; display:flex; align-items:center; gap:10px;">
+                            <i class="fas fa-clipboard-list"></i> RANGKUMAN
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:20px; padding:20px;">
+                        <div style="flex:1; min-width:300px;">
+                            <div id="summary-material-list"
+                                style="font-family:'Rajdhani'; font-size:0.95rem; max-height:180px; overflow-y:auto; padding-right:10px;">
+                            </div>
+                        </div>
+                        <div style="flex:1; display:flex; flex-direction:column; gap:15px; justify-content:center;">
+                            <div style="display:flex; gap:15px;">
+                                <div
+                                    style="flex:1; background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; border-left:4px solid #f87171;">
+                                    <div style="color:#f87171; font-weight:bold; font-size:0.9rem; margin-bottom:5px;">
+                                        📉 LOWEST POINT</div>
+                                    <div id="summary-lowest-stock"
+                                        style="color:#fff; font-size:1.4rem; font-weight:bold;">0 KG</div>
+                                    <div id="summary-lowest-pct" style="color:#94a3b8; font-size:0.9rem;">0% Capacity
+                                    </div>
+                                </div>
+                                <div
+                                    style="flex:1; background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; border-left:4px solid #34d399;">
+                                    <div style="color:#34d399; font-weight:bold; font-size:0.9rem; margin-bottom:5px;">
+                                        📈 HIGHEST POINT</div>
+                                    <div id="summary-highest-stock"
+                                        style="color:#fff; font-size:1.4rem; font-weight:bold;">0 KG</div>
+                                    <div id="summary-highest-pct" style="color:#94a3b8; font-size:0.9rem;">0% Capacity
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="summary-conclusion-box"
+                                style="background:rgba(52,211,153,0.1); padding:20px; border-radius:8px; border:1px solid #34d399; text-align:center; display:flex; justify-content:space-between; align-items:center;">
+                                <div style="font-family:'Orbitron'; font-size:2rem; color:#34d399;">AMAN</div>
+                                <div style="color:#cbd5e1; font-size:1.1rem; text-align:right;">Sisa Space:<br><b
+                                        style="color:#34d399; font-size:1.5rem;">-</b></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DAILY FLUX (LANDSCAPE) -->
+                <div class="glass-panel"
+                    style="border:1px solid #0aff0a; box-shadow:0 0 20px rgba(10,255,10,0.1); height:350px; display:flex; flex-direction:column; margin-bottom:0;">
+                    <div
+                        style="font-family:'Orbitron'; color:#ff9e0b; font-size:1.1rem; padding:15px; border-bottom:1px solid rgba(255,158,11,0.3); display:flex; justify-content:space-between; align-items:center;">
+                        <span><i class="fas fa-chart-bar"></i> DAILY NET FLUX (IN - OUT)</span>
+                        <span style="font-family:'Rajdhani'; font-size:0.85rem; color:#64748b;">Analisa fluktuasi harian
+                            per material</span>
+                    </div>
+                    <div style="flex:1; position:relative; padding:10px;"><canvas id="fluxChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- MATERIAL VARIABLE PENENTU -->
+            <div class="glass-panel" style="border:1px solid #bc13fe; box-shadow:0 0 20px rgba(188,19,254,0.1);">
+                <div style="padding:15px; border-bottom:1px solid rgba(188,19,254,0.3);">
+                    <div style="font-family:'Orbitron'; color:#bc13fe; font-size:1rem;"><i class="fas fa-flask"></i>
+                        MATERIAL VARIABLE PENENTU</div>
+                </div>
+                <div id="material-variables-container" style="padding:15px; display:flex; flex-wrap:wrap; gap:10px;">
+                </div>
+            </div>
+
+            <!-- WAREHOUSE + ALL CALENDARS EXPANDED -->
+            <div class="glass-panel" style="border:1px solid #00f3ff; box-shadow:0 0 20px rgba(0,243,255,0.1);">
+                <div
+                    style="padding:15px; border-bottom:1px solid rgba(0,243,255,0.3); display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-family:'Orbitron'; color:#00f3ff; font-size:1rem;"><i class="fas fa-warehouse"></i>
+                        TAMPILAN GUDANG — SIMULASI</div>
+                    <span id="sim-wh-selected-date"
+                        style="font-family:'Rajdhani'; font-size:0.85rem; color:#00f3ff; font-weight:600;">-</span>
+                </div>
+                <!-- ALL CALENDARS (auto-expanded by month) -->
+                <div id="all-calendars-container"
+                    style="padding:15px; border-bottom:1px solid rgba(0,243,255,0.2); background:rgba(0,0,0,0.3);">
+                </div>
+                <!-- WAREHOUSE CARDS -->
+                <div id="sim-warehouse-display"
+                    style="padding:20px; display:flex; gap:15px; flex-wrap:wrap; justify-content:center; align-items:flex-end; min-height:200px;">
+                </div>
+            </div>
+
+            <!-- DETAIL TABLE -->
+            <div class="glass-panel" style="border:1px solid rgba(255,255,255,0.15);">
+                <div
+                    style="padding:15px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-family:'Orbitron'; color:#fff; font-size:1rem;"><i class="fas fa-table"></i> TABEL
+                        DETAIL SIMULASI</div>
+                    <button onclick="VP.toggleTableFullscreen()"
+                        style="background:rgba(188,19,254,0.1); border:1px solid #bc13fe; color:#bc13fe; padding:5px 15px; font-family:'Orbitron'; font-size:0.65rem; cursor:pointer; border-radius:4px; transition:0.3s;">FULLSCREEN</button>
+                </div>
+                <div style="padding:15px; overflow-x:auto; max-height:500px; overflow-y:auto;">
+                    <table class="detail-table" id="detail-table">
+                        <thead id="detail-table-head"></thead>
+                        <tbody id="detail-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN TABLE OVERLAY -->
+    <div class="table-fullscreen-overlay" id="table-fullscreen-overlay">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <div style="font-family:'Orbitron'; color:#fff; font-size:1.2rem;"><i class="fas fa-table"></i> TABEL DETAIL
+                SIMULASI — FULLSCREEN</div>
+            <button onclick="VP.toggleTableFullscreen()"
+                style="background:#ef4444; border:none; color:#fff; padding:8px 20px; font-family:'Orbitron'; font-size:0.7rem; cursor:pointer; border-radius:4px;">✕
+                CLOSE</button>
+        </div>
+        <div style="overflow:auto; max-height:calc(100vh - 80px);">
+            <table class="detail-table" id="detail-table-full">
+                <thead id="detail-table-head-full"></thead>
+                <tbody id="detail-table-body-full"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Embed CONFIG for standalone use
+        const CONFIG = {
+            UNIT_DIVIDER: 1000,
+            WAREHOUSE_CAPACITIES: { "RM": 10000, "GEBANG-A": 2500, "GEBANG-B": 1500, "SAMPING-C": 2500, "SAMPING-D": 2500, "SAMPING-E": 4000, "SAMPING-F": 3000 }
+        };
+
+        const VP = {
+            shareData: null, session: [], data: null,
+            currentSlicer: 'daily',
+            movementChartInstance: null, stockChartInstance: null, fluxChartInstance: null,
+            calendarSelectedDate: null,
+            colorPalette: ['#00f3ff', '#39ff14', '#ffe600', '#ff9500', '#38bdf8', '#ff4d4d'],
+
+            init: function () {
+                history.pushState(null, null, location.href);
+                window.onpopstate = () => history.pushState(null, null, location.href);
+                this.startClock();
+
+                const params = new URLSearchParams(window.location.search);
+                const shareId = params.get('id');
+                if (!shareId) { this.showError(); return; }
+
+                const links = JSON.parse(localStorage.getItem('rm_sim_shared_links') || '[]');
+                this.shareData = links.find(l => l.id === shareId);
+                if (!this.shareData) { this.showError(); return; }
+
+                document.getElementById('viewer-sim-name').textContent = this.shareData.name || 'Simulation';
+                document.getElementById('password-overlay').style.display = 'flex';
+            },
+
+            showError: function () {
+                document.getElementById('password-overlay').style.display = 'none';
+                document.getElementById('error-page').style.display = 'block';
+            },
+
+            simpleHash: function (str) {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; }
+                return hash.toString(36);
+            },
+
+            authenticate: function () {
+                const pw = document.getElementById('viewer-password-input').value;
+                if (this.simpleHash(pw) !== this.shareData.passwordHash) {
+                    document.getElementById('viewer-error').style.display = 'block';
+                    document.getElementById('viewer-password-input').value = '';
+                    return;
+                }
+                document.getElementById('password-overlay').style.display = 'none';
+                document.getElementById('viewer-content').style.display = 'block';
+
+                this.session = this.shareData.session || [];
+                this.data = this.shareData.warehouseData || { warehouses: [], capacities: [], materials: [] };
+
+                this.populateInfoStrip();
+                this.renderAll();
+            },
+
+            // ---- CLOCK (same as homepage) ----
+            startClock: function () {
+                const update = () => {
+                    const now = new Date();
+                    const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+                    const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+                    const el = (id) => document.getElementById(id);
+                    if (el('clock-day-name')) el('clock-day-name').textContent = days[now.getDay()];
+                    if (el('clock-date-text')) el('clock-date-text').textContent = `${months[now.getMonth()]} ${now.getDate()}`;
+                    let h = now.getHours(); const ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+                    if (el('clock-ampm')) el('clock-ampm').textContent = ampm;
+                    if (el('clock-time')) el('clock-time').textContent = `${h}:${String(now.getMinutes()).padStart(2, '0')}`;
+                    const sec = now.getSeconds(); const deg = (sec / 60) * 360;
+                    if (el('clock-progress')) el('clock-progress').style.transform = `rotate(${deg}deg)`;
+                };
+                update();
+                setInterval(update, 1000);
+            },
+
+            // ---- INFO STRIP ----
+            populateInfoStrip: function () {
+                // Period
+                const dates = this.getDateRange();
+                if (dates.length > 0) {
+                    document.getElementById('info-period').textContent =
+                        this.formatDate(dates[0].toISOString().split('T')[0]) + ' — ' +
+                        this.formatDate(dates[dates.length - 1].toISOString().split('T')[0]);
+                }
+                // Materials
+                const mats = this.session.map(s => s.material);
+                document.getElementById('info-materials').innerHTML = mats.map(m => `<span style="color:#bc13fe;">${m}</span>`).join(', ');
+                // Documents
+                const srcDocs = this.session.map(s => s.source || '-').filter((v, i, a) => a.indexOf(v) === i);
+                const rcptDates = this.session.map(s => s.receiptDate ? this.formatDate(s.receiptDate) : '-').filter((v, i, a) => a.indexOf(v) === i);
+                document.getElementById('info-doc-smg').textContent = srcDocs.includes('PORT SEMARANG') ? rcptDates.join(', ') : '-';
+                document.getElementById('info-doc-jkt').textContent = srcDocs.includes('PORT JAKARTA') ? rcptDates.join(', ') : '-';
+            },
+
+            // ---- CORE FUNCTIONS (EXACT COPY from page-simulation.js) ----
+            getDateRange: function () {
+                if (!this.session || this.session.length === 0) return [];
+                let minStart = new Date(8640000000000000), maxEnd = new Date(-8640000000000000);
+                this.session.forEach(s => { const sd = new Date(s.startDate); const ed = new Date(s.endDate); if (sd < minStart) minStart = sd; if (ed > maxEnd) maxEnd = ed; });
+                if (minStart > maxEnd) return [];
+                let dates = [], cur = new Date(minStart);
+                while (cur <= maxEnd) { dates.push(new Date(cur)); cur.setDate(cur.getDate() + 1); }
+                return dates;
+            },
+            getStep: function () { return this.currentSlicer === 'daily' ? 1 : (this.currentSlicer === 'weekly' ? 7 : 30); },
+            getLabels: function (fullDates) {
+                if (this.currentSlicer === 'daily') return fullDates.map(d => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
+                else if (this.currentSlicer === 'weekly') { let l = []; for (let i = 0; i < fullDates.length; i += 7) l.push('WEEK ' + (Math.floor(i / 7) + 1) + ' (' + fullDates[i].toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ')'); return l; }
+                else { let l = []; for (let i = 0; i < fullDates.length; i += 30) l.push('MONTH ' + (Math.floor(i / 30) + 1) + ' (' + fullDates[i].toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }) + ')'); return l; }
+            },
+            formatDate: function (ds) { if (!ds) return '-'; return new Date(ds).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); },
+
+            calculateStateAtDate: function (sess, dateStr) {
+                const baseStock = Number(sess.baseStock) || 0, defaultIn = Number(sess.defaultIn) || 0, defaultOut = Number(sess.defaultOut) || 0;
+                const startDate = new Date(sess.startDate), targetDate = new Date(dateStr);
+                if (targetDate < startDate) return { stock: baseStock, inVal: 0, outVal: 0 };
+                let cur = baseStock, d = new Date(startDate), lastIn = 0, lastOut = 0, loop = 0;
+                while (d <= targetDate && loop < 400) {
+                    const dStr = d.toISOString().split('T')[0];
+                    let dIn = defaultIn, dOut = defaultOut;
+                    if (sess.overrides && sess.overrides[dStr]) { if (sess.overrides[dStr].in !== undefined) dIn = Number(sess.overrides[dStr].in); if (sess.overrides[dStr].out !== undefined) dOut = Number(sess.overrides[dStr].out); }
+                    cur += (dIn * 1000) - (dOut * 1000); lastIn = dIn; lastOut = dOut;
+                    d.setDate(d.getDate() + 1); loop++;
+                }
+                return { stock: cur, inVal: lastIn, outVal: lastOut };
+            },
+
+            setSlicer: function (mode) {
+                this.currentSlicer = mode;
+                document.querySelectorAll('.slicer-btn').forEach(b => b.classList.remove('active'));
+                const btn = document.getElementById('slicer-' + mode);
+                if (btn) btn.classList.add('active');
+                this.renderStockChart(); this.renderMovementChart();
+            },
+
+            renderAll: function () {
+                this.renderStockChart(); this.renderMovementChart(); this.renderFluxChart();
+                this.generateRangkuman(); this.renderMaterialVariables();
+                this.renderAllCalendars(); this.renderWarehouseVisualization();
+                this.renderDetailTable(false); // Initial 10 rows
+            },
+
+            // ---- EXACT CHART COPIES ----
+
+            renderStockChart: function () {
+                const ctx = document.getElementById('stockChart'); if (!ctx) return;
+                if (this.stockChartInstance) { this.stockChartInstance.destroy(); this.stockChartInstance = null; }
+                const fullDates = this.getDateRange(); if (fullDates.length === 0) return;
+                const labels = this.getLabels(fullDates), step = this.getStep();
+
+                // Total capacity using CONFIG
+                let totalCapacity = 0;
+                if (this.data.warehouses) {
+                    this.data.warehouses.forEach((w, idx) => {
+                        totalCapacity += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || this.data.capacities[idx] || 0;
+                    });
+                }
+                if (totalCapacity > 0 && totalCapacity < 1000000) totalCapacity *= 1000;
+                if (totalCapacity === 0) totalCapacity = 25000000;
+
+                // Unsimulated stock
+                let totalAllMatStock = 0;
+                if (this.data.materials) this.data.materials.forEach(m => { if (m.stocks) totalAllMatStock += m.stocks.reduce((a, b) => a + b, 0); });
+                let simulatedBaseStock = 0;
+                this.session.forEach(s => simulatedBaseStock += s.baseStock);
+                const unsimulatedStock = Math.max(0, totalAllMatStock - simulatedBaseStock);
+
+                let dataStock = [], dataCap = [];
+                for (let i = 0; i < fullDates.length; i += step) {
+                    const dStr = fullDates[i].toISOString().split('T')[0];
+                    let simTotal = 0;
+                    this.session.forEach(s => { simTotal += this.calculateStateAtDate(s, dStr).stock; });
+                    dataStock.push(unsimulatedStock + simTotal);
+                    dataCap.push(totalCapacity);
+                }
+
+                this.stockChartInstance = new Chart(ctx, {
+                    type: 'bar', data: {
+                        labels, datasets: [
+                            { type: 'line', label: 'MAX CAPACITY', data: dataCap, borderColor: '#FFE600', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false, order: 0 },
+                            { type: 'bar', label: 'TOTAL GLOBAL RM STOCK', data: dataStock, backgroundColor: '#ffffff', borderColor: 'transparent', borderWidth: 0, barPercentage: 0.6, order: 1 }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { labels: { color: '#94a3b8', font: { family: 'Orbitron', size: 11, weight: 'bold' } } },
+                            tooltip: {
+                                backgroundColor: 'rgba(15,23,42,0.9)', titleColor: '#fff', bodyColor: '#fff', borderColor: 'rgba(255,255,255,0.2)', borderWidth: 1,
+                                callbacks: { label: ctx2 => `${ctx2.dataset.label}: ${Math.round(ctx2.raw).toLocaleString()} Kg` }
+                            }
+                        },
+                        scales: {
+                            y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8', font: { weight: 'bold' }, stepSize: 4000000 }, beginAtZero: true },
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8', maxTicksLimit: 10 } }
+                        }
+                    }
+                });
+            },
+
+            renderMovementChart: function () {
+                const canvas = document.getElementById('movementChart'); if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (this.movementChartInstance) { this.movementChartInstance.destroy(); this.movementChartInstance = null; }
+                const fullDates = this.getDateRange(); if (fullDates.length === 0) return;
+                const labels = this.getLabels(fullDates), step = this.getStep();
+
+                const datasets = this.session.map(s => {
+                    let data = [];
+                    for (let i = 0; i < fullDates.length; i += step) {
+                        data.push(this.calculateStateAtDate(s, fullDates[i].toISOString().split('T')[0]).stock);
+                    }
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                    gradient.addColorStop(0, s.color); gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                    return { label: s.material, data, borderColor: s.color, backgroundColor: gradient, borderWidth: 3, pointRadius: 0, pointHoverRadius: 6, pointBackgroundColor: '#fff', tension: 0.4, fill: true };
+                });
+
+                this.movementChartInstance = new Chart(ctx, {
+                    type: 'line', data: { labels, datasets },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false }, tooltip: {
+                                backgroundColor: 'rgba(15,23,42,0.9)', titleColor: '#fff', bodyColor: '#fff', borderColor: '#bc13fe', borderWidth: 1,
+                                callbacks: { label: c => `${c.dataset.label}: ${Math.round(c.raw).toLocaleString()} Kg` }
+                            }
+                        },
+                        scales: {
+                            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } }, beginAtZero: true },
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8', maxTicksLimit: 10, font: { size: 10 } } }
+                        }
+                    }
+                });
+            },
+
+            renderFluxChart: function () {
+                const canvas = document.getElementById('fluxChart'); if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (this.fluxChartInstance) { this.fluxChartInstance.destroy(); this.fluxChartInstance = null; }
+                const fullDates = this.getDateRange(); if (fullDates.length === 0) return;
+                const step = this.getStep(), dateLabels = this.getLabels(fullDates);
+                let labels = [], netFluxData = [];
+
+                for (let i = 0; i < fullDates.length; i += step) {
+                    labels.push(dateLabels[Math.floor(i / step)] || '');
+                    let periodNet = 0;
+                    this.session.forEach(s => {
+                        for (let j = 0; j < step && (i + j) < fullDates.length; j++) {
+                            const dateStr = fullDates[i + j].toISOString().split('T')[0];
+                            let dIn = s.defaultIn, dOut = s.defaultOut;
+                            if (s.overrides && s.overrides[dateStr]) { if (s.overrides[dateStr].in !== undefined) dIn = Number(s.overrides[dateStr].in); if (s.overrides[dateStr].out !== undefined) dOut = Number(s.overrides[dateStr].out); }
+                            periodNet += (dIn - dOut);
+                        }
+                    });
+                    netFluxData.push(periodNet);
+                }
+
+                this.fluxChartInstance = new Chart(ctx, {
+                    type: 'bar', data: { labels, datasets: [{ label: 'Net Flux (Ton)', data: netFluxData, backgroundColor: netFluxData.map(v => v >= 0 ? '#34d399' : '#f87171'), borderRadius: 4 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }, x: { grid: { display: false }, ticks: { color: '#64748b', maxTicksLimit: 10 } } },
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw > 0 ? `+${c.raw.toLocaleString()} Ton` : `${c.raw.toLocaleString()} Ton` } } }
+                    }
+                });
+            },
+
+            generateRangkuman: function () {
+                const listContainer = document.getElementById('summary-material-list'); if (!listContainer) return;
+                listContainer.innerHTML = '';
+                const fullDates = this.getDateRange();
+                if (fullDates.length === 0) { listContainer.innerHTML = '<div style="color:orange">No data</div>'; return; }
+
+                let globalLowest = { qty: Infinity }, globalHighest = { qty: -Infinity };
+
+                // Calculate total capacity
+                let tCap = 0;
+                if (this.data && this.data.warehouses) {
+                    this.data.warehouses.forEach((w, idx) => { tCap += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || this.data.capacities[idx] || 0; });
+                }
+                if (tCap > 0 && tCap < 1000000) tCap *= 1000;
+                const totalCapacity = tCap > 0 ? tCap : 25000000;
+
+                // Unsimulated stock
+                let totalAllMatStock = 0;
+                if (this.data && this.data.materials) this.data.materials.forEach(m => { if (m.stocks) totalAllMatStock += m.stocks.reduce((a, b) => a + b, 0); });
+                let simulatedBaseStock = 0;
+                this.session.forEach(s => simulatedBaseStock += s.baseStock);
+                const unsimulatedStock = Math.max(0, totalAllMatStock - simulatedBaseStock);
+
+                this.session.forEach(s => {
+                    const startState = this.calculateStateAtDate(s, fullDates[0].toISOString().split('T')[0]);
+                    const endState = this.calculateStateAtDate(s, fullDates[fullDates.length - 1].toISOString().split('T')[0]);
+                    let peak = 0;
+                    for (let d of fullDates) { const st = this.calculateStateAtDate(s, d.toISOString().split('T')[0]); if (st.stock > peak) peak = st.stock; }
+                    const item = document.createElement('div');
+                    item.style.cssText = 'margin-bottom:8px; border-left:3px solid ' + s.color + '; padding-left:8px;';
+                    item.innerHTML = `<div style="color:${s.color}; font-weight:bold;">${s.material}</div>
+                    <div style="display:flex; justify-content:space-between; color:#cbd5e1; font-size:0.8rem;">
+                    <span>Start: <b>${(startState.stock / 1000).toLocaleString()} T</b></span>
+                    <span>Peak: <b>${(peak / 1000).toLocaleString()} T</b></span>
+                    <span>End: <b>${(endState.stock / 1000).toLocaleString()} T</b></span></div>`;
+                    listContainer.appendChild(item);
+                });
+
+                for (let d of fullDates) {
+                    let simTotal = 0;
+                    this.session.forEach(s => { simTotal += this.calculateStateAtDate(s, d.toISOString().split('T')[0]).stock; });
+                    const globalTotal = unsimulatedStock + simTotal;
+                    if (globalTotal < globalLowest.qty) globalLowest.qty = globalTotal;
+                    if (globalTotal > globalHighest.qty) globalHighest.qty = globalTotal;
+                }
+                globalLowest.pct = (globalLowest.qty / totalCapacity) * 100;
+                globalHighest.pct = (globalHighest.qty / totalCapacity) * 100;
+
+                document.getElementById('summary-lowest-stock').innerText = `${(globalLowest.qty / 1000).toLocaleString('id-ID')} T`;
+                document.getElementById('summary-lowest-pct').innerText = `${globalLowest.pct.toFixed(1)}% Capacity`;
+                document.getElementById('summary-highest-stock').innerText = `${(globalHighest.qty / 1000).toLocaleString('id-ID')} T`;
+                document.getElementById('summary-highest-pct').innerText = `${globalHighest.pct.toFixed(1)}% Capacity`;
+
+                const box = document.getElementById('summary-conclusion-box');
+                const remaining = totalCapacity - globalHighest.qty;
+                if (remaining < 0) {
+                    box.style.borderColor = '#ef4444'; box.style.background = 'rgba(239,68,68,0.1)';
+                    box.innerHTML = `<div class="brand-title" style="font-size:2rem; color:#ef4444; letter-spacing:2px; text-shadow:0 0 15px rgba(239,68,68,0.5);">COLLAPSE</div><div style="color:#cbd5e1; font-size:1.1rem; text-align:right;">Over Capacity:<br><b style="color:#ef4444; font-size:1.5rem;">${Math.abs(remaining / 1000).toLocaleString('id-ID')} T</b></div>`;
+                }
+                else {
+                    box.style.borderColor = '#34d399'; box.style.background = 'rgba(52,211,153,0.1)';
+                    box.innerHTML = `<div class="brand-title" style="font-size:2rem; color:#34d399; letter-spacing:2px; text-shadow:0 0 15px rgba(52,211,153,0.5);">AMAN</div><div style="color:#cbd5e1; font-size:1.1rem; text-align:right;">Sisa Space:<br><b style="color:#34d399; font-size:1.5rem;">${(remaining / 1000).toLocaleString('id-ID')} T</b></div>`;
+                }
+            },
+
+            renderMaterialVariables: function () {
+                const c = document.getElementById('material-variables-container'); if (!c) return;
+                let h = '';
+                this.session.forEach((s, i) => {
+                    const color = s.color || this.colorPalette[i % this.colorPalette.length];
+                    h += `<div class="mat-var-chip" style="border-color:${color}; background:${color}15; color:${color};"><span class="chip-dot" style="background:${color}; box-shadow:0 0 8px ${color};"></span><span>${s.material}</span><span class="chip-info" style="color:#94a3b8;">${s.facility} · ${this.formatDate(s.startDate)} - ${this.formatDate(s.endDate)}</span></div>`;
+                });
+                c.innerHTML = h;
+            },
+
+            // ---- ALL CALENDARS EXPANDED ----
+            renderAllCalendars: function () {
+                const container = document.getElementById('all-calendars-container'); if (!container) return;
+                const dates = this.getDateRange();
+                if (dates.length === 0) { container.innerHTML = '<div style="color:#64748b; text-align:center; padding:20px;">No simulation dates</div>'; return; }
+
+                const startDate = dates[0], endDate = dates[dates.length - 1];
+                let months = [];
+                let cur = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+                while (cur <= endDate) {
+                    months.push({ year: cur.getFullYear(), month: cur.getMonth() });
+                    cur.setMonth(cur.getMonth() + 1);
+                }
+
+                const simStart = startDate.toISOString().split('T')[0];
+                const simEnd = endDate.toISOString().split('T')[0];
+                const today = new Date().toISOString().split('T')[0];
+                const monthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+
+                // Get Global Capacity and Unsimulated Stock exactly once for efficiency
+                let totalCapacity = 0;
+                if (this.data.warehouses) {
+                    this.data.warehouses.forEach((w, idx) => { totalCapacity += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || this.data.capacities[idx] || 0; });
+                }
+                if (totalCapacity > 0 && totalCapacity < 1000000) totalCapacity *= 1000;
+                if (totalCapacity === 0) totalCapacity = 25000000;
+
+                let totalAllMatStock = 0;
+                if (this.data.materials) this.data.materials.forEach(m => { if (m.stocks) totalAllMatStock += m.stocks.reduce((a, b) => a + b, 0); });
+                let simulatedBaseStock = 0;
+                this.session.forEach(s => simulatedBaseStock += s.baseStock);
+                const unsimulatedStock = Math.max(0, totalAllMatStock - simulatedBaseStock);
+
+                let html = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:15px;">';
+                months.forEach(m => {
+                    const firstDay = new Date(m.year, m.month, 1);
+                    const lastDay = new Date(m.year, m.month + 1, 0);
+                    let startDow = firstDay.getDay() - 1; if (startDow < 0) startDow = 6;
+
+                    html += `<div style="background:rgba(0,0,0,0.3); border:1px solid rgba(0,243,255,0.1); border-radius:8px; padding:10px;">
+                    <div style="text-align:center; font-family:'Orbitron'; color:#fff; font-size:0.75rem; margin-bottom:8px;">${monthNames[m.month]} ${m.year}</div>
+                    <div class="sim-calendar-header"><div>S</div><div>S</div><div>R</div><div>K</div><div>J</div><div>S</div><div>M</div></div>
+                    <div class="sim-calendar-grid">`;
+                    for (let i = 0; i < startDow; i++) html += '<div class="sim-cal-day outside"></div>';
+
+                    for (let d = 1; d <= lastDay.getDate(); d++) {
+                        const dateStr = `${m.year}-${String(m.month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        let cls = 'sim-cal-day';
+                        const inRange = dateStr >= simStart && dateStr <= simEnd;
+
+                        let collapseMarkup = '';
+                        if (inRange) {
+                            cls += ' in-range';
+                            // Calculate stock for collapse highlighting
+                            let dTotal = 0;
+                            this.session.forEach(s => dTotal += this.calculateStateAtDate(s, dateStr).stock);
+                            const globalAtDate = unsimulatedStock + dTotal;
+                            if (globalAtDate > totalCapacity) {
+                                cls += ' collapse-date';
+                                collapseMarkup = `<span class="collapse-desc">${(globalAtDate / 1000).toLocaleString('id-ID')}T</span>`;
+                            }
+                        }
+                        if (dateStr === today) cls += ' today';
+                        if (dateStr === this.calendarSelectedDate) cls += ' selected';
+                        const oc = inRange ? `onclick="VP.onDateClick('${dateStr}')"` : '';
+
+                        if (collapseMarkup) {
+                            html += `<div class="${cls}" ${oc}><span>${d}</span>${collapseMarkup}</div>`;
+                        } else {
+                            html += `<div class="${cls}" ${oc}>${d}</div>`;
+                        }
+                    }
+                    html += '</div></div>';
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            },
+
+            onDateClick: function (dateStr) {
+                this.calendarSelectedDate = dateStr;
+                this.renderAllCalendars();
+                document.getElementById('sim-wh-selected-date').textContent = new Date(dateStr).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+                this.renderWarehouseVisualization(dateStr);
+            },
+
+            // ---- WAREHOUSE VIZ (CASCADING LEFT-TO-RIGHT FIX) ----
+            renderWarehouseVisualization: function (targetDateStr) {
+                const container = document.getElementById('sim-warehouse-display');
+                if (!container || !this.data || !this.data.warehouses) return;
+                if (!targetDateStr) { const dates = this.getDateRange(); if (dates.length > 0) targetDateStr = dates[dates.length - 1].toISOString().split('T')[0]; else return; }
+
+                const warehouses = this.data.warehouses;
+                const capacities = this.data.capacities || [];
+                const warehouseStocks = {};
+
+                warehouses.forEach((name, idx) => {
+                    const capTon = CONFIG.WAREHOUSE_CAPACITIES[name.toUpperCase()] || capacities[idx] || 0;
+                    const capKg = capTon * 1000;
+                    warehouseStocks[name] = { capacity: capKg, allocated: 0 };
+                });
+
+                // Calculate global stock at target date
+                let totalAllMatStock = 0;
+                if (this.data.materials) this.data.materials.forEach(m => { if (m.stocks) totalAllMatStock += m.stocks.reduce((a, b) => a + b, 0); });
+                let simulatedBaseStock = 0;
+                this.session.forEach(s => simulatedBaseStock += s.baseStock);
+                const unsimulatedStock = Math.max(0, totalAllMatStock - simulatedBaseStock);
+
+                let simTotal = 0;
+                this.session.forEach(sess => {
+                    simTotal += this.calculateStateAtDate(sess, targetDateStr).stock;
+                });
+
+                let remainingToFill = unsimulatedStock + simTotal;
+
+                // Cascade fill from left to right
+                warehouses.forEach(name => {
+                    const wh = warehouseStocks[name];
+                    const fillAmount = Math.min(remainingToFill, wh.capacity);
+                    wh.allocated = fillAmount;
+                    remainingToFill -= fillAmount;
+                });
+
+                // If OVERCAPACITY (COLLAPSE), apply all remaining excess ONLY to the first warehouse (RM)
+                if (remainingToFill > 0 && warehouses.length > 0) {
+                    warehouseStocks[warehouses[0]].allocated += remainingToFill;
+                }
+
+                const MAX_H = 180;
+                const maxCap = Math.max(...Object.values(warehouseStocks).map(w => w.capacity), 10000);
+                let html = '';
+                warehouses.forEach(name => {
+                    const wh = warehouseStocks[name];
+                    const totalStock = wh.allocated;
+                    const capKg = wh.capacity;
+                    const percent = capKg > 0 ? (totalStock / capKg) * 100 : 0;
+                    const visualH = Math.max((capKg / (maxCap * 1.2)) * MAX_H, 60);
+                    // Use red if >= 100% (since others will max at 100, overcapacity focuses red on the excess one too)
+                    const isCritical = percent >= 85, isHigh = percent >= 70;
+                    const fillColor = isCritical ? 'linear-gradient(to top,#ef4444,#991b1b)' : (isHigh ? 'linear-gradient(to top,#f59e0b,#9a3412)' : 'linear-gradient(to top,#00f3ff,#0e7490)');
+                    const bc = isCritical ? '#ef4444' : (isHigh ? '#f59e0b' : '#00f3ff');
+                    html += `<div class="sim-wh-card" style="height:${visualH + 80}px;">
+                    <div class="sim-wh-header"><div class="sim-wh-name">${name}</div><div class="sim-wh-cap">Cap: ${(capKg / 1000).toLocaleString('id-ID')} T</div>
+                    <div class="sim-wh-stock" style="color:${bc};">Stock: ${(totalStock / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} T</div></div>
+                    <div class="sim-wh-bar" style="height:${visualH}px;">
+                        <div class="sim-wh-bar-grid"></div>
+                        <div class="sim-wh-fill" style="height:${Math.min(percent, 100)}%; background:${fillColor}; border-top:2px solid ${bc}; box-shadow:0 0 15px ${bc}44;"></div>
+                        <div class="sim-wh-pct">${Math.round(percent)}%</div>
+                    </div><div class="sim-wh-footer"></div></div>`;
+                });
+                container.innerHTML = html;
+            },
+
+            // ---- DETAIL TABLE ----
+            renderDetailTable: function (full) {
+                const headId = full ? 'detail-table-head-full' : 'detail-table-head';
+                const bodyId = full ? 'detail-table-body-full' : 'detail-table-body';
+                const thead = document.getElementById(headId);
+                const tbody = document.getElementById(bodyId);
+                if (!thead || !tbody) return;
+
+                const fullDates = this.getDateRange();
+                if (fullDates.length === 0) return;
+
+                // Build material list: simulated + all others (stagnan)
+                const simMaterials = this.session.map(s => s.material);
+                const allMaterials = [];
+                // Add simulated materials first
+                simMaterials.forEach(m => allMaterials.push({ name: m, simulated: true }));
+                // Add remaining materials from data
+                if (this.data && this.data.materials) {
+                    this.data.materials.forEach(mat => {
+                        if (!simMaterials.includes(mat.name)) {
+                            allMaterials.push({ name: mat.name, simulated: false, baseStock: mat.stocks ? mat.stocks.reduce((a, b) => a + b, 0) : 0 });
+                        }
+                    });
+                }
+                // Group unsimulated
+                const unsimMats = allMaterials.filter(m => !m.simulated);
+                const showMats = allMaterials.filter(m => m.simulated);
+                const unsimTotal = unsimMats.reduce((s, m) => s + (m.baseStock || 0), 0);
+
+                // Header
+                let headerHtml = '<tr><th>TANGGAL</th>';
+                showMats.forEach(m => headerHtml += `<th style="color:${this.session.find(s => s.material === m.name)?.color || '#fff'}">${m.name}<br><small>STOCK (KG)</small></th><th>IN</th><th>OUT</th>`);
+                headerHtml += `<th style="color:#64748b;">${unsimMats.length} RM LAINNYA<br><small>STOCK (KG)</small></th><th>IN</th><th>OUT</th></tr>`;
+                thead.innerHTML = headerHtml;
+
+                // Body
+                const maxRows = full ? fullDates.length : Math.min(10, fullDates.length);
+                let bodyHtml = '';
+                for (let i = 0; i < maxRows; i++) {
+                    const d = fullDates[i];
+                    const dStr = d.toISOString().split('T')[0];
+                    const dateLabel = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                    bodyHtml += `<tr><td style="color:#fff; font-weight:600; white-space:nowrap;">${dateLabel}</td>`;
+
+                    showMats.forEach(m => {
+                        const sess = this.session.find(s => s.material === m.name);
+                        if (sess) {
+                            const state = this.calculateStateAtDate(sess, dStr);
+                            bodyHtml += `<td style="font-weight:700; color:#fff;">${Math.round(state.stock).toLocaleString()}</td>`;
+                            bodyHtml += `<td style="color:#34d399;">${state.inVal}</td>`;
+                            bodyHtml += `<td style="color:#f87171;">${state.outVal}</td>`;
+                        }
+                    });
+
+                    // Unsimulated materials (stagnan)
+                    bodyHtml += `<td style="color:#64748b;">${Math.round(unsimTotal).toLocaleString()}</td>`;
+                    bodyHtml += `<td style="color:#64748b;">0</td>`;
+                    bodyHtml += `<td style="color:#64748b;">0</td>`;
+                    bodyHtml += '</tr>';
+                }
+                if (!full && fullDates.length > 10) {
+                    bodyHtml += `<tr><td colspan="${3 * showMats.length + 4}" style="color:#bc13fe; text-align:center; padding:15px; font-weight:700;">... ${fullDates.length - 10} baris lagi — klik FULLSCREEN untuk melihat semua</td></tr>`;
+                }
+                tbody.innerHTML = bodyHtml;
+            },
+
+            toggleTableFullscreen: function () {
+                const overlay = document.getElementById('table-fullscreen-overlay');
+                if (overlay.classList.contains('active')) {
+                    overlay.classList.remove('active');
+                } else {
+                    this.renderDetailTable(true);
+                    overlay.classList.add('active');
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => VP.init());
+    </script>
+</body>
+
+</html>

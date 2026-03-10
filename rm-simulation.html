@@ -1263,6 +1263,146 @@
 
             </div>
 
+            <!-- MATERIAL VARIABLE PENENTU -->
+            <div class="glass-panel"
+                style="margin-top:20px; border:1px solid #bc13fe; box-shadow:0 0 20px rgba(188,19,254,0.1);">
+                <div
+                    style="padding:15px; border-bottom:1px solid rgba(188,19,254,0.3); display:flex; justify-content:space-between; align-items:center;">
+                    <div
+                        style="font-family:'Orbitron'; color:#bc13fe; font-size:1rem; display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-flask"></i> MATERIAL VARIABLE PENENTU
+                    </div>
+                    <div style="font-family:'Rajdhani'; font-size:0.75rem; color:#64748b;">Material yang digunakan dalam
+                        simulasi ini</div>
+                </div>
+                <div id="material-variables-container" style="padding:15px; display:flex; flex-wrap:wrap; gap:10px;">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- WAREHOUSE VISUALIZATION + CALENDAR -->
+            <div class="glass-panel"
+                style="margin-top:20px; border:1px solid #00f3ff; box-shadow:0 0 20px rgba(0,243,255,0.1);">
+                <div
+                    style="padding:15px; border-bottom:1px solid rgba(0,243,255,0.3); display:flex; justify-content:space-between; align-items:center;">
+                    <div
+                        style="font-family:'Orbitron'; color:#00f3ff; font-size:1rem; display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-warehouse"></i> TAMPILAN GUDANG — SIMULASI
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span id="sim-wh-selected-date"
+                            style="font-family:'Rajdhani'; font-size:0.85rem; color:#00f3ff; font-weight:600;">-</span>
+                        <button class="btn-hud-primary" onclick="SimPage.toggleSimCalendar()" style="font-size:0.7rem;">
+                            <i class="fas fa-calendar-alt"></i> PILIH TANGGAL
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CALENDAR POPUP -->
+                <div id="sim-calendar-popup"
+                    style="display:none; padding:15px; border-bottom:1px solid rgba(0,243,255,0.2); background:rgba(0,0,0,0.3);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <button class="btn-hud-primary" onclick="SimPage.calendarPrevMonth()"
+                            style="padding:4px 10px; font-size:0.7rem;">◀ PREV</button>
+                        <div id="sim-calendar-month-label"
+                            style="font-family:'Orbitron'; color:#fff; font-size:0.9rem;"></div>
+                        <button class="btn-hud-primary" onclick="SimPage.calendarNextMonth()"
+                            style="padding:4px 10px; font-size:0.7rem;">NEXT ▶</button>
+                    </div>
+                    <div class="sim-calendar-header">
+                        <div>SEN</div>
+                        <div>SEL</div>
+                        <div>RAB</div>
+                        <div>KAM</div>
+                        <div>JUM</div>
+                        <div>SAB</div>
+                        <div>MIN</div>
+                    </div>
+                    <div id="sim-calendar-grid" class="sim-calendar-grid">
+                        <!-- Calendar dates injected via JS -->
+                    </div>
+                </div>
+
+                <!-- WAREHOUSE CARDS -->
+                <div id="sim-warehouse-display"
+                    style="padding:20px; display:flex; gap:15px; flex-wrap:wrap; justify-content:center; align-items:flex-end; min-height:200px;">
+                    <div style="color:#64748b; font-size:0.9rem; text-align:center; width:100%;">Run simulasi untuk
+                        melihat tampilan gudang</div>
+                </div>
+            </div>
+
+            <!-- SHARE SIMULATION PANEL -->
+            <div class="glass-panel"
+                style="margin-top:20px; border:1px solid #FFE600; box-shadow:0 0 20px rgba(255,230,0,0.1);">
+                <div
+                    style="padding:15px; border-bottom:1px solid rgba(255,230,0,0.3); background:rgba(255,230,0,0.05);">
+                    <div
+                        style="font-family:'Orbitron'; color:#FFE600; font-size:1rem; display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-share-alt"></i> SHARE SIMULATION
+                    </div>
+                </div>
+                <div style="padding:20px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:15px; align-items:end;">
+                        <div>
+                            <label class="control-label" style="color:#FFE600;">🔐 SET PASSWORD</label>
+                            <input type="password" id="share-password" class="control-input"
+                                placeholder="Masukkan password..." autocomplete="new-password">
+                        </div>
+                        <div>
+                            <label class="control-label" style="color:#FFE600;">📝 NAMA SIMULASI</label>
+                            <input type="text" id="share-sim-name" class="control-input"
+                                placeholder="Nama untuk simulasi ini...">
+                        </div>
+                        <button class="btn-add-sim" onclick="SimPage.generateShareLink()"
+                            style="background:linear-gradient(135deg, #FFE600, #ff9500); height:46px; margin-top:0;">
+                            🔗 GENERATE LINK
+                        </button>
+                    </div>
+                    <!-- Generated Link Display -->
+                    <div id="share-link-result"
+                        style="display:none; margin-top:15px; background:rgba(255,230,0,0.05); border:1px solid rgba(255,230,0,0.3); border-radius:8px; padding:15px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <input type="text" id="share-link-url" class="control-input" readonly
+                                style="flex:1; font-size:0.85rem; color:#FFE600;">
+                            <button class="btn-hud-primary" onclick="SimPage.copyShareLink()"
+                                style="border-color:#FFE600; color:#FFE600; white-space:nowrap;">
+                                📋 COPY
+                            </button>
+                        </div>
+                        <div style="color:#64748b; font-size:0.75rem; margin-top:8px;">Link ini dapat dibagikan.
+                            Penerima harus memasukkan password untuk melihat hasil simulasi.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SHARED LINKS MANAGEMENT TABLE -->
+            <div class="glass-panel" style="margin-top:20px; border:1px solid rgba(255,255,255,0.15);">
+                <div style="padding:15px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                    <div
+                        style="font-family:'Orbitron'; color:#fff; font-size:1rem; display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-link"></i> SHARED LINKS MANAGER
+                    </div>
+                </div>
+                <div style="padding:15px; overflow-x:auto;">
+                    <table class="consolidated-table" id="shared-links-table">
+                        <thead>
+                            <tr>
+                                <th>NAMA</th>
+                                <th>TANGGAL DIBUAT</th>
+                                <th>MATERIAL</th>
+                                <th>RANGE</th>
+                                <th>LINK</th>
+                                <th>AKSI</th>
+                            </tr>
+                        </thead>
+                        <tbody id="shared-links-body">
+                            <tr>
+                                <td colspan="6" style="color:#64748b; padding:20px;">Belum ada link yang dibuat.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
         </div>
 

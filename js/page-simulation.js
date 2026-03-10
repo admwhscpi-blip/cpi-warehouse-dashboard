@@ -41,6 +41,9 @@ const SimPage = {
         // 4. Load History
         this.loadHistory();
 
+        // 5. Load Shared Links Table
+        this.renderSharedLinksTable();
+
         // Hide loading overlay after initialization
         setTimeout(() => {
             const overlay = document.getElementById('loading-overlay');
@@ -859,6 +862,8 @@ const SimPage = {
         this.renderMovementChart();
         this.renderFluxChart();
         this.renderSummaryBoxes();
+        this.renderMaterialVariables();
+        this.renderWarehouseVisualization();
     },
 
     renderStockChart: function (targetId = 'stockChart') {
@@ -2162,6 +2167,384 @@ const SimPage = {
         const utcDays = Math.floor(serial - 25569);
         const utcValue = utcDays * 86400;
         return new Date(utcValue * 1000);
+    },
+
+    // ===============================
+    // FEATURE 2: MATERIAL VARIABLES, 
+    // WAREHOUSE VIZ, CALENDAR
+    // ===============================
+
+    calendarCurrentMonth: null, // Date object for currently viewed month
+    calendarSelectedDate: null, // Currently selected date string (YYYY-MM-DD)
+
+    renderMaterialVariables: function () {
+        const container = document.getElementById('material-variables-container');
+        if (!container) return;
+        if (this.session.length === 0) {
+            container.innerHTML = '<div style="color:#64748b; font-size:0.85rem;">Tidak ada material dalam simulasi.</div>';
+            return;
+        }
+
+        let html = '';
+        this.session.forEach((sess, idx) => {
+            const color = sess.color || this.colorPalette[idx % this.colorPalette.length];
+            html += `
+                <div class="mat-var-chip" style="border-color:${color}; background:${color}15; color:${color};">
+                    <span class="chip-dot" style="background:${color}; box-shadow:0 0 8px ${color};"></span>
+                    <span>${sess.material}</span>
+                    <span class="chip-info" style="color:#94a3b8;">
+                        ${sess.facility} · ${this.formatDate(sess.startDate)} - ${this.formatDate(sess.endDate)}
+                    </span>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    },
+
+    toggleSimCalendar: function () {
+        const popup = document.getElementById('sim-calendar-popup');
+        if (popup.style.display === 'none') {
+            popup.style.display = 'block';
+            // Initialize calendar to first month
+            if (!this.calendarCurrentMonth) {
+                const dates = this.getDateRange();
+                if (dates.length > 0) {
+                    this.calendarCurrentMonth = new Date(dates[0].getFullYear(), dates[0].getMonth(), 1);
+                } else {
+                    this.calendarCurrentMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+                }
+            }
+            this.renderSimCalendar();
+        } else {
+            popup.style.display = 'none';
+        }
+    },
+
+    calendarPrevMonth: function () {
+        if (!this.calendarCurrentMonth) return;
+        this.calendarCurrentMonth.setMonth(this.calendarCurrentMonth.getMonth() - 1);
+        this.renderSimCalendar();
+    },
+
+    calendarNextMonth: function () {
+        if (!this.calendarCurrentMonth) return;
+        this.calendarCurrentMonth.setMonth(this.calendarCurrentMonth.getMonth() + 1);
+        this.renderSimCalendar();
+    },
+
+    renderSimCalendar: function () {
+        const grid = document.getElementById('sim-calendar-grid');
+        const label = document.getElementById('sim-calendar-month-label');
+        if (!grid || !label || !this.calendarCurrentMonth) return;
+
+        const year = this.calendarCurrentMonth.getFullYear();
+        const month = this.calendarCurrentMonth.getMonth();
+        const monthNames = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+        label.textContent = `${monthNames[month]} ${year}`;
+
+        // Get sim date range for highlighting
+        const dates = this.getDateRange();
+        let simStart = null, simEnd = null;
+        if (dates.length > 0) {
+            simStart = dates[0].toISOString().split('T')[0];
+            simEnd = dates[dates.length - 1].toISOString().split('T')[0];
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        // Monday = 0 adjustment (JS: 0=Sun, we want Mon=0)
+        let startDow = firstDay.getDay() - 1;
+        if (startDow < 0) startDow = 6;
+
+        let html = '';
+
+        // Empty cells before first day
+        for (let i = 0; i < startDow; i++) {
+            html += '<div class="sim-cal-day outside"></div>';
+        }
+
+        for (let d = 1; d <= lastDay.getDate(); d++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            let classes = 'sim-cal-day';
+
+            const inRange = simStart && simEnd && dateStr >= simStart && dateStr <= simEnd;
+            if (inRange) classes += ' in-range';
+            if (dateStr === today) classes += ' today';
+            if (dateStr === this.calendarSelectedDate) classes += ' selected';
+
+            const onclick = inRange ? `onclick="SimPage.onCalendarDateClick('${dateStr}')"` : '';
+            html += `<div class="${classes}" ${onclick}>${d}</div>`;
+        }
+
+        grid.innerHTML = html;
+    },
+
+    onCalendarDateClick: function (dateStr) {
+        this.calendarSelectedDate = dateStr;
+        this.renderSimCalendar(); // Re-render to update selected state
+
+        // Update label
+        const labelEl = document.getElementById('sim-wh-selected-date');
+        if (labelEl) {
+            const d = new Date(dateStr);
+            labelEl.textContent = d.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+        }
+
+        // Update warehouse visualization for this date
+        this.renderWarehouseVisualization(dateStr);
+    },
+
+    renderWarehouseVisualization: function (targetDateStr) {
+        const container = document.getElementById('sim-warehouse-display');
+        if (!container || !this.data || !this.data.warehouses) return;
+
+        if (this.session.length === 0) {
+            container.innerHTML = '<div style="color:#64748b; font-size:0.9rem; text-align:center; width:100%;">Run simulasi untuk melihat tampilan gudang</div>';
+            return;
+        }
+
+        // If no targetDateStr, use end date of simulation
+        if (!targetDateStr) {
+            const dates = this.getDateRange();
+            if (dates.length > 0) {
+                targetDateStr = dates[dates.length - 1].toISOString().split('T')[0];
+            } else {
+                return;
+            }
+        }
+
+        const targetDate = new Date(targetDateStr);
+
+        // Calculate stock per warehouse at this date
+        const warehouseStocks = {};
+        const warehouses = this.data.warehouses;
+        const capacities = this.data.capacities || [];
+
+        // Initialize with capacities
+        warehouses.forEach((name, idx) => {
+            warehouseStocks[name] = {
+                capacity: (capacities[idx] || 0) * (typeof CONFIG !== 'undefined' && CONFIG.UNIT_DIVIDER ? CONFIG.UNIT_DIVIDER : 1),
+                allocated: 0
+            };
+        });
+
+        // Calculate global stock at target date
+        let totalAllMatStock = 0;
+        if (this.data.materials) {
+            this.data.materials.forEach(mat => {
+                if (mat.stocks) {
+                    mat.stocks.forEach(st => totalAllMatStock += st);
+                }
+            });
+        }
+
+        let simulatedBaseStock = 0;
+        this.session.forEach(s => simulatedBaseStock += s.baseStock);
+        const unsimulatedStock = Math.max(0, totalAllMatStock - simulatedBaseStock);
+
+        let simTotal = 0;
+        this.session.forEach(sess => {
+            simTotal += this.calculateStateAtDate(sess, targetDateStr, targetDate).stock;
+        });
+
+        let remainingToFill = unsimulatedStock + simTotal;
+
+        // Cascade fill from left to right
+        warehouses.forEach(name => {
+            const wh = warehouseStocks[name];
+            const fillAmount = Math.min(remainingToFill, wh.capacity);
+            wh.allocated = fillAmount;
+            remainingToFill -= fillAmount;
+        });
+
+        // If OVERCAPACITY (COLLAPSE), apply all remaining excess ONLY to the first warehouse (RM)
+        if (remainingToFill > 0 && warehouses.length > 0) {
+            warehouseStocks[warehouses[0]].allocated += remainingToFill;
+        }
+
+        // Render warehouse cards
+        const maxCap = Math.max(...capacities.map((c, i) => warehouseStocks[warehouses[i]]?.capacity || 0), 10000);
+        const MAX_H = 160;
+
+        let html = '';
+        warehouses.forEach((name, idx) => {
+            const wh = warehouseStocks[name];
+            const totalStock = wh.allocated;
+            const capKg = wh.capacity;
+            const percent = capKg > 0 ? (totalStock / capKg) * 100 : 0;
+            const visualH = Math.max((capKg / (maxCap * 1.2)) * MAX_H, 50);
+
+            // Use red if >= 100% (since others will max at 100, overcapacity focuses red on the excess one too)
+            const isCritical = percent >= 85;
+            const isHigh = percent >= 70;
+            const fillColor = isCritical ? 'linear-gradient(to top, #ef4444, #991b1b)' :
+                (isHigh ? 'linear-gradient(to top, #f59e0b, #9a3412)' :
+                    'linear-gradient(to top, #00f3ff, #0e7490)');
+            const borderColor = isCritical ? '#ef4444' : (isHigh ? '#f59e0b' : '#00f3ff');
+
+            html += `
+                <div class="sim-wh-card" style="height:${visualH + 80}px;">
+                    <div class="sim-wh-header">
+                        <div class="sim-wh-name">${name}</div>
+                        <div class="sim-wh-cap">Cap: ${(capKg / 1000).toLocaleString('id-ID')} T</div>
+                        <div class="sim-wh-stock" style="color:${borderColor};">Stock: ${(totalStock / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} T</div>
+                    </div>
+                    <div class="sim-wh-bar" style="height:${visualH}px;">
+                        <div class="sim-wh-bar-grid"></div>
+                        <div class="sim-wh-fill" style="height:${Math.min(percent, 100)}%; background:${fillColor}; border-top:2px solid ${borderColor}; box-shadow:0 0 15px ${borderColor}44;"></div>
+                        <div class="sim-wh-pct">${Math.round(percent)}%</div>
+                    </div>
+                    <div class="sim-wh-footer"></div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    },
+
+    // ===============================
+    // FEATURE 1: SHARE SIMULATION LINKS
+    // ===============================
+
+    simpleHash: function (str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash |= 0;
+        }
+        return hash.toString(36);
+    },
+
+    generateShareLink: function () {
+        const password = document.getElementById('share-password').value;
+        const simName = document.getElementById('share-sim-name').value;
+
+        if (!password) {
+            alert('⚠️ Harap masukkan password untuk share link!');
+            return;
+        }
+        if (!simName) {
+            alert('⚠️ Harap masukkan nama simulasi!');
+            return;
+        }
+        if (this.session.length === 0) {
+            alert('⚠️ Tidak ada data simulasi untuk dibagikan!');
+            return;
+        }
+
+        const shareId = 'sim_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 5);
+        const passwordHash = this.simpleHash(password);
+
+        // Get materials list
+        const materials = this.session.map(s => s.material).join(', ');
+
+        // Get date range
+        const dates = this.getDateRange();
+        let rangeStr = '-';
+        if (dates.length > 0) {
+            rangeStr = this.formatDate(dates[0].toISOString().split('T')[0]) + ' — ' + this.formatDate(dates[dates.length - 1].toISOString().split('T')[0]);
+        }
+
+        // Store share data
+        const shareData = {
+            id: shareId,
+            name: simName,
+            passwordHash: passwordHash,
+            createdAt: new Date().toISOString(),
+            materials: materials,
+            dateRange: rangeStr,
+            session: JSON.parse(JSON.stringify(this.session)), // Deep clone
+            warehouseData: this.data ? {
+                warehouses: this.data.warehouses,
+                capacities: this.data.capacities,
+                materials: this.data.materials
+            } : null
+        };
+
+        const sharedLinks = JSON.parse(localStorage.getItem('rm_sim_shared_links') || '[]');
+        sharedLinks.unshift(shareData);
+        localStorage.setItem('rm_sim_shared_links', JSON.stringify(sharedLinks));
+
+        // Generate URL
+        const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
+        const shareUrl = `${baseUrl}/rm-simulation-viewer.html?id=${shareId}`;
+
+        // Show result
+        document.getElementById('share-link-url').value = shareUrl;
+        document.getElementById('share-link-result').style.display = 'block';
+
+        // Refresh table
+        this.renderSharedLinksTable();
+    },
+
+    copyShareLink: function () {
+        const urlInput = document.getElementById('share-link-url');
+        if (!urlInput) return;
+        urlInput.select();
+        document.execCommand('copy');
+
+        // Visual feedback
+        const btn = urlInput.nextElementSibling;
+        const origText = btn.innerHTML;
+        btn.innerHTML = '✅ COPIED!';
+        btn.style.background = 'rgba(52,211,153,0.2)';
+        btn.style.borderColor = '#34d399';
+        btn.style.color = '#34d399';
+        setTimeout(() => {
+            btn.innerHTML = origText;
+            btn.style.background = '';
+            btn.style.borderColor = '#FFE600';
+            btn.style.color = '#FFE600';
+        }, 2000);
+    },
+
+    deleteShareLink: function (id) {
+        if (!confirm('Apakah Anda yakin ingin menghapus link ini?')) return;
+
+        let sharedLinks = JSON.parse(localStorage.getItem('rm_sim_shared_links') || '[]');
+        sharedLinks = sharedLinks.filter(link => link.id !== id);
+        localStorage.setItem('rm_sim_shared_links', JSON.stringify(sharedLinks));
+
+        this.renderSharedLinksTable();
+    },
+
+    renderSharedLinksTable: function () {
+        const tbody = document.getElementById('shared-links-body');
+        if (!tbody) return;
+
+        const sharedLinks = JSON.parse(localStorage.getItem('rm_sim_shared_links') || '[]');
+
+        if (sharedLinks.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="color:#64748b; padding:20px;">Belum ada link yang dibuat.</td></tr>';
+            return;
+        }
+
+        const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
+
+        let html = '';
+        sharedLinks.forEach(link => {
+            const createdDate = new Date(link.createdAt).toLocaleDateString('id-ID', {
+                day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            const shareUrl = `${baseUrl}/rm-simulation-viewer.html?id=${link.id}`;
+
+            html += `
+                <tr>
+                    <td style="color:#fff; font-weight:600;">${link.name}</td>
+                    <td style="color:#94a3b8; font-size:0.8rem;">${createdDate}</td>
+                    <td style="color:#bc13fe; font-size:0.8rem; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${link.materials}</td>
+                    <td style="color:#00f3ff; font-size:0.8rem;">${link.dateRange || '-'}</td>
+                    <td>
+                        <button class="btn-copy-link" onclick="navigator.clipboard.writeText('${shareUrl}'); this.textContent='✅'; setTimeout(()=>this.textContent='📋 COPY',1500);">📋 COPY</button>
+                    </td>
+                    <td>
+                        <button class="btn-delete-link" onclick="SimPage.deleteShareLink('${link.id}')">🗑️ DELETE</button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
     }
 };
 
