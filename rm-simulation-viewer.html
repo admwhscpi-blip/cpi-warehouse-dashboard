@@ -617,6 +617,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <script>
         // Embed CONFIG for standalone use
         const CONFIG = {
@@ -641,13 +642,19 @@
                 if (!payload) { this.showError(); return; }
 
                 try {
-                    const decodedStr = decodeURIComponent(atob(payload));
+                    let decodedStr = '';
+                    if (typeof LZString !== 'undefined') {
+                        decodedStr = LZString.decompressFromEncodedURIComponent(payload);
+                    }
+                    if (!decodedStr) {
+                        decodedStr = decodeURIComponent(atob(payload));
+                    }
                     this.shareData = JSON.parse(decodedStr);
                 } catch (e) {
                     console.error("Failed to parse simulation share link payload:", e);
                     this.shareData = null;
                 }
-                
+
                 if (!this.shareData) { this.showError(); return; }
 
                 document.getElementById('viewer-sim-name').textContent = this.shareData.name || 'Simulation';
@@ -738,6 +745,19 @@
             },
             formatDate: function (ds) { if (!ds) return '-'; return new Date(ds).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); },
 
+            getUnsimulatedStock: function () {
+                if (this.data && this.data.unsimulatedStock !== undefined) {
+                    return this.data.unsimulatedStock;
+                }
+                let totalAllMatStock = 0;
+                if (this.data && this.data.materials) {
+                    this.data.materials.forEach(m => { if (m.stocks) totalAllMatStock += m.stocks.reduce((a, b) => a + b, 0); });
+                }
+                let simulatedBaseStock = 0;
+                this.session.forEach(s => simulatedBaseStock += s.baseStock);
+                return Math.max(0, totalAllMatStock - simulatedBaseStock);
+            },
+
             calculateStateAtDate: function (sess, dateStr) {
                 const baseStock = Number(sess.baseStock) || 0, defaultIn = Number(sess.defaultIn) || 0, defaultOut = Number(sess.defaultOut) || 0;
                 const startDate = new Date(sess.startDate), targetDate = new Date(dateStr);
@@ -787,11 +807,7 @@
                 if (totalCapacity === 0) totalCapacity = 25000000;
 
                 // Unsimulated stock
-                let totalAllMatStock = 0;
-                if (this.data.materials) this.data.materials.forEach(m => { if (m.stocks) totalAllMatStock += m.stocks.reduce((a, b) => a + b, 0); });
-                let simulatedBaseStock = 0;
-                this.session.forEach(s => simulatedBaseStock += s.baseStock);
-                const unsimulatedStock = Math.max(0, totalAllMatStock - simulatedBaseStock);
+                const unsimulatedStock = this.getUnsimulatedStock();
 
                 let dataStock = [], dataCap = [];
                 for (let i = 0; i < fullDates.length; i += step) {
@@ -910,11 +926,7 @@
                 const totalCapacity = tCap > 0 ? tCap : 25000000;
 
                 // Unsimulated stock
-                let totalAllMatStock = 0;
-                if (this.data && this.data.materials) this.data.materials.forEach(m => { if (m.stocks) totalAllMatStock += m.stocks.reduce((a, b) => a + b, 0); });
-                let simulatedBaseStock = 0;
-                this.session.forEach(s => simulatedBaseStock += s.baseStock);
-                const unsimulatedStock = Math.max(0, totalAllMatStock - simulatedBaseStock);
+                const unsimulatedStock = this.getUnsimulatedStock();
 
                 this.session.forEach(s => {
                     const startState = this.calculateStateAtDate(s, fullDates[0].toISOString().split('T')[0]);
@@ -1070,11 +1082,7 @@
                 });
 
                 // Calculate global stock at target date
-                let totalAllMatStock = 0;
-                if (this.data.materials) this.data.materials.forEach(m => { if (m.stocks) totalAllMatStock += m.stocks.reduce((a, b) => a + b, 0); });
-                let simulatedBaseStock = 0;
-                this.session.forEach(s => simulatedBaseStock += s.baseStock);
-                const unsimulatedStock = Math.max(0, totalAllMatStock - simulatedBaseStock);
+                const unsimulatedStock = this.getUnsimulatedStock();
 
                 let simTotal = 0;
                 this.session.forEach(sess => {
@@ -1133,27 +1141,14 @@
                 if (fullDates.length === 0) return;
 
                 // Build material list: simulated + all others (stagnan)
-                const simMaterials = this.session.map(s => s.material);
-                const allMaterials = [];
-                // Add simulated materials first
-                simMaterials.forEach(m => allMaterials.push({ name: m, simulated: true }));
-                // Add remaining materials from data
-                if (this.data && this.data.materials) {
-                    this.data.materials.forEach(mat => {
-                        if (!simMaterials.includes(mat.name)) {
-                            allMaterials.push({ name: mat.name, simulated: false, baseStock: mat.stocks ? mat.stocks.reduce((a, b) => a + b, 0) : 0 });
-                        }
-                    });
-                }
-                // Group unsimulated
-                const unsimMats = allMaterials.filter(m => !m.simulated);
-                const showMats = allMaterials.filter(m => m.simulated);
-                const unsimTotal = unsimMats.reduce((s, m) => s + (m.baseStock || 0), 0);
+                const showMats = this.session.map(s => ({ name: s.material, simulated: true }));
+                const unsimTotal = this.getUnsimulatedStock();
+                const unsimCountText = (this.data && this.data.materials) ? (this.data.materials.length - showMats.length) : 'ALL';
 
                 // Header
                 let headerHtml = '<tr><th>TANGGAL</th>';
                 showMats.forEach(m => headerHtml += `<th style="color:${this.session.find(s => s.material === m.name)?.color || '#fff'}">${m.name}<br><small>STOCK (KG)</small></th><th>IN</th><th>OUT</th>`);
-                headerHtml += `<th style="color:#64748b;">${unsimMats.length} RM LAINNYA<br><small>STOCK (KG)</small></th><th>IN</th><th>OUT</th></tr>`;
+                headerHtml += `<th style="color:#64748b;">${unsimCountText} RM LAINNYA<br><small>STOCK (KG)</small></th><th>IN</th><th>OUT</th></tr>`;
                 thead.innerHTML = headerHtml;
 
                 // Body

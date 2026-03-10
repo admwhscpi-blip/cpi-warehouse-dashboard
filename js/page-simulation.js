@@ -2446,7 +2446,15 @@ const SimPage = {
             rangeStr = this.formatDate(dates[0].toISOString().split('T')[0]) + ' — ' + this.formatDate(dates[dates.length - 1].toISOString().split('T')[0]);
         }
 
-        // Store share data
+        // Pre-calculate unsimulated stock to avoid passing massive materials array in URL
+        let totalAllMatStock = 0;
+        if (this.data && this.data.materials) {
+            this.data.materials.forEach(m => { if (m.stocks) totalAllMatStock += m.stocks.reduce((a, b) => a + b, 0); });
+        }
+        let simulatedBaseStock = 0;
+        this.session.forEach(s => simulatedBaseStock += s.baseStock);
+        const unsimulatedStock = Math.max(0, totalAllMatStock - simulatedBaseStock);
+
         const shareData = {
             id: shareId,
             name: simName,
@@ -2458,12 +2466,18 @@ const SimPage = {
             warehouseData: this.data ? {
                 warehouses: this.data.warehouses,
                 capacities: this.data.capacities,
-                materials: this.data.materials
+                unsimulatedStock: unsimulatedStock
             } : null
         };
 
-        // Instead of local storage, compress to URL string (Base64 encoded JSON)
-        const payload = btoa(encodeURIComponent(JSON.stringify(shareData)));
+        // Compress to URL string using LZString (fallback to btoa if failed/missing)
+        const jsonString = JSON.stringify(shareData);
+        let payload = '';
+        if (typeof LZString !== 'undefined') {
+            payload = LZString.compressToEncodedURIComponent(jsonString);
+        } else {
+            payload = btoa(encodeURIComponent(jsonString));
+        }
 
         // Store minimum info for management table in local storage
         const managementData = {
