@@ -291,15 +291,38 @@
             padding: 5px 2px;
         }
 
-        .collapse-desc {
+        .sim-cal-day.warning-date {
+            animation: kelapKelip 1.5s infinite;
+            color: #FFE600 !important;
+            border-color: #FFE600 !important;
+            background: rgba(255, 230, 0, 0.1);
+            z-index: 2;
+            font-weight: 800;
+            height: auto;
+            min-height: 55px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 2px;
+        }
+
+        .collapse-desc,
+        .warning-desc {
             display: block;
             font-size: 0.5rem;
-            color: #ff003c;
             line-height: 1;
             margin-top: 3px;
             font-family: 'Rajdhani';
         }
 
+        .collapse-desc {
+            color: #ff003c;
+        }
+
+        .warning-desc {
+            color: #FFE600;
+        }
 
         /* DETAIL TABLE */
         .detail-table {
@@ -1037,9 +1060,14 @@
                             let dTotal = 0;
                             this.session.forEach(s => dTotal += this.calculateStateAtDate(s, dateStr).stock);
                             const globalAtDate = unsimulatedStock + dTotal;
-                            if (globalAtDate > totalCapacity) {
+                            const remainingSpace = totalCapacity - globalAtDate;
+
+                            if (remainingSpace < 0) {
                                 cls += ' collapse-date';
                                 collapseMarkup = `<span class="collapse-desc">${(globalAtDate / 1000).toLocaleString('id-ID')}T</span>`;
+                            } else if (remainingSpace < 1000000) {
+                                cls += ' warning-date';
+                                collapseMarkup = `<span class="warning-desc">${(globalAtDate / 1000).toLocaleString('id-ID')}T</span>`;
                             }
                         }
                         if (dateStr === today) cls += ' today';

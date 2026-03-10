@@ -2257,6 +2257,25 @@ const SimPage = {
         let startDow = firstDay.getDay() - 1;
         if (startDow < 0) startDow = 6;
 
+        // Setup shared logic before loop
+        let totalCapacity = 0;
+        let unsimulatedStock = 0;
+        if (this.data && this.data.warehouses) {
+            this.data.warehouses.forEach((w, idx) => { totalCapacity += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || this.data.capacities[idx] || 0; });
+            if (totalCapacity > 0 && totalCapacity < 1000000) totalCapacity *= 1000;
+            if (totalCapacity === 0) totalCapacity = 25000000;
+
+            let totalAllMatStock = 0;
+            if (this.data.materials) {
+                this.data.materials.forEach(mat => {
+                    if (mat.stocks) mat.stocks.forEach(st => totalAllMatStock += st);
+                });
+            }
+            let simulatedBaseStock = 0;
+            this.session.forEach(s => simulatedBaseStock += s.baseStock);
+            unsimulatedStock = Math.max(0, totalAllMatStock - simulatedBaseStock);
+        }
+
         let html = '';
 
         // Empty cells before first day
@@ -2269,12 +2288,35 @@ const SimPage = {
             let classes = 'sim-cal-day';
 
             const inRange = simStart && simEnd && dateStr >= simStart && dateStr <= simEnd;
-            if (inRange) classes += ' in-range';
+            let markup = '';
+
+            if (inRange) {
+                classes += ' in-range';
+
+                let simTotal = 0;
+                this.session.forEach(s => simTotal += this.calculateStateAtDate(s, dateStr).stock);
+
+                const globalAtDate = unsimulatedStock + simTotal;
+                const remainingSpace = totalCapacity - globalAtDate;
+
+                if (remainingSpace < 0) {
+                    classes += ' collapse-date';
+                    markup = `<span class="collapse-desc">${(globalAtDate / 1000).toLocaleString('id-ID')}T</span>`;
+                } else if (remainingSpace < 1000000) {
+                    classes += ' warning-date';
+                    markup = `<span class="warning-desc">${(globalAtDate / 1000).toLocaleString('id-ID')}T</span>`;
+                }
+            }
+
             if (dateStr === today) classes += ' today';
             if (dateStr === this.calendarSelectedDate) classes += ' selected';
 
             const onclick = inRange ? `onclick="SimPage.onCalendarDateClick('${dateStr}')"` : '';
-            html += `<div class="${classes}" ${onclick}>${d}</div>`;
+            if (markup) {
+                html += `<div class="${classes}" ${onclick}><span>${d}</span>${markup}</div>`;
+            } else {
+                html += `<div class="${classes}" ${onclick}>${d}</div>`;
+            }
         }
 
         grid.innerHTML = html;
@@ -2299,18 +2341,13 @@ const SimPage = {
         const container = document.getElementById('sim-warehouse-display');
         if (!container || !this.data || !this.data.warehouses) return;
 
-        if (this.session.length === 0) {
-            container.innerHTML = '<div style="color:#64748b; font-size:0.9rem; text-align:center; width:100%;">Run simulasi untuk melihat tampilan gudang</div>';
-            return;
-        }
-
-        // If no targetDateStr, use end date of simulation
+        // If no targetDateStr, use end date of simulation or today
         if (!targetDateStr) {
             const dates = this.getDateRange();
             if (dates.length > 0) {
                 targetDateStr = dates[dates.length - 1].toISOString().split('T')[0];
             } else {
-                return;
+                targetDateStr = new Date().toISOString().split('T')[0];
             }
         }
 
