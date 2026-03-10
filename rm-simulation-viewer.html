@@ -309,11 +309,7 @@
 
         .collapse-desc,
         .warning-desc {
-            display: block;
-            font-size: 0.5rem;
-            line-height: 1;
-            margin-top: 3px;
-            font-family: 'Rajdhani';
+            display: none;
         }
 
         .collapse-desc {
@@ -1053,7 +1049,6 @@
                         let cls = 'sim-cal-day';
                         const inRange = dateStr >= simStart && dateStr <= simEnd;
 
-                        let collapseMarkup = '';
                         if (inRange) {
                             cls += ' in-range';
                             // Calculate stock for collapse highlighting
@@ -1064,21 +1059,15 @@
 
                             if (remainingSpace < 0) {
                                 cls += ' collapse-date';
-                                collapseMarkup = `<span class="collapse-desc">${(globalAtDate / 1000).toLocaleString('id-ID')}T</span>`;
                             } else if (remainingSpace < 1000000) {
                                 cls += ' warning-date';
-                                collapseMarkup = `<span class="warning-desc">${(globalAtDate / 1000).toLocaleString('id-ID')}T</span>`;
                             }
                         }
                         if (dateStr === today) cls += ' today';
                         if (dateStr === this.calendarSelectedDate) cls += ' selected';
                         const oc = inRange ? `onclick="VP.onDateClick('${dateStr}')"` : '';
 
-                        if (collapseMarkup) {
-                            html += `<div class="${cls}" ${oc}><span>${d}</span>${collapseMarkup}</div>`;
-                        } else {
-                            html += `<div class="${cls}" ${oc}>${d}</div>`;
-                        }
+                        html += `<div class="${cls}" ${oc}>${d}</div>`;
                     }
                     html += '</div></div>';
                 });

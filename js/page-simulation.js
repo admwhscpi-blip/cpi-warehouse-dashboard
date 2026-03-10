@@ -2288,7 +2288,6 @@ const SimPage = {
             let classes = 'sim-cal-day';
 
             const inRange = simStart && simEnd && dateStr >= simStart && dateStr <= simEnd;
-            let markup = '';
 
             if (inRange) {
                 classes += ' in-range';
@@ -2301,10 +2300,8 @@ const SimPage = {
 
                 if (remainingSpace < 0) {
                     classes += ' collapse-date';
-                    markup = `<span class="collapse-desc">${(globalAtDate / 1000).toLocaleString('id-ID')}T</span>`;
                 } else if (remainingSpace < 1000000) {
                     classes += ' warning-date';
-                    markup = `<span class="warning-desc">${(globalAtDate / 1000).toLocaleString('id-ID')}T</span>`;
                 }
             }
 
@@ -2312,11 +2309,7 @@ const SimPage = {
             if (dateStr === this.calendarSelectedDate) classes += ' selected';
 
             const onclick = inRange ? `onclick="SimPage.onCalendarDateClick('${dateStr}')"` : '';
-            if (markup) {
-                html += `<div class="${classes}" ${onclick}><span>${d}</span>${markup}</div>`;
-            } else {
-                html += `<div class="${classes}" ${onclick}>${d}</div>`;
-            }
+            html += `<div class="${classes}" ${onclick}>${d}</div>`;
         }
 
         grid.innerHTML = html;
