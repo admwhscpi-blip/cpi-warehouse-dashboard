@@ -479,6 +479,35 @@
 
             <!-- 4 MAIN CHARTS (ALL LANDSCAPE) -->
             <div class="chart-stack">
+                <!-- RANGKUMAN SIMULASI (EXECUTIVE SUMMARY) — POSISI PALING ATAS -->
+                <div class="glass-panel"
+                    style="display:flex; flex-direction:column; padding:0; border:1px solid #FFE600; box-shadow:0 0 20px rgba(255,230,0,0.1); background:rgba(20,20,30,0.8); overflow:hidden; margin-bottom:0;">
+                    <div
+                        style="padding:15px; border-bottom:1px solid rgba(255,230,0,0.3); background:rgba(255,230,0,0.05);">
+                        <div
+                            style="font-family:'Orbitron'; color:#FFE600; font-size:1.1rem; letter-spacing:2px; display:flex; align-items:center; gap:10px;">
+                            <i class="fas fa-clipboard-list"></i> RANGKUMAN SIMULASI
+                        </div>
+                    </div>
+                    <!-- GRAFIK RANGKUMAN (TOP) -->
+                    <div style="padding:15px 20px; border-bottom:1px solid rgba(255,230,0,0.15);">
+                        <div style="height:200px; position:relative;"><canvas id="summaryChart"></canvas></div>
+                    </div>
+                    <!-- EXECUTIVE SUMMARY CONTENT -->
+                    <div id="executive-summary-content" style="padding:20px; font-family:'Rajdhani';">
+                        <!-- A. STATUS KRITIS (COLLAPSE POINT) -->
+                        <div id="collapse-point-box" style="margin-bottom:18px;"></div>
+                        <!-- B. TABEL PUNCAK STOK -->
+                        <div id="peak-inventory-table" style="margin-bottom:18px;"></div>
+                        <!-- C. ANALISIS MATEMATIKA -->
+                        <div id="math-analysis-box" style="margin-bottom:10px;"></div>
+                        <!-- FOOTER NOTE -->
+                        <div
+                            style="color:#94a3b8; font-size:0.85rem; font-style:italic; text-align:left; padding-top:6px; border-top:1px solid rgba(255,230,0,0.1);">
+                            * detail nya lihat grafik dibawah</div>
+                    </div>
+                </div>
+
                 <!-- MOVEMENT (LANDSCAPE) -->
                 <div class="glass-panel"
                     style="display:flex; flex-direction:column; padding:0; overflow:hidden; border:1px solid #bc13fe; box-shadow:0 0 20px rgba(188,19,254,0.1); height:350px; margin-bottom:0;">
@@ -508,53 +537,6 @@
                         </div>
                     </div>
                     <div style="flex:1; position:relative; padding:10px;"><canvas id="stockChart"></canvas></div>
-                </div>
-
-                <!-- RANGKUMAN (LANDSCAPE) -->
-                <div class="glass-panel"
-                    style="display:flex; flex-direction:column; padding:0; border:1px solid #FFE600; box-shadow:0 0 20px rgba(255,230,0,0.1); background:rgba(20,20,30,0.8); overflow:hidden; margin-bottom:0;">
-                    <div
-                        style="padding:15px; border-bottom:1px solid rgba(255,230,0,0.3); background:rgba(255,230,0,0.05);">
-                        <div
-                            style="font-family:'Orbitron'; color:#FFE600; font-size:1.1rem; letter-spacing:2px; display:flex; align-items:center; gap:10px;">
-                            <i class="fas fa-clipboard-list"></i> RANGKUMAN
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:20px; padding:20px;">
-                        <div style="flex:1; min-width:300px;">
-                            <div id="summary-material-list"
-                                style="font-family:'Rajdhani'; font-size:0.95rem; max-height:180px; overflow-y:auto; padding-right:10px;">
-                            </div>
-                        </div>
-                        <div style="flex:1; display:flex; flex-direction:column; gap:15px; justify-content:center;">
-                            <div style="display:flex; gap:15px;">
-                                <div
-                                    style="flex:1; background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; border-left:4px solid #f87171;">
-                                    <div style="color:#f87171; font-weight:bold; font-size:0.9rem; margin-bottom:5px;">
-                                        📉 LOWEST POINT</div>
-                                    <div id="summary-lowest-stock"
-                                        style="color:#fff; font-size:1.4rem; font-weight:bold;">0 KG</div>
-                                    <div id="summary-lowest-pct" style="color:#94a3b8; font-size:0.9rem;">0% Capacity
-                                    </div>
-                                </div>
-                                <div
-                                    style="flex:1; background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; border-left:4px solid #34d399;">
-                                    <div style="color:#34d399; font-weight:bold; font-size:0.9rem; margin-bottom:5px;">
-                                        📈 HIGHEST POINT</div>
-                                    <div id="summary-highest-stock"
-                                        style="color:#fff; font-size:1.4rem; font-weight:bold;">0 KG</div>
-                                    <div id="summary-highest-pct" style="color:#94a3b8; font-size:0.9rem;">0% Capacity
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="summary-conclusion-box"
-                                style="background:rgba(52,211,153,0.1); padding:20px; border-radius:8px; border:1px solid #34d399; text-align:center; display:flex; justify-content:space-between; align-items:center;">
-                                <div style="font-family:'Orbitron'; font-size:2rem; color:#34d399;">AMAN</div>
-                                <div style="color:#cbd5e1; font-size:1.1rem; text-align:right;">Sisa Space:<br><b
-                                        style="color:#34d399; font-size:1.5rem;">-</b></div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- DAILY FLUX (LANDSCAPE) -->
@@ -928,65 +910,395 @@
                 });
             },
 
+            summaryChartInstance: null,
+
             generateRangkuman: function () {
-                const listContainer = document.getElementById('summary-material-list'); if (!listContainer) return;
-                listContainer.innerHTML = '';
                 const fullDates = this.getDateRange();
-                if (fullDates.length === 0) { listContainer.innerHTML = '<div style="color:orange">No data</div>'; return; }
+                if (fullDates.length === 0) return;
 
-                let globalLowest = { qty: Infinity }, globalHighest = { qty: -Infinity };
-
-                // Calculate total capacity
+                // === CALCULATE TOTAL CAPACITY ===
                 let tCap = 0;
                 if (this.data && this.data.warehouses) {
                     this.data.warehouses.forEach((w, idx) => { tCap += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || this.data.capacities[idx] || 0; });
                 }
                 if (tCap > 0 && tCap < 1000000) tCap *= 1000;
                 const totalCapacity = tCap > 0 ? tCap : 25000000;
-
-                // Unsimulated stock
                 const unsimulatedStock = this.getUnsimulatedStock();
+                const unsimCount = (this.data && this.data.materials) ? (this.data.materials.length - this.session.length) : 148;
 
-                this.session.forEach(s => {
-                    const startState = this.calculateStateAtDate(s, fullDates[0].toISOString().split('T')[0]);
-                    const endState = this.calculateStateAtDate(s, fullDates[fullDates.length - 1].toISOString().split('T')[0]);
-                    let peak = 0;
-                    for (let d of fullDates) { const st = this.calculateStateAtDate(s, d.toISOString().split('T')[0]); if (st.stock > peak) peak = st.stock; }
-                    const item = document.createElement('div');
-                    item.style.cssText = 'margin-bottom:8px; border-left:3px solid ' + s.color + '; padding-left:8px;';
-                    item.innerHTML = `<div style="color:${s.color}; font-weight:bold;">${s.material}</div>
-                    <div style="display:flex; justify-content:space-between; color:#cbd5e1; font-size:0.8rem;">
-                    <span>Start: <b>${(startState.stock / 1000).toLocaleString()} T</b></span>
-                    <span>Peak: <b>${(peak / 1000).toLocaleString()} T</b></span>
-                    <span>End: <b>${(endState.stock / 1000).toLocaleString()} T</b></span></div>`;
-                    listContainer.appendChild(item);
+                // === COLLECT DATA PER DATE ===
+                let dailyTotals = [], collapseDate = null, collapseDay = null;
+                let perMatPeak = this.session.map(s => ({ material: s.material, color: s.color, peakStock: 0, peakDate: null, peakDay: 0 }));
+
+                fullDates.forEach((d, idx) => {
+                    const dStr = d.toISOString().split('T')[0];
+                    let simTotal = 0;
+                    this.session.forEach((s, si) => {
+                        const st = this.calculateStateAtDate(s, dStr);
+                        simTotal += st.stock;
+                        if (st.stock > perMatPeak[si].peakStock) {
+                            perMatPeak[si].peakStock = st.stock;
+                            perMatPeak[si].peakDate = dStr;
+                            perMatPeak[si].peakDay = idx + 1;
+                        }
+                    });
+                    const globalTotal = unsimulatedStock + simTotal;
+                    dailyTotals.push(globalTotal);
+                    if (!collapseDate && globalTotal > totalCapacity) {
+                        collapseDate = dStr;
+                        collapseDay = idx + 1;
+                    }
                 });
 
-                for (let d of fullDates) {
-                    let simTotal = 0;
-                    this.session.forEach(s => { simTotal += this.calculateStateAtDate(s, d.toISOString().split('T')[0]).stock; });
-                    const globalTotal = unsimulatedStock + simTotal;
-                    if (globalTotal < globalLowest.qty) globalLowest.qty = globalTotal;
-                    if (globalTotal > globalHighest.qty) globalHighest.qty = globalTotal;
-                }
-                globalLowest.pct = (globalLowest.qty / totalCapacity) * 100;
-                globalHighest.pct = (globalHighest.qty / totalCapacity) * 100;
+                // === A. GRAFIK RANGKUMAN (SUMMARY CHART) ===
+                this.renderSummaryChart(fullDates, dailyTotals, totalCapacity);
 
-                document.getElementById('summary-lowest-stock').innerText = `${(globalLowest.qty / 1000).toLocaleString('id-ID')} T`;
-                document.getElementById('summary-lowest-pct').innerText = `${globalLowest.pct.toFixed(1)}% Capacity`;
-                document.getElementById('summary-highest-stock').innerText = `${(globalHighest.qty / 1000).toLocaleString('id-ID')} T`;
-                document.getElementById('summary-highest-pct').innerText = `${globalHighest.pct.toFixed(1)}% Capacity`;
+                // === B. STATUS KRITIS (COLLAPSE POINT) ===
+                const cpBox = document.getElementById('collapse-point-box');
+                if (cpBox) {
+                    if (collapseDate) {
+                        const collapseFormatted = this.formatDate(collapseDate);
+                        const triggerNames = this.session.map(s => s.material).join(' bertemu sisa stok ');
+                        cpBox.innerHTML = `
+                        <div style="background:rgba(255,0,60,0.08); border:1px solid #ff003c; border-radius:10px; padding:18px 20px; display:flex; align-items:center; gap:18px;">
+                            <div style="flex-shrink:0; width:56px; height:56px; border-radius:50%; background:rgba(255,0,60,0.15); border:2px solid #ff003c; display:flex; align-items:center; justify-content:center; font-size:1.8rem; animation:kelapKelip 1.5s infinite;">💥</div>
+                            <div style="flex:1;">
+                                <div style="font-family:'Orbitron'; font-size:0.85rem; color:#ff003c; letter-spacing:2px; margin-bottom:6px;">⚠ TITIK COLLAPSE TERDETEKSI</div>
+                                <div style="color:#fff; font-size:1.3rem; font-weight:800;">Hari ke-${collapseDay} <span style="color:#94a3b8; font-weight:400; font-size:0.95rem;">( ${collapseFormatted} )</span></div>
+                                <div style="color:#cbd5e1; font-size:0.85rem; margin-top:4px;">Penyebab: <span style="color:#ff9e0b;">Lonjakan ${triggerNames}</span></div>
+                            </div>
+                            <div style="flex-shrink:0; text-align:center;">
+                                <div style="font-family:'Orbitron'; font-size:1.8rem; color:#ff003c; text-shadow:0 0 20px rgba(255,0,60,0.5);">COLLAPSE</div>
+                                <div style="color:#f87171; font-size:0.8rem;">Kapasitas Gudang Jebol</div>
+                            </div>
+                        </div>`;
+                    } else {
+                        const maxTotal = Math.max(...dailyTotals);
+                        const remainingSpace = totalCapacity - maxTotal;
+                        cpBox.innerHTML = `
+                        <div style="background:rgba(52,211,153,0.08); border:1px solid #34d399; border-radius:10px; padding:18px 20px; display:flex; align-items:center; gap:18px;">
+                            <div style="flex-shrink:0; width:56px; height:56px; border-radius:50%; background:rgba(52,211,153,0.15); border:2px solid #34d399; display:flex; align-items:center; justify-content:center; font-size:1.8rem;">✅</div>
+                            <div style="flex:1;">
+                                <div style="font-family:'Orbitron'; font-size:0.85rem; color:#34d399; letter-spacing:2px; margin-bottom:6px;">STATUS: AMAN</div>
+                                <div style="color:#fff; font-size:1rem;">Tidak ada titik collapse selama periode simulasi</div>
+                            </div>
+                            <div style="flex-shrink:0; text-align:center;">
+                                <div style="font-family:'Orbitron'; font-size:1.8rem; color:#34d399; text-shadow:0 0 20px rgba(52,211,153,0.5);">AMAN</div>
+                                <div style="color:#94a3b8; font-size:0.8rem;">Sisa: ${(remainingSpace / 1000).toLocaleString('id-ID')} T</div>
+                            </div>
+                        </div>`;
+                    }
+                }
 
-                const box = document.getElementById('summary-conclusion-box');
-                const remaining = totalCapacity - globalHighest.qty;
-                if (remaining < 0) {
-                    box.style.borderColor = '#ef4444'; box.style.background = 'rgba(239,68,68,0.1)';
-                    box.innerHTML = `<div class="brand-title" style="font-size:2rem; color:#ef4444; letter-spacing:2px; text-shadow:0 0 15px rgba(239,68,68,0.5);">COLLAPSE</div><div style="color:#cbd5e1; font-size:1.1rem; text-align:right;">Over Capacity:<br><b style="color:#ef4444; font-size:1.5rem;">${Math.abs(remaining / 1000).toLocaleString('id-ID')} T</b></div>`;
+                // === C. TABEL PUNCAK STOK (PEAK INVENTORY) ===
+                const peakBox = document.getElementById('peak-inventory-table');
+                if (peakBox) {
+                    let tableHtml = `
+                    <div style="font-family:'Orbitron'; font-size:0.75rem; color:#FFE600; letter-spacing:2px; margin-bottom:10px;"><i class="fas fa-chart-line"></i> TABEL PUNCAK STOK (PEAK INVENTORY)</div>
+                    <table style="width:100%; border-collapse:collapse; font-family:'Rajdhani'; font-size:0.9rem;">
+                    <thead><tr style="border-bottom:2px solid rgba(255,230,0,0.3);">
+                        <th style="padding:8px; color:#FFE600; font-family:'Orbitron'; font-size:0.6rem; text-align:left; letter-spacing:1px;">KATEGORI</th>
+                        <th style="padding:8px; color:#FFE600; font-family:'Orbitron'; font-size:0.6rem; text-align:left; letter-spacing:1px;">NAMA MATERIAL</th>
+                        <th style="padding:8px; color:#FFE600; font-family:'Orbitron'; font-size:0.6rem; text-align:center; letter-spacing:1px;">TITIK PUNCAK</th>
+                        <th style="padding:8px; color:#FFE600; font-family:'Orbitron'; font-size:0.6rem; text-align:right; letter-spacing:1px;">VOLUME TERTINGGI</th>
+                        <th style="padding:8px; color:#FFE600; font-family:'Orbitron'; font-size:0.6rem; text-align:center; letter-spacing:1px;">STATUS / DAMPAK</th>
+                    </tr></thead><tbody>`;
+
+                    // Driver materials
+                    perMatPeak.forEach(mp => {
+                        const pctOfCap = ((mp.peakStock / totalCapacity) * 100).toFixed(1);
+                        const isHigh = mp.peakStock > totalCapacity * 0.3;
+                        tableHtml += `<tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                            <td style="padding:8px;"><span style="background:rgba(188,19,254,0.15); color:#bc13fe; padding:2px 10px; border-radius:12px; font-size:0.8rem; font-weight:700;">Material Pemicu</span></td>
+                            <td style="padding:8px; color:${mp.color}; font-weight:700;">${mp.material}</td>
+                            <td style="padding:8px; text-align:center; color:#fff;">Hari ke-${mp.peakDay} <span style="color:#94a3b8; font-size:0.8rem;">(${this.formatDate(mp.peakDate)})</span></td>
+                            <td style="padding:8px; text-align:right; color:#fff; font-weight:700;">${(mp.peakStock / 1000).toLocaleString('id-ID')} T</td>
+                            <td style="padding:8px; text-align:center;"><span style="color:${isHigh ? '#f87171' : '#34d399'}; font-weight:700;">▲ ${pctOfCap}% Cap</span></td>
+                        </tr>`;
+                    });
+
+                    // Base Load (unsimulated materials)
+                    const unsimPct = ((unsimulatedStock / totalCapacity) * 100).toFixed(1);
+                    tableHtml += `<tr style="border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(255,255,255,0.02);">
+                        <td style="padding:8px;"><span style="background:rgba(100,116,139,0.2); color:#94a3b8; padding:2px 10px; border-radius:12px; font-size:0.8rem; font-weight:700;">Base Load</span></td>
+                        <td style="padding:8px; color:#64748b; font-weight:600;">Material Stagnan (${unsimCount} Item)</td>
+                        <td style="padding:8px; text-align:center; color:#64748b;">━ Konstan</td>
+                        <td style="padding:8px; text-align:right; color:#94a3b8; font-weight:700;">${(unsimulatedStock / 1000).toLocaleString('id-ID')} T</td>
+                        <td style="padding:8px; text-align:center;"><span style="color:#64748b;">━ ${unsimPct}% Cap</span></td>
+                    </tr>`;
+
+                    tableHtml += '</tbody></table>';
+                    peakBox.innerHTML = tableHtml;
                 }
-                else {
-                    box.style.borderColor = '#34d399'; box.style.background = 'rgba(52,211,153,0.1)';
-                    box.innerHTML = `<div class="brand-title" style="font-size:2rem; color:#34d399; letter-spacing:2px; text-shadow:0 0 15px rgba(52,211,153,0.5);">AMAN</div><div style="color:#cbd5e1; font-size:1.1rem; text-align:right;">Sisa Space:<br><b style="color:#34d399; font-size:1.5rem;">${(remaining / 1000).toLocaleString('id-ID')} T</b></div>`;
+
+                // === D. ANALISIS MATEMATIKA (EXPANDED - SUPER DETAIL) ===
+                const mathBox = document.getElementById('math-analysis-box');
+                if (mathBox) {
+                    const matNames = this.session.map(s => s.material);
+                    const vLabels = matNames.map((m, i) => `V<sub>${String.fromCharCode(65 + i)}</sub>(t)`);
+
+                    // --- Compute per-material detailed stats ---
+                    // Average daily net rate per material
+                    const matStats = this.session.map((s, si) => {
+                        const totalDays = fullDates.length;
+                        let totalNetKg = 0, peakKg = 0, troughKg = Infinity, daysPositive = 0, daysNegative = 0;
+                        let dailyNets = [];
+                        for (let i = 0; i < fullDates.length; i++) {
+                            const dStr = fullDates[i].toISOString().split('T')[0];
+                            let dIn = s.defaultIn, dOut = s.defaultOut;
+                            if (s.overrides && s.overrides[dStr]) {
+                                if (s.overrides[dStr].in !== undefined) dIn = Number(s.overrides[dStr].in);
+                                if (s.overrides[dStr].out !== undefined) dOut = Number(s.overrides[dStr].out);
+                            }
+                            const net = (dIn - dOut) * 1000; // in Kg
+                            totalNetKg += net;
+                            dailyNets.push(net);
+                            if (net > 0) daysPositive++;
+                            else if (net < 0) daysNegative++;
+                        }
+                        const avgDailyNet = totalNetKg / totalDays;
+                        const maxDailyNet = Math.max(...dailyNets);
+                        const minDailyNet = Math.min(...dailyNets);
+                        const baseStockKg = Number(s.baseStock);
+                        // Days until material alone would fill remaining capacity
+                        const remainCap = totalCapacity - unsimulatedStock - baseStockKg;
+                        const daysToCapAlone = avgDailyNet > 0 ? Math.round(remainCap / avgDailyNet) : null;
+                        return { material: s.material, color: s.color, baseStockKg, totalDays, avgDailyNet, maxDailyNet, minDailyNet, daysPositive, daysNegative, totalNetKg, daysToCapAlone };
+                    });
+
+                    // --- Compute global stats ---
+                    const totalSimNetKg = matStats.reduce((a, b) => a + b.totalNetKg, 0);
+                    const avgGlobalDailyNet = matStats.reduce((a, b) => a + b.avgDailyNet, 0);
+                    const startingGlobalStock = unsimulatedStock + matStats.reduce((a, b) => a + b.baseStockKg, 0);
+                    const remainingCapAtStart = totalCapacity - startingGlobalStock;
+                    const daysToCollapsePredicted = avgGlobalDailyNet > 0 ? Math.round(remainingCapAtStart / avgGlobalDailyNet) : null;
+
+                    // --- Snapshot table: key days ---
+                    const snapshotDays = [];
+                    const snapshotIndices = [0, Math.floor(fullDates.length * 0.1), Math.floor(fullDates.length * 0.25),
+                        Math.floor(fullDates.length * 0.5), Math.floor(fullDates.length * 0.75), fullDates.length - 1];
+                    if (collapseDate) {
+                        const collapseIdx = fullDates.findIndex(d => d.toISOString().split('T')[0] === collapseDate);
+                        if (collapseIdx >= 0 && !snapshotIndices.includes(collapseIdx)) snapshotIndices.splice(3, 0, collapseIdx);
+                    }
+                    snapshotIndices.forEach(idx => {
+                        if (idx < 0 || idx >= fullDates.length) return;
+                        const dStr = fullDates[idx].toISOString().split('T')[0];
+                        let simTotal = 0;
+                        this.session.forEach(s => { simTotal += this.calculateStateAtDate(s, dStr).stock; });
+                        const gTotal = unsimulatedStock + simTotal;
+                        const util = ((gTotal / totalCapacity) * 100).toFixed(1);
+                        const isCollapse = dStr === collapseDate;
+                        snapshotDays.push({ day: idx + 1, date: dStr, gTotal, util, isCollapse });
+                    });
+
+                    // --- Unique deduplicated snapshots ---
+                    const seen = new Set();
+                    const uniqSnapshots = snapshotDays.filter(s => { if (seen.has(s.day)) return false; seen.add(s.day); return true; });
+
+                    // Build utilization colour helper
+                    const utilColor = (u) => { const n = parseFloat(u); if (n >= 100) return '#ff003c'; if (n >= 85) return '#FFE600'; if (n >= 70) return '#ff9e0b'; return '#34d399'; };
+
+                    mathBox.innerHTML = `
+                    <div style="font-family:'Orbitron'; font-size:0.75rem; color:#FFE600; letter-spacing:2px; margin-bottom:14px;"><i class="fas fa-square-root-alt"></i> ANALISIS & LOGIKA MATEMATIKA — DETAIL SISTEM</div>
+
+                    <!-- FORMULA UTAMA -->
+                    <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,230,0,0.25); border-radius:10px; padding:16px 20px; margin-bottom:14px;">
+                        <div style="font-family:'Rajdhani'; font-size:1.05rem; color:#64748b; letter-spacing:1px; margin-bottom:8px;">① MODEL STOK GLOBAL</div>
+                        <div style="font-family:'Rajdhani'; font-size:1.4rem; color:#FFE600; font-weight:800; text-align:center; margin-bottom:10px;">
+                            V<sub>total</sub>(t) = M<sub>stagnan</sub> + ${vLabels.join(' + ')}
+                        </div>
+                        <div style="font-family:'Rajdhani'; font-size:1.1rem; color:#00f3ff; font-weight:700; text-align:center; margin-bottom:10px;">
+                            U(t) = V<sub>total</sub>(t) / C<sub>gudang</sub> × 100%
+                        </div>
+                        <div style="font-family:'Rajdhani'; font-size:1.05rem; color:#bc13fe; font-weight:700; text-align:center;">
+                            S<sub>i</sub>(t) = S<sub>i</sub>(t−1) + In<sub>i</sub>(t) − Out<sub>i</sub>(t)
+                        </div>
+                        <div style="margin-top:10px; color:#94a3b8; font-size:0.82rem; line-height:1.7; padding-left:4px;">
+                            <span style="color:#FFE600;">V<sub>total</sub></span> = Total stok global seluruh material &nbsp;|&nbsp;
+                            <span style="color:#00f3ff;">U(t)</span> = Utilisasi gudang (%) &nbsp;|&nbsp;
+                            <span style="color:#bc13fe;">S<sub>i</sub>(t)</span> = Stok material ke-i pada hari t
+                        </div>
+                    </div>
+
+                    <!-- FORMULA T_COLLAPSE -->
+                    <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,0,60,0.2); border-radius:10px; padding:16px 20px; margin-bottom:14px;">
+                        <div style="font-family:'Rajdhani'; font-size:1.05rem; color:#64748b; letter-spacing:1px; margin-bottom:8px;">② PREDIKSI WAKTU COLLAPSE</div>
+                        <div style="font-family:'Rajdhani'; font-size:1.2rem; color:#ff9e0b; font-weight:800; text-align:center; margin-bottom:8px;">
+                            T<sub>collapse</sub> = (C<sub>gudang</sub> − V<sub>total</sub>(t₀)) / ΔV̄<sub>net/day</sub>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
+                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                                <div style="color:#64748b; font-size:0.7rem; letter-spacing:1px; margin-bottom:4px;">C_GUDANG (TOTAL)</div>
+                                <div style="color:#fff; font-size:1rem; font-weight:700;">${(totalCapacity / 1000).toLocaleString('id-ID')} T</div>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                                <div style="color:#64748b; font-size:0.7rem; letter-spacing:1px; margin-bottom:4px;">V_TOTAL AWAL (t₀)</div>
+                                <div style="color:#fff; font-size:1rem; font-weight:700;">${(startingGlobalStock / 1000).toLocaleString('id-ID')} T</div>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                                <div style="color:#64748b; font-size:0.7rem; letter-spacing:1px; margin-bottom:4px;">SISA KAPASITAS AWAL</div>
+                                <div style="color:${remainingCapAtStart > 0 ? '#34d399' : '#ff003c'}; font-size:1rem; font-weight:700;">${(remainingCapAtStart / 1000).toLocaleString('id-ID')} T</div>
+                            </div>
+                        </div>
+                        <div style="margin-top:10px; padding:8px 12px; background:rgba(255,0,60,0.07); border:1px solid rgba(255,0,60,0.2); border-radius:6px; display:flex; align-items:center; gap:12px;">
+                            <div style="font-size:1.6rem;">⏱️</div>
+                            <div>
+                                <div style="color:#f87171; font-family:'Orbitron'; font-size:0.65rem; letter-spacing:1px;">PROYEKSI T_COLLAPSE (LINEAR AVERAGE)</div>
+                                <div style="color:#fff; font-size:1rem; font-weight:700; margin-top:2px;">${collapseDate ? `Hari ke-${collapseDay} <span style="color:#ff003c;">(${this.formatDate(collapseDate)} — AKTUAL SIMULASI)</span>` : daysToCollapsePredicted ? `Hari ke-${daysToCollapsePredicted} (proyeksi linier)` : '<span style="color:#34d399;">Tidak ada collapse dalam periode ini</span>'}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TABEL DETAIL PER MATERIAL -->
+                    <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(188,19,254,0.2); border-radius:10px; padding:16px 20px; margin-bottom:14px;">
+                        <div style="font-family:'Rajdhani'; font-size:1.05rem; color:#64748b; letter-spacing:1px; margin-bottom:10px;">③ TABEL LAJU PERGERAKAN PER MATERIAL PEMICU</div>
+                        <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-family:'Rajdhani'; font-size:0.85rem;">
+                            <thead>
+                                <tr style="border-bottom:2px solid rgba(188,19,254,0.3);">
+                                    <th style="padding:8px 6px; color:#bc13fe; font-family:'Orbitron'; font-size:0.55rem; text-align:left; letter-spacing:1px;">MATERIAL</th>
+                                    <th style="padding:8px 6px; color:#bc13fe; font-family:'Orbitron'; font-size:0.55rem; text-align:right; letter-spacing:1px;">STOK AWAL (Kg)</th>
+                                    <th style="padding:8px 6px; color:#bc13fe; font-family:'Orbitron'; font-size:0.55rem; text-align:right; letter-spacing:1px;">Δ̄ NET/HARI (Kg)</th>
+                                    <th style="padding:8px 6px; color:#bc13fe; font-family:'Orbitron'; font-size:0.55rem; text-align:right; letter-spacing:1px;">TOTAL NET (Kg)</th>
+                                    <th style="padding:8px 6px; color:#bc13fe; font-family:'Orbitron'; font-size:0.55rem; text-align:center; letter-spacing:1px;">HARI + / −</th>
+                                    <th style="padding:8px 6px; color:#bc13fe; font-family:'Orbitron'; font-size:0.55rem; text-align:right; letter-spacing:1px;">MAX NET/HARI</th>
+                                    <th style="padding:8px 6px; color:#bc13fe; font-family:'Orbitron'; font-size:0.55rem; text-align:right; letter-spacing:1px;">MIN NET/HARI</th>
+                                    <th style="padding:8px 6px; color:#bc13fe; font-family:'Orbitron'; font-size:0.55rem; text-align:center; letter-spacing:1px;">KONTRIBUSI</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${matStats.map(ms => {
+                        const contribPct = totalSimNetKg !== 0 ? ((ms.totalNetKg / totalSimNetKg) * 100).toFixed(1) : 0;
+                        const netColor = ms.avgDailyNet > 0 ? '#f87171' : '#34d399';
+                        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                                        <td style="padding:8px 6px; color:${ms.color}; font-weight:700;">${ms.material}</td>
+                                        <td style="padding:8px 6px; text-align:right; color:#cbd5e1;">${Math.round(ms.baseStockKg).toLocaleString()}</td>
+                                        <td style="padding:8px 6px; text-align:right; color:${netColor}; font-weight:700;">${ms.avgDailyNet >= 0 ? '+' : ''}${Math.round(ms.avgDailyNet).toLocaleString()}</td>
+                                        <td style="padding:8px 6px; text-align:right; color:${netColor};">${ms.totalNetKg >= 0 ? '+' : ''}${Math.round(ms.totalNetKg).toLocaleString()}</td>
+                                        <td style="padding:8px 6px; text-align:center;"><span style="color:#34d399;">${ms.daysPositive}d▲</span> / <span style="color:#f87171;">${ms.daysNegative}d▼</span></td>
+                                        <td style="padding:8px 6px; text-align:right; color:#fff;">${ms.maxDailyNet >= 0 ? '+' : ''}${Math.round(ms.maxDailyNet).toLocaleString()}</td>
+                                        <td style="padding:8px 6px; text-align:right; color:#fff;">${ms.minDailyNet >= 0 ? '+' : ''}${Math.round(ms.minDailyNet).toLocaleString()}</td>
+                                        <td style="padding:8px 6px; text-align:center; color:#FFE600; font-weight:700;">${contribPct}%</td>
+                                    </tr>`;
+                    }).join('')}
+                                <tr style="border-top:2px solid rgba(255,230,0,0.2); background:rgba(255,230,0,0.03);">
+                                    <td style="padding:8px 6px; color:#94a3b8; font-weight:600;">Material Stagnan (${unsimCount})</td>
+                                    <td style="padding:8px 6px; text-align:right; color:#64748b;">${Math.round(unsimulatedStock).toLocaleString()}</td>
+                                    <td style="padding:8px 6px; text-align:right; color:#64748b;">± 0</td>
+                                    <td style="padding:8px 6px; text-align:right; color:#64748b;">0</td>
+                                    <td style="padding:8px 6px; text-align:center; color:#64748b;">━</td>
+                                    <td style="padding:8px 6px; text-align:right; color:#64748b;">━</td>
+                                    <td style="padding:8px 6px; text-align:right; color:#64748b;">━</td>
+                                    <td style="padding:8px 6px; text-align:center; color:#64748b;">konstan</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+
+                    <!-- TABEL SNAPSHOT UTILISASI HARIAN -->
+                    <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(0,243,255,0.2); border-radius:10px; padding:16px 20px; margin-bottom:14px;">
+                        <div style="font-family:'Rajdhani'; font-size:1.05rem; color:#64748b; letter-spacing:1px; margin-bottom:10px;">④ SNAPSHOT UTILISASI GUDANG — TITIK KRITIS</div>
+                        <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-family:'Rajdhani'; font-size:0.85rem;">
+                            <thead>
+                                <tr style="border-bottom:2px solid rgba(0,243,255,0.3);">
+                                    <th style="padding:8px 6px; color:#00f3ff; font-family:'Orbitron'; font-size:0.55rem; text-align:center;">HARI</th>
+                                    <th style="padding:8px 6px; color:#00f3ff; font-family:'Orbitron'; font-size:0.55rem; text-align:center;">TANGGAL</th>
+                                    <th style="padding:8px 6px; color:#00f3ff; font-family:'Orbitron'; font-size:0.55rem; text-align:right;">V_TOTAL (Kg)</th>
+                                    <th style="padding:8px 6px; color:#00f3ff; font-family:'Orbitron'; font-size:0.55rem; text-align:right;">V_TOTAL (T)</th>
+                                    <th style="padding:8px 6px; color:#00f3ff; font-family:'Orbitron'; font-size:0.55rem; text-align:right;">SISA KAP (T)</th>
+                                    <th style="padding:8px 6px; color:#00f3ff; font-family:'Orbitron'; font-size:0.55rem; text-align:center;">U(t) %</th>
+                                    <th style="padding:8px 6px; color:#00f3ff; font-family:'Orbitron'; font-size:0.55rem; text-align:center;">STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${uniqSnapshots.map(sn => {
+                        const sisa = totalCapacity - sn.gTotal;
+                        const uNum = parseFloat(sn.util);
+                        const uCol = utilColor(sn.util);
+                        const status = uNum >= 100 ? '🔴 COLLAPSE' : uNum >= 85 ? '🟡 KRITIS' : uNum >= 70 ? '🟠 WASPADA' : '🟢 AMAN';
+                        const rowBg = sn.isCollapse ? 'background:rgba(255,0,60,0.08);' : '';
+                        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05); ${rowBg}">
+                                        <td style="padding:8px 6px; text-align:center; color:${sn.isCollapse ? '#ff003c' : '#94a3b8'}; font-weight:${sn.isCollapse ? '800' : '400'};">ke-${sn.day}${sn.isCollapse ? ' ⚡' : ''}</td>
+                                        <td style="padding:8px 6px; text-align:center; color:#cbd5e1;">${this.formatDate(sn.date)}</td>
+                                        <td style="padding:8px 6px; text-align:right; color:#fff;">${Math.round(sn.gTotal).toLocaleString()}</td>
+                                        <td style="padding:8px 6px; text-align:right; color:#fff; font-weight:700;">${(sn.gTotal / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })}</td>
+                                        <td style="padding:8px 6px; text-align:right; color:${sisa < 0 ? '#ff003c' : '#34d399'};">${(sisa / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })}</td>
+                                        <td style="padding:8px 6px; text-align:center;"><span style="color:${uCol}; font-weight:800;">${sn.util}%</span></td>
+                                        <td style="padding:8px 6px; text-align:center; font-size:0.85rem;">${status}</td>
+                                    </tr>`;
+                    }).join('')}
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+
+                    <!-- KESIMPULAN & NERACA AKHIR -->
+                    <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,230,0,0.15); border-radius:10px; padding:16px 20px;">
+                        <div style="font-family:'Rajdhani'; font-size:1.05rem; color:#64748b; letter-spacing:1px; margin-bottom:10px;">⑤ NERACA STOK AKHIR PERIODE</div>
+                        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px;">
+                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                                <div style="color:#64748b; font-size:0.65rem; margin-bottom:4px;">STOK AWAL (V₀)</div>
+                                <div style="color:#fff; font-weight:700;">${(startingGlobalStock / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} T</div>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                                <div style="color:#64748b; font-size:0.65rem; margin-bottom:4px;">STOK AKHIR (V_end)</div>
+                                <div style="color:#fff; font-weight:700;">${(dailyTotals[dailyTotals.length - 1] / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} T</div>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                                <div style="color:#64748b; font-size:0.65rem; margin-bottom:4px;">TOTAL MASUK (ΣIn)</div>
+                                <div style="color:#34d399; font-weight:700;">+${(this.session.reduce((a, s) => a + (s.defaultIn * fullDates.length), 0)).toLocaleString('id-ID')} T</div>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                                <div style="color:#64748b; font-size:0.65rem; margin-bottom:4px;">TOTAL KELUAR (ΣOut)</div>
+                                <div style="color:#f87171; font-weight:700;">−${(this.session.reduce((a, s) => a + (s.defaultOut * fullDates.length), 0)).toLocaleString('id-ID')} T</div>
+                            </div>
+                        </div>
+                        <div style="padding:10px 14px; background:rgba(255,230,0,0.05); border-left:3px solid #FFE600; border-radius:0 6px 6px 0; color:#e2e8f0; font-size:0.85rem; line-height:1.7;">
+                            <b style="color:#FFE600;">Kesimpulan Sistem:</b> ${unsimCount} material stagnan berkontribusi <b style="color:#fff;">${((unsimulatedStock / totalCapacity) * 100).toFixed(1)}%</b> dari total kapasitas gudang secara konstan sebagai <i>base load</i>.
+                            Volatilitas stok dipicu oleh <b style="color:${matStats[0]?.color || '#bc13fe'};">${matNames.join(', ')}</b> dengan laju rata-rata bersih <b style="color:${avgGlobalDailyNet > 0 ? '#f87171' : '#34d399'};">+${Math.round(avgGlobalDailyNet).toLocaleString()} Kg/hari</b>.
+                            ${collapseDate ? `Kapasitas gudang terlampaui pada <b style="color:#ff003c;">Hari ke-${collapseDay} (${this.formatDate(collapseDate)})</b>.` : '<b style="color:#34d399;">Kapasitas gudang tidak terlampaui selama periode simulasi.</b>'}
+                        </div>
+                    </div>`;
                 }
+            },
+
+            renderSummaryChart: function (fullDates, dailyTotals, totalCapacity) {
+                const ctx = document.getElementById('summaryChart'); if (!ctx) return;
+                if (this.summaryChartInstance) { this.summaryChartInstance.destroy(); this.summaryChartInstance = null; }
+
+                const step = Math.max(1, Math.floor(fullDates.length / 60));
+                let labels = [], stockData = [], capData = [];
+                for (let i = 0; i < fullDates.length; i += step) {
+                    labels.push(fullDates[i].toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
+                    stockData.push(dailyTotals[i]);
+                    capData.push(totalCapacity);
+                }
+
+                this.summaryChartInstance = new Chart(ctx, {
+                    type: 'bar', data: {
+                        labels, datasets: [
+                            { type: 'line', label: 'MAX CAPACITY', data: capData, borderColor: '#ff003c', borderWidth: 2, borderDash: [6, 4], pointRadius: 0, fill: false, order: 0 },
+                            { type: 'bar', label: 'TOTAL RM STOCK', data: stockData, backgroundColor: stockData.map(v => v > totalCapacity ? 'rgba(255,0,60,0.7)' : 'rgba(255,230,0,0.5)'), borderColor: 'transparent', borderWidth: 0, barPercentage: 0.8, order: 1 }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { labels: { color: '#94a3b8', font: { family: 'Orbitron', size: 9, weight: 'bold' } } },
+                            tooltip: {
+                                backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: '#FFE600', borderWidth: 1,
+                                callbacks: { label: c => `${c.dataset.label}: ${(c.raw / 1000).toLocaleString('id-ID')} T` }
+                            }
+                        },
+                        scales: {
+                            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 9 }, callback: v => (v / 1000000).toFixed(0) + 'M Kg' }, beginAtZero: true },
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8', maxTicksLimit: 12, font: { size: 9 } } }
+                        }
+                    }
+                });
             },
 
             renderMaterialVariables: function () {
@@ -1026,11 +1338,7 @@
                 if (totalCapacity > 0 && totalCapacity < 1000000) totalCapacity *= 1000;
                 if (totalCapacity === 0) totalCapacity = 25000000;
 
-                let totalAllMatStock = 0;
-                if (this.data.materials) this.data.materials.forEach(m => { if (m.stocks) totalAllMatStock += m.stocks.reduce((a, b) => a + b, 0); });
-                let simulatedBaseStock = 0;
-                this.session.forEach(s => simulatedBaseStock += s.baseStock);
-                const unsimulatedStock = Math.max(0, totalAllMatStock - simulatedBaseStock);
+                const unsimulatedStock = this.getUnsimulatedStock();
 
                 let html = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:15px;">';
                 months.forEach(m => {
