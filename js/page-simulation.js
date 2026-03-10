@@ -2462,13 +2462,25 @@ const SimPage = {
             } : null
         };
 
+        // Instead of local storage, compress to URL string (Base64 encoded JSON)
+        const payload = btoa(encodeURIComponent(JSON.stringify(shareData)));
+
+        // Store minimum info for management table in local storage
+        const managementData = {
+            id: shareId,
+            name: simName,
+            payload: payload,
+            createdAt: shareData.createdAt,
+            materials: shareData.materials,
+            dateRange: shareData.dateRange
+        };
         const sharedLinks = JSON.parse(localStorage.getItem('rm_sim_shared_links') || '[]');
-        sharedLinks.unshift(shareData);
+        sharedLinks.unshift(managementData);
         localStorage.setItem('rm_sim_shared_links', JSON.stringify(sharedLinks));
 
         // Generate URL
         const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
-        const shareUrl = `${baseUrl}/rm-simulation-viewer.html?id=${shareId}`;
+        const shareUrl = `${baseUrl}/rm-simulation-viewer.html?payload=${payload}`;
 
         // Show result
         document.getElementById('share-link-url').value = shareUrl;
@@ -2527,7 +2539,7 @@ const SimPage = {
             const createdDate = new Date(link.createdAt).toLocaleDateString('id-ID', {
                 day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
             });
-            const shareUrl = `${baseUrl}/rm-simulation-viewer.html?id=${link.id}`;
+            const shareUrl = `${baseUrl}/rm-simulation-viewer.html?payload=${link.payload}`;
 
             html += `
                 <tr>

@@ -637,11 +637,17 @@
                 this.startClock();
 
                 const params = new URLSearchParams(window.location.search);
-                const shareId = params.get('id');
-                if (!shareId) { this.showError(); return; }
+                const payload = params.get('payload');
+                if (!payload) { this.showError(); return; }
 
-                const links = JSON.parse(localStorage.getItem('rm_sim_shared_links') || '[]');
-                this.shareData = links.find(l => l.id === shareId);
+                try {
+                    const decodedStr = decodeURIComponent(atob(payload));
+                    this.shareData = JSON.parse(decodedStr);
+                } catch (e) {
+                    console.error("Failed to parse simulation share link payload:", e);
+                    this.shareData = null;
+                }
+                
                 if (!this.shareData) { this.showError(); return; }
 
                 document.getElementById('viewer-sim-name').textContent = this.shareData.name || 'Simulation';
