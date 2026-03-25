@@ -44,47 +44,184 @@ const TrackingApp = {
         this.renderDailyPanel(null); // Clear panel
     },
 
-    fetchData: async function () {
+    // === GOOGLE SHEETS CONFIG (for direct column access) ===
+    SHEET_ID: '1m7q1IdtKyaNvjKP5QL85NPsk0FPEGUqV0scSB2CsXJ0',
+    SHEET_NAME: 'DATA BONGKARAN',
+
+    fetchData: function () {
         const statusPill = document.querySelector('.status-pill');
         if (statusPill) statusPill.innerHTML = '<div class="status-dot" style="background:#f59e0b; box-shadow:0 0 8px #f59e0b;"></div> <span id="system-status">SYNCING...</span>';
 
-        try {
-            // Fetch from New API (Since data is only >= 19 Feb 2026)
-            const res = await fetch(CONFIG.ANALYTICS_V2_URL).then(r => r.json());
-            if (res && res.template) {
-                this.allData = res.template;
+        // Use JSONP (script tag injection) to bypass CORS when page runs from file://
+        // The gviz API supports a custom responseHandler via tqx parameter.
+        const callbackName = '_gvizContainerCallback';
+        const url = `https://docs.google.com/spreadsheets/d/${this.SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&sheet=${encodeURIComponent(this.SHEET_NAME)}`;
+
+        // Define global callback
+        window[callbackName] = (gviz) => {
+            try {
+                if (!gviz || !gviz.table) throw new Error("Invalid Sheets data");
+
+                this.allData = this.parseGvizTable(gviz.table);
+
                 this.processContainerData();
                 this.renderCalendars();
                 this.initInapSlicers();
                 this.renderInapAnalysis();
 
                 if (statusPill) statusPill.innerHTML = '<div class="status-dot"></div> <span id="system-status">SYSTEM ONLINE</span>';
-            } else {
-                throw new Error("Invalid API Data");
+                console.log('Container data loaded:', this.containerData.length, 'containers from', this.allData.length, 'total rows');
+            } catch (err) {
+                console.error("PARSE ERROR:", err);
+                if (statusPill) statusPill.innerHTML = '<div class="status-dot" style="background:#ef4444; box-shadow:0 0 8px #ef4444;"></div> <span id="system-status">DATA ERROR</span>';
             }
-        } catch (err) {
-            console.error("FETCH ERROR:", err);
+            // Cleanup
+            delete window[callbackName];
+        };
+
+        // Inject script tag
+        const script = document.createElement('script');
+        script.src = url;
+        script.onerror = () => {
+            console.error("FETCH ERROR: Script load failed");
             if (statusPill) statusPill.innerHTML = '<div class="status-dot" style="background:#ef4444; box-shadow:0 0 8px #ef4444;"></div> <span id="system-status">CONNECTION ERROR</span>';
-        }
+            delete window[callbackName];
+        };
+        document.head.appendChild(script);
+    },
+
+    /**
+     * Parse a Google Visualization API table into an array of row-objects.
+     * Header labels are normalized: spaces→underscores, UPPERCASE.
+     * e.g. "Jenis Truck" => "JENIS_TRUCK", "Nopol" => "NOPOL"
+     * The first date-type column with empty label is assigned "TANGGAL".
+     * Aliases are created so existing field references still work.
+     */
+    parseGvizTable: function (table) {
+        const cols = table.cols || [];
+        const rows = table.rows || [];
+
+        // Build normalized header list
+        let foundTanggal = false;
+        const headers = cols.map((c, idx) => {
+            let label = String(c.label || '').trim().toUpperCase().replace(/[\s]+/g, '_');
+            // The first column is the date column but may have blank label in gviz
+            if (!label || label === '' || label === String(c.id || '').toUpperCase()) {
+                if ((c.type === 'date' || c.type === 'datetime' || idx === 0) && !foundTanggal) {
+                    label = 'TANGGAL';
+                    foundTanggal = true;
+                } else {
+                    label = 'COL_' + idx;
+                }
+            }
+            return label;
+        });
+
+        console.log('GVIZ headers:', headers.join(', '));
+
+        const parsed = rows.map(row => {
+            const obj = {};
+            (row.c || []).forEach((cell, i) => {
+                if (!headers[i]) return;
+                let val = cell ? cell.v : null;
+                if (val === null || val === undefined) { obj[headers[i]] = ''; return; }
+
+                // Google encodes dates as "Date(y,m,d)" strings in JSON
+                if (typeof val === 'string' && val.startsWith('Date(')) {
+                    const m = val.match(/Date\((\d+),(\d+),(\d+)/);
+                    if (m) val = `${m[1]}-${String(parseInt(m[2])+1).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+                }
+
+                // Use formatted value (cell.f) if raw value is unhelpful
+                let finalVal = (val !== null && val !== '') ? String(val) : '';
+                if (finalVal === '' && cell && cell.f) finalVal = String(cell.f);
+
+                obj[headers[i]] = finalVal;
+            });
+
+            // === ALIAS MAPPING ===
+            // Map actual sheet column names to the field names used in the rest of this file.
+            // This way we don't need to rewrite every function.
+            // Sheet col "Finish"      -> code uses FINISH_BONGKAR or FINISH_TIME
+            // Sheet col "Netto (Kg)"  -> code uses NETTO_KG
+            // Sheet col "Start Bongkar" -> code uses START_BONGKAR (already matches)
+            // Sheet col "Start Panggil" -> code uses PB_START or PANGGIL_BONGKAR
+            if (obj['FINISH'] !== undefined && !obj['FINISH_BONGKAR']) obj['FINISH_BONGKAR'] = obj['FINISH'];
+            if (obj['FINISH'] !== undefined && !obj['FINISH_TIME']) obj['FINISH_TIME'] = obj['FINISH'];
+            if (obj['START_PANGGIL'] !== undefined && !obj['PB_START']) obj['PB_START'] = obj['START_PANGGIL'];
+            if (obj['START_PANGGIL'] !== undefined && !obj['PANGGIL_BONGKAR']) obj['PANGGIL_BONGKAR'] = obj['START_PANGGIL'];
+            if (obj['NETTO_(KG)'] !== undefined && !obj['NETTO_KG']) obj['NETTO_KG'] = obj['NETTO_(KG)'];
+            if (obj['QC_SAMPLING_1_TIME'] !== undefined && !obj['QC_SAMPLING_1']) obj['QC_SAMPLING_1'] = obj['QC_SAMPLING_1_TIME'];
+            if (obj['QC_SAMPLING_1_TIME'] !== undefined && !obj['TUNGGU_QC']) obj['TUNGGU_QC'] = obj['QC_SAMPLING_1_TIME'];
+            if (obj['LOKASI_SIMPAN'] !== undefined && !obj['LOKASI']) obj['LOKASI'] = obj['LOKASI_SIMPAN'];
+            if (obj['MATERIAL'] !== undefined && !obj['JENIS_RM']) obj['JENIS_RM'] = obj['MATERIAL'];
+            if (obj['GUDANG/INTAKE'] !== undefined && !obj['GUDANG']) obj['GUDANG'] = obj['GUDANG/INTAKE'];
+            if (obj['TIM_KERJA'] !== undefined && !obj['TIM']) obj['TIM'] = obj['TIM_KERJA'];
+            if (obj['TRUCK_READY'] !== undefined && !obj['TIME_TIMBANG_MASUK']) obj['TIME_TIMBANG_MASUK'] = obj['TRUCK_READY'];
+
+            // Calculate DURASI_BONGKAR (minutes) from START_BONGKAR and FINISH
+            if (!obj['DURASI_BONGKAR'] || obj['DURASI_BONGKAR'] === '') {
+                let tStart = this.parseTime(obj['START_BONGKAR']);
+                let tFinish = this.parseTime(obj['FINISH'] || obj['FINISH_BONGKAR']);
+                if (tStart !== null && tFinish !== null) {
+                    let dur = tFinish - tStart;
+                    if (dur < 0) dur += 1440;
+                    obj['DURASI_BONGKAR'] = String(dur);
+                }
+            }
+
+            return obj;
+        }).filter(row => {
+            // Skip empty rows and ensure TANGGAL exists
+            return row['TANGGAL'] && row['TANGGAL'] !== '';
+        });
+
+        console.log('Parsed rows:', parsed.length, 'Sample:', parsed[0]);
+        return parsed;
     },
 
     normalizeDate: function (dateStr) {
         if (!dateStr) return null;
         try {
-            let d = new Date(dateStr);
+            let ds = String(dateStr).trim();
+
+            // Handle dd-MMM-yyyy (e.g. "19-Feb-2026")
+            const monthMap = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+            let m = ds.match(/^(\d{1,2})[\-\s](Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[\-\s](\d{4})$/i);
+            if (m) {
+                let day = parseInt(m[1]);
+                let mon = monthMap[m[2].toLowerCase().substring(0,3)];
+                let year = parseInt(m[3]);
+                return `${year}-${String(mon).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            }
+
+            // Handle dd/MM/yyyy or dd.MM.yyyy
+            m = ds.match(/^(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{4})$/);
+            if (m) {
+                return `${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+            }
+
+            // Handle yyyy-MM-dd (ISO format)
+            m = ds.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+            if (m) {
+                return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+            }
+
+            // Fallback to Date parsing
+            let d = new Date(ds);
             if (isNaN(d.getTime())) return null;
             return d.toISOString().split('T')[0];
         } catch (e) { return null; }
     },
 
     processContainerData: function () {
-        // Filter: >= 19 Feb 2026 AND JENIS_TRUCK contains "CONTAINER"
+        // Filter: >= 19 Feb 2026 AND JENIS_TRUCK contains "CONTAINER" (20ft or 40ft)
         this.containerData = this.allData.filter(row => {
             let tglStr = this.normalizeDate(row['TANGGAL']);
             if (!tglStr || tglStr < '2026-02-19') return false;
 
-            // Note: The Apps Script needs to expose JENIS_TRUCK (Col H)
-            let truckType = String(row['JENIS_TRUCK'] || row['JENIS_RM'] || '').toUpperCase();
+            // JENIS_TRUCK is now available via direct gviz fetch (Col H)
+            let truckType = String(row['JENIS_TRUCK'] || '').toUpperCase();
             if (truckType.includes('CONTAINER')) {
                 return true;
             }
