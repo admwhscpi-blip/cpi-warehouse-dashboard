@@ -42,10 +42,192 @@ const BKKDowntimeApp = {
             this.selectedMaterial = material;
 
             const cb = 'bkk_v10_' + Math.round(Math.random() * 100000);
-            window[cb] = (result) => {
+            window[cb] = async (result) => {
                 if (btnText) btnText.innerHTML = '<i class="fas fa-play"></i> RUN ANALYTICS';
                 delete window[cb];
                 if (result && result.data && result.data.length > 0) {
+                    
+                    // === CLIENT-SIDE DURATION FIX VIA GVIZ RAW DATA ===
+                    try {
+                        const gData = await new Promise((resolveGviz, rejectGviz) => {
+                            const gcb = 'gviz_req_' + Math.round(Math.random() * 1000000);
+                            window[gcb] = (payload) => {
+                                delete window[gcb];
+                                resolveGviz(payload);
+                            };
+                            const gScript = document.createElement('script');
+                            gScript.src = `https://docs.google.com/spreadsheets/d/17rIBNXdJOQkuizl_gJ5jGid7oqiEfJdWxUgPtz-i3As/gviz/tq?tqx=responseHandler:${gcb}&gid=1993407350`;
+                            gScript.onerror = () => {
+                                delete window[gcb];
+                                rejectGviz(new Error("GViz CORS JSONP Loading failed"));
+                            };
+                            document.head.appendChild(gScript);
+                        });
+                        
+                        const parseT = (v) => {
+                            if (!v) return null;
+                            let tStr = v.f || (typeof v.v === 'string' ? v.v : null);
+                            if (!tStr && Array.isArray(v.v) && v.v.length >= 2) {
+                                return parseInt(v.v[0]) * 60 + parseInt(v.v[1]);
+                            }
+                            if (tStr) {
+                                const p = tStr.split(':');
+                                if (p.length >= 2) return parseInt(p[0]) * 60 + parseInt(p[1]);
+                            }
+                            return null;
+                        };
+                        const parseD = (v) => v && v.f ? v.f : null; // e.g. "19-Feb-2026"
+                        
+                        const getMerged = (intervals) => {
+                            if (!intervals.length) return 0;
+                            const sorted = intervals.map(arr => [...arr]).sort((a,b) => a[0] - b[0]);
+                            const merged = [sorted[0]];
+                            for (let i = 1; i < sorted.length; i++) {
+                                const cur = sorted[i];
+                                const last = merged[merged.length-1];
+                                if (cur[0] <= last[1]) {
+                                    last[1] = Math.max(last[1], cur[1]);
+                                } else {
+                                    merged.push(cur);
+                                }
+                            }
+                            return merged.reduce((sum, intv) => sum + (intv[1] - intv[0]), 0);
+                        };
+
+                        // Metrics grouped by "Date_Shift" => e.g. "19-Feb-2026_1"
+                        const metrics = {};
+                        const dailyTrucks = {};
+                        
+                        gData.table.rows.forEach(r => {
+                            const c = r.c;
+                            if (!c[0] || !c[1] || !c[1].v) return;
+                            const intakeStr = c[1].v.toString();
+                            if (!intakeStr.includes('INTAKE 71')) return;
+                            
+                            const dStr = parseD(c[0]);
+                            const shiftNum = c[4] && c[4].v ? c[4].v.toString() : "1";
+                            if (!dStr) return;
+                            
+                            // Truck aggregation: Column G (index 6)
+                            if (!dailyTrucks[dStr]) dailyTrucks[dStr] = {};
+                            const tType = (c[6] && c[6].v) ? c[6].v.toString().trim() : 'UNKNOWN TRUCK';
+                            dailyTrucks[dStr][tType] = (dailyTrucks[dStr][tType] || 0) + 1;
+                            
+                            const key = dStr + "_" + shiftNum;
+                            if (!metrics[key]) metrics[key] = { a:[], i:[], o:[] };
+                            
+                            const L = parseT(c[11]); 
+                            const R = parseT(c[17]); 
+                            const S = parseT(c[18]); 
+                            const U = c[20] ? parseT(c[20]) : null; 
+                            
+                            let startA = L, endA = R;
+                            if (startA !== null && endA !== null) {
+                                if (endA < startA) endA += 24 * 60; // crossed midnight
+                                metrics[key].a.push([startA, endA]);
+                            }
+                            
+                            if (endA !== null) {
+                                if (U !== null) {
+                                    let endU = U;
+                                    if (endU < endA) endU += 24 * 60;
+                                    metrics[key].o.push([endA, endU]);
+                                } else if (S !== null) {
+                                    let endS = S;
+                                    if (endS < endA) endS += 24 * 60;
+                                    metrics[key].i.push([endA, endS]);
+                                }
+                            }
+                        });
+
+                        // Now override `result.data` and `result.intake71`
+                        let totalActiveRecalc = 0, totalIdleRecalc = 0, totalOffRecalc = 0;
+                        
+                        result.data.forEach(d => {
+                            // map "2026-02-19" to "19-Feb-2026"
+                            const dateObj = new Date(d.date);
+                            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                            const dMatch = dateObj.getDate() + '-' + months[dateObj.getMonth()] + '-' + dateObj.getFullYear();
+                            
+                            let dailyActive = 0, dailyIdle = 0, dailyOff = 0;
+                            
+                            if (d.shiftData) {
+                                ["1", "2", "3"].forEach(shiftId => {
+                                    const s = d.shiftData[shiftId];
+                                    if (!s) return;
+                                    const hasActivity = (s.sbm_ins + s.pkm_ins) > 0 || s.trucks > 0;
+                                    
+                                    let newActive = 0, newIdle = 0, newOff = 0;
+                                    if (hasActivity) {
+                                        const key = dMatch + "_" + shiftId;
+                                        const m = metrics[key];
+                                        if (m) {
+                                            newActive = getMerged(m.a);
+                                            newIdle = getMerged(m.i);
+                                            newOff = getMerged(m.o);
+                                        }
+                                        
+                                        // Pro-rate sub-metrics if active changed
+                                        const hasNewBreakdown = (s.wt !== undefined && (s.wt + s.bk + s.qct + s.mnv + s.fn) > 0);
+                                        if (hasNewBreakdown) {
+                                            const oldSubTotal = s.wt + s.bk + s.qct + s.mnv + s.fn;
+                                            if (oldSubTotal > 0 && newActive > 0) {
+                                                const ratio = newActive / oldSubTotal;
+                                                s.wt *= ratio; s.bk *= ratio; s.qct *= ratio; s.mnv *= ratio; s.fn *= ratio;
+                                            } else if (newActive === 0) {
+                                                s.wt = 0; s.bk = 0; s.qct = 0; s.mnv = 0; s.fn = 0;
+                                            }
+                                        } else {
+                                            const oldSubTotal = s.active || 0;
+                                            if (oldSubTotal > 0 && newActive > 0) {
+                                                const ratio = newActive / oldSubTotal;
+                                                s.qc = (s.qc || 0) * ratio; s.man = (s.man || 0) * ratio;
+                                            } else if (newActive === 0) {
+                                                s.qc = 0; s.man = 0;
+                                            }
+                                        }
+                                        s.idle = newIdle; s.off = newOff; s.active = newActive;
+                                        
+                                        dailyActive += newActive; dailyIdle += newIdle; dailyOff += newOff;
+                                    } else {
+                                        s.idle = 0; s.off = 0; s.active = 0;
+                                    }
+                                });
+                            }
+                            
+                            if (result.intake71 && result.intake71.dailyDetail) {
+                                const detailDay = result.intake71.dailyDetail.find(x => x.date === d.date);
+                                if (detailDay) {
+                                    detailDay.activeMin = dailyActive;
+                                    detailDay.idleMin = dailyIdle;
+                                    detailDay.offMin = dailyOff;
+                                    detailDay.tonPerHour = dailyActive > 0 ? (detailDay.netto / 1000) / (dailyActive / 60) : 0;
+                                    
+                                    const tDateObj = new Date(d.date);
+                                    const tMatch = tDateObj.getDate() + '-' + months[tDateObj.getMonth()] + '-' + tDateObj.getFullYear();
+                                    detailDay.truckBreakdown = dailyTrucks[tMatch] || {};
+                                }
+                            }
+                            
+                            totalActiveRecalc += dailyActive;
+                            totalIdleRecalc += dailyIdle;
+                            totalOffRecalc += dailyOff;
+                        });
+
+                        if (result.intake71) {
+                            result.intake71.activeTotal = totalActiveRecalc;
+                            result.intake71.idleLoss = totalIdleRecalc;
+                            result.intake71.offSetup = totalOffRecalc;
+                            result.intake71.totalMonthMin = totalActiveRecalc + totalIdleRecalc + totalOffRecalc;
+                            const tTon = result.intake71.nettoKg / 1000;
+                            result.intake71.avgSpeed = totalActiveRecalc > 0 ? tTon / (totalActiveRecalc / 60) : 0;
+                        }
+                    } catch (err) {
+                        console.error("GViz Fetch Error:", err);
+                    }
+                    // === END FIX ===
+
+
                     this.aggregatedData = result.data;
                     this.intake71Data = result.intake71 || {};
                     this.materialBreakdown = result.materialBreakdown || {};
@@ -154,6 +336,7 @@ const BKKDowntimeApp = {
         // New V10 Logic:
         this.renderGrandTotal();
         this.renderProcessStats();
+        this.renderIntake71DailyTable(); // DAILY TABLE EXTENSION (NEW)
         this.renderEvalSection(); // V14: New consolidated evaluation
         this.renderCalendar(); // V15: New daily volume calendar
     },
@@ -162,6 +345,191 @@ const BKKDowntimeApp = {
         // Called when manpower input changes (now calls renderEvalSection)
         this.renderIntake71Analysis();
         this.renderEvalSection();
+    },
+
+    renderGrandTotal: function () {
+        // Sum Intake + Direct
+        const i71 = this.intake71Data || {};
+        const dg = this.directGudangData || {};
+        const dailyDirect = dg.daily || [];
+
+        const intakeNetto = i71.nettoKg || 0;
+        const directNetto = dailyDirect.reduce((sum, d) => sum + (d.netto || 0), 0);
+        const grandTotal = intakeNetto + directNetto;
+
+        const el = document.getElementById('val-grand-total');
+        if (el) el.innerText = (grandTotal / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 });
+    }, // <-- added comma
+
+    // ==========================================
+    // INTAKE 71 DAILY (NEW)
+    // ==========================================
+    renderIntake71DailyTable: function() {
+        const tbody = document.getElementById('intake-daily-tbody');
+        if (!tbody) return;
+        
+        if (!this.aggregatedData || this.aggregatedData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:#555;">TIDAK ADA DATA UNTUK BULAN INI</td></tr>';
+            return;
+        }
+
+        const fmt = (n) => Math.round(n).toLocaleString();
+        const fmt1 = (n) => n.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        
+        let html = '';
+        
+        // Sort by date ascending
+        const sortedData = [...this.aggregatedData].sort((a,b) => new Date(a.date) - new Date(b.date));
+
+        sortedData.forEach(dayInfo => {
+            // Aggregate daily intake metrics across all 3 shifts
+            let dayIntakeVol = 0;
+            let dayActive = 0;
+            let dayIdle = 0;
+            let dayOff = 0;
+            let dayTotalMins = 0;
+            
+            // Sub metrics for Active Modal
+            let w=0, b=0, q=0, m=0, f=0;
+            
+            // Material & Truck Breakdown for Qty Modal
+            let matMap = {};
+            let truckMap = {};
+            
+            if (dayInfo.shiftData) {
+                ["1","2","3"].forEach(sid => {
+                    const s = dayInfo.shiftData[sid];
+                    if (s) {
+                        const intakeVol = (s.sbm_ins || 0) + (s.pkm_ins || 0);
+                        dayIntakeVol += intakeVol;
+                        dayActive += (s.active || 0);
+                        dayIdle += (s.idle || 0);
+                        dayOff += (s.off || 0);
+                        dayTotalMins += ((s.active||0) + (s.idle||0) + (s.off||0));
+                        
+                        w += (s.wt||0); b += (s.bk||0); q += ((s.qct||0) + (s.qc||0)); 
+                        m += ((s.mnv||0) + (s.man||0)); f += (s.fn||0);
+                    }
+                });
+            }
+
+            // Also aggregate materials from detailed distribution if available (otherwise we just know it's intake)
+            if (dayInfo.matDist) {
+                Object.keys(dayInfo.matDist).forEach(mt => {
+                    // For simplicity, we assume dayInfo.matDist is total string form. 
+                    // However, actual strict Intake/Direct breakdown per material per date isn't easily isolated in aggregatedData.
+                    // We'll use dayInfo estimates or raw maps if possible.
+                });
+            }
+
+            // Only show rows that have intake volume or intake activity
+            if (dayIntakeVol === 0 && dayActive === 0 && dayIdle === 0 && dayOff === 0) return;
+
+            // Safe division
+            const den = dayTotalMins || 1;
+            const activePct = (dayActive / den) * 100;
+            const downtimePct = ((dayIdle + dayOff) / den) * 100;
+
+            const dateStr = new Date(dayInfo.date).toLocaleDateString('id-ID', { day:'numeric', month:'short' });
+
+            // Create row
+            html += `<tr style="cursor:pointer; transition:background 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                <td style="font-weight:bold; color:var(--text-main);"><i class="far fa-calendar-alt" style="margin-right:8px; color:var(--text-sec);"></i> ${dateStr}</td>
+                
+                <td style="text-align:right; color:#00e5ff; font-family:'Orbitron'; font-weight:700;" 
+                    onclick="BKKDowntimeApp.openDailyQtyModal('${dayInfo.date}', ${dayIntakeVol})">
+                    <div style="padding:5px; background:rgba(0,229,255,0.1); border-radius:4px; display:inline-block; min-width:60px;">
+                        ${fmt(dayIntakeVol/1000)} <i class="fas fa-search-plus" style="font-size:0.6rem; opacity:0.5; margin-left:5px;"></i>
+                    </div>
+                </td>
+                
+                <td style="text-align:right; color:#00ff88; font-weight:bold;"
+                    onclick="BKKDowntimeApp.openDailyActiveModal('${dayInfo.date}', ${dayActive}, ${w}, ${b}, ${q}, ${m}, ${f})">
+                    <div style="padding:5px; background:rgba(0,255,136,0.1); border-radius:4px; display:inline-block; min-width:60px;">
+                        ${activePct.toFixed(1)}% <i class="fas fa-search-plus" style="font-size:0.6rem; opacity:0.5; margin-left:5px;"></i>
+                    </div>
+                </td>
+                
+                <td style="text-align:right; color:#ff003c; font-weight:bold;"
+                    onclick="BKKDowntimeApp.openDailyOffModal('${dayInfo.date}', ${dayIdle}, ${dayOff})">
+                    <div style="padding:5px; background:rgba(255,0,60,0.1); border-radius:4px; display:inline-block; min-width:60px;">
+                        ${downtimePct.toFixed(1)}% <i class="fas fa-search-plus" style="font-size:0.6rem; opacity:0.5; margin-left:5px;"></i>
+                    </div>
+                </td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = html;
+        if (html === '') {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:30px; color:#555;">TIDAK ADA AKTIVITAS INTAKE</td></tr>';
+        }
+    },
+
+    openDailyQtyModal: function(dateStr, intakeVol) {
+        document.getElementById('qty-modal-date').innerText = new Date(dateStr).toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' }).toUpperCase();
+        const dObj = this.aggregatedData.find(x => x.date === dateStr);
+        
+        let htmlMat = '';
+        let htmlTrk = '';
+        
+        if (dObj) {
+            // Material approximation based on shiftData
+            let sbmVol = 0; let pkmVol = 0;
+            ["1","2","3"].forEach(sid => { if(dObj.shiftData && dObj.shiftData[sid]){ sbmVol += (dObj.shiftData[sid].sbm_ins||0); pkmVol += (dObj.shiftData[sid].pkm_ins||0); } });
+            
+            htmlMat += `<tr><td style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); color:#d500f9;">SBM</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold;">${Math.round(sbmVol/1000).toLocaleString()} TON</td></tr>`;
+            htmlMat += `<tr><td style="padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); color:#00e5ff;">PKM</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold;">${Math.round(pkmVol/1000).toLocaleString()} TON</td></tr>`;
+            htmlMat += `<tr style="background:rgba(255,255,255,0.05);"><td style="padding:8px 5px; font-weight:bold; color:var(--neon-gold);">TOTAL</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold; color:var(--neon-gold); padding-right:5px;">${Math.round(intakeVol/1000).toLocaleString()} TON</td></tr>`;
+            
+            const detailDay = this.intake71Data.dailyDetail.find(x => x.date === dateStr);
+            if (detailDay && detailDay.truckBreakdown && Object.keys(detailDay.truckBreakdown).length > 0) {
+                let sortedTrucks = Object.entries(detailDay.truckBreakdown).sort((a,b) => b[1] - a[1]);
+                sortedTrucks.forEach(([tName, tCount]) => {
+                    htmlTrk += `<tr><td style="padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); color:#fff; font-size:0.9rem;">${tName}</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold;">${tCount} T</td></tr>`;
+                });
+                const totalTrks = sortedTrucks.reduce((sum, item) => sum + item[1], 0);
+                htmlTrk += `<tr style="background:rgba(255,255,255,0.05);"><td style="padding:8px 5px; font-weight:bold; color:var(--neon-gold);">TOTAL</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold; color:var(--neon-gold); padding-right:5px;">${totalTrks} UNIT</td></tr>`;
+            } else {
+                htmlTrk = `<tr><td style="padding:20px; text-align:center; color:#666; font-size:0.8rem;"><i>Detail tipe truck tidak tersedia untuk hari ini dari Raw Data GSheet.</i></td></tr>`;
+            }
+        }
+
+        document.getElementById('qty-modal-material').innerHTML = htmlMat;
+        document.getElementById('qty-modal-truck').innerHTML = htmlTrk;
+        document.getElementById('modal-qty-detail').style.display = 'flex';
+    },
+
+    openDailyActiveModal: function(dateStr, totalMins, w, b, q, m, f) {
+        document.getElementById('active-modal-date').innerText = new Date(dateStr).toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' }).toUpperCase();
+        
+        let html = '';
+        const t = Math.round;
+        const subSum = w+b+q+m+f;
+        const isValid = subSum > 0;
+        
+        html += `<tr><td style="padding:10px 0; border-bottom:1px solid rgba(0,255,136,0.1); color:#ffea00;">Wait Panggil</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold;">${isValid ? t((w/subSum)*totalMins) : 0} MIN</td></tr>`;
+        html += `<tr><td style="padding:10px 0; border-bottom:1px solid rgba(0,255,136,0.1); color:#00e5ff;">Active Bongkar</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold;">${isValid ? t((b/subSum)*totalMins) : totalMins} MIN</td></tr>`;
+        html += `<tr><td style="padding:10px 0; border-bottom:1px solid rgba(0,255,136,0.1); color:#651fff;">QC Process</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold;">${isValid ? t((q/subSum)*totalMins) : 0} MIN</td></tr>`;
+        html += `<tr><td style="padding:10px 0; border-bottom:1px solid rgba(0,255,136,0.1); color:#ff003c;">Manuver Akhir</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold;">${isValid ? t((m/subSum)*totalMins) : 0} MIN</td></tr>`;
+        html += `<tr><td style="padding:10px 0; border-bottom:1px solid rgba(0,255,136,0.1); color:#ff9100;">Finish Delay</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold;">${isValid ? t((f/subSum)*totalMins) : 0} MIN</td></tr>`;
+        html += `<tr style="background:rgba(0,255,136,0.1);"><td style="padding:12px 10px; font-weight:bold; color:#00ff88; font-size:1.1rem;">TOTAL ACTIVE</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold; color:#00ff88; font-size:1.1rem; padding-right:10px;">${t(totalMins)} MIN</td></tr>`;
+        
+        document.getElementById('active-modal-table').innerHTML = html;
+        document.getElementById('modal-active-detail').style.display = 'flex';
+    },
+
+    openDailyOffModal: function(dateStr, idle, off) {
+        document.getElementById('off-modal-date').innerText = new Date(dateStr).toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' }).toUpperCase();
+        
+        let html = '';
+        const t = Math.round;
+        
+        html += `<tr><td style="padding:15px 0; border-bottom:1px solid rgba(255,0,60,0.1); color:#ffcc00;"><i class="fas fa-pause-circle" style="margin-right:8px;"></i> IDLE LOSS</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold; font-size:1.2rem;">${t(idle)} MIN</td></tr>`;
+        html += `<tr><td style="padding:15px 0; border-bottom:1px solid rgba(255,0,60,0.1); color:#ff003c;"><i class="fas fa-power-off" style="margin-right:8px;"></i> OFF / SETUP</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold; font-size:1.2rem;">${t(off)} MIN</td></tr>`;
+        html += `<tr style="background:rgba(255,0,60,0.1);"><td style="padding:15px 10px; font-weight:bold; color:#fff; font-size:1.1rem;">TOTAL DOWNTIME</td><td style="text-align:right; font-family:'Orbitron'; font-weight:bold; color:#fff; font-size:1.2rem; padding-right:10px;">${t(idle+off)} MIN</td></tr>`;
+        
+        document.getElementById('off-modal-table').innerHTML = html;
+        document.getElementById('modal-off-detail').style.display = 'flex';
     },
 
     renderGrandTotal: function () {
@@ -984,24 +1352,29 @@ const BKKDowntimeApp = {
                 </tr>
             </thead>
             <tbody>
+                <!-- === INTAKE 71 SECTION === -->
                 <tr>
-                    <td class="metric-name">SBM Via Intake 71</td>
+                    <td class="metric-name" colspan="${displayShifts.length + 1}" style="color:#d500f9; font-weight:bold; font-size:0.85rem; padding:8px 0 4px; border-bottom:1px solid rgba(213,0,249,0.3); letter-spacing:1px;">
+                        <i class="fas fa-industry" style="margin-right:6px;"></i>INTAKE 71
+                    </td>
+                </tr>
+                <tr>
+                    <td class="metric-name sub-metric">SBM Intake</td>
                     ${displayShifts.map(id => `<td class="shift-val">${fmt(shifts[id]?.sbm_ins || 0)}</td>`).join("")}
                 </tr>
                 <tr>
-                    <td class="metric-name">SBM Direct Gudang</td>
-                    ${displayShifts.map(id => `<td class="shift-val">${fmt(shifts[id]?.sbm_dg || 0)}</td>`).join("")}
-                </tr>
-                <tr>
-                    <td class="metric-name">PKM Via Intake 71</td>
+                    <td class="metric-name sub-metric">PKM Intake</td>
                     ${displayShifts.map(id => `<td class="shift-val">${fmt(shifts[id]?.pkm_ins || 0)}</td>`).join("")}
                 </tr>
-                <tr>
-                    <td class="metric-name">PKM Direct Gudang</td>
-                    ${displayShifts.map(id => `<td class="shift-val">${fmt(shifts[id]?.pkm_dg || 0)}</td>`).join("")}
+                <tr class="total-row">
+                    <td class="metric-name" style="color:#d500f9; font-size:0.75rem;">SUBTOTAL INTAKE</td>
+                    ${displayShifts.map(id => {
+            const s = shifts[id] || { sbm_ins: 0, pkm_ins: 0 };
+            return `<td class="shift-val" style="color:#d500f9; font-weight:bold;">${fmt((s.sbm_ins || 0) + (s.pkm_ins || 0))}</td>`;
+        }).join("")}
                 </tr>
                 
-                <tr style="height:10px;"><td colspan="${displayShifts.length + 1}"></td></tr>
+                <tr style="height:6px;"><td colspan="${displayShifts.length + 1}"></td></tr>
                 
                 <tr>
                     <td class="metric-name highlight">1. Active Discharge</td>
@@ -1053,14 +1426,6 @@ const BKKDowntimeApp = {
                     <td class="metric-name highlight">3. OFF / Set-up</td>
                     ${displayShifts.map(id => `<td class="shift-val highlight">${fmtM(shifts[id]?.off || 0)}</td>`).join("")}
                 </tr>
-                
-                <tr class="total-row">
-                    <td class="metric-name" style="color:var(--coin-accent);">TOTAL VOLUME</td>
-                    ${displayShifts.map(id => {
-            const s = shifts[id] || { sbm_ins: 0, sbm_dg: 0, pkm_ins: 0, pkm_dg: 0 };
-            return `<td class="shift-val" style="color:var(--coin-accent);">${fmt(s.sbm_ins + s.sbm_dg + s.pkm_ins + s.pkm_dg)}</td>`;
-        }).join("")}
-                </tr>
                 <tr class="total-row">
                     <td class="metric-name">TRUCK COUNT</td>
                     ${displayShifts.map(id => `<td class="shift-val">${shifts[id]?.trucks || ""}</td>`).join("")}
@@ -1082,8 +1447,75 @@ const BKKDowntimeApp = {
                     ${displayShifts.map(id => `<td class="shift-val" style="font-size:0.7rem; color:#888;">${shifts[id]?.scada?.length ? shifts[id].scada.join(", ") : ""}</td>`).join("")}
                 </tr>
                 ` : ""}
+
+                <!-- === DIRECT GUDANG SECTION === -->
+                <tr style="height:10px;"><td colspan="${displayShifts.length + 1}"></td></tr>
+                <tr>
+                    <td class="metric-name" colspan="${displayShifts.length + 1}" style="color:#00e5ff; font-weight:bold; font-size:0.85rem; padding:8px 0 4px; border-bottom:1px solid rgba(0,229,255,0.3); letter-spacing:1px;">
+                        <i class="fas fa-warehouse" style="margin-right:6px;"></i>DIRECT GUDANG
+                    </td>
+                </tr>
+                <tr>
+                    <td class="metric-name sub-metric">SBM Direct</td>
+                    ${displayShifts.map(id => `<td class="shift-val">${fmt(shifts[id]?.sbm_dg || 0)}</td>`).join("")}
+                </tr>
+                <tr>
+                    <td class="metric-name sub-metric">PKM Direct</td>
+                    ${displayShifts.map(id => `<td class="shift-val">${fmt(shifts[id]?.pkm_dg || 0)}</td>`).join("")}
+                </tr>
+                <tr class="total-row">
+                    <td class="metric-name" style="color:#00e5ff; font-size:0.75rem;">SUBTOTAL DIRECT</td>
+                    ${displayShifts.map(id => {
+            const s = shifts[id] || { sbm_dg: 0, pkm_dg: 0 };
+            return `<td class="shift-val" style="color:#00e5ff; font-weight:bold;">${fmt((s.sbm_dg || 0) + (s.pkm_dg || 0))}</td>`;
+        }).join("")}
+                </tr>
+
             </tbody>
-        </table>`;
+        </table>
+
+        <!-- === TOTAL VOLUME MINI TABLE === -->
+        <div style="margin-top:15px; padding:12px; background:rgba(255,204,0,0.05); border:1px solid rgba(255,204,0,0.25); border-radius:8px;">
+            <div style="font-family:'Orbitron'; color:var(--coin-accent); font-size:0.85rem; font-weight:bold; margin-bottom:10px; letter-spacing:1px;">
+                <i class="fas fa-calculator" style="margin-right:6px;"></i>TOTAL VOLUME
+            </div>
+            <table class="comparison-table" style="margin:0;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left; font-size:0.7rem;">SHIFT</th>
+                        <th style="text-align:right; font-size:0.7rem;">INTAKE 71</th>
+                        <th style="text-align:right; font-size:0.7rem;">DIRECT</th>
+                        <th style="text-align:right; font-size:0.7rem;">TOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${displayShifts.map(id => {
+            const s = shifts[id] || { sbm_ins: 0, sbm_dg: 0, pkm_ins: 0, pkm_dg: 0 };
+            const intake = (s.sbm_ins || 0) + (s.pkm_ins || 0);
+            const direct = (s.sbm_dg || 0) + (s.pkm_dg || 0);
+            const total = intake + direct;
+            return `<tr>
+                        <td class="metric-name" style="font-size:0.8rem;">Shift ${id}</td>
+                        <td class="shift-val" style="text-align:right; color:#d500f9;">${fmt(intake)}</td>
+                        <td class="shift-val" style="text-align:right; color:#00e5ff;">${fmt(direct)}</td>
+                        <td class="shift-val" style="text-align:right; color:#fff; font-weight:bold;">${fmt(total)}</td>
+                    </tr>`;
+        }).join("")}
+                    <tr style="border-top:2px solid rgba(255,204,0,0.4);">
+                        <td class="metric-name" style="color:var(--coin-accent); font-weight:bold; font-size:0.85rem;">HARI INI</td>
+                        <td class="shift-val" style="text-align:right; color:#d500f9; font-weight:bold;">${(() => {
+            let t = 0; displayShifts.forEach(id => { const s = shifts[id] || {}; t += (s.sbm_ins || 0) + (s.pkm_ins || 0); }); return fmt(t);
+        })()}</td>
+                        <td class="shift-val" style="text-align:right; color:#00e5ff; font-weight:bold;">${(() => {
+            let t = 0; displayShifts.forEach(id => { const s = shifts[id] || {}; t += (s.sbm_dg || 0) + (s.pkm_dg || 0); }); return fmt(t);
+        })()}</td>
+                        <td class="shift-val" style="text-align:right; color:var(--coin-accent); font-weight:bold; font-size:1.05rem;">${(() => {
+            let t = 0; displayShifts.forEach(id => { const s = shifts[id] || {}; t += (s.sbm_ins || 0) + (s.sbm_dg || 0) + (s.pkm_ins || 0) + (s.pkm_dg || 0); }); return fmt(t);
+        })()}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>`;
 
         // Add Remarks if any
         let remHtml = "";

@@ -1729,6 +1729,30 @@
                 <div id="chart-intake-volume" style="height:280px;"></div>
             </div>
 
+            <!-- === NEW: INTAKE 71 DAILY TABLE === -->
+            <div class="coin-card" style="background:rgba(255,255,255,0.01); padding:0; overflow:hidden;">
+                <div class="coin-header" style="padding:20px 25px 10px; margin:0;">
+                    <span><i class="fas fa-table" style="margin-right:8px; color:var(--neon-gold);"></i> DETAIL HARIAN INTAKE 71</span>
+                    <span style="font-size:0.75rem; color:#666;">KLIK ANGKA UNTUK MELIHAT RINCIAN</span>
+                </div>
+                <div style="width:100%; overflow-x:auto;">
+                    <table class="data-table-v10" id="table-intake-daily" style="margin:0; width:100%; border-spacing:0;">
+                        <thead>
+                            <tr style="background:rgba(0,0,0,0.5);">
+                                <th style="padding:15px 25px;">TANGGAL</th>
+                                <th style="text-align:right;">QUANTITY (TON)</th>
+                                <th style="text-align:right; color:#00ff88;">ACTIVE (%)</th>
+                                <th style="text-align:right; color:#ff003c;">OFF / IDLE (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="intake-daily-tbody">
+                            <!-- Injected via JS -->
+                            <tr><td colspan="4" style="text-align:center; padding:30px; color:#555;">MEMUAT DATA...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- 2. Truck Analysis Below -->
             <div id="truck-analysis-intake" class="coin-card" style="background:rgba(255,255,255,0.01);">
                 <div class="coin-header" style="margin-bottom:15px;">
@@ -1804,9 +1828,56 @@
 
     </div>
 
-    </div>
     <script src="js/app-config.js"></script>
     <script src="js/bkk-downtime.js"></script>
+
+    <!-- === MODALS FOR DAILY TABLE DRILL-DOWN === -->
+    
+    <!-- 1. Quantity Modal -->
+    <div id="modal-qty-detail" class="modal-overlay" onclick="if(event.target === this) this.style.display='none'">
+        <div class="modal-box" style="max-width:700px; padding:30px;">
+            <div class="modal-close" onclick="document.getElementById('modal-qty-detail').style.display='none'"><i class="fas fa-times"></i></div>
+            <div class="coin-header" style="color:#00e5ff; font-size:1.1rem; margin-bottom:5px;">RINCIAN QUANTITY INTAKE 71</div>
+            <div id="qty-modal-date" style="font-family:'Orbitron'; font-size:0.8rem; color:#888; margin-bottom:20px;">-</div>
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:8px;">
+                    <div style="font-family:'Orbitron'; font-size:0.75rem; color:var(--text-sec); margin-bottom:15px;">BREAKDOWN MATERIAL</div>
+                    <table style="width:100%; font-family:'Rajdhani'; font-size:0.9rem; color:#fff;" id="qty-modal-material"></table>
+                </div>
+                <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:8px;">
+                    <div style="font-family:'Orbitron'; font-size:0.75rem; color:var(--text-sec); margin-bottom:15px;">BREAKDOWN JENIS TRUCK</div>
+                    <table style="width:100%; font-family:'Rajdhani'; font-size:0.9rem; color:#fff;" id="qty-modal-truck"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Active Modal -->
+    <div id="modal-active-detail" class="modal-overlay" onclick="if(event.target === this) this.style.display='none'">
+        <div class="modal-box" style="max-width:500px; padding:30px; border-color:#00ff88;">
+            <div class="modal-close" onclick="document.getElementById('modal-active-detail').style.display='none'"><i class="fas fa-times"></i></div>
+            <div class="coin-header" style="color:#00ff88; font-size:1.1rem; margin-bottom:5px;">RINCIAN ACTIVE DISCHARGE</div>
+            <div id="active-modal-date" style="font-family:'Orbitron'; font-size:0.8rem; color:#888; margin-bottom:20px;">-</div>
+            
+            <div style="background:rgba(0,255,136,0.05); padding:20px; border-radius:8px; border:1px solid rgba(0,255,136,0.2);">
+                <table style="width:100%; font-family:'Rajdhani'; font-size:1rem; color:#fff; border-collapse:collapse;" id="active-modal-table"></table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Off / Idle Modal -->
+    <div id="modal-off-detail" class="modal-overlay" onclick="if(event.target === this) this.style.display='none'">
+        <div class="modal-box" style="max-width:500px; padding:30px; border-color:#ff003c;">
+            <div class="modal-close" onclick="document.getElementById('modal-off-detail').style.display='none'"><i class="fas fa-times"></i></div>
+            <div class="coin-header" style="color:#ff003c; font-size:1.1rem; margin-bottom:5px;">RINCIAN DOWNTIME (OFF & IDLE)</div>
+            <div id="off-modal-date" style="font-family:'Orbitron'; font-size:0.8rem; color:#888; margin-bottom:20px;">-</div>
+            
+            <div style="background:rgba(255,0,60,0.05); padding:20px; border-radius:8px; border:1px solid rgba(255,0,60,0.2);">
+                <table style="width:100%; font-family:'Rajdhani'; font-size:1rem; color:#fff; border-collapse:collapse;" id="off-modal-table"></table>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
