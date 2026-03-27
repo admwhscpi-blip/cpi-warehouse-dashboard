@@ -2503,6 +2503,7 @@ const SimPage = {
             warehouseData: this.data ? {
                 warehouses: this.data.warehouses,
                 capacities: this.data.capacities,
+                materials: this.data.materials ? this.data.materials.map(m => ({ name: m.name, stocks: m.stocks })) : [],
                 unsimulatedStock: unsimulatedStock
             } : null
         };

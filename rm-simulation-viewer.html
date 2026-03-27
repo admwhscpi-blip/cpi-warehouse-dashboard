@@ -228,20 +228,36 @@
             color: var(--neon-blue) !important;
             text-shadow: none !important;
         }
-        .glass-panel *[style*="color:#fff"], .glass-panel *[style*="color: #fff"] {
+        #viewer-content *[style*="color:#fff"], #viewer-content *[style*="color: #fff"] {
             color: #1e293b !important;
         }
-        .glass-panel *[style*="color:#cbd5e1"], .glass-panel *[style*="color: #cbd5e1"],
-        .glass-panel *[style*="color:#94a3b8"], .glass-panel *[style*="color: #94a3b8"] {
+        #viewer-content *[style*="color:#cbd5e1"], #viewer-content *[style*="color: #cbd5e1"],
+        #viewer-content *[style*="color:#94a3b8"], #viewer-content *[style*="color: #94a3b8"] {
             color: #475569 !important;
         }
-        .glass-panel *[style*="color:#00f3ff"], .glass-panel *[style*="color: #00f3ff"] {
-            color: var(--neon-blue) !important;
+        #viewer-content *[style*="color:#00f3ff"], #viewer-content *[style*="color: #00f3ff"] {
+            color: var(--neon-blue) !important; text-shadow: none !important;
         }
-        .glass-panel *[style*="color:#FFE600"], .glass-panel *[style*="color: #FFE600"],
-        .glass-panel *[style*="color:#ff9e0b"], .glass-panel *[style*="color: #ff9e0b"] {
-            color: #d97706 !important;
+        #viewer-content *[style*="color:#FFE600"], #viewer-content *[style*="color: #FFE600"],
+        #viewer-content *[style*="color:#ff9e0b"], #viewer-content *[style*="color: #ff9e0b"] {
+            color: #d97706 !important; text-shadow: none !important;
         }
+        #viewer-content *[style*="color:#bc13fe"], #viewer-content *[style*="color: #bc13fe"] {
+            color: #7e22ce !important; text-shadow: none !important;
+        }
+
+        /* PASSWORD SCREEN OVERRIDES */
+        .viewer-password-overlay { background: #f1f5f9 !important; }
+        .viewer-password-card {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05) !important;
+            color: #1e293b !important;
+        }
+        .viewer-password-card *[style*="color:#00f3ff"] { color: var(--neon-blue) !important; text-shadow: none !important; }
+        .viewer-password-card *[style*="color:#94a3b8"] { color: #64748b !important; }
+        .viewer-password-card *[style*="color:#FFE600"] { color: #d97706 !important; }
+
         .detail-table thead th {
             background: #f8fafc !important;
             color: var(--neon-blue) !important;
@@ -604,7 +620,7 @@
         // Embed CONFIG for standalone use
         const CONFIG = {
             UNIT_DIVIDER: 1000,
-            WAREHOUSE_CAPACITIES: { "RM": 10000, "GEBANG-A": 2500, "GEBANG-B": 1500, "SAMPING-C": 2500, "SAMPING-D": 2500, "SAMPING-E": 4000, "SAMPING-F": 3000 }
+            WAREHOUSE_CAPACITIES: { "RM": 10000, "GEBANG-A": 2500, "GEBANG-B": 1500, "SAMPING-C": 2500, "SAMPING-D": 2500, "SAMPING-E": 4000, "SAMPING-F": 3000, "GUDANG HINO": 1000, "GD.HINO": 1000 }
         };
 
         const VP = {
@@ -777,57 +793,136 @@
                 const el = document.getElementById('initial-state-widget');
                 if(!el) return;
 
-                let tCap = 0;
-                if (this.data && this.data.warehouses) {
-                    this.data.warehouses.forEach((w, idx) => { 
+                if (!this.data || !this.data.warehouses) return;
+
+                // Compute per-warehouse stock totals
+                let whTotals = new Array(this.data.warehouses.length).fill(0);
+                
+                if (this.data.materials && this.data.materials.length > 0) {
+                    // Method A: Use materials data from payload
+                    this.data.materials.forEach(m => {
+                        const simMat = this.session.find(s => s.material === m.name);
+                        let totalOriginal = 0;
+                        if(m.stocks) totalOriginal = m.stocks.reduce((a,b)=>a+b, 0);
+                        
+                        for(let i=0; i<this.data.warehouses.length; i++) {
+                            const originStock = (m.stocks && m.stocks[i]) ? m.stocks[i] : 0;
+                            if(simMat && totalOriginal > 0) {
+                                const ratio = originStock / totalOriginal;
+                                whTotals[i] += simMat.baseStock * ratio;
+                            } else {
+                                whTotals[i] += originStock;
+                            }
+                        }
+                    });
+                } else {
+                    // Method B: Fallback — distribute total stock proportionally by capacity
+                    let totalSimStock = 0;
+                    this.session.forEach(s => totalSimStock += s.baseStock);
+                    const unsimStock = this.getUnsimulatedStock();
+                    const totalStock = totalSimStock + unsimStock;
+                    
+                    let totalCap = 0;
+                    this.data.warehouses.forEach((w, idx) => {
                         const fallbackCap = this.data.capacities[idx] > 100000 ? this.data.capacities[idx] / 1000 : this.data.capacities[idx];
-                        tCap += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || fallbackCap || 0; 
+                        let rawCap = CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || fallbackCap || 0;
+                        if (rawCap > 0 && rawCap < 1000000) rawCap *= 1000;
+                        totalCap += rawCap;
+                    });
+                    
+                    this.data.warehouses.forEach((w, idx) => {
+                        const fallbackCap = this.data.capacities[idx] > 100000 ? this.data.capacities[idx] / 1000 : this.data.capacities[idx];
+                        let rawCap = CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || fallbackCap || 0;
+                        if (rawCap > 0 && rawCap < 1000000) rawCap *= 1000;
+                        const ratio = totalCap > 0 ? rawCap / totalCap : 0;
+                        whTotals[idx] = totalStock * ratio;
                     });
                 }
-                if (tCap > 0 && tCap < 1000000) tCap *= 1000;
-                const totalCapacity = tCap > 0 ? tCap : 25000000;
-                const unsimulatedStock = this.getUnsimulatedStock();
-                
-                let initialSimStock = 0;
-                this.session.forEach(s => initialSimStock += s.baseStock);
-                
-                const totalStock = unsimulatedStock + initialSimStock;
-                const pct = Math.min(100, Math.round((totalStock / totalCapacity) * 100));
-                
-                let colorCode = '#10b981';
-                let statusText = 'OPTIMAL - HIJAU';
-                if(pct > 90) { colorCode = '#ef4444'; statusText = 'KRITIS - MERAH'; }
-                else if(pct > 80) { colorCode = '#f59e0b'; statusText = 'WASPADA - KUNING'; }
 
-                el.innerHTML = `
-                <div class="glass-panel" style="margin-bottom:0; padding:20px; border-left: 5px solid ${colorCode} !important; border-radius:12px;">
-                    <div style="font-family:'Orbitron'; font-size:1.1rem; color:var(--neon-blue); margin-bottom:5px;">KONDISI AWAL GUDANG (RM)</div>
-                    <div style="color:${colorCode}; font-weight:800; font-size:0.95rem; margin-bottom:20px; letter-spacing:1px;">Status: ${statusText}</div>
+                let html = `
+                <div class="glass-panel" style="margin-bottom:0; padding:20px; border-radius:12px; border-left:4px solid var(--neon-blue) !important;">
+                    <div style="font-family:'Orbitron'; font-size:1.1rem; color:var(--neon-blue); margin-bottom:15px; letter-spacing:1px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>KONDISI AWAL GUDANG (DETAIL)</div>
+                        <div style="font-size:0.85rem; color:#64748b; font-family:'Rajdhani'; font-weight:700; background:#f1f5f9; padding:4px 10px; border-radius:4px; border:1px solid #e2e8f0;">HARI KE-0</div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:14px;">
+                `;
+
+                this.data.warehouses.forEach((w, idx) => {
+                    const fallbackCap = this.data.capacities[idx] > 100000 ? this.data.capacities[idx] / 1000 : this.data.capacities[idx];
+                    let rawCap = CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || fallbackCap || 0;
+                    if (rawCap > 0 && rawCap < 1000000) rawCap *= 1000;
+                    const capKg = rawCap > 0 ? rawCap : 1000000;
                     
-                    <div style="display:flex; align-items:center; gap:30px; flex-wrap:wrap;">
-                        <!-- Capacity Donut CSS -->
-                        <div style="width: 100px; height: 100px; border-radius: 50%; background: conic-gradient(${colorCode} ${pct}%, #f1f5f9 0); display: flex; justify-content: center; align-items: center; flex-shrink:0;">
-                            <div style="width: 76px; height: 76px; background: #ffffff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 800; font-size:1.2rem; color:#1e293b;">${pct}%</div>
+                    const stockKg = whTotals[idx];
+                    const pct = Math.min(100, Math.round((stockKg / capKg) * 100));
+                    
+                    // Color zones: green < 70, orange 70-89, red >= 90
+                    let gaugeColor = '#10b981';
+                    let statusText = 'OPTIMAL';
+                    let statusTag = 'HIJAU';
+                    if(pct >= 90) { gaugeColor = '#ef4444'; statusText = 'KRITIS'; statusTag = 'MERAH'; }
+                    else if(pct >= 70) { gaugeColor = '#f59e0b'; statusText = 'WASPADA'; statusTag = 'KUNING'; }
+
+                    // SVG speedometer (half-circle gauge)
+                    // Arc from 180deg to 0deg (left to right sweep)
+                    const radius = 40;
+                    const circumference = Math.PI * radius; // half circle
+                    const strokeDash = (pct / 100) * circumference;
+                    const strokeGap = circumference - strokeDash;
+
+                    html += `
+                    <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:14px; position:relative; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.15);">
+                        <!-- Grid overlay -->
+                        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background-image:linear-gradient(rgba(0,243,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,243,255,0.04) 1px, transparent 1px); background-size:10px 10px; pointer-events:none;"></div>
+                        <!-- Top glow line -->
+                        <div style="position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, ${gaugeColor}, transparent);"></div>
+                        
+                        <!-- Warehouse Name -->
+                        <div style="font-family:'Orbitron'; font-size:0.85rem; font-weight:700; color:#fff; margin-bottom:2px; position:relative; z-index:2; text-shadow:0 0 8px rgba(0,0,0,0.5);">${w.toUpperCase()}</div>
+                        <div style="font-size:0.7rem; color:${gaugeColor}; font-weight:700; margin-bottom:10px; position:relative; z-index:2;">Status: ${statusText} - ${statusTag}</div>
+                        
+                        <!-- Speedometer Gauge -->
+                        <div style="display:flex; justify-content:center; position:relative; z-index:2;">
+                            <svg viewBox="0 0 100 60" width="130" height="78" style="overflow:visible;">
+                                <!-- Background arc -->
+                                <path d="M 10 55 A 40 40 0 0 1 90 55" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7" stroke-linecap="round"/>
+                                <!-- Colored arc (fill) -->
+                                <path d="M 10 55 A 40 40 0 0 1 90 55" fill="none" stroke="${gaugeColor}" stroke-width="7" stroke-linecap="round"
+                                    stroke-dasharray="${strokeDash} ${strokeGap}"
+                                    style="filter:drop-shadow(0 0 4px ${gaugeColor}); transition: stroke-dasharray 1s ease;"/>
+                                <!-- Center percentage -->
+                                <text x="50" y="48" text-anchor="middle" style="font-family:'Rajdhani'; font-size:18px; font-weight:800; fill:#fff; text-shadow:0 0 10px rgba(0,0,0,0.5);">${pct}%</text>
+                                <!-- Min / Max labels -->
+                                <text x="10" y="60" text-anchor="middle" style="font-size:5px; fill:#64748b;">0</text>
+                                <text x="90" y="60" text-anchor="middle" style="font-size:5px; fill:#64748b;">100</text>
+                            </svg>
                         </div>
                         
-                        <!-- Details -->
-                        <div style="flex:1;">
-                            <div style="font-family:'Rajdhani'; color:#64748b; font-size:0.95rem;">Total Initial Volume:</div>
-                            <div style="font-size:1.9rem; font-weight:800; color:#1e293b; line-height:1.2;">
-                                ${(totalStock/1000).toLocaleString('en-US', {maximumFractionDigits:1})} <span style="font-size:1.1rem; color:#475569;">Ton</span>
+                        <!-- Stock & Capacity Info -->
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:6px; position:relative; z-index:2;">
+                            <div>
+                                <div style="color:#94a3b8; font-size:0.6rem; text-transform:uppercase; letter-spacing:0.5px;">Capacity</div>
+                                <div style="color:#cbd5e1; font-size:0.85rem; font-family:'Rajdhani'; font-weight:600;">${(capKg/1000).toLocaleString('en-US')} T</div>
                             </div>
-                            <div style="margin-top:8px; font-size:0.85rem; color:#64748b; background:#f8fafc; padding:6px 10px; border-radius:6px; display:inline-block; border:1px solid #e2e8f0;">
-                                Max Capacity: <b>${(totalCapacity/1000).toLocaleString()} Ton</b>
+                            <div style="text-align:right;">
+                                <div style="color:#00f3ff; font-size:1.3rem; font-family:'Rajdhani'; font-weight:800; text-shadow:0 0 8px rgba(0,243,255,0.3);">${(stockKg/1000).toLocaleString('en-US', {maximumFractionDigits:1})}</div>
+                                <div style="color:#64748b; font-size:0.6rem; text-transform:uppercase;">TON</div>
                             </div>
                         </div>
                     </div>
-                </div>
-                `;
+                    `;
+                });
+
+                html += `</div></div>`;
+                el.innerHTML = html;
             },
 
             renderMaterialList: function() {
                 const el = document.getElementById('material-list-widget');
                 if(!el) return;
+                
+                const fullDates = this.getDateRange();
 
                 let matHtml = `
                 <div class="glass-panel" style="margin-bottom:0; padding:20px; border-radius:12px;">
@@ -836,11 +931,47 @@
                 `;
 
                 this.session.forEach(s => {
+                    let peakStock = 0;
+                    let totalIn = 0;
+                    let totalOut = 0;
+
+                    fullDates.forEach(d => {
+                        const dStr = d.toISOString().split('T')[0];
+                        const st = this.calculateStateAtDate(s, dStr).stock;
+                        if(st > peakStock) peakStock = st;
+                        
+                        let dIn = s.defaultIn;
+                        let dOut = s.defaultOut;
+                        if (s.overrides && s.overrides[dStr]) {
+                            if (s.overrides[dStr].in !== undefined) dIn = Number(s.overrides[dStr].in);
+                            if (s.overrides[dStr].out !== undefined) dOut = Number(s.overrides[dStr].out);
+                        }
+                        totalIn += dIn * 1000;
+                        totalOut += dOut * 1000;
+                    });
+
                     matHtml += `
                     <div style="background:#ffffff; border:1px solid #e2e8f0; border-top:4px solid ${s.color}; padding:15px; border-radius:10px; width:220px; box-shadow:0 6px 15px rgba(0,0,0,0.03); flex-grow:1; max-width:280px;">
-                        <div style="font-family:'Orbitron'; font-weight:700; font-size:1.05rem; margin-bottom:12px; color:#1e293b;">${s.material}</div>
-                        <div style="color:#64748b; font-size:0.85rem; margin-bottom:2px;">Volume Target Awal:</div>
-                        <div style="font-size:1.3rem; font-weight:800; color:#1e293b;">${(s.baseStock/1000).toLocaleString('en-US', {maximumFractionDigits:1})} <span style="font-size:0.85rem; color:#64748b;">Ton</span></div>
+                        <div style="font-family:'Orbitron'; font-weight:700; font-size:1.05rem; margin-bottom:12px; color:#1e293b; border-bottom:1px solid #f8fafc; padding-bottom:8px;">${s.material}</div>
+                        
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 4px;">
+                            <div>
+                                <div style="color:#64748b; font-size:0.7rem;">Volume Awal:</div>
+                                <div style="font-size:1.05rem; font-weight:800; color:#1e293b;">${(s.baseStock/1000).toLocaleString('en-US', {maximumFractionDigits:1})} <span style="font-size:0.7rem; color:#64748b;">T</span></div>
+                            </div>
+                            <div>
+                                <div style="color:#64748b; font-size:0.7rem;">Peak Session:</div>
+                                <div style="font-size:1.05rem; font-weight:800; color:#d97706;">${(peakStock/1000).toLocaleString('en-US', {maximumFractionDigits:1})} <span style="font-size:0.7rem; color:#64748b;">T</span></div>
+                            </div>
+                            <div style="background:#f0fdf4; padding:6px; border-radius:6px; border:1px solid #dcfce7;">
+                                <div style="color:#166534; font-size:0.65rem;">Total IN (Sim):</div>
+                                <div style="font-size:1rem; font-weight:800; color:#15803d;">+${(Math.round(totalIn/1000)).toLocaleString('en-US')} <span style="font-size:0.7rem;">T</span></div>
+                            </div>
+                            <div style="background:#fef2f2; padding:6px; border-radius:6px; border:1px solid #fee2e2;">
+                                <div style="color:#991b1b; font-size:0.65rem;">Total OUT (Sim):</div>
+                                <div style="font-size:1rem; font-weight:800; color:#b91c1c;">-${(Math.round(totalOut/1000)).toLocaleString('en-US')} <span style="font-size:0.7rem;">T</span></div>
+                            </div>
+                        </div>
                     </div>
                     `;
                 });
@@ -848,9 +979,12 @@
                 const unsimStock = this.getUnsimulatedStock();
                 matHtml += `
                     <div style="background:#f8fafc; border:1px solid #e2e8f0; border-top:4px solid #94a3b8; padding:15px; border-radius:10px; width:220px; box-shadow:0 6px 15px rgba(0,0,0,0.03); flex-grow:1; max-width:280px; opacity:0.9;">
-                        <div style="font-family:'Orbitron'; font-weight:700; font-size:1.05rem; margin-bottom:12px; color:#475569;">Material Lainnya (Stagnan)</div>
-                        <div style="color:#64748b; font-size:0.85rem; margin-bottom:2px;">Volume Target Awal:</div>
-                        <div style="font-size:1.3rem; font-weight:800; color:#475569;">${(unsimStock/1000).toLocaleString('en-US', {maximumFractionDigits:1})} <span style="font-size:0.85rem; color:#94a3b8;">Ton</span></div>
+                        <div style="font-family:'Orbitron'; font-weight:700; font-size:1.05rem; margin-bottom:12px; color:#475569; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">Material Lainnya (Stagnan)</div>
+                        <div>
+                            <div style="color:#64748b; font-size:0.7rem;">Volume Konstan:</div>
+                            <div style="font-size:1.2rem; font-weight:800; color:#475569;">${(unsimStock/1000).toLocaleString('en-US', {maximumFractionDigits:1})} <span style="font-size:0.8rem; color:#94a3b8;">Ton</span></div>
+                        </div>
+                        <div style="font-size:0.75rem; color:#64748b; margin-top:8px; line-height:1.3;">Material stagnan tidak terpengaruh arus (IN/OUT) periode.</div>
                     </div>
                 </div>
                 </div>
@@ -1177,7 +1311,7 @@
                     <div style="font-family:'Orbitron'; font-size:0.75rem; color:#FFE600; letter-spacing:2px; margin-bottom:14px;"><i class="fas fa-square-root-alt"></i> ANALISIS & LOGIKA MATEMATIKA — DETAIL SISTEM</div>
 
                     <!-- FORMULA UTAMA -->
-                    <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,230,0,0.25); border-radius:10px; padding:16px 20px; margin-bottom:14px;">
+                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:16px 20px; margin-bottom:14px; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
                         <div style="font-family:'Rajdhani'; font-size:1.05rem; color:#64748b; letter-spacing:1px; margin-bottom:8px;">① MODEL STOK GLOBAL</div>
                         <div style="font-family:'Rajdhani'; font-size:1.4rem; color:#FFE600; font-weight:800; text-align:center; margin-bottom:10px;">
                             V<sub>total</sub>(t) = M<sub>stagnan</sub> + ${vLabels.join(' + ')}
@@ -1196,21 +1330,21 @@
                     </div>
 
                     <!-- FORMULA T_COLLAPSE -->
-                    <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,0,60,0.2); border-radius:10px; padding:16px 20px; margin-bottom:14px;">
+                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:16px 20px; margin-bottom:14px; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
                         <div style="font-family:'Rajdhani'; font-size:1.05rem; color:#64748b; letter-spacing:1px; margin-bottom:8px;">② PREDIKSI WAKTU COLLAPSE</div>
                         <div style="font-family:'Rajdhani'; font-size:1.2rem; color:#ff9e0b; font-weight:800; text-align:center; margin-bottom:8px;">
                             T<sub>collapse</sub> = (C<sub>gudang</sub> − V<sub>total</sub>(t₀)) / ΔV̄<sub>net/day</sub>
                         </div>
                         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
-                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; text-align:center;">
                                 <div style="color:#64748b; font-size:0.7rem; letter-spacing:1px; margin-bottom:4px;">C_GUDANG (TOTAL)</div>
                                 <div style="color:#fff; font-size:1rem; font-weight:700;">${(totalCapacity / 1000).toLocaleString('id-ID')} T</div>
                             </div>
-                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; text-align:center;">
                                 <div style="color:#64748b; font-size:0.7rem; letter-spacing:1px; margin-bottom:4px;">V_TOTAL AWAL (t₀)</div>
                                 <div style="color:#fff; font-size:1rem; font-weight:700;">${(startingGlobalStock / 1000).toLocaleString('id-ID')} T</div>
                             </div>
-                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; text-align:center;">
                                 <div style="color:#64748b; font-size:0.7rem; letter-spacing:1px; margin-bottom:4px;">SISA KAPASITAS AWAL</div>
                                 <div style="color:${remainingCapAtStart > 0 ? '#34d399' : '#ff003c'}; font-size:1rem; font-weight:700;">${(remainingCapAtStart / 1000).toLocaleString('id-ID')} T</div>
                             </div>
@@ -1225,7 +1359,7 @@
                     </div>
 
                     <!-- TABEL DETAIL PER MATERIAL -->
-                    <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(188,19,254,0.2); border-radius:10px; padding:16px 20px; margin-bottom:14px;">
+                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:16px 20px; margin-bottom:14px; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
                         <div style="font-family:'Rajdhani'; font-size:1.05rem; color:#64748b; letter-spacing:1px; margin-bottom:10px;">③ TABEL LAJU PERGERAKAN PER MATERIAL PEMICU</div>
                         <div style="overflow-x:auto;">
                         <table style="width:100%; border-collapse:collapse; font-family:'Rajdhani'; font-size:0.85rem;">
@@ -1272,7 +1406,7 @@
                     </div>
 
                     <!-- TABEL SNAPSHOT UTILISASI HARIAN -->
-                    <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(0,243,255,0.2); border-radius:10px; padding:16px 20px; margin-bottom:14px;">
+                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:16px 20px; margin-bottom:14px; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
                         <div style="font-family:'Rajdhani'; font-size:1.05rem; color:#64748b; letter-spacing:1px; margin-bottom:10px;">④ SNAPSHOT UTILISASI GUDANG — TITIK KRITIS</div>
                         <div style="overflow-x:auto;">
                         <table style="width:100%; border-collapse:collapse; font-family:'Rajdhani'; font-size:0.85rem;">
@@ -1310,30 +1444,30 @@
                     </div>
 
                     <!-- KESIMPULAN & NERACA AKHIR -->
-                    <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,230,0,0.15); border-radius:10px; padding:16px 20px;">
+                    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:16px 20px; box-shadow:0 4px 6px rgba(0,0,0,0.02);">
                         <div style="font-family:'Rajdhani'; font-size:1.05rem; color:#64748b; letter-spacing:1px; margin-bottom:10px;">⑤ NERACA STOK AKHIR PERIODE</div>
                         <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px;">
-                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; text-align:center;">
                                 <div style="color:#64748b; font-size:0.65rem; margin-bottom:4px;">STOK AWAL (V₀)</div>
                                 <div style="color:#fff; font-weight:700;">${(startingGlobalStock / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} T</div>
                             </div>
-                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; text-align:center;">
                                 <div style="color:#64748b; font-size:0.65rem; margin-bottom:4px;">STOK AKHIR (V_end)</div>
                                 <div style="color:#fff; font-weight:700;">${(dailyTotals[dailyTotals.length - 1] / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} T</div>
                             </div>
-                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; text-align:center;">
                                 <div style="color:#64748b; font-size:0.65rem; margin-bottom:4px;">TOTAL MASUK (ΣIn)</div>
                                 <div style="color:#34d399; font-weight:700;">+${(this.session.reduce((a, s) => a + (s.defaultIn * fullDates.length), 0)).toLocaleString('id-ID')} T</div>
                             </div>
-                            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px; text-align:center;">
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; text-align:center;">
                                 <div style="color:#64748b; font-size:0.65rem; margin-bottom:4px;">TOTAL KELUAR (ΣOut)</div>
                                 <div style="color:#f87171; font-weight:700;">−${(this.session.reduce((a, s) => a + (s.defaultOut * fullDates.length), 0)).toLocaleString('id-ID')} T</div>
                             </div>
                         </div>
-                        <div style="padding:10px 14px; background:rgba(255,230,0,0.05); border-left:3px solid #FFE600; border-radius:0 6px 6px 0; color:#e2e8f0; font-size:0.85rem; line-height:1.7;">
-                            <b style="color:#FFE600;">Kesimpulan Sistem:</b> ${unsimCount} material stagnan berkontribusi <b style="color:#fff;">${((unsimulatedStock / totalCapacity) * 100).toFixed(1)}%</b> dari total kapasitas gudang secara konstan sebagai <i>base load</i>.
-                            Volatilitas stok dipicu oleh <b style="color:${matStats[0]?.color || '#bc13fe'};">${matNames.join(', ')}</b> dengan laju rata-rata bersih <b style="color:${avgGlobalDailyNet > 0 ? '#f87171' : '#34d399'};">+${Math.round(avgGlobalDailyNet).toLocaleString()} Kg/hari</b>.
-                            ${collapseDate ? `Kapasitas gudang terlampaui pada <b style="color:#ff003c;">Hari ke-${collapseDay} (${this.formatDate(collapseDate)})</b>.` : '<b style="color:#34d399;">Kapasitas gudang tidak terlampaui selama periode simulasi.</b>'}
+                        <div style="padding:10px 14px; background:#fffbeb; border-left:3px solid #d97706; border-radius:0 6px 6px 0; color:#475569; font-size:0.85rem; line-height:1.7;">
+                            <b style="color:#d97706;">Kesimpulan Sistem:</b> <span style="color:#1e293b; font-weight:600;">${unsimCount}</span> material stagnan berkontribusi <b style="color:#1e293b;">${((unsimulatedStock / totalCapacity) * 100).toFixed(1)}%</b> dari total kapasitas gudang secara konstan sebagai <i>base load</i>.
+                            Volatilitas stok dipicu oleh <b style="color:${matStats[0]?.color || '#bc13fe'};">${matNames.join(', ')}</b> dengan laju rata-rata bersih <b style="color:${avgGlobalDailyNet > 0 ? '#ef4444' : '#10b981'};">+${Math.round(avgGlobalDailyNet).toLocaleString()} Kg/hari</b>.
+                            ${collapseDate ? `Kapasitas gudang terlampaui pada <b style="color:#ef4444;">Hari ke-${collapseDay} (${this.formatDate(collapseDate)})</b>.` : '<b style="color:#10b981;">Kapasitas gudang tidak terlampaui selama periode simulasi.</b>'}
                         </div>
                     </div>`;
                 }
@@ -1361,15 +1495,15 @@
                     options: {
                         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: { labels: { color: '#94a3b8', font: { family: 'Orbitron', size: 9, weight: 'bold' } } },
+                            legend: { labels: { color: '#64748b', font: { family: 'Orbitron', size: 9, weight: 'bold' } } },
                             tooltip: {
-                                backgroundColor: 'rgba(15,23,42,0.95)', titleColor: '#fff', bodyColor: '#fff', borderColor: '#FFE600', borderWidth: 1,
+                                backgroundColor: '#ffffff', titleColor: '#1e293b', bodyColor: '#475569', borderColor: '#e2e8f0', borderWidth: 1,
                                 callbacks: { label: c => `${c.dataset.label}: ${(c.raw / 1000).toLocaleString('id-ID')} T` }
                             }
                         },
                         scales: {
-                            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 9 }, callback: v => (v / 1000000).toFixed(0) + 'M Kg' }, beginAtZero: true },
-                            x: { grid: { display: false }, ticks: { color: '#94a3b8', maxTicksLimit: 12, font: { size: 9 } } }
+                            y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#64748b', font: { size: 9 }, callback: v => (v / 1000000).toFixed(0) + 'M Kg' }, beginAtZero: true },
+                            x: { grid: { display: false }, ticks: { color: '#64748b', maxTicksLimit: 12, font: { size: 9 } } }
                         }
                     }
                 });
