@@ -503,4 +503,62 @@
         box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
         border: 1px solid var(--rm-primary-neon);
     }
+
+    /* 9. DASHBOARD HEADER RESPONSIVE */
+    #live-dashboard {
+        padding: 20px 10px !important;
+    }
+    
+    .section-header {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 20px !important;
+        text-align: center !important;
+    }
+    
+    .section-header > div {
+        width: 100% !important;
+        margin-left: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    .section-header h2 {
+        font-size: 1.5rem !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+    
+    .section-header .btn-dashboard {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+    
+    #share-panel {
+        width: 100% !important;
+        right: 0 !important;
+        left: 0 !important;
+    }
+
+    .mini-clock-wrapper {
+        transform: scale(0.8) !important;
+        transform-origin: center center !important;
+        margin-bottom: -10px !important;
+    }
+    
+    .clock-container {
+        min-width: unset !important;
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 8px 15px !important;
+    }
+
+    #category-chart-container {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 20px !important;
+    }
 }
