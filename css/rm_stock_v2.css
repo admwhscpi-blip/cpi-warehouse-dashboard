@@ -260,6 +260,95 @@
 }
 
 /* =========================================
+   CLOCK WIDGET
+   ========================================= */
+
+
+
+.clock-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 8px 25px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    border-radius: 40px;
+    font-family: 'Orbitron', sans-serif;
+    color: #fff;
+    min-width: 360px;
+    height: 65px;
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.1);
+}
+
+.clock-date-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 150px;
+    line-height: 1.1;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    padding-right: 15px;
+}
+
+.clock-day {
+    font-size: 0.65rem;
+    color: var(--rm-primary-neon);
+    letter-spacing: 2px;
+}
+
+.clock-date {
+    font-size: 1.3rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.clock-visual {
+    position: relative;
+    width: 55px;
+    height: 55px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.clock-circle {
+    position: absolute;
+    inset: 0;
+    border: 2px solid rgba(14, 165, 233, 0.1);
+    border-radius: 50%;
+}
+
+.clock-progress {
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    border-top: 2px solid var(--rm-primary-neon);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--rm-primary-neon);
+    transition: transform 1s linear;
+}
+
+.clock-time-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 5;
+}
+
+.clock-ampm {
+    font-size: 0.45rem;
+    font-weight: 800;
+    color: var(--rm-primary-neon);
+}
+
+.clock-time {
+    font-size: 1.4rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+/* =========================================
    UNIVERSAL MOBILE RESPONSIVE PATCH
    ========================================= */
 @media (max-width: 900px) {

@@ -211,7 +211,17 @@ const HistoryApp = {
         });
 
         const stockData = points.map(p => Math.round(p.totalStock / 1000));
-        const capacityData = points.map(() => 26000);
+        
+        let totalCapacityTon = 0;
+        if (this.data && this.data.warehouses) {
+            this.data.warehouses.forEach((w, idx) => {
+                const fallbackCap = this.data.capacities[idx] > 100000 ? this.data.capacities[idx] / 1000 : this.data.capacities[idx];
+                totalCapacityTon += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || fallbackCap || 0;
+            });
+        }
+        if (totalCapacityTon === 0) totalCapacityTon = 26000;
+        
+        const capacityData = points.map(() => totalCapacityTon);
 
         const latest = displayHistory[displayHistory.length - 1];
         const prev = displayHistory.length > 1 ? displayHistory[displayHistory.length - 2] : latest;
@@ -232,11 +242,11 @@ const HistoryApp = {
             const pre = i > 0 ? stockData[i - 1] : cur;
             const delta = cur - pre;
             const p = pre > 0 ? ((delta / pre) * 100).toFixed(1) : 0;
-            const free = 26000 - cur;
+            const free = totalCapacityTon - cur;
             const sign = delta >= 0 ? '+' : '';
 
             annotations.push({
-                x: labels[i], y: 26000, marker: { size: 0 },
+                x: labels[i], y: totalCapacityTon, marker: { size: 0 },
                 label: {
                     borderColor: 'transparent', offsetY: -55,
                     style: {
@@ -270,7 +280,7 @@ const HistoryApp = {
             },
             yaxis: {
                 labels: { style: { colors: '#64748b' }, formatter: (v) => `${(v / 1000).toFixed(0)}K` },
-                max: 30000
+                max: totalCapacityTon + 4000
             },
             grid: { borderColor: 'rgba(255,255,255,0.05)' },
             tooltip: { theme: 'dark', shared: true }

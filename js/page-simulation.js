@@ -170,7 +170,8 @@ const SimPage = {
             const currentStockTon = parseFloat(DataService.convertKgToTon(currentStockKg));
 
             // Get hard capacity from config or fallback
-            const hardCapTon = CONFIG.WAREHOUSE_CAPACITIES[name.toUpperCase()] || this.data.capacities[index];
+            const fallbackCap = this.data.capacities[index] > 100000 ? this.data.capacities[index] / 1000 : this.data.capacities[index];
+            const hardCapTon = CONFIG.WAREHOUSE_CAPACITIES[name.toUpperCase()] || fallbackCap || 0;
             const availableSpace = Math.max(0, hardCapTon - currentStockTon).toFixed(2);
             const usagePercent = hardCapTon > 0 ? ((currentStockTon / hardCapTon) * 100).toFixed(0) : 0;
             const barColor = usagePercent >= 80 ? '#ef4444' : (usagePercent >= 60 ? '#ff9e0b' : '#00f3ff');
@@ -884,7 +885,8 @@ const SimPage = {
         let totalCapacity = 0;
         if (this.data.warehouses) {
             this.data.warehouses.forEach((w, idx) => {
-                const cap = CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || this.data.capacities[idx] || 0;
+                const fallbackCap = this.data.capacities[idx] > 100000 ? this.data.capacities[idx] / 1000 : this.data.capacities[idx];
+                const cap = CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || fallbackCap || 0;
                 totalCapacity += cap;
             });
         }
@@ -2261,7 +2263,10 @@ const SimPage = {
         let totalCapacity = 0;
         let unsimulatedStock = 0;
         if (this.data && this.data.warehouses) {
-            this.data.warehouses.forEach((w, idx) => { totalCapacity += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || this.data.capacities[idx] || 0; });
+            this.data.warehouses.forEach((w, idx) => { 
+                const fallbackCap = this.data.capacities[idx] > 100000 ? this.data.capacities[idx] / 1000 : this.data.capacities[idx];
+                totalCapacity += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || fallbackCap || 0; 
+            });
             if (totalCapacity > 0 && totalCapacity < 1000000) totalCapacity *= 1000;
             if (totalCapacity === 0) totalCapacity = 25000000;
 
@@ -2353,8 +2358,10 @@ const SimPage = {
 
         // Initialize with capacities
         warehouses.forEach((name, idx) => {
+            const fallbackCap = capacities[idx] > 100000 ? capacities[idx] / 1000 : capacities[idx];
+            const capTon = CONFIG.WAREHOUSE_CAPACITIES[name.toUpperCase()] || fallbackCap || 0;
             warehouseStocks[name] = {
-                capacity: (capacities[idx] || 0) * (typeof CONFIG !== 'undefined' && CONFIG.UNIT_DIVIDER ? CONFIG.UNIT_DIVIDER : 1),
+                capacity: capTon * 1000,
                 allocated: 0
             };
         });

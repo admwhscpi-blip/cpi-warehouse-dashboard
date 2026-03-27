@@ -801,7 +801,8 @@
                 let totalCapacity = 0;
                 if (this.data.warehouses) {
                     this.data.warehouses.forEach((w, idx) => {
-                        totalCapacity += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || this.data.capacities[idx] || 0;
+                        const fallbackCap = this.data.capacities[idx] > 100000 ? this.data.capacities[idx] / 1000 : this.data.capacities[idx];
+                        totalCapacity += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || fallbackCap || 0;
                     });
                 }
                 if (totalCapacity > 0 && totalCapacity < 1000000) totalCapacity *= 1000;
@@ -919,7 +920,10 @@
                 // === CALCULATE TOTAL CAPACITY ===
                 let tCap = 0;
                 if (this.data && this.data.warehouses) {
-                    this.data.warehouses.forEach((w, idx) => { tCap += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || this.data.capacities[idx] || 0; });
+                    this.data.warehouses.forEach((w, idx) => { 
+                        const fallbackCap = this.data.capacities[idx] > 100000 ? this.data.capacities[idx] / 1000 : this.data.capacities[idx];
+                        tCap += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || fallbackCap || 0; 
+                    });
                 }
                 if (tCap > 0 && tCap < 1000000) tCap *= 1000;
                 const totalCapacity = tCap > 0 ? tCap : 25000000;
@@ -1333,7 +1337,10 @@
                 // Get Global Capacity and Unsimulated Stock exactly once for efficiency
                 let totalCapacity = 0;
                 if (this.data.warehouses) {
-                    this.data.warehouses.forEach((w, idx) => { totalCapacity += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || this.data.capacities[idx] || 0; });
+                    this.data.warehouses.forEach((w, idx) => { 
+                        const fallbackCap = this.data.capacities[idx] > 100000 ? this.data.capacities[idx] / 1000 : this.data.capacities[idx];
+                        totalCapacity += CONFIG.WAREHOUSE_CAPACITIES[w.toUpperCase()] || fallbackCap || 0; 
+                    });
                 }
                 if (totalCapacity > 0 && totalCapacity < 1000000) totalCapacity *= 1000;
                 if (totalCapacity === 0) totalCapacity = 25000000;
@@ -1401,7 +1408,8 @@
                 const warehouseStocks = {};
 
                 warehouses.forEach((name, idx) => {
-                    const capTon = CONFIG.WAREHOUSE_CAPACITIES[name.toUpperCase()] || capacities[idx] || 0;
+                    const fallbackCap = capacities[idx] > 100000 ? capacities[idx] / 1000 : capacities[idx];
+                    const capTon = CONFIG.WAREHOUSE_CAPACITIES[name.toUpperCase()] || fallbackCap || 0;
                     const capKg = capTon * 1000;
                     warehouseStocks[name] = { capacity: capKg, allocated: 0 };
                 });
