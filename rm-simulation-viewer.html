@@ -395,6 +395,28 @@
             background: #334155;
             border-radius: 4px;
         }
+
+        /* Warehouse Visualizer - Bar Charts */
+        .sim-wh-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            width: 155px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        .sim-wh-header { padding:12px 10px; background:#f8fafc; border-bottom:1px solid #e2e8f0; text-align:center; flex-shrink:0; }
+        .sim-wh-name { font-family:'Orbitron'; font-weight:900; font-size:1rem; color:#1e293b; margin-bottom:4px; text-transform:uppercase; letter-spacing:1px; }
+        .sim-wh-cap { color:#64748b; font-size:0.7rem; font-weight:700; font-family:'Rajdhani'; }
+        .sim-wh-stock { font-size:0.8rem; font-weight:800; font-family:'Rajdhani'; margin-top:2px; }
+        .sim-wh-bar { position:relative; height:180px; background:#fff; margin:15px; border-radius:6px; border:2px solid #e2e8f0; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; }
+        .sim-wh-bar-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px); background-size: 100% 20%; pointer-events:none; z-index:1; }
+        .sim-wh-fill { width:100%; transition:height 0.8s ease-out; position:relative; z-index:2; min-height: 2px; }
+        .sim-wh-pct { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-family:'Orbitron'; font-weight:900; font-size:1.1rem; text-shadow:0 0 10px rgba(0,0,0,0.8); z-index:10; pointer-events:none; }
+        .sim-wh-footer { height:4px; width:100%; flex-shrink:0; }
     </style>
 </head>
 
@@ -805,13 +827,19 @@
             // ---- FETCH LIVE DATA FROM API ----
             fetchLiveWarehouseData: async function() {
                 try {
-                    const response = await fetch(CONFIG.API_URL);
+                    const url = `${CONFIG.API_URL}?action=getData&t=${new Date().getTime()}`;
+                    const response = await fetch(url);
                     const raw = await response.json();
-                    if (raw && raw.status === 'success' && raw.data) {
-                        this.data.warehouses = raw.data.warehouses;
-                        this.data.capacities = raw.data.capacities || this.data.capacities;
-                        this.data.materials = raw.data.materials.map(m => ({ name: m.name, stocks: m.stocks }));
-                        console.log('Live warehouse data fetched successfully:', this.data.warehouses.length, 'warehouses,', this.data.materials.length, 'materials');
+                    
+                    // Support both structures: {success:true, materials:[]} and {status:'success', data:{materials:[]}}
+                    const isSuccess = raw.success || raw.status === 'success';
+                    const dataObj = raw.data || raw;
+
+                    if (isSuccess && dataObj.warehouses && dataObj.materials) {
+                        this.data.warehouses = dataObj.warehouses;
+                        this.data.capacities = dataObj.capacities || this.data.capacities;
+                        this.data.materials = dataObj.materials.map(m => ({ name: m.name, stocks: m.stocks }));
+                        console.log('Live warehouse data fetched successfully:', this.data.warehouses.length, 'warehouses');
                     }
                 } catch(e) {
                     console.warn('Could not fetch live warehouse data, using fallback:', e);
@@ -1708,7 +1736,13 @@
                 if (!container || !this.data || !this.data.warehouses) return;
                 if (!targetDateStr) { const dates = this.getDateRange(); if (dates.length > 0) targetDateStr = dates[dates.length - 1].toISOString().split('T')[0]; else return; }
 
-                const warehouses = this.data.warehouses;
+                // Ensure Gudang Hino is present (it's the 8th warehouse)
+                let warehouses = [...this.data.warehouses];
+                const hinoNames = ['GUDANG HINO', 'GD.HINO', 'HINO'];
+                if (!warehouses.some(w => hinoNames.includes(w.toUpperCase()))) {
+                    warehouses.push("GUDANG HINO");
+                }
+
                 const capacities = this.data.capacities || [];
                 const warehouseStocks = {};
 
@@ -1750,19 +1784,28 @@
                     const totalStock = wh.allocated;
                     const capKg = wh.capacity;
                     const percent = capKg > 0 ? (totalStock / capKg) * 100 : 0;
-                    const visualH = Math.max((capKg / (maxCap * 1.2)) * MAX_H, 60);
-                    // Use red if >= 100% (since others will max at 100, overcapacity focuses red on the excess one too)
-                    const isCritical = percent >= 85, isHigh = percent >= 70;
-                    const fillColor = isCritical ? 'linear-gradient(to top,#ef4444,#991b1b)' : (isHigh ? 'linear-gradient(to top,#f59e0b,#9a3412)' : 'linear-gradient(to top,#00f3ff,#0e7490)');
-                    const bc = isCritical ? '#ef4444' : (isHigh ? '#f59e0b' : '#00f3ff');
-                    html += `<div class="sim-wh-card" style="height:${visualH + 80}px;">
-                    <div class="sim-wh-header"><div class="sim-wh-name">${name}</div><div class="sim-wh-cap">Cap: ${(capKg / 1000).toLocaleString('id-ID')} T</div>
-                    <div class="sim-wh-stock" style="color:${bc};">Stock: ${(totalStock / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} T</div></div>
-                    <div class="sim-wh-bar" style="height:${visualH}px;">
-                        <div class="sim-wh-bar-grid"></div>
-                        <div class="sim-wh-fill" style="height:${Math.min(percent, 100)}%; background:${fillColor}; border-top:2px solid ${bc}; box-shadow:0 0 15px ${bc}44;"></div>
-                        <div class="sim-wh-pct">${Math.round(percent)}%</div>
-                    </div><div class="sim-wh-footer"></div></div>`;
+                    
+                    // Thresholds matching user request: <80 Aman, 80-99 Warning, >=100 Collapse
+                    const isCollapse = percent >= 100;
+                    const isWarning = percent >= 80;
+                    
+                    const bc = isCollapse ? '#ef4444' : (isWarning ? '#f59e0b' : '#10b981');
+                    const fillColor = isCollapse ? 'linear-gradient(to top,#ef4444,#991b1b)' : (isWarning ? 'linear-gradient(to top,#f59e0b,#9a3412)' : 'linear-gradient(to top,#10b981,#064e3b)');
+                    
+                    html += `<div class="sim-wh-card">
+                        <div class="sim-wh-header">
+                            <div class="sim-wh-name">${name.replace('Gudang ', '').replace('GUDANG ', '')}</div>
+                            <div class="sim-wh-cap">CAP: ${(capKg / 1000).toLocaleString('id-ID')} T</div>
+                            <div class="sim-wh-stock" style="color:${bc};">STOCK: ${(totalStock / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} T</div>
+                        </div>
+                        <div class="sim-wh-bar">
+                            <div class="sim-wh-bar-grid"></div>
+                            <div class="sim-wh-fill" style="height:${Math.min(percent, 100)}%; background:${fillColor}; border-top:2px solid ${bc};">
+                                <div class="sim-wh-pct">${Math.round(percent)}%</div>
+                            </div>
+                        </div>
+                        <div class="sim-wh-footer" style="background:${bc};"></div>
+                    </div>`;
                 });
                 container.innerHTML = html;
             },
