@@ -648,7 +648,7 @@
         // Embed CONFIG for standalone use
         const CONFIG = {
             UNIT_DIVIDER: 1000,
-            API_URL: "https://script.google.com/macros/s/AKfycbx_lxtmzHqTwt2sBUlXzsFFGJzR5xx3R9ZsRhk3atLhb27aMWcJynCzaqC7MglE2F6k/exec",
+            API_URL: "https://script.google.com/macros/s/AKfycbzQSDsrcmxH5zW-A6hK1bEhJqt9N7AyTCd5m7BjGTNnublO5V0iCQmMk8ukPfvtm7LH/exec",
             WAREHOUSE_CAPACITIES: { "RM": 10000, "GEBANG-A": 2500, "GEBANG-B": 1500, "SAMPING-C": 2500, "SAMPING-D": 2500, "SAMPING-E": 4000, "SAMPING-F": 3000, "GUDANG HINO": 1000, "GD.HINO": 1000 }
         };
 
@@ -659,27 +659,38 @@
             calendarSelectedDate: null,
             colorPalette: ['#00f3ff', '#39ff14', '#ffe600', '#ff9500', '#38bdf8', '#ff4d4d'],
 
-            init: function () {
+            init: async function () {
                 history.pushState(null, null, location.href);
                 window.onpopstate = () => history.pushState(null, null, location.href);
                 this.startClock();
 
                 const params = new URLSearchParams(window.location.search);
-                const payload = params.get('payload');
-                if (!payload) { this.showError(); return; }
+                const id = params.get('id');
+                const payload = params.get('payload') || params.get('data');
 
-                try {
-                    let decodedStr = '';
-                    if (typeof LZString !== 'undefined') {
-                        decodedStr = LZString.decompressFromEncodedURIComponent(payload);
+                if (id) {
+                    try {
+                        const res = await fetch(`${CONFIG.API_URL}?action=getSimulation&id=${id}`);
+                        const json = await res.json();
+                        if (json.success && json.data) {
+                            this.shareData = json.data;
+                        }
+                    } catch (e) {
+                        console.error("Failed to fetch simulation by ID:", e);
                     }
-                    if (!decodedStr) {
-                        decodedStr = decodeURIComponent(atob(payload));
+                } else if (payload) {
+                    try {
+                        let decodedStr = '';
+                        if (typeof LZString !== 'undefined') {
+                            decodedStr = LZString.decompressFromEncodedURIComponent(payload);
+                        }
+                        if (!decodedStr) {
+                            decodedStr = decodeURIComponent(atob(payload));
+                        }
+                        this.shareData = JSON.parse(decodedStr);
+                    } catch (e) {
+                        console.error("Failed to parse simulation share link payload:", e);
                     }
-                    this.shareData = JSON.parse(decodedStr);
-                } catch (e) {
-                    console.error("Failed to parse simulation share link payload:", e);
-                    this.shareData = null;
                 }
 
                 if (!this.shareData) { this.showError(); return; }

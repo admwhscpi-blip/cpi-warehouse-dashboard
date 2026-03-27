@@ -2453,7 +2453,7 @@ const SimPage = {
         return hash.toString(36);
     },
 
-    generateShareLink: function () {
+    generateShareLink: async function () {
         const password = document.getElementById('share-password').value;
         const simName = document.getElementById('share-sim-name').value;
 
@@ -2517,9 +2517,27 @@ const SimPage = {
             payload = btoa(encodeURIComponent(jsonString));
         }
 
-        // Store minimum info for management table in local storage
+        // SHOW LOADING INDICATOR
+        document.getElementById('share-link-url').value = "GENERATING SHORT LINK...";
+        document.getElementById('share-link-result').style.display = 'block';
+
+        // ATTEMPT TO SAVE TO SERVER (SHORT URL)
+        let shortId = null;
+        try {
+            const apiRes = await fetch(`${CONFIG.API_URL}?action=saveSimulation`, {
+                method: 'POST',
+                body: jsonString
+            });
+            const apiData = await apiRes.json();
+            if (apiData.success) shortId = apiData.id;
+        } catch (e) {
+            console.warn("Failed to generate short link, falling back to long link:", e);
+        }
+
+        // Store management data in local storage
         const managementData = {
             id: shareId,
+            shortId: shortId,
             name: simName,
             payload: payload,
             createdAt: shareData.createdAt,
@@ -2532,12 +2550,16 @@ const SimPage = {
 
         // Generate URL
         const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
-        const shareUrl = `${baseUrl}/rm-simulation-viewer.html?payload=${payload}`;
+        let shareUrl = '';
+        if (shortId) {
+            shareUrl = `${baseUrl}/rm-simulation-viewer.html?id=${shortId}`;
+        } else {
+            shareUrl = `${baseUrl}/rm-simulation-viewer.html?payload=${payload}`;
+        }
 
         // Show result
         document.getElementById('share-link-url').value = shareUrl;
-        document.getElementById('share-link-result').style.display = 'block';
-
+        
         // Refresh table
         this.renderSharedLinksTable();
     },
@@ -2591,7 +2613,9 @@ const SimPage = {
             const createdDate = new Date(link.createdAt).toLocaleDateString('id-ID', {
                 day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
             });
-            const shareUrl = `${baseUrl}/rm-simulation-viewer.html?payload=${link.payload}`;
+            const shareUrl = link.shortId 
+                ? `${baseUrl}/rm-simulation-viewer.html?id=${link.shortId}` 
+                : `${baseUrl}/rm-simulation-viewer.html?payload=${link.payload}`;
 
             html += `
                 <tr>
