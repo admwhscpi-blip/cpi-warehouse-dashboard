@@ -101,41 +101,88 @@ const BKKDowntimeApp = {
                         gData.table.rows.forEach(r => {
                             const c = r.c;
                             if (!c[0] || !c[1] || !c[1].v) return;
-                            const intakeStr = c[1].v.toString();
-                            if (!intakeStr.includes('INTAKE 71')) return;
+                            const intakeStr = c[1].v.toString().toUpperCase();
+                            const isIntake71 = intakeStr.includes('INTAKE 71');
+                            const isDirectGudang = intakeStr.includes('DIRECT') || intakeStr.includes('GUDANG');
+                            
+                            if (!isIntake71 && !isDirectGudang) return;
                             
                             const dStr = parseD(c[0]);
-                            const shiftNum = c[4] && c[4].v ? c[4].v.toString() : "1";
-                            if (!dStr) return;
+                            // Detect Time (Check New Format [11] and Old Format [14])
+                            const L = parseT(c[11]) !== null ? parseT(c[11]) : parseT(c[14]); 
+                            const R = parseT(c[17]) !== null ? parseT(c[17]) : parseT(c[15]); 
+
+                            // SHIFT DETECTION (Logika Waktu Backend)
+                            // 07:00-15:00 (1), 15:00-23:00 (2), 23:00-07:00 (3)
+                            let shiftNum = "";
+                            const refTime = (L !== null) ? L : R; 
+                            if (refTime !== null) {
+                                if (refTime >= 420 && refTime < 900) shiftNum = "1";
+                                else if (refTime >= 900 && refTime < 1380) shiftNum = "2";
+                                else shiftNum = "3";
+                            }
                             
-                            // Truck aggregation: Column G (index 6)
+                            // Fallback to Column E (index 4) only if time detection failed
+                            if (!shiftNum && c[4] && c[4].v) {
+                                shiftNum = c[4].v.toString().split('.')[0];
+                            }
+                            if (!shiftNum) shiftNum = "1";
+                            
+                            if (!dStr) return;
+
+                            // Material identification (Robust check across columns)
+                            let matName = '';
+                            [5, 4, 3, 2, 9].forEach(idx => {
+                                if (!matName && c[idx] && c[idx].v) {
+                                    const v = c[idx].v.toString().toUpperCase();
+                                    if (v.includes('SBM') || v.includes('PKM') || v.includes('MEAL')) matName = v;
+                                }
+                            });
+                            const isSBM = matName.includes('SBM');
+                            const isPKM = matName.includes('PKM');
+
+                            // Tonnage identification (Index 8, 10, 7)
+                            let netto = 0;
+                            [8, 10, 7, 21].forEach(idx => {
+                                if (netto === 0 && c[idx] && typeof c[idx].v === 'number' && c[idx].v > 500) netto = c[idx].v;
+                            });
+                            
+                            // Truck aggregation
                             if (!dailyTrucks[dStr]) dailyTrucks[dStr] = {};
                             const tType = (c[6] && c[6].v) ? c[6].v.toString().trim() : 'UNKNOWN TRUCK';
                             dailyTrucks[dStr][tType] = (dailyTrucks[dStr][tType] || 0) + 1;
                             
                             const key = dStr + "_" + shiftNum;
-                            if (!metrics[key]) metrics[key] = { a:[], i:[], o:[] };
+                            if (!metrics[key]) metrics[key] = { a:[], i:[], o:[], sbm_ins:0, pkm_ins:0, sbm_dg:0, pkm_dg:0 };
                             
-                            const L = parseT(c[11]); 
-                            const R = parseT(c[17]); 
-                            const S = parseT(c[18]); 
-                            const U = c[20] ? parseT(c[20]) : null; 
-                            
-                            let startA = L, endA = R;
-                            if (startA !== null && endA !== null) {
-                                if (endA < startA) endA += 24 * 60; // crossed midnight
-                                metrics[key].a.push([startA, endA]);
+                            if (isIntake71) {
+                                if (isSBM) metrics[key].sbm_ins += netto;
+                                else if (isPKM) metrics[key].pkm_ins += netto;
+                            } else if (isDirectGudang) {
+                                if (isSBM) metrics[key].sbm_dg += netto;
+                                else if (isPKM) metrics[key].pkm_dg += netto;
                             }
-                            
-                            if (endA !== null) {
-                                if (U !== null) {
-                                    let endU = U;
-                                    if (endU < endA) endU += 24 * 60;
-                                    metrics[key].o.push([endA, endU]);
-                                } else if (S !== null) {
-                                    let endS = S;
-                                    if (endS < endA) endS += 24 * 60;
-                                    metrics[key].i.push([endA, endS]);
+
+                            if (isIntake71) {
+                                const S = parseT(c[18]); 
+                                const U = c[20] ? parseT(c[20]) : null; 
+                                
+                                let startA = L, endA = R;
+                                if (startA !== null && endA !== null) {
+                                    if (endA < startA) endA += 24 * 60;
+                                    metrics[key].a.push([startA, endA]);
+                                }
+                                
+                                if (endA !== null) {
+                                    if (U !== null) {
+                                        let endU = U;
+                                        if (endU < endA) endU += 24 * 60;
+                                        metrics[key].o.push([endA, endU]);
+                                    } else if (S !== null) {
+                                        let endS = S;
+                                        if (endS < endA) endS += 24 * 60;
+                                        metrics[key].i.push([endA, endS]);
+                                    }
                                 }
                             }
                         });
@@ -155,7 +202,7 @@ const BKKDowntimeApp = {
                                 ["1", "2", "3"].forEach(shiftId => {
                                     const s = d.shiftData[shiftId];
                                     if (!s) return;
-                                    const hasActivity = (s.sbm_ins + s.pkm_ins) > 0 || s.trucks > 0;
+                                    const hasActivity = (s.sbm_ins + s.pkm_ins + s.sbm_dg + s.pkm_dg) > 0 || s.trucks > 0;
                                     
                                     let newActive = 0, newIdle = 0, newOff = 0;
                                     if (hasActivity) {
@@ -165,6 +212,12 @@ const BKKDowntimeApp = {
                                             newActive = getMerged(m.a);
                                             newIdle = getMerged(m.i);
                                             newOff = getMerged(m.o);
+                                            
+                                            // Transfer Tonnages (V17.0 Fix)
+                                            s.sbm_ins = m.sbm_ins || s.sbm_ins || 0;
+                                            s.pkm_ins = m.pkm_ins || s.pkm_ins || 0;
+                                            s.sbm_dg = m.sbm_dg || s.sbm_dg || 0;
+                                            s.pkm_dg = m.pkm_dg || s.pkm_dg || 0;
                                         }
                                         
                                         // Pro-rate sub-metrics if active changed
@@ -189,13 +242,30 @@ const BKKDowntimeApp = {
                                         s.idle = newIdle; s.off = newOff; s.active = newActive;
                                         
                                         dailyActive += newActive; dailyIdle += newIdle; dailyOff += newOff;
-                                    } else {
-                                        s.idle = 0; s.off = 0; s.active = 0;
-                                    }
-                                });
+                                } else {
+                                    s.idle = 0; s.off = 0; s.active = 0;
+                                }
+                            });
+                        }
+                        
+                        // v19.0 Fix: Sync from directGudang (which is already verified correct by user)
+                        if (result.directGudang && result.directGudang.daily) {
+                            const dgDay = result.directGudang.daily.find(x => x.date === d.date);
+                            if (dgDay && dgDay.netto > 0) {
+                                // If already populated by GViz extraction, we use it. 
+                                // Otherwise, we put the day's total into Shift 1 as a fallback.
+                                let currentTotal = 0;
+                                ["1","2","3"].forEach(sid => { if(d.shiftData[sid]) currentTotal += (d.shiftData[sid].sbm_dg || 0) + (d.shiftData[sid].pkm_dg || 0); });
+                                
+                                if (currentTotal === 0 && d.shiftData["1"]) {
+                                    // Material split logic (SBM vs PKM) from dgDay if available
+                                    // For simplicity and safety, if no split, assume it's the primary selected material or SBM
+                                    d.shiftData["1"].sbm_dg = dgDay.netto; 
+                                }
                             }
-                            
-                            if (result.intake71 && result.intake71.dailyDetail) {
+                        }
+
+                        if (result.intake71 && result.intake71.dailyDetail) {
                                 const detailDay = result.intake71.dailyDetail.find(x => x.date === d.date);
                                 if (detailDay) {
                                     detailDay.activeMin = dailyActive;
@@ -1325,7 +1395,7 @@ const BKKDowntimeApp = {
         const s2 = shifts["2"] || { sbm_ins: 0, sbm_dg: 0, pkm_ins: 0, pkm_dg: 0, active: 0, qc: 0, man: 0, idle: 0, off: 0, workers: 0, trucks: 0 };
         const s3 = shifts["3"] || { sbm_ins: 0, sbm_dg: 0, pkm_ins: 0, pkm_dg: 0, active: 0, qc: 0, man: 0, idle: 0, off: 0, workers: 0, trucks: 0 };
 
-        const fmt = (n) => (n === 0) ? "" : (n / 1000).toFixed(1) + " T";
+        const fmt = (n) => (n / 1000).toFixed(1) + " T";
         const fmtM = (n) => (n === 0) ? "" : Math.round(n) + " M";
 
         const hasNewBreakdown = (s1.wt !== undefined && (s1.wt + s1.bk + s1.qct + s1.mnv + s1.fn) > 0);

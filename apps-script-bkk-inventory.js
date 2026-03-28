@@ -23,6 +23,9 @@ function doGet(e) {
         if (action === "getDowntimeQuery") {
             return getDowntimeQuery(ssId, e);
         }
+        else if (action === "getBKKCommandCenterData") {
+            return getBKKCommandCenterData(ssId, e);
+        }
         else if (action === "debugRaw") {
             return debugRawData(ssId, e);
         }
@@ -534,6 +537,10 @@ function parseTime(t) {
 }
 
 function getDowntimeQuery(ssId, e) {
+    return createOutput(fetchDowntimeData(ssId, e), e);
+}
+
+function fetchDowntimeData(ssId, e) {
     var ss = SpreadsheetApp.openById(ssId);
 
     var targetMonth = parseInt(e.parameter.month);
@@ -1090,7 +1097,7 @@ function getDowntimeQuery(ssId, e) {
         return dd;
     });
 
-    return createOutput({
+    return {
         status: "success",
         data: result,
         materialBreakdown: materialNetto,
@@ -1128,11 +1135,15 @@ function getDowntimeQuery(ssId, e) {
             materials: directMaterialNetto, truckTypes: directTruckTypes
         },
         materials: Array.from(materials).sort()
-    }, e);
+    };
 }
 
 
 function getOutstandingBKKTurbo(ssId, e) {
+    return createOutput(fetchOutstandingBKKData(ssId, e), e);
+}
+
+function fetchOutstandingBKKData(ssId, e) {
     var ss = SpreadsheetApp.openById(ssId);
     var sheet = ss.getSheetByName("Monitoring bongkaran");
     var allValues = sheet.getRange(1, 1, 250, 9).getValues();
@@ -1157,14 +1168,12 @@ function getOutstandingBKKTurbo(ssId, e) {
     for (var i = 21; i < allValues.length; i++) {
         if (!allValues[i][2] && !allValues[i][3]) continue;
 
-        // Column D (index 3) = combined: "G 8755 OF  05.03.2026 QC not yet performed"
         var mixedStr = (allValues[i][3] || "").toString();
         var dateMatch = mixedStr.match(/(\d{2}[-./]\d{2}[-./]\d{2,4})/);
         var truckDate = dateMatch ? dateMatch[0] : "";
         var parts = truckDate ? mixedStr.split(truckDate) : [mixedStr];
         var truckSeq = (parts[0] || "").trim();
 
-        // Column G (index 6) = grade (NOT YET, FATTY, BRAZIL LO PRO, etc.)
         var gradeVal = (allValues[i][6] || "").toString().trim();
         if (!gradeVal) gradeVal = "NOT YET";
 
@@ -1180,7 +1189,13 @@ function getOutstandingBKKTurbo(ssId, e) {
         });
     }
 
-    return createOutput({ intake: intakeData, silos: silos, trucks: truckData }, e);
+    return { intake: intakeData, silos: silos, trucks: truckData };
+}
+
+function getBKKCommandCenterData(ssId, e) {
+    var live = fetchOutstandingBKKData(ssId, e);
+    var analysis = fetchDowntimeData(ssId, e);
+    return createOutput({ live: live, analysis: analysis }, e);
 }
 
 function createOutput(result, e) {
