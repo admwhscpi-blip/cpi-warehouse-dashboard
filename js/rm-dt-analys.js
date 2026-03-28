@@ -20,6 +20,12 @@ const AnalysApp = {
     apiV2Url: CONFIG.ANALYTICS_V2_URL,
     dataOld: null,  // ≤ Feb 2026
     dataV2: null,   // ≥ Mar 2026
+    containerData: [], // Data dari Container Tracking
+    containerDataByDate: {}, // Grouped containers
+
+    // CONFIG GOOGLE SHEETS (Container)
+    CONTAINER_SHEET_ID: '1m7q1IdtKyaNvjKP5QL85NPsk0FPEGUqV0scSB2CsXJ0',
+    CONTAINER_SHEET_NAME: 'DATA BONGKARAN',
 
     init: function () {
         console.log("Analytics Engine V3 (Real Data Mode) Starting...");
@@ -28,6 +34,7 @@ const AnalysApp = {
         Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.05)';
 
         this.fetchData();
+        this.fetchContainerData(); // Parallel fetch
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') this.exitAllFullscreen();
@@ -95,6 +102,91 @@ const AnalysApp = {
         }
     },
 
+    fetchContainerData: function () {
+        const callbackName = '_gvizContainerAnalysisCallback';
+        const url = `https://docs.google.com/spreadsheets/d/${this.CONTAINER_SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&sheet=${encodeURIComponent(this.CONTAINER_SHEET_NAME)}`;
+
+        window[callbackName] = (gviz) => {
+            try {
+                if (!gviz || !gviz.table) throw new Error("Invalid Container data");
+                const raw = this.parseGvizTable(gviz.table);
+                
+                // Filter: Ensure date exists (Ambil SEMUA data dari baris 2 s/d bawah)
+                this.containerData = raw.filter(row => {
+                    return !!this.normalizeDate(row['TANGGAL']);
+                });
+
+                console.log('Total Bongkaran Data Loaded:', this.containerData.length);
+                if (this.containerData.length > 0) console.log('Sample data:', this.containerData[0]);
+
+                // Update filter dropdown with months from container data
+                this.initGlobalFilter();
+
+                // Group by Date for fast lookup
+                this.containerDataByDate = {};
+                this.containerData.forEach(row => {
+                    let d = this.normalizeDate(row['TANGGAL']);
+                    if (!this.containerDataByDate[d]) this.containerDataByDate[d] = [];
+                    this.containerDataByDate[d].push(row);
+                });
+
+                console.log('Container analysis data loaded:', this.containerData.length);
+                
+                // RE-RENDER UI after container data arrives
+                this.renderAllCharts();
+                this.renderKPIs();
+                this.initMaterialFeed();
+            } catch (err) {
+                console.error("CONTAINER FETCH ERROR:", err);
+            }
+            delete window[callbackName];
+        };
+
+        const script = document.createElement('script');
+        script.src = url;
+        document.head.appendChild(script);
+    },
+
+    parseGvizTable: function (table) {
+        const cols = table.cols || [];
+        const rows = table.rows || [];
+        let foundTanggal = false;
+        const headers = cols.map((c, idx) => {
+            let label = String(c.label || '').trim().toUpperCase().replace(/[\s]+/g, '_');
+            if (!label || label === '' || label === String(c.id || '').toUpperCase()) {
+                if ((c.type === 'date' || c.type === 'datetime' || idx === 0) && !foundTanggal) {
+                    label = 'TANGGAL'; foundTanggal = true;
+                } else { label = 'COL_' + idx; }
+            }
+            return label;
+        });
+
+        return rows.map(row => {
+            const obj = {};
+            (row.c || []).forEach((cell, i) => {
+                if (!headers[i]) return;
+                let val = cell ? cell.v : null;
+                if (typeof val === 'string' && val.startsWith('Date(')) {
+                    const m = val.match(/Date\((\d+),(\d+),(\d+)/);
+                    if (m) val = `${m[1]}-${String(parseInt(m[2]) + 1).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+                }
+                let finalVal = (val !== null && val !== '') ? String(val) : '';
+                if (finalVal === '' && cell && cell.f) finalVal = String(cell.f);
+                obj[headers[i]] = finalVal;
+            });
+            // Aliases for consistency with rm-tracking-container
+            if (obj['NETTO_(KG)'] !== undefined) {
+                // Ensure volume is numeric and handled correctly
+                let rawVol = String(obj['NETTO_(KG)']).replace(/,/g, '');
+                obj['NETTO_KG'] = parseFloat(rawVol) || 0;
+            }
+            if (obj['MATERIAL'] !== undefined) obj['JENIS_RM'] = obj['MATERIAL'];
+            if (obj['START_PANGGIL'] !== undefined) obj['PB_START'] = obj['START_PANGGIL'];
+            if (obj['QC_SAMPLING_1_TIME'] !== undefined) obj['TUNGGU_QC'] = obj['QC_SAMPLING_1_TIME'];
+            return obj;
+        });
+    },
+
     initGlobalFilter: function () {
         // Collect all distinct months from all data sources for robustness
         let months = new Set();
@@ -126,6 +218,14 @@ const AnalysApp = {
                         if (d) months.add(d.substring(0, 7));
                     });
                 }
+            });
+        }
+        
+        // From Container Data (Google Sheet)
+        if (this.containerData) {
+            this.containerData.forEach(row => {
+                let d = this.normalizeDate(row['TANGGAL']);
+                if (d) months.add(d.substring(0, 7));
             });
         }
 
@@ -301,6 +401,16 @@ const AnalysApp = {
             }
         });
 
+        // INTEGRATION: Add Container Unloading to KPIs
+        this.containerData.forEach(row => {
+            let tgl = this.normalizeDate(row['TANGGAL']);
+            if (tgl && tgl.startsWith(selectedMonth)) {
+                let vol = parseFloat(row['NETTO_KG']) || 0;
+                sumBongkar += vol;
+                totalVol += vol;
+            }
+        });
+
         this.animateValue('kpi-total-vol', 0, totalVol, 2000, " KG");
         if (document.getElementById('kpi-vol-bongkar')) document.getElementById('kpi-vol-bongkar').innerText = sumBongkar.toLocaleString();
         if (document.getElementById('kpi-vol-muat')) document.getElementById('kpi-vol-muat').innerText = sumMuat.toLocaleString();
@@ -458,6 +568,23 @@ const AnalysApp = {
                 });
             }
         }
+
+        // INTEGRATION: Add Container Unloading to Ops Daily Chart
+        this.containerData.forEach(row => {
+            let tgl = this.normalizeDate(row['TANGGAL']);
+            if (tgl && tgl.startsWith(selectedMonth)) {
+                let key = tgl;
+                if (period === 'monthly') key = tgl.substring(0, 7);
+                else if (period === 'weekly') {
+                    let day = parseInt(tgl.split('-')[2]);
+                    let weekNum = Math.ceil(day / 7);
+                    key = `W${weekNum}`;
+                }
+                
+                if (!grouped[key]) grouped[key] = this.createEmptyGroup();
+                grouped[key].sum.bongkar += (parseFloat(row['NETTO_KG']) || 0);
+            }
+        });
 
         const sortedKeys = Object.keys(grouped).sort();
         const labels = sortedKeys.map(k => this.formatDateSimple(k, period));
@@ -720,6 +847,17 @@ const AnalysApp = {
             grouped[key]++;
         });
 
+        // INTEGRATION: Add Container Records to Trend Flow (Bongkar)
+        if (type === 'BONGKAR') {
+            this.containerData.forEach(row => {
+                let iso = this.normalizeDate(row['TANGGAL']);
+                if (iso && iso.startsWith(selectedMonth)) {
+                    if (!grouped[iso]) grouped[iso] = 0;
+                    grouped[iso]++;
+                }
+            });
+        }
+
         let sortedKeys = Object.keys(grouped).sort();
         let labels = sortedKeys.map(k => this.formatDateSimple(k, 'daily'));
         let data = sortedKeys.map(k => grouped[k]);
@@ -768,6 +906,22 @@ const AnalysApp = {
             if (t1 && t2) {
                 let diff = t1 - t2;
                 // Handle day wrap? Assuming simple subtract for now as per request
+                if (!dateMap[iso]) dateMap[iso] = { sum: 0, count: 0 };
+                dateMap[iso].sum += diff;
+                dateMap[iso].count++;
+            }
+        });
+
+        // INTEGRATION: Add Container QC Wait Time
+        this.containerData.forEach(r => {
+            let iso = this.normalizeDate(r['TANGGAL']);
+            if (!iso || !iso.startsWith(selectedMonth)) return;
+
+            let t1 = this.parseTime(r['PB_START']);
+            let t2 = this.parseTime(r['TUNGGU_QC']);
+            if (t1 && t2) {
+                let diff = t1 - t2;
+                if (diff < 0) diff += 1440;
                 if (!dateMap[iso]) dateMap[iso] = { sum: 0, count: 0 };
                 dateMap[iso].sum += diff;
                 dateMap[iso].count++;
@@ -950,13 +1104,27 @@ const AnalysApp = {
             // It's "DD MMM"
             let day = parts[0].padStart(2, '0');
             let m = monthMap[parts[1]];
-
-            // Try to guess year from selected filter or default to current
             let y = new Date().getFullYear();
-            if (this.currentMonth) {
-                y = this.currentMonth.split('-')[0];
-            }
+            if (this.currentMonth) y = this.currentMonth.split('-')[0];
             return `${y}-${m}-${day}`;
+        }
+
+        // Handle dd-MMM-yyyy (e.g. "26-Mar-2026")
+        let m2 = s.match(/^(\d{1,2})[\-\/\s](JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/\s](\d{4})$/i);
+        if (m2) {
+            let day = m2[1].padStart(2, '0');
+            let mon = monthMap[m2[2].toUpperCase().substring(0, 3)];
+            let year = m2[3];
+            return `${year}-${mon}-${day}`;
+        }
+
+        // Handle dd/MM/yyyy or dd.MM.yyyy
+        let m3 = s.match(/^(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{4})$/);
+        if (m3) {
+            let day = m3[1].padStart(2, '0');
+            let mon = m3[2].padStart(2, '0');
+            let year = m3[3];
+            return `${year}-${mon}-${day}`;
         }
 
         let d = new Date(str);
@@ -1004,6 +1172,16 @@ const AnalysApp = {
                 let m = Number(row.muat) || 0;
                 let s = (Number(row.st_badrun) || 0) + (Number(row.st_kartono) || 0) + (Number(row.st_kulhar) || 0);
                 volMap[dayNum] = b + m + s;
+            }
+        });
+
+        // INTEGRATION: Add Container Unloading to Calendar
+        this.containerData.forEach(row => {
+            let tgl = this.normalizeDate(row['TANGGAL']);
+            if (tgl && tgl.startsWith(this.currentMonth)) {
+                let dayNum = parseInt(tgl.split('-')[2]);
+                let vol = parseFloat(row['NETTO_KG']) || 0;
+                volMap[dayNum] = (volMap[dayNum] || 0) + vol;
             }
         });
 
@@ -1105,6 +1283,19 @@ const AnalysApp = {
                 totalDayVol += val;
             }
         });
+
+        // INTEGRATION: Add Container Unloading to Daily Details
+        if (this.containerDataByDate && this.containerDataByDate[isoDate]) {
+            this.containerDataByDate[isoDate].forEach(row => {
+                let mat = (row['JENIS_RM'] || 'CONT-RM').toUpperCase();
+                let vol = parseFloat(row['NETTO_KG']) || 0;
+                // Use material name directly without [CONT] prefix
+                let key = mat; 
+                if (!bMats[key]) bMats[key] = 0;
+                bMats[key] += vol;
+                totalDayVol += vol;
+            });
+        }
 
         let stBadrun = Number(dailyRec.st_badrun) || 0;
         let stKartono = Number(dailyRec.st_kartono) || 0;
