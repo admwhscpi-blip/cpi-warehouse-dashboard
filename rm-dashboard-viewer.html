@@ -556,18 +556,31 @@
         }
 
         // Initialize
-        window.onload = () => {
+        window.onload = async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
-            const activeToken = localStorage.getItem('rm_dashboard_active_share');
+            
+            // GLOBAL VERIFICATION VIA API
+            let isValid = false;
+            try {
+                if (token) {
+                    const resp = await fetch(`${CONFIG.API_URL}?action=getShareStatus&t=${Date.now()}`);
+                    const status = await resp.json();
+                    if (status.active && status.token === token) {
+                        isValid = true;
+                    }
+                }
+            } catch (err) {
+                console.error("Verification failed:", err);
+            }
 
-            if (!token || token !== activeToken) {
+            if (!isValid) {
                 document.body.innerHTML = `
                     <div style="display:flex; height:100vh; justify-content:center; align-items:center; flex-direction:column; background:#050505; color:#fff; font-family:'Orbitron';">
                         <i class="fas fa-lock" style="font-size:4rem; color:#ef4444; margin-bottom:20px;"></i>
                         <h2 style="letter-spacing:2px; font-weight:900;">ACCESS DENIED</h2>
                         <div style="color:#64748b; margin-top:10px; font-family:'Inter'; text-align:center;">
-                            Sesi telah kedaluwarsa atau dinonaktifkan oleh Administrator.<br>
+                            Sesi telah kedaluwarsa, tidak valid, atau dinonaktifkan oleh Administrator.<br>
                             Silakan minta tautan akses yang baru.
                         </div>
                     </div>

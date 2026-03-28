@@ -105,9 +105,15 @@
                             🔗 PUBLIC SHARE LINK
                         </div>
                         
+                        <!-- Loading State -->
+                        <div id="share-loading" style="display:none; text-align:center; padding:20px;">
+                            <div class="loading-spinner" style="width:20px; height:20px; border-width:2px; margin:0 auto 10px;"></div>
+                            <div style="color:#94a3b8; font-size:0.75rem;">CHECKING STATUS...</div>
+                        </div>
+
                         <div id="share-inactive-view">
-                            <div style="color:#94a3b8; font-size:0.8rem; margin-bottom:15px;">Generate a public link so others can view this dashboard live.</div>
-                            <button onclick="generateDashboardShare()" style="width:100%; background:linear-gradient(90deg, #FFE600, #ff9500); color:#000; border:none; padding:10px; border-radius:6px; font-weight:700; cursor:pointer;">
+                            <div style="color:#94a3b8; font-size:0.8rem; margin-bottom:15px;">Generate a public link so others can view this dashboard live on any device.</div>
+                            <button id="btn-activate-share" onclick="generateDashboardShare()" style="width:100%; background:linear-gradient(90deg, #FFE600, #ff9500); color:#000; border:none; padding:10px; border-radius:6px; font-weight:700; cursor:pointer;">
                                 AKTIFKAN SHARING
                             </button>
                         </div>
@@ -115,16 +121,17 @@
                         <div id="share-active-view" style="display:none;">
                             <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                                 <span style="color:#64748b; font-size:0.8rem;">Status:</span>
-                                <span style="color:#0aff0a; font-size:0.8rem; font-weight:700; text-shadow:0 0 10px #0aff0a;">● ACTIVE SELAMANYA</span>
+                                <span style="color:#0aff0a; font-size:0.8rem; font-weight:700; text-shadow:0 0 10px #0aff0a;">● ACTIVE GLOBAL</span>
                             </div>
                             <div style="margin-bottom:15px;">
-                                <span style="color:#64748b; font-size:0.8rem;">Link:</span>
+                                <span style="color:#64748b; font-size:0.8rem;">Link Akses:</span>
                                 <div style="display:flex; gap:5px; margin-top:5px;">
                                     <input type="text" id="dashboard-share-url" readonly style="flex:1; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.2); color:#FFE600; padding:8px; border-radius:4px; font-size:0.75rem;">
                                     <button onclick="copyDashboardShare()" style="background:#334155; border:none; color:#fff; padding:0 10px; border-radius:4px; cursor:pointer;"><i class="fas fa-copy"></i></button>
                                 </div>
+                                <div style="color:#64748b; font-size:0.65rem; margin-top:5px; font-style:italic;">*Link ini dapat dibuka dari HP/PC lain selama terhubung internet.</div>
                             </div>
-                            <button onclick="deactivateDashboardShare()" style="width:100%; background:transparent; border:1px solid #ef4444; color:#ef4444; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; transition:0.3s;" onmouseenter="this.style.background='rgba(239,68,68,0.1)'" onmouseleave="this.style.background='transparent'">
+                            <button id="btn-deactivate-share" onclick="deactivateDashboardShare()" style="width:100%; background:transparent; border:1px solid #ef4444; color:#ef4444; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; transition:0.3s;" onmouseenter="this.style.background='rgba(239,68,68,0.1)'" onmouseleave="this.style.background='transparent'">
                                 NONAKTIFKAN SHARING
                             </button>
                         </div>
@@ -644,44 +651,110 @@
             setInterval(update, 1000);
         }
 
-        /* --- DASHBOARD SHARE LOGIC --- */
-        function toggleSharePanel() {
+        /* --- DASHBOARD SHARE LOGIC (API V2) --- */
+        async function toggleSharePanel() {
             const panel = document.getElementById('share-panel');
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
             if (panel.style.display === 'block') {
-                updateShareUI();
+                await updateShareUI();
             }
         }
 
-        function generateDashboardShare() {
-            const shareId = 'dashboard_' + Date.now().toString(36) + Math.random().toString(36).substr(2,5);
-            localStorage.setItem('rm_dashboard_active_share', shareId);
-            updateShareUI();
-        }
+        async function updateShareUI() {
+            const loading = document.getElementById('share-loading');
+            const inactiveView = document.getElementById('share-inactive-view');
+            const activeView = document.getElementById('share-active-view');
+            
+            loading.style.display = 'block';
+            inactiveView.style.display = 'none';
+            activeView.style.display = 'none';
 
-        function deactivateDashboardShare() {
-            if(confirm('Yakin ingin menonaktifkan link ini? Orang lain tidak akan bisa mengakses lagi dengan link tersebut.')) {
-                localStorage.removeItem('rm_dashboard_active_share');
-                updateShareUI();
+            try {
+                // Fetch status from GAS API
+                const url = `${CONFIG.API_URL}?action=getShareStatus&t=${Date.now()}`;
+                const response = await fetch(url);
+                const result = await response.json();
+
+                loading.style.display = 'none';
+
+                if (result.active && result.token) {
+                    activeView.style.display = 'block';
+                    
+                    const currentUrl = window.location.href;
+                    let baseUrl = currentUrl.split('/').slice(0, -1).join('/');
+                    
+                    if (baseUrl.startsWith('file:///')) {
+                         document.getElementById('dashboard-share-url').value = `[WEBSITE_URL]/rm-dashboard-viewer.html?token=${result.token}`;
+                         localStorage.setItem('rm_dashboard_active_share', result.token);
+                    } else {
+                         document.getElementById('dashboard-share-url').value = `${baseUrl}/rm-dashboard-viewer.html?token=${result.token}`;
+                    }
+                } else {
+                    inactiveView.style.display = 'block';
+                    localStorage.removeItem('rm_dashboard_active_share');
+                }
+            } catch (err) {
+                console.error("Failed to fetch share status:", err);
+                loading.style.display = 'none';
+                inactiveView.style.display = 'block';
             }
         }
 
-        function updateShareUI() {
-            const activeShare = localStorage.getItem('rm_dashboard_active_share');
-            if (activeShare) {
-                document.getElementById('share-inactive-view').style.display = 'none';
-                document.getElementById('share-active-view').style.display = 'block';
-                const baseUrl = window.location.href.split('/').slice(0, -1).join('/');
-                document.getElementById('dashboard-share-url').value = `${baseUrl}/rm-dashboard-viewer.html?token=${activeShare}`;
-            } else {
-                document.getElementById('share-inactive-view').style.display = 'block';
-                document.getElementById('share-active-view').style.display = 'none';
+        async function generateDashboardShare() {
+            const btn = document.getElementById('btn-activate-share');
+            const oldText = btn.innerText;
+            btn.innerText = 'PROSES...';
+            btn.disabled = true;
+
+            try {
+                const url = `${CONFIG.API_URL}?action=toggleShare&enable=true&t=${Date.now()}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.success) {
+                    await updateShareUI();
+                } else {
+                    alert("Gagal mengaktifkan sharing: " + (result.message || "Unknown error"));
+                }
+            } catch (err) {
+                alert("Error koneksi ke API: " + err.message);
+            } finally {
+                btn.innerText = oldText;
+                btn.disabled = false;
+            }
+        }
+
+        async function deactivateDashboardShare() {
+            if(!confirm('Yakin ingin menonaktifkan link ini? Orang lain tidak akan bisa mengakses lagi.')) return;
+
+            const btn = document.getElementById('btn-deactivate-share');
+            const oldText = btn.innerText;
+            btn.innerText = 'PROSES...';
+            btn.disabled = true;
+
+            try {
+                const url = `${CONFIG.API_URL}?action=toggleShare&enable=false&t=${Date.now()}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.success) {
+                    await updateShareUI();
+                }
+            } catch (err) {
+                alert("Error koneksi ke API: " + err.message);
+            } finally {
+                btn.innerText = oldText;
+                btn.disabled = false;
             }
         }
 
         function copyDashboardShare() {
             const el = document.getElementById('dashboard-share-url');
             if (el) {
+                if (el.value.includes('[WEBSITE_URL]')) {
+                    alert("PERHATIAN: Dashboard dibuka lokal (file://).\n\nUntuk share ke HP lain, Anda harus ganti '[WEBSITE_URL]' dengan alamat hosting/IP komputer Anda yang bisa diakses di jaringan yang sama.");
+                }
+
                 el.select();
                 document.execCommand('copy');
                 const btn = el.nextElementSibling;
