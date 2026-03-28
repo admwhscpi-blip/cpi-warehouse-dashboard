@@ -402,24 +402,45 @@
             color: var(--text-dim);
         }
 
-        /* DETAIL MODAL-LIKE OVERLAY */
+        /* DETAIL VIEW (FULL SCREEN REVISI) */
         #detail-view {
             position: fixed;
-            right: -100%;
-            top: 0;
-            width: 40%;
+            inset: 0;
+            width: 100%;
             height: 100vh;
-            background: rgba(5, 5, 5, 0.95);
-            backdrop-filter: blur(30px);
-            border-left: 1px solid var(--accent-cyan);
+            background: rgba(5, 5, 5, 0.98);
+            backdrop-filter: blur(40px);
             z-index: 2000;
-            padding: 50px;
-            box-shadow: -20px 0 50px rgba(0, 0, 0, 0.5);
-            transition: right 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 40px;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         #detail-view.active {
-            right: 0;
+            display: flex;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .detail-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-scroller {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 20px;
+            padding-right: 10px;
         }
 
         .close-btn {
@@ -523,6 +544,49 @@
                 <span class="brand-v2">V2.0</span>
             </div>
         </a>
+
+        <!-- SHARE ENGINE -->
+        <div style="position:relative;">
+            <button onclick="toggleSharePanel()" style="background:rgba(255,230,0,0.1); border:1px solid #FFE600; color:#FFE600; padding:8px 15px; border-radius:8px; font-family:'Orbitron'; font-size:0.7rem; cursor:pointer; display:flex; align-items:center; gap:8px; transition:0.3s;" onmouseenter="this.style.background='rgba(255,230,0,0.2)'" onmouseleave="this.style.background='rgba(255,230,0,0.1)'">
+                <i class="fas fa-share-alt"></i> SHARE AGING
+            </button>
+
+            <!-- Dropdown Panel -->
+            <div id="share-panel" style="display:none; position:absolute; top:calc(100% + 15px); right:0; width:350px; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); border:1px solid #FFE600; border-radius:12px; padding:15px; box-shadow:0 0 30px rgba(0,0,0,0.8); z-index:100; text-align:left;">
+                <div style="font-family:'Orbitron'; color:#FFE600; font-size:0.9rem; margin-bottom:15px; border-bottom:1px solid rgba(255,230,0,0.2); padding-bottom:10px;">
+                    🔗 AGING SHARE LINK
+                </div>
+                
+                <div id="share-loading" style="display:none; text-align:center; padding:20px;">
+                    <div class="spinner" style="width:20px; height:20px; border-width:2px; margin:0 auto 10px;"></div>
+                    <div style="color:#94a3b8; font-size:0.75rem;">SYNCHRONIZING...</div>
+                </div>
+
+                <div id="share-inactive-view">
+                    <div style="color:#94a3b8; font-size:0.8rem; margin-bottom:15px;">Generate a public link to share current aging data with others.</div>
+                    <button id="btn-activate-share" onclick="generateAgingShare()" style="width:100%; background:linear-gradient(90deg, #FFE600, #ff9500); color:#000; border:none; padding:10px; border-radius:6px; font-weight:700; cursor:pointer;">
+                        AKSIKAN SHARING
+                    </button>
+                </div>
+
+                <div id="share-active-view" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <span style="color:#64748b; font-size:0.8rem;">Status:</span>
+                        <span style="color:#0aff0a; font-size:0.8rem; font-weight:700; text-shadow:0 0 10px #0aff0a;">● ACTIVE GLOBAL</span>
+                    </div>
+                    <div style="margin-bottom:15px;">
+                        <span style="color:#64748b; font-size:0.8rem;">Access Link:</span>
+                        <div style="display:flex; gap:5px; margin-top:5px;">
+                            <input type="text" id="aging-share-url" readonly style="flex:1; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.2); color:#FFE600; padding:8px; border-radius:4px; font-size:0.75rem;">
+                            <button onclick="copyAgingShare()" style="background:#334155; border:none; color:#fff; padding:0 10px; border-radius:4px; cursor:pointer;"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </div>
+                    <button id="btn-deactivate-share" onclick="deactivateAgingShare()" style="width:100%; background:transparent; border:1px solid #ef4444; color:#ef4444; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; transition:0.3s;" onmouseenter="this.style.background='rgba(239,68,68,0.1)'" onmouseleave="this.style.background='transparent'">
+                        OFFLINE SHARING
+                    </button>
+                </div>
+            </div>
+        </div>
     </nav>
 
     <div class="dashboard-container">
@@ -592,22 +656,28 @@
 
     </div>
 
-    <!-- DETAIL VIEW OVERLAY -->
+    <!-- DETAIL VIEW (FULL SCREEN) -->
     <div id="detail-view">
-        <div class="close-btn" onclick="toggleDetail(false)"><i class="fas fa-times"></i></div>
+        <div class="detail-container">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px;">
+                <div>
+                    <p id="detail-material-name" class="text-cyan" style="font-family: 'Orbitron'; font-size: 2.5rem; text-shadow: 0 0 20px var(--accent-cyan);"></p>
+                    <p class="text-dim" style="letter-spacing: 2px;">PRIORITY EXTRACTION LIST (FIFO)</p>
+                </div>
+                <div class="close-btn" onclick="toggleDetail(false)" style="position: static; font-size: 2rem;"><i class="fas fa-times"></i></div>
+            </div>
 
-        <div class="detail-header">
-            <p id="detail-material-name" class="text-cyan" style="font-family: 'Orbitron'; font-size: 1.5rem;"></p>
-            <p class="text-dim">Urutan Prioritas Berdasarkan Umur</p>
-        </div>
-
-        <div id="priority-list">
-            <!-- Priority items injected here -->
+            <div class="detail-scroller">
+                <div id="priority-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px;">
+                    <!-- Priority items injected here -->
+                </div>
+            </div>
         </div>
     </div>
 
+    <script src="js/app-config.js"></script>
     <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzJaE-6mT8JUv8PbAFR55w07lZC1zX6Iab0w3dXPx9fx0-mwAtWWpF5Qa4ii4KT_pKZqw/exec';
+        const API_URL = CONFIG.AGING_API_URL;
 
         let allData = [];
         let filteredMaterials = [];
@@ -767,6 +837,102 @@
         document.getElementById('input-search').addEventListener('input', (e) => {
             renderMaterialList(e.target.value);
         });
+
+        /* --- DASHBOARD SHARE LOGIC (AGING VERSION) --- */
+        async function toggleSharePanel() {
+            const panel = document.getElementById('share-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            if (panel.style.display === 'block') {
+                await updateShareUI();
+            }
+        }
+
+        async function updateShareUI() {
+            const loading = document.getElementById('share-loading');
+            const inactiveView = document.getElementById('share-inactive-view');
+            const activeView = document.getElementById('share-active-view');
+            
+            loading.style.display = 'block';
+            inactiveView.style.display = 'none';
+            activeView.style.display = 'none';
+
+            try {
+                const url = `${API_URL}?action=getShareStatus&t=${Date.now()}`;
+                const response = await fetch(url);
+                const result = await response.json();
+
+                loading.style.display = 'none';
+
+                if (result.active && result.token) {
+                    activeView.style.display = 'block';
+                    const currentUrl = window.location.href;
+                    let baseUrl = currentUrl.split('/').slice(0, -1).join('/');
+                    if (baseUrl.startsWith('file:///')) {
+                         document.getElementById('aging-share-url').value = `[WEBSITE_URL]/rm-aging-viewer.html?token=${result.token}`;
+                    } else {
+                         document.getElementById('aging-share-url').value = `${baseUrl}/rm-aging-viewer.html?token=${result.token}`;
+                    }
+                } else {
+                    inactiveView.style.display = 'block';
+                }
+            } catch (err) {
+                console.error("Failed to fetch share status:", err);
+                loading.style.display = 'none';
+                inactiveView.style.display = 'block';
+            }
+        }
+
+        async function generateAgingShare() {
+            const btn = document.getElementById('btn-activate-share');
+            btn.innerText = 'WAIT...';
+            btn.disabled = true;
+
+            try {
+                const url = `${API_URL}?action=toggleShare&enable=true&t=${Date.now()}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                if (result.success) await updateShareUI();
+            } catch (err) {
+                alert("Error connecting to API: " + err.message);
+            } finally {
+                btn.innerText = 'AKTIKAN SHARING';
+                btn.disabled = false;
+            }
+        }
+
+        async function deactivateAgingShare() {
+            if(!confirm('Disable this link? Remote access will be revoked immediately.')) return;
+            const btn = document.getElementById('btn-deactivate-share');
+            btn.innerText = 'WAIT...';
+            btn.disabled = true;
+
+            try {
+                const url = `${API_URL}?action=toggleShare&enable=false&t=${Date.now()}`;
+                const response = await fetch(url);
+                const result = await response.json();
+                if (result.success) await updateShareUI();
+            } catch (err) {
+                alert("Error connecting to API: " + err.message);
+            } finally {
+                btn.innerText = 'OFFLINE SHARING';
+                btn.disabled = false;
+            }
+        }
+
+        function copyAgingShare() {
+            const el = document.getElementById('aging-share-url');
+            if (el) {
+                if (el.value.includes('[WEBSITE_URL]')) {
+                    alert("DASHBOARD LOKAL (file://)\n\nUntuk HP lain, ganti [WEBSITE_URL] dengan IP komputer Anda.");
+                }
+                el.select();
+                document.execCommand('copy');
+                const btn = el.nextElementSibling;
+                const oldContent = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => btn.innerHTML = oldContent, 2000);
+            }
+        }
 
     </script>
 </body>

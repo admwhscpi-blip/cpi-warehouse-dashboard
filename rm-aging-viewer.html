@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM-AGING VIEWER - Smart Warehouse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="js/app-config.js"></script>
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --card-bg: rgba(15, 23, 42, 0.6);
+            --accent-cyan: #00f3ff;
+            --text-main: #ffffff;
+            --text-dim: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+            background: radial-gradient(circle at 50% 50%, #111827 0%, #050505 100%);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            padding: 20px 40px;
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            letter-spacing: 2px;
+        }
+
+        .container {
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+
+        th {
+            text-align: left;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            padding: 10px 15px;
+        }
+
+        td {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px 15px;
+            font-size: 0.85rem;
+        }
+
+        .badge-age {
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 0.7rem;
+        }
+
+        .age-old { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
+        .age-mid { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid #fbbf24; }
+        .age-new { background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid #22c55e; }
+
+        .loading-screen {
+            position: fixed; inset: 0; background: #050505; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .spinner {
+            width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent-cyan); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #error-screen {
+            display: none; height: 100vh; width: 100vw; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen" class="loading-screen">
+        <div class="spinner"></div>
+        <p style="margin-top: 20px; font-family:'Orbitron'; color:var(--accent-cyan);">VERIFYING ACCESS...</p>
+    </div>
+
+    <div id="error-screen">
+        <i class="fas fa-lock" style="font-size: 4rem; color: #ef4444; margin-bottom: 20px;"></i>
+        <h1 style="font-family:'Orbitron';">ACCESS DENIED</h1>
+        <p style="color:var(--text-dim);">Tautan tidak valid atau telah dinonaktifkan.</p>
+    </div>
+
+    <div id="main-content" style="display: none;">
+        <nav class="navbar">
+            <div class="logo-text">RM-AGING VIEWER</div>
+            <div id="last-update" style="font-size: 0.7rem; color: var(--text-dim);"></div>
+        </nav>
+
+        <div class="container">
+            <div class="glass-card">
+                <h2 style="font-family:'Orbitron'; font-size: 1rem; color: var(--accent-cyan); margin-bottom: 20px;">
+                    <i class="fas fa-history"></i> LIVE AGING DATA
+                </h2>
+                <div style="max-height: 70vh; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>LOT</th>
+                                <th>MATERIAL</th>
+                                <th>UMUR (HARI)</th>
+                                <th>GUDANG</th>
+                                <th>STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-aging"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = CONFIG.AGING_API_URL;
+
+        window.onload = async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            if (!token) {
+                showError();
+                return;
+            }
+
+            try {
+                // Verify Token
+                const verifyResp = await fetch(`${API_URL}?action=getShareStatus&t=${Date.now()}`);
+                const status = await verifyResp.json();
+
+                if (!status.active || status.token !== token) {
+                    showError();
+                    return;
+                }
+
+                // Load Data
+                const dataResp = await fetch(`${API_URL}?action=getAgingData`);
+                const result = await dataResp.json();
+
+                if (result.status === "success") {
+                    renderTable(result.data);
+                    document.getElementById('last-update').innerText = "Last Sync: " + new Date().toLocaleTimeString();
+                    showMain();
+                } else {
+                    showError();
+                }
+
+            } catch (err) {
+                console.error(err);
+                showError();
+            }
+        };
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tbody-aging');
+            const sorted = data.sort((a, b) => b.umur - a.umur);
+            
+            tbody.innerHTML = sorted.map(item => `
+                <tr>
+                    <td style="color:var(--accent-cyan); font-weight:700;">${item.lot}</td>
+                    <td>${item.material}</td>
+                    <td style="font-weight:700;">${item.umur}</td>
+                    <td>${item.gudang}</td>
+                    <td>${getBadge(item.umur)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function getBadge(age) {
+            if (age > 90) return '<span class="badge-age age-old">OLD</span>';
+            if (age >= 30) return '<span class="badge-age age-mid">MID</span>';
+            return '<span class="badge-age age-new">YOUNG</span>';
+        }
+
+        function showMain() {
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        }
+
+        function showError() {
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('error-screen').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
