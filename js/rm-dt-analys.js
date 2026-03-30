@@ -66,11 +66,30 @@ const AnalysApp = {
         } catch (e) { console.warn("Cache read error", e); }
 
         // 2. FETCH LATEST IN BACKGROUND
+        console.log(`[FETCH] Starting background sync: ${this.apiUrl} & ${this.apiV2Url}`);
         try {
             const [resOld, resV2] = await Promise.all([
-                fetch(this.apiUrl).then(r => r.json()).catch(() => null),
-                this.apiV2Url ? fetch(this.apiV2Url).then(r => r.json()).catch(() => null) : Promise.resolve(null)
+                fetch(this.apiUrl).then(r => r.json()).catch(err => { console.error("Old API Error:", err); return null; }),
+                this.apiV2Url ? fetch(this.apiV2Url).then(r => r.json()).catch(err => { console.error("V2 API Error:", err); return null; }) : Promise.resolve(null)
             ]);
+
+            if (resV2) {
+                console.log(`[FETCH] V2 API SUCCESS: ${(resV2.template || []).length} template rows, ${(resV2.dailyActivity || []).length} activity rows.`);
+                if (resV2.template && resV2.template.length > 0) {
+                    console.log(`[DEBUG] Sample V2 Template Row:`, resV2.template[0]);
+                    // Table debugger for Bongkaran entries
+                    const bDebug = resV2.template.filter(r => {
+                        let k = String(r['KEGIATAN'] || r['JENIS KEGIATAN'] || '').toUpperCase();
+                        return k.includes('BONGKAR');
+                    }).slice(0, 20);
+                    if (bDebug.length > 0) {
+                        console.log("[V2 BONGKARAN DEBUGGER]");
+                        console.table(bDebug);
+                    }
+                }
+            } else {
+                console.warn(`[FETCH] V2 API returned NULL or failed.`);
+            }
 
             let changed = true; // Force re-render after fetch
 
@@ -86,7 +105,8 @@ const AnalysApp = {
 
             // RE-RENDER IF THERE WAS A CHANGE
             if (changed || (!this.dataOld && !this.dataV2)) {
-                this.data = this.dataOld || this.dataV2 || { dailyActivity: [], template: [], kuliBorong: {}, kuliHarian: {} };
+                // v20.2.4: Ensure we pick the right month's data after fetch
+                this.data = this.buildDataForMonth(this.currentMonth);
                 this.initGlobalFilter();
                 this.renderAllCharts();
                 this.renderKPIs();
@@ -104,20 +124,25 @@ const AnalysApp = {
 
     fetchContainerData: function () {
         const callbackName = '_gvizContainerAnalysisCallback';
-        const url = `https://docs.google.com/spreadsheets/d/${this.CONTAINER_SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&sheet=${encodeURIComponent(this.CONTAINER_SHEET_NAME)}`;
+        const url = `https://docs.google.com/spreadsheets/d/${this.CONTAINER_SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&sheet=${encodeURIComponent(this.CONTAINER_SHEET_NAME)}&tq=${encodeURIComponent('SELECT A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB')}`;
 
         window[callbackName] = (gviz) => {
             try {
                 if (!gviz || !gviz.table) throw new Error("Invalid Container data");
                 const raw = this.parseGvizTable(gviz.table);
-                
-                // Filter: Ensure date exists (Ambil SEMUA data dari baris 2 s/d bawah)
+                console.log(`[ContainerData] Received ${raw.length} rows from Sheet.`);
+
                 this.containerData = raw.filter(row => {
-                    return !!this.normalizeDate(row['TANGGAL']);
+                    let iso = this.normalizeDate(row['TANGGAL']);
+                    return !!iso;
                 });
 
-                console.log('Total Bongkaran Data Loaded:', this.containerData.length);
-                if (this.containerData.length > 0) console.log('Sample data:', this.containerData[0]);
+                console.log(`[ContainerData] ${this.containerData.length} rows successfully normalized and filtered.`);
+                if (this.containerData.length > 0) {
+                    const dates = this.containerData.map(r => r['TANGGAL']).sort();
+                    console.log(`[ContainerData] Date range: ${dates[0]} to ${dates[dates.length-1]}`);
+                    console.log(`[ContainerData] Sample row:`, this.containerData[0]);
+                }
 
                 // Update filter dropdown with months from container data
                 this.initGlobalFilter();
@@ -166,25 +191,66 @@ const AnalysApp = {
             (row.c || []).forEach((cell, i) => {
                 if (!headers[i]) return;
                 let val = cell ? cell.v : null;
+                if (val === null || val === undefined) { obj[headers[i]] = ''; return; }
+
+                // Google encodes dates as "Date(y,m,d)" strings in JSON
                 if (typeof val === 'string' && val.startsWith('Date(')) {
                     const m = val.match(/Date\((\d+),(\d+),(\d+)/);
                     if (m) val = `${m[1]}-${String(parseInt(m[2]) + 1).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
                 }
+                
+                // Use formatted value (cell.f) if raw value is unhelpful
                 let finalVal = (val !== null && val !== '') ? String(val) : '';
                 if (finalVal === '' && cell && cell.f) finalVal = String(cell.f);
+
                 obj[headers[i]] = finalVal;
             });
-            // Aliases for consistency with rm-tracking-container
+
+            // === ALIAS MAPPING (Consistent with rm-tracking-container) ===
+            if (obj['FINISH'] !== undefined && !obj['FINISH_BONGKAR']) obj['FINISH_BONGKAR'] = obj['FINISH'];
             if (obj['NETTO_(KG)'] !== undefined) {
-                // Ensure volume is numeric and handled correctly
                 let rawVol = String(obj['NETTO_(KG)']).replace(/,/g, '');
                 obj['NETTO_KG'] = parseFloat(rawVol) || 0;
+            } else if (obj['NETTO_KG'] !== undefined) {
+                // If already named NETTO_KG, ensure it is float
+                obj['NETTO_KG'] = parseFloat(String(obj['NETTO_KG']).replace(/,/g, '')) || 0;
             }
+
             if (obj['MATERIAL'] !== undefined) obj['JENIS_RM'] = obj['MATERIAL'];
             if (obj['START_PANGGIL'] !== undefined) obj['PB_START'] = obj['START_PANGGIL'];
             if (obj['QC_SAMPLING_1_TIME'] !== undefined) obj['TUNGGU_QC'] = obj['QC_SAMPLING_1_TIME'];
+            if (obj['LOKASI_SIMPAN'] !== undefined) obj['LOKASI'] = obj['LOKASI_SIMPAN'];
+            if (obj['GUDANG/INTAKE'] !== undefined) obj['GUDANG'] = obj['GUDANG/INTAKE'];
+            if (obj['TIM_KERJA'] !== undefined) obj['TIM'] = obj['TIM_KERJA'];
+
             return obj;
         });
+    },
+
+    // v20.2.3: Robust volume extraction (handles Kg/MT and field name changes)
+    getUnloadingVol: function (row) {
+        if (!row) return 0;
+        // 1. Check for explicit Kg fields (Direct from Sheet or correctly mapped)
+        if (row['NETTO_KG'] !== undefined && row['NETTO_KG'] !== '') return parseFloat(row['NETTO_KG']) || 0;
+        if (row['REAL_BONGKAR_KG'] !== undefined && row['REAL_BONGKAR_KG'] !== '') return parseFloat(row['REAL_BONGKAR_KG']) || 0;
+        
+        // 2. Check for V2 API field (REAL_BONGKAR_MT is often KG in current backend or vice versa)
+        if (row['REAL_BONGKAR_MT'] !== undefined && row['REAL_BONGKAR_MT'] !== '') {
+            let val = parseFloat(String(row['REAL_BONGKAR_MT']).replace(/,/g, '')) || 0;
+            if (val > 0 && val < 500) return val * 1000; // Auto-detect MT (e.g. 25.5 -> 25500)
+            return val; 
+        }
+
+        // 3. Broad Catch-all for any column containing 'NETTO' or 'KG' or 'MT'
+        for (let key in row) {
+            let k = key.toUpperCase();
+            if ((k.includes('NETTO') || k.includes('_KG') || k === 'MT' || k.includes('BERAT')) && row[key] !== '' && row[key] !== null) {
+                let val = parseFloat(String(row[key]).replace(/,/g, '')) || 0;
+                if (val > 0 && val < 500) return val * 1000; // MT detected
+                if (val > 0) return val;
+            }
+        }
+        return 0;
     },
 
     initGlobalFilter: function () {
@@ -401,13 +467,39 @@ const AnalysApp = {
             }
         });
 
-        // INTEGRATION: Add Container Unloading to KPIs
+        // INTEGRATION: Unified Unloading Aggregation
+        // Step 1: Add all from Container Data (Source of truth for containers/Rice Bran)
+        const countedContainers = new Set(); // Track unique identifiers if possible, or just sum
         this.containerData.forEach(row => {
             let tgl = this.normalizeDate(row['TANGGAL']);
             if (tgl && tgl.startsWith(selectedMonth)) {
-                let vol = parseFloat(row['NETTO_KG']) || 0;
+                let vol = this.getUnloadingVol(row);
                 sumBongkar += vol;
                 totalVol += vol;
+                // If it's a specific container, we might want to mark it as counted
+                // For now, we assume ALL rows in containerData are valid unloading
+            }
+        });
+
+        // Step 2: Add materials from V2 Template that are NOT in containerData
+        // Convention: ContainerData usually covers RICE BRAN. Other materials come from V2 API.
+        const v2Template = this.data.template || [];
+        v2Template.forEach(row => {
+            let tgl = this.normalizeDate(row['TANGGAL']);
+            if (tgl && tgl.startsWith(selectedMonth)) {
+                let activity = String(row['KEGIATAN'] || '').toUpperCase();
+                if (activity === 'BONGKAR') {
+                    let mat = String(row['MATERIAL'] || row['JENIS_RM'] || '').toUpperCase();
+                    // CRITICAL: Ensure we read material even if field names vary
+                    let volKG = this.getUnloadingVol(row);
+                    
+                    // AVOID DOUBLE COUNTING: 
+                    // If the material is RICE BRAN, we skip it here because it's already in containerData loop
+                    if (!mat.includes('RICE BRAN')) {
+                        sumBongkar += volKG;
+                        totalVol += volKG;
+                    }
+                }
             }
         });
 
@@ -569,7 +661,7 @@ const AnalysApp = {
             }
         }
 
-        // INTEGRATION: Add Container Unloading to Ops Daily Chart
+        // INTEGRATION: Add Container Unloading + V2 Multi-Material to Ops Daily Chart
         this.containerData.forEach(row => {
             let tgl = this.normalizeDate(row['TANGGAL']);
             if (tgl && tgl.startsWith(selectedMonth)) {
@@ -582,7 +674,39 @@ const AnalysApp = {
                 }
                 
                 if (!grouped[key]) grouped[key] = this.createEmptyGroup();
-                grouped[key].sum.bongkar += (parseFloat(row['NETTO_KG']) || 0);
+                let vol = this.getUnloadingVol(row);
+                grouped[key].sum.bongkar += vol;
+                
+                // Track material for dynamic labeling
+                if (!grouped[key].materials) grouped[key].materials = new Set();
+                let m = row['MATERIAL'] || row['JENIS_RM'] || 'RM';
+                grouped[key].materials.add(m.split(' (')[0]); 
+            }
+        });
+
+        // Add V2 Template Multi-Material Unloading
+        const v2Tpl_ops = this.data.template || [];
+        v2Tpl_ops.forEach(row => {
+            let tgl = this.normalizeDate(row['TANGGAL']);
+            if (tgl && tgl.startsWith(selectedMonth)) {
+                let act = String(row['KEGIATAN'] || '').toUpperCase();
+                if (act === 'BONGKAR') {
+                    let mat = String(row['MATERIAL'] || row['JENIS_RM'] || '').toUpperCase();
+                    if (!mat.includes('RICE BRAN')) {
+                        let key = tgl;
+                        if (period === 'monthly') key = tgl.substring(0, 7);
+                        else if (period === 'weekly') {
+                            let day = parseInt(tgl.split('-')[2]);
+                            let weekNum = Math.ceil(day / 7);
+                            key = `W${weekNum}`;
+                        }
+                        if (!grouped[key]) grouped[key] = this.createEmptyGroup();
+                        let volKG = this.getUnloadingVol(row);
+                        grouped[key].sum.bongkar += volKG;
+                        if (!grouped[key].materials) grouped[key].materials = new Set();
+                        grouped[key].materials.add(mat.split(' (')[0]);
+                    }
+                }
             }
         });
 
@@ -844,7 +968,9 @@ const AnalysApp = {
             // if (period === 'weekly') { ... } 
 
             if (!grouped[key]) grouped[key] = 0;
-            grouped[key]++;
+            let valMT = parseFloat(r['REAL_BONGKAR_MT'] || r['REAL_MUAT_MT'] || 0);
+            if (valMT > 0) grouped[key] += (valMT * 1000);
+            else grouped[key]++; // Fallback to count if weight missing
         });
 
         // INTEGRATION: Add Container Records to Trend Flow (Bongkar)
@@ -853,7 +979,22 @@ const AnalysApp = {
                 let iso = this.normalizeDate(row['TANGGAL']);
                 if (iso && iso.startsWith(selectedMonth)) {
                     if (!grouped[iso]) grouped[iso] = 0;
-                    grouped[iso]++;
+                    grouped[iso] += this.getUnloadingVol(row);
+                }
+            });
+            // V2 Template Multi-Material
+            const v2Tpl = this.data.template || [];
+            v2Tpl.forEach(row => {
+                let iso = this.normalizeDate(row['TANGGAL']);
+                if (iso && iso.startsWith(selectedMonth)) {
+                    let act = String(row['KEGIATAN'] || '').toUpperCase();
+                    if (act === 'BONGKAR') {
+                        let mat = String(row['MATERIAL'] || row['JENIS_RM'] || '').toUpperCase();
+                        if (!mat.includes('RICE BRAN')) {
+                            if (!grouped[iso]) grouped[iso] = 0;
+                            grouped[iso] += this.getUnloadingVol(row);
+                        }
+                    }
                 }
             });
         }
@@ -1092,16 +1233,18 @@ const AnalysApp = {
         if (!str) return null;
 
         // Handle "DD MMM" format (e.g. "01 JAN", "05 FEB")
-        // Common in Apps Script output
         const monthMap = {
             'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04', 'MAY': '05', 'JUN': '06',
             'JUL': '07', 'AUG': '08', 'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12'
         };
 
         let s = String(str).trim().toUpperCase();
+        
+        // Handle ISO Direct (yyyy-mm-dd)
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
         let parts = s.split(' ');
         if (parts.length === 2 && monthMap[parts[1]]) {
-            // It's "DD MMM"
             let day = parts[0].padStart(2, '0');
             let m = monthMap[parts[1]];
             let y = new Date().getFullYear();
@@ -1110,7 +1253,7 @@ const AnalysApp = {
         }
 
         // Handle dd-MMM-yyyy (e.g. "26-Mar-2026")
-        let m2 = s.match(/^(\d{1,2})[\-\/\s](JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/\s](\d{4})$/i);
+        let m2 = s.match(/^(\d{1,2})[\-\/\s\.](JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/\s\.](\d{4})$/i);
         if (m2) {
             let day = m2[1].padStart(2, '0');
             let mon = monthMap[m2[2].toUpperCase().substring(0, 3)];
@@ -1119,7 +1262,7 @@ const AnalysApp = {
         }
 
         // Handle dd/MM/yyyy or dd.MM.yyyy
-        let m3 = s.match(/^(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{4})$/);
+        let m3 = s.match(/^(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{4})$/);
         if (m3) {
             let day = m3[1].padStart(2, '0');
             let mon = m3[2].padStart(2, '0');
@@ -1129,10 +1272,15 @@ const AnalysApp = {
 
         let d = new Date(str);
         if (isNaN(d.getTime())) return null;
-        // Use local year/month/day
+        
+        // v20.2.4 TZ-Safe: Use individual components to avoid UTC shift
         let y = d.getFullYear();
         let m = String(d.getMonth() + 1).padStart(2, '0');
         let day = String(d.getDate()).padStart(2, '0');
+        
+        // Check for 1899 glitch (common in cell time values)
+        if (y < 1910) return null; 
+
         return `${y}-${m}-${day}`;
     },
 
@@ -1241,9 +1389,6 @@ const AnalysApp = {
         if (targetAuto) {
             let iso = `${year}-${month}-${String(targetAuto).padStart(2, '0')}`;
             this.showShiftAnalysis(iso, targetAuto);
-        } else {
-            let dash = document.getElementById('analysis-content-v15');
-            if (dash) dash.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-muted);"><i class="fas fa-satellite-dish" style="font-size:2rem; margin-bottom:10px; opacity:0.5;"></i><br>NO DATA CAPTURED THIS MONTH</div>`;
         }
     },
 
@@ -1252,45 +1397,54 @@ const AnalysApp = {
 
         let container = document.getElementById('analysis-content-v15');
 
-        let related = (this.data.template || []).filter(r => this.normalizeDate(r['TANGGAL']) === isoDate);
+        // Robust matching: Try both normalized and raw string matching
+        let related = (this.data.template || []).filter(r => {
+            let d = r['TANGGAL'];
+            if (!d) return false;
+            let norm = this.normalizeDate(d);
+            return norm === isoDate || String(d).startsWith(isoDate);
+        });
         let dailyRec = (this.data.dailyActivity || []).find(r => r.tanggal === isoDate) || {};
 
         let bMats = {};
         let mMats = {};
 
         let totalDayVol = 0;
-
         related.forEach(r => {
             let keg = (r['KEGIATAN'] || r['JENIS KEGIATAN'] || '').toUpperCase();
             let mat = (r['JENIS_RM'] || r['JENIS RM'] || r['MATERIAL'] || 'UNKNOWN').toUpperCase();
 
             // Handle various NETTO column names
-            let rawVal = r['NETTO TS'] || r['NETTO_TS'] || r['NETTO'] || r['REAL_BONGKAR_MT'] || 0;
-            let val = parseFloat(String(rawVal).replace(/,/g, '')) || 0;
+            let val = this.getUnloadingVol(r);
 
             if (keg.includes('BONGKAR')) {
-                if (!bMats[mat]) bMats[mat] = 0;
-                bMats[mat] += val;
-                totalDayVol += val; // Adding real bongkar MT
+                // AVOID DOUBLE COUNTING: 
+                // convention: ContainerData usually covers RICE BRAN. Other materials come from V2 API.
+                if (!mat.includes('RICE BRAN')) {
+                    if (!bMats[mat]) bMats[mat] = 0;
+                    bMats[mat] += val;
+                    totalDayVol += val;
+                }
             }
             else if (keg.includes('MUAT')) {
                 let lok = (r['LOKASI'] || r['SLOC'] || 'UNKNOWN').toUpperCase();
                 let key = `${mat} | ${lok}`;
                 if (!mMats[key]) mMats[key] = 0;
                 mMats[key] += val;
-                totalDayVol += val; // Adding real muat MT
+                totalDayVol += val;
             } else {
                 totalDayVol += val;
             }
         });
 
-        // INTEGRATION: Add Container Unloading to Daily Details
+        // INTEGRATION: Add Container Unloading to Daily Details (Source of Truth for Rice Bran)
         if (this.containerDataByDate && this.containerDataByDate[isoDate]) {
             this.containerDataByDate[isoDate].forEach(row => {
-                let mat = (row['JENIS_RM'] || 'CONT-RM').toUpperCase();
-                let vol = parseFloat(row['NETTO_KG']) || 0;
-                // Use material name directly without [CONT] prefix
+                let mat = (row['MATERIAL'] || 'RICE BRAN').toUpperCase();
+                let vol = this.getUnloadingVol(row);
                 let key = mat; 
+                // We add everything from containerData. 
+                // If there's RICE BRAN here and also in V2 template, the V2 loop (above) skips it to avoid double counting.
                 if (!bMats[key]) bMats[key] = 0;
                 bMats[key] += vol;
                 totalDayVol += vol;

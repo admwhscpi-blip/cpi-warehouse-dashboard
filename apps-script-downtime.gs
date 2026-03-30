@@ -59,6 +59,20 @@ function calcDurMin(startVal, endVal) {
   return String(diff);
 }
 
+// v20.2.5 Helper: Find header index with variants (Case Insensitive)
+function findH(headers, variants) {
+  if (!headers || !variants) return -1;
+  const h = headers.map(s => String(s || "").toUpperCase().trim());
+  for (let v of variants) {
+    let idx = h.indexOf(v.toUpperCase().trim());
+    if (idx >= 0) return idx;
+    // Try partial match if no exact match
+    idx = h.findIndex(str => str.includes(v.toUpperCase().trim()));
+    if (idx >= 0) return idx;
+  }
+  return -1;
+}
+
 function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   forceMuatHeaders();
@@ -266,51 +280,63 @@ function doGet(e) {
 
       if (bSheet && bSheet.getLastRow() > 1) {
         const bData = bSheet.getDataRange().getValues();
-        const bH = bData[0].map(h => String(h).toUpperCase());
+        const bH = bData[0];
         const bIdx = {
-          tanggal: bH.indexOf("TANGGAL"),
-          material: bH.indexOf("MATERIAL"),
-          netto: bH.findIndex(h => h.includes("NETTO")),
-          gudang: bH.findIndex(h => h.includes("GUDANG")),
-          tim: bH.findIndex(h => h.includes("TIM KERJA")),
-          jenisKuli: bH.findIndex(h => h.includes("JENIS KULI")),
-          startPanggil: bH.findIndex(h => h.includes("START PANGGIL")),
-          truckReady: bH.findIndex(h => h.includes("TRUCK READY")),
-          startBongkar: bH.findIndex(h => h.includes("START BONGKAR")),
-          holdQC: bH.findIndex(h => h.includes("HOLD QC")),
-          restartQC: bH.findIndex(h => h.includes("RE-START")),
-          manuverAkhir: bH.findIndex(h => h.includes("MANUVER")),
-          finish: bH.findIndex(h => h.includes("FINISH")),
-          nopol: bH.indexOf("NOPOL"),
-          lokasiSimpan: bH.findIndex(h => h.includes("LOKASI SIMPAN")),
-          truck: bH.findIndex(h => h.includes("TRUCK")),
-          arrivalDate: bH.findIndex(h => h.includes("ARRIVAL DATE")),
-          arrivalTime: bH.findIndex(h => h.includes("ARRIVAL TIME")),
-          qcTime: bH.findIndex(h => h.includes("QC SAMPLING 1 TIME")),
-          timbangTime: bH.findIndex(h => h.includes("TIME TIMBANG MASUK"))
+          tanggal: findH(bH, ["TANGGAL", "DATE"]),
+          material: findH(bH, ["MATERIAL", "JENIS RM", "KOMODITAS", "JENIS_RM", "NAMA BARANG"]),
+          netto: findH(bH, ["NETTO (KG)", "REAL_BONGKAR_MT", "NETTO", "KG", "MT"]),
+          gudang: findH(bH, ["GUDANG/INTAKE", "GUDANG", "LOKASI"]),
+          tim: findH(bH, ["TIM KERJA", "TIM"]),
+          jenisKuli: findH(bH, ["JENIS KULI", "KULI"]),
+          startPanggil: findH(bH, ["START PANGGIL"]),
+          truckReady: findH(bH, ["TRUCK READY"]),
+          startBongkar: findH(bH, ["START BONGKAR"]),
+          holdQC: findH(bH, ["HOLD QC"]),
+          restartQC: findH(bH, ["RE-START", "RESTART QC"]),
+          manuverAkhir: findH(bH, ["MANUVER", "MANUVER AKHIR"]),
+          finish: findH(bH, ["FINISH", "TIME FINISH"]),
+          nopol: findH(bH, ["NOPOL", "PLAT"]),
+          lokasiSimpan: findH(bH, ["LOKASI SIMPAN", "SLOC"]),
+          truck: findH(bH, ["JENIS TRUCK", "TRUCK"]),
+          arrivalDate: findH(bH, ["ARRIVAL DATE"]),
+          arrivalTime: findH(bH, ["ARRIVAL TIME"]),
+          qcTime: findH(bH, ["QC SAMPLING 1 TIME", "QC TIME"]),
+          timbangTime: findH(bH, ["TIME TIMBANG MASUK", "TIMBANG IN"])
         };
 
         for (let i = 1; i < bData.length; i++) {
           const row = bData[i];
-          let tgl = row[bIdx.tanggal];
-          if (!tgl) continue;
-          if (tgl instanceof Date) tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
-          else tgl = String(tgl).trim();
+          let rawTgl = row[bIdx.tanggal];
+          if (!rawTgl) continue;
 
-          const netto = Number(row[bIdx.netto]) || 0;
-          const tim = String(row[bIdx.tim] || "").toUpperCase().trim();
-          const material = String(row[bIdx.material] || "");
-          const gudang = String(row[bIdx.gudang >= 0 ? bIdx.gudang : 2] || "");
+          // v20.2.4 Robust Date Normalization (Backend)
+          let tgl = "";
+          if (rawTgl instanceof Date) {
+            tgl = Utilities.formatDate(rawTgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          } else {
+            // Handle common string formats like dd/MM/yyyy
+            let s = String(rawTgl).trim();
+            let m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+            if (m) tgl = m[3] + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0");
+            else tgl = s; // fallback to raw string
+          }
+
+          const nettoIndex = bIdx.netto >= 0 ? bIdx.netto : bH.findIndex(h => h === "NETTO (KG)" || h === "REAL_BONGKAR_MT" || h.includes("NETTO"));
+          const netto = Number(row[nettoIndex]) || 0;
+          const tim = String(bIdx.tim >= 0 ? row[bIdx.tim] : "").toUpperCase().trim();
+          const material = String(bIdx.material >= 0 ? row[bIdx.material] : "");
+          const gudang = String(bIdx.gudang >= 0 ? row[bIdx.gudang] : "");
           
           // Template row (per-truck detail)
           templateRows.push({
             TANGGAL: tgl,
             JENIS_RM: material,
-            JENIS_TRUCK: String(row[bIdx.truck >= 0 ? bIdx.truck : 7] || ""),
+            JENIS_TRUCK: String(bIdx.truck >= 0 ? row[bIdx.truck] : ""),
             KEGIATAN: "BONGKAR",
             LOKASI: gudang,
-            NOPOL: String(row[bIdx.nopol >= 0 ? bIdx.nopol : 6] || ""),
+            NOPOL: String(bIdx.nopol >= 0 ? row[bIdx.nopol] : ""),
             REAL_BONGKAR_MT: netto,
+            REAL_BONGKAR_KG: netto, // Alias for clarity v20.2.3
             ARRIVAL_DATE: (function(v) { 
               if (!v) return ""; 
               if (v instanceof Date) { 
@@ -318,20 +344,20 @@ function doGet(e) {
                 return (dd<10?"0"+dd:dd) + "." + (mm<10?"0"+mm:mm) + "." + yy;
               }
               return String(v).trim();
-            })(row[bIdx.arrivalDate >= 0 ? bIdx.arrivalDate : 23]),
-            ARRIVAL_TIME: fmtTime(row[bIdx.arrivalTime >= 0 ? bIdx.arrivalTime : 24]),
-            QC_SAMPLING_1: fmtTime(row[bIdx.qcTime >= 0 ? bIdx.qcTime : 25]),
-            TIME_TIMBANG_MASUK: fmtTime(row[bIdx.timbangTime >= 0 ? bIdx.timbangTime : 26]),
-            START_PANGGIL: fmtTime(row[bIdx.startPanggil]),
-            TRUCK_READY: fmtTime(row[bIdx.truckReady]),
-            START_BONGKAR: fmtTime(row[bIdx.startBongkar]),
-            HOLD_QC: fmtTime(row[bIdx.holdQC]),
-            RESTART_QC: fmtTime(row[bIdx.restartQC]),
-            MANUVER_AKHIR: fmtTime(row[bIdx.manuverAkhir]),
-            FINISH_TIME: fmtTime(row[bIdx.finish]),
-            DURASI_BONGKAR: calcDurMin(row[bIdx.startBongkar], row[bIdx.finish]),
-            PB_START: fmtTime(row[bIdx.startPanggil]),
-            TUNGGU_QC: fmtTime(row[bIdx.holdQC])
+            })(bIdx.arrivalDate >= 0 ? row[bIdx.arrivalDate] : ""),
+            ARRIVAL_TIME: fmtTime(bIdx.arrivalTime >= 0 ? row[bIdx.arrivalTime] : ""),
+            QC_SAMPLING_1: fmtTime(bIdx.qcTime >= 0 ? row[bIdx.qcTime] : ""),
+            TIME_TIMBANG_MASUK: fmtTime(bIdx.timbangTime >= 0 ? row[bIdx.timbangTime] : ""),
+            START_PANGGIL: fmtTime(bIdx.startPanggil >= 0 ? row[bIdx.startPanggil] : ""),
+            TRUCK_READY: fmtTime(bIdx.truckReady >= 0 ? row[bIdx.truckReady] : ""),
+            START_BONGKAR: fmtTime(bIdx.startBongkar >= 0 ? row[bIdx.startBongkar] : ""),
+            HOLD_QC: fmtTime(bIdx.holdQC >= 0 ? row[bIdx.holdQC] : ""),
+            RESTART_QC: fmtTime(bIdx.restartQC >= 0 ? row[bIdx.restartQC] : ""),
+            MANUVER_AKHIR: fmtTime(bIdx.manuverAkhir >= 0 ? row[bIdx.manuverAkhir] : ""),
+            FINISH_TIME: fmtTime(bIdx.finish >= 0 ? row[bIdx.finish] : ""),
+            DURASI_BONGKAR: bIdx.startBongkar >= 0 && bIdx.finish >= 0 ? calcDurMin(row[bIdx.startBongkar], row[bIdx.finish]) : "-",
+            PB_START: fmtTime(bIdx.startPanggil >= 0 ? row[bIdx.startPanggil] : ""),
+            TUNGGU_QC: fmtTime(bIdx.holdQC >= 0 ? row[bIdx.holdQC] : "")
           });
 
           // Daily aggregation
@@ -362,10 +388,18 @@ function doGet(e) {
         const mGudang = mH.indexOf("GUDANG MUAT") >= 0 ? mH.indexOf("GUDANG MUAT") : 18; // S=18
 
         for (let i = 1; i < mData.length; i++) {
-          let tgl = mData[i][mTanggal];
-          if (!tgl) continue;
-          if (tgl instanceof Date) tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
-          else tgl = String(tgl).trim();
+          let rawTgl = mData[i][mTanggal];
+          if (!rawTgl) continue;
+
+          let tgl = "";
+          if (rawTgl instanceof Date) {
+            tgl = Utilities.formatDate(rawTgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          } else {
+            let s = String(rawTgl).trim();
+            let m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+            if (m) tgl = m[3] + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0");
+            else tgl = s;
+          }
 
           const netto = Number(mData[i][mNetto >= 0 ? mNetto : 6]) || 0;
           if (!dailyMap[tgl]) dailyMap[tgl] = { 
