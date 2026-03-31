@@ -215,13 +215,12 @@ const TrackingApp = {
     },
 
     processContainerData: function () {
-        // Filter: >= 19 Feb 2026 AND JENIS_TRUCK contains "CONTAINER" (20ft or 40ft)
+        // Filter: >= 19 Feb 2026, ONLY include trucks with "Container" (e.g., Container 20ft, Container 40ft)
         this.containerData = this.allData.filter(row => {
             let tglStr = this.normalizeDate(row['TANGGAL']);
             if (!tglStr || tglStr < '2026-02-19') return false;
 
-            // JENIS_TRUCK is now available via direct gviz fetch (Col H)
-            let truckType = String(row['JENIS_TRUCK'] || '').toUpperCase();
+            let truckType = String(row['JENIS_TRUCK'] || '').trim().toUpperCase();
             if (truckType.includes('CONTAINER')) {
                 return true;
             }
@@ -395,26 +394,14 @@ const TrackingApp = {
      */
     parseDateTimeStr: function (dateStr, timeStr) {
         if (!dateStr || String(dateStr).trim() === '') return null;
-        let day, month, year;
-        const ds = String(dateStr).trim();
-
-        // Try dd.MM.yyyy or dd/MM/yyyy
-        let dm = ds.match(/^(\d{1,2})[\./](\d{1,2})[\./](\d{4})$/);
-        if (dm) {
-            day = parseInt(dm[1]); month = parseInt(dm[2]) - 1; year = parseInt(dm[3]);
-        } else {
-            // Try yyyy-MM-dd or ISO
-            dm = ds.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-            if (dm) {
-                year = parseInt(dm[1]); month = parseInt(dm[2]) - 1; day = parseInt(dm[3]);
-            } else {
-                // Last resort: native Date parse (but force local timezone)
-                const fb = new Date(ds + 'T00:00:00');
-                if (!isNaN(fb.getTime())) {
-                    day = fb.getDate(); month = fb.getMonth(); year = fb.getFullYear();
-                } else { return null; }
-            }
-        }
+        
+        let normDate = this.normalizeDate(dateStr); // Gets "YYYY-MM-DD" reliably
+        if (!normDate) return null;
+        
+        let parts = normDate.split('-');
+        let year = parseInt(parts[0]);
+        let month = parseInt(parts[1]) - 1;
+        let day = parseInt(parts[2]);
 
         // Parse time
         let hh = 0, mm = 0;
@@ -433,6 +420,25 @@ const TrackingApp = {
         return result;
     },
 
+    /**
+     * Centralized helper: resolve arrival and finish date/time for a row.
+     * Returns { arrDate, arrTime, finDate, finTime, hasArrival, hasFinish }
+     */
+    _resolveArrivalFinish: function (row) {
+        // STRICTLY: ARRIVAL_DATE (Kolom X) & ARRIVAL_TIME (Kolom Y) vs TANGGAL (Kolom A) & FINISH (Kolom U)
+        let arrDate = String(row['ARRIVAL_DATE'] || '').trim();
+        let arrTime = String(row['ARRIVAL_TIME'] || '').trim();
+
+        // Finish: TANGGAL + FINISH
+        let finDate = String(row['TANGGAL'] || '').trim();
+        let finTime = String(row['FINISH_BONGKAR'] || row['FINISH_TIME'] || row['FINISH'] || '').trim();
+
+        let hasArrival = arrDate && arrDate !== '-' && arrTime && arrTime !== '-';
+        let hasFinish = finDate && finDate !== '-' && finTime && finTime !== '-';
+
+        return { arrDate, arrTime, finDate, finTime, hasArrival, hasFinish };
+    },
+
     calculateMetrics: function (data) {
         let total = data.length;
         let sumBongkar = 0; let countBongkar = 0;
@@ -443,25 +449,16 @@ const TrackingApp = {
             let dur = Number(row['DURASI_BONGKAR']);
             if (!isNaN(dur) && dur > 0) { sumBongkar += dur; countBongkar++; }
 
-            // Hitungan Inap — robust parsing
-            // Arrival IN: Col X (date) & Col Y (time) — text from SAP
-            let arrDateStr = String(row['ARRIVAL_DATE'] || '').trim();
-            let arrTimeStr = String(row['ARRIVAL_TIME'] || '').trim();
-            // Bongkar OUT: Col A (tanggal) & Col U (finish)
-            let finDateStr = String(row['TANGGAL'] || '').trim();
-            let finTimeStr = String(row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '').trim();
+            // Resolve arrival/finish with fallbacks
+            let af = this._resolveArrivalFinish(row);
 
-            // Check if arrival data exists (must have both date AND time)
-            let hasArrival = arrDateStr && arrDateStr !== '-' && arrTimeStr && arrTimeStr !== '-';
-            let hasFinish = finDateStr && finDateStr !== '-' && finTimeStr && finTimeStr !== '-';
-
-            if (!hasArrival || !hasFinish) {
+            if (!af.hasArrival || !af.hasFinish) {
                 countNoData++;
                 return;
             }
 
-            let dArr = this.parseDateTimeStr(arrDateStr, arrTimeStr);
-            let dFin = this.parseDateTimeStr(finDateStr, finTimeStr);
+            let dArr = this.parseDateTimeStr(af.arrDate, af.arrTime);
+            let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
 
             if (dArr && dFin) {
                 if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
@@ -614,21 +611,15 @@ const TrackingApp = {
             let noDataCount = 0;
 
             data.forEach(row => {
-                let arrDateStr = String(row['ARRIVAL_DATE'] || '').trim();
-                let arrTimeStr = String(row['ARRIVAL_TIME'] || '').trim();
-                let finDateStr = String(row['TANGGAL'] || '').trim();
-                let finTimeStr = String(row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '').trim();
+                let af = this._resolveArrivalFinish(row);
 
-                let hasArrival = arrDateStr && arrDateStr !== '-' && arrTimeStr && arrTimeStr !== '-';
-                let hasFinish = finDateStr && finDateStr !== '-' && finTimeStr && finTimeStr !== '-';
-
-                if (!hasArrival || !hasFinish) {
+                if (!af.hasArrival || !af.hasFinish) {
                     noDataCount++;
                     return;
                 }
 
-                let dArr = this.parseDateTimeStr(arrDateStr, arrTimeStr);
-                let dFin = this.parseDateTimeStr(finDateStr, finTimeStr);
+                let dArr = this.parseDateTimeStr(af.arrDate, af.arrTime);
+                let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
 
                 if (dArr && dFin) {
                     if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
@@ -697,40 +688,31 @@ const TrackingApp = {
         `;
 
         data.forEach((row, i) => {
-            let truckLine = row['JENIS_TRUCK'] || row['JENIS_RM'] || 'CONTAINER';
+            let truckLine = row['JENIS_TRUCK'] || row['JENIS_RM'] || 'N/A';
             let nopol = row['NOPOL'] || 'N/A';
 
-            // Arrival IN: strictly Col X (ARRIVAL_DATE) & Col Y (ARRIVAL_TIME) only
-            // These are SAP data — NO fallbacks to TANGGAL or PB_START
-            let arrDateStr = row['ARRIVAL_DATE'] || '';
-            let arrTimeStr = row['ARRIVAL_TIME'] || '';
-            // Bongkar OUT: Col A (TANGGAL) & Col U (FINISH_TIME)
-            let finDateStr = row['TANGGAL'] || '';
-            let finTimeStr = row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '';
+            // Resolve arrival/finish with fallbacks
+            let af = this._resolveArrivalFinish(row);
 
             // Display labels
-            let arrDateDisplay = String(arrDateStr).trim() || '-';
-            let arrTimeDisplay = String(arrTimeStr).trim() || 'No Data';
-            let finDateDisplay = String(finDateStr).trim() || '-';
-            let finTimeDisplay = String(finTimeStr).trim() || 'No Data';
+            let arrDateDisplay = af.arrDate || '-';
+            let arrTimeDisplay = af.arrTime || 'No Data';
+            let finDateDisplay = af.finDate || '-';
+            let finTimeDisplay = af.finTime || 'No Data';
 
             let statusInap = 'OK';
             let colorInap = 'var(--success)';
             let durasiHtml = '';
 
-            // Check data completeness FIRST
-            let hasArrival = arrTimeDisplay !== 'No Data' && arrDateDisplay !== '-';
-            let hasFinish = finTimeDisplay !== 'No Data' && finDateDisplay !== '-';
-
-            if (!hasArrival || !hasFinish) {
-                // Missing data — no fake values
+            if (!af.hasArrival || !af.hasFinish) {
+                // Missing data — genuinely incomplete
                 durasiHtml = `<span style="color:#f59e0b;">-</span>`;
                 statusInap = 'DATA TIDAK LENGKAP';
                 colorInap = '#f59e0b';
             } else {
                 // Parse using robust helper
-                let dArr = this.parseDateTimeStr(arrDateStr, arrTimeStr);
-                let dFin = this.parseDateTimeStr(finDateStr, finTimeStr);
+                let dArr = this.parseDateTimeStr(af.arrDate, af.arrTime);
+                let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
 
                 if (dArr && dFin) {
                     // If finish < arrival, must have crossed midnight
@@ -1096,18 +1078,12 @@ const TrackingApp = {
      * DATA TIDAK LENGKAP treated as TIDAK INAP (temporary)
      */
     _getInapStatus: function (row) {
-        let arrDateStr = String(row['ARRIVAL_DATE'] || '').trim();
-        let arrTimeStr = String(row['ARRIVAL_TIME'] || '').trim();
-        let finDateStr = String(row['TANGGAL'] || '').trim();
-        let finTimeStr = String(row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '').trim();
+        let af = this._resolveArrivalFinish(row);
 
-        let hasArrival = arrDateStr && arrDateStr !== '-' && arrTimeStr && arrTimeStr !== '-';
-        let hasFinish = finDateStr && finDateStr !== '-' && finTimeStr && finTimeStr !== '-';
+        if (!af.hasArrival || !af.hasFinish) return 'TIDAK INAP'; // incomplete = tidak inap
 
-        if (!hasArrival || !hasFinish) return 'TIDAK INAP'; // temporary: incomplete = tidak inap
-
-        let dArr = this.parseDateTimeStr(arrDateStr, arrTimeStr);
-        let dFin = this.parseDateTimeStr(finDateStr, finTimeStr);
+        let dArr = this.parseDateTimeStr(af.arrDate, af.arrTime);
+        let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
 
         if (dArr && dFin) {
             if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
@@ -1122,17 +1098,11 @@ const TrackingApp = {
      * Get duration in hours for a single row (for detail table)
      */
     _getDurationHours: function (row) {
-        let arrDateStr = String(row['ARRIVAL_DATE'] || '').trim();
-        let arrTimeStr = String(row['ARRIVAL_TIME'] || '').trim();
-        let finDateStr = String(row['TANGGAL'] || '').trim();
-        let finTimeStr = String(row['FINISH_BONGKAR'] || row['FINISH_TIME'] || '').trim();
+        let af = this._resolveArrivalFinish(row);
+        if (!af.hasArrival || !af.hasFinish) return null;
 
-        let hasArrival = arrDateStr && arrDateStr !== '-' && arrTimeStr && arrTimeStr !== '-';
-        let hasFinish = finDateStr && finDateStr !== '-' && finTimeStr && finTimeStr !== '-';
-        if (!hasArrival || !hasFinish) return null;
-
-        let dArr = this.parseDateTimeStr(arrDateStr, arrTimeStr);
-        let dFin = this.parseDateTimeStr(finDateStr, finTimeStr);
+        let dArr = this.parseDateTimeStr(af.arrDate, af.arrTime);
+        let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
         if (dArr && dFin) {
             if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
             return (dFin.getTime() - dArr.getTime()) / (1000 * 60 * 60);

@@ -227,31 +227,34 @@ const AnalysApp = {
         });
     },
 
-    // v20.2.3: Robust volume extraction (handles Kg/MT and field name changes)
+    // v20.2.6: Robust volume extraction (handles Kg/MT and field name changes)
     getUnloadingVol: function (row) {
         if (!row) return 0;
-        // 1. Check for explicit Kg fields (Direct from Sheet or correctly mapped)
-        if (row['NETTO_KG'] !== undefined && row['NETTO_KG'] !== '') return parseFloat(row['NETTO_KG']) || 0;
-        if (row['REAL_BONGKAR_KG'] !== undefined && row['REAL_BONGKAR_KG'] !== '') return parseFloat(row['REAL_BONGKAR_KG']) || 0;
         
-        // 2. Check for V2 API field (REAL_BONGKAR_MT is often KG in current backend or vice versa)
-        if (row['REAL_BONGKAR_MT'] !== undefined && row['REAL_BONGKAR_MT'] !== '') {
-            let val = parseFloat(String(row['REAL_BONGKAR_MT']).replace(/,/g, '')) || 0;
-            if (val > 0 && val < 500) return val * 1000; // Auto-detect MT (e.g. 25.5 -> 25500)
-            return val; 
-        }
-
-        // 3. Broad Catch-all for any column containing 'NETTO' or 'KG' or 'MT'
-        for (let key in row) {
-            let k = key.toUpperCase();
-            if ((k.includes('NETTO') || k.includes('_KG') || k === 'MT' || k.includes('BERAT')) && row[key] !== '' && row[key] !== null) {
-                let val = parseFloat(String(row[key]).replace(/,/g, '')) || 0;
-                if (val > 0 && val < 500) return val * 1000; // MT detected
-                if (val > 0) return val;
+        let val = 0;
+        // 1. Check for explicit Kg/MT fields
+        if (row['NETTO_KG'] !== undefined && row['NETTO_KG'] !== '') val = parseFloat(row['NETTO_KG']) || 0;
+        else if (row['REAL_BONGKAR_KG'] !== undefined && row['REAL_BONGKAR_KG'] !== '') val = parseFloat(row['REAL_BONGKAR_KG']) || 0;
+        else if (row['REAL_BONGKAR_MT'] !== undefined && row['REAL_BONGKAR_MT'] !== '') val = parseFloat(String(row['REAL_BONGKAR_MT']).replace(/,/g, '')) || 0;
+        else if (row['NETTO_TS'] !== undefined && row['NETTO_TS'] !== '') val = parseFloat(String(row['NETTO_TS']).replace(/,/g, '')) || 0;
+        else if (row['NETTO'] !== undefined && row['NETTO'] !== '') val = parseFloat(String(row['NETTO']).replace(/,/g, '')) || 0;
+        else {
+            // Broad Catch-all for any column containing 'NETTO', 'KG', 'MT', 'BRUTO', or 'VOL'
+            for (let key in row) {
+                let k = key.toUpperCase();
+                if ((k.includes('NETTO') || k.includes('_KG') || k.includes('MT') || k.includes('BERAT') || k.includes('VOLUME') || k.includes('BRUTO')) && row[key] !== '' && row[key] !== null) {
+                    let n = parseFloat(String(row[key]).replace(/,/g, '')) || 0;
+                    if (n > 0) { val = n; break; }
+                }
             }
         }
-        return 0;
+
+
+        // AUTO-DETECT MT (If value < 250, likely in Metric Tons so convert to KG)
+        if (val > 0 && val < 250) return val * 1000;
+        return val;
     },
+
 
     initGlobalFilter: function () {
         // Collect all distinct months from all data sources for robustness
@@ -459,13 +462,14 @@ const AnalysApp = {
 
         opsData.forEach(i => {
             if (i.tanggal && i.tanggal.startsWith(selectedMonth)) {
-                let b = Number(i.bongkar) || 0;
+                let b = (Number(i.bongkar) || 0) + (Number(i.bongkarKulhar) || 0); // Combined
                 let m = Number(i.muat) || 0;
                 let s = (Number(i.st_badrun) || 0) + (Number(i.st_kartono) || 0) + (Number(i.st_kulhar) || 0);
                 sumBongkar += b; sumMuat += m; sumStapel += s;
                 totalVol += (b + m + s);
             }
         });
+
 
         // INTEGRATION: Unified Unloading Aggregation
         // Step 1: Add all from Container Data (Source of truth for containers/Rice Bran)
@@ -968,8 +972,8 @@ const AnalysApp = {
             // if (period === 'weekly') { ... } 
 
             if (!grouped[key]) grouped[key] = 0;
-            let valMT = parseFloat(r['REAL_BONGKAR_MT'] || r['REAL_MUAT_MT'] || 0);
-            if (valMT > 0) grouped[key] += (valMT * 1000);
+            let val = this.getUnloadingVol(r);
+            if (val > 0) grouped[key] += val;
             else grouped[key]++; // Fallback to count if weight missing
         });
 
@@ -988,7 +992,7 @@ const AnalysApp = {
                 let iso = this.normalizeDate(row['TANGGAL']);
                 if (iso && iso.startsWith(selectedMonth)) {
                     let act = String(row['KEGIATAN'] || '').toUpperCase();
-                    if (act === 'BONGKAR') {
+                    if (act === 'BONGKAR' || act.includes('KULHAR')) {
                         let mat = String(row['MATERIAL'] || row['JENIS_RM'] || '').toUpperCase();
                         if (!mat.includes('RICE BRAN')) {
                             if (!grouped[iso]) grouped[iso] = 0;
@@ -1195,9 +1199,11 @@ const AnalysApp = {
 
     aggregateItemToGroup: function (group, item) {
         group.count++;
-        ['muat', 'bongkar', 'bongkarKulhar', 'st_badrun', 'st_kartono', 'st_kulhar', 'prod_badrun', 'prod_kartono', 'prod_kulhar'].forEach(k => {
+        // v20.2.7: Ensure Bongkar includes Kulhar for unified view
+        ['muat', 'st_badrun', 'st_kartono', 'st_kulhar', 'prod_badrun', 'prod_kartono', 'prod_kulhar'].forEach(k => {
             group.sum[k] += (Number(item[k]) || 0);
         });
+        group.sum.bongkar += (Number(item.bongkar) || 0) + (Number(item.bongkarKulhar) || 0);
     },
 
     groupDataByPeriod: function (items, mode) {
@@ -1316,7 +1322,7 @@ const AnalysApp = {
         (this.data.dailyActivity || []).forEach(row => {
             if (row.tanggal && row.tanggal.startsWith(this.currentMonth)) {
                 let dayNum = parseInt(row.tanggal.split('-')[2]);
-                let b = Number(row.bongkar) || 0;
+                let b = (Number(row.bongkar) || 0) + (Number(row.bongkarKulhar) || 0);
                 let m = Number(row.muat) || 0;
                 let s = (Number(row.st_badrun) || 0) + (Number(row.st_kartono) || 0) + (Number(row.st_kulhar) || 0);
                 volMap[dayNum] = b + m + s;
@@ -1412,23 +1418,26 @@ const AnalysApp = {
         let totalDayVol = 0;
         related.forEach(r => {
             let keg = (r['KEGIATAN'] || r['JENIS KEGIATAN'] || '').toUpperCase();
-            let mat = (r['JENIS_RM'] || r['JENIS RM'] || r['MATERIAL'] || 'UNKNOWN').toUpperCase();
+            let mat = String(r['JENIS_RM'] || r['JENIS RM'] || r['MATERIAL'] || 'RM').toUpperCase();
 
-            // Handle various NETTO column names
+            // Handle various NETTO column names via helper
             let val = this.getUnloadingVol(r);
 
             if (keg.includes('BONGKAR')) {
-                // AVOID DOUBLE COUNTING: 
-                // convention: ContainerData usually covers RICE BRAN. Other materials come from V2 API.
-                if (!mat.includes('RICE BRAN')) {
-                    if (!bMats[mat]) bMats[mat] = 0;
-                    bMats[mat] += val;
-                    totalDayVol += val;
-                }
+                // Determine material grouping
+                let groupMat = mat;
+                if (mat.includes('(')) groupMat = mat.split(' (')[0].trim();
+
+                if (!bMats[groupMat]) bMats[groupMat] = 0;
+                bMats[groupMat] += val;
+                totalDayVol += val;
             }
+
             else if (keg.includes('MUAT')) {
-                let lok = (r['LOKASI'] || r['SLOC'] || 'UNKNOWN').toUpperCase();
-                let key = `${mat} | ${lok}`;
+                let groupMat = mat;
+                if (mat.includes('(')) groupMat = mat.split(' (')[0].trim();
+                let lok = (r['LOKASI'] || r['SLOC'] || r['GUDANG'] || 'UNKNOWN').toUpperCase();
+                let key = `${groupMat} | ${lok}`;
                 if (!mMats[key]) mMats[key] = 0;
                 mMats[key] += val;
                 totalDayVol += val;
@@ -1437,19 +1446,23 @@ const AnalysApp = {
             }
         });
 
-        // INTEGRATION: Add Container Unloading to Daily Details (Source of Truth for Rice Bran)
+
+        // INTEGRATION: Add Container Unloading to Daily Details (Source of Truth for Rice Bran Containers)
         if (this.containerDataByDate && this.containerDataByDate[isoDate]) {
             this.containerDataByDate[isoDate].forEach(row => {
-                let mat = (row['MATERIAL'] || 'RICE BRAN').toUpperCase();
+                let mat = (row['MATERIAL'] || row['JENIS RM'] || 'RICE BRAN').toUpperCase();
+                // Clean naming
+                let key = mat;
+                if (mat.includes('(')) key = mat.split(' (')[0].trim();
+
                 let vol = this.getUnloadingVol(row);
-                let key = mat; 
-                // We add everything from containerData. 
-                // If there's RICE BRAN here and also in V2 template, the V2 loop (above) skips it to avoid double counting.
+                
                 if (!bMats[key]) bMats[key] = 0;
                 bMats[key] += vol;
                 totalDayVol += vol;
             });
         }
+
 
         let stBadrun = Number(dailyRec.st_badrun) || 0;
         let stKartono = Number(dailyRec.st_kartono) || 0;
