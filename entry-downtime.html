@@ -1006,10 +1006,12 @@
                         </select></div>
                     <div class="field-group"><label>SLOC</label>
                         <select id="setup_sloc" onchange="checkAbsenceLock()">
-                            <option value="" disabled selected>-- PILIH SLOC --</option>
                             <option value="RW01">RW01</option>
+                            <option value="RW05">RW05</option>
                             <option value="RW03">RW03</option>
                             <option value="RM01">RM01</option>
+
+
                         </select>
                     </div>
                 </div>
@@ -1224,6 +1226,8 @@
                     <select id="muat_gudang">
                         <option value="" disabled selected>-- PILIH GUDANG MUAT --</option>
                     </select>
+
+
                 </div>
                 <div class="field-group"><label>Nama Krani Muat</label>
                     <input type="text" id="muat_krani" placeholder="Isi Nama Krani...">
@@ -1343,9 +1347,12 @@
                 <div class="field-group"><label>SLOC</label>
                     <select id="common_gudang">
                         <option value="RW01">RW01</option>
+                        <option value="RW05">RW05</option>
                         <option value="RW03">RW03</option>
                         <option value="RM01">RM01</option>
                     </select>
+
+
                 </div>
                 <div class="field-group"><label>Koordinator</label>
                     <input type="text" id="display_coordinator" placeholder="Nama Koordinator">
@@ -1377,6 +1384,8 @@
                     <select id="common_gudang_durasi">
                         <option value="" disabled selected>-- PILIH GUDANG --</option>
                     </select>
+
+
                 </div>
                 <div class="input-grid">
                     <div class="field-group"><label>1. START PANGGIL</label><input type="text" id="common_start"
@@ -1837,23 +1846,22 @@
                     materialData = stockRes.materials;
                 }
 
-                // v19.1: Populate gudang dropdown from RM stock warehouses
-                if (stockRes && stockRes.success && stockRes.warehouses) {
+                    // v19.1 & v20.2.11: Hybrid Warehouse Population
                     const gdSel = document.getElementById('common_gudang_durasi');
                     if (gdSel && gdSel.options.length <= 1) {
-                        stockRes.warehouses.forEach(w => {
-                            gdSel.appendChild(new Option(w, w));
-                        });
+                        stockRes.warehouses.forEach(w => gdSel.appendChild(new Option(w, w)));
+                        // Always include manual fallback if missing
+                        if (!stockRes.warehouses.includes('GUDANG HINO')) gdSel.appendChild(new Option('GUDANG HINO', 'GUDANG HINO'));
                     }
 
-                    // v20.0.3: Populate Gudang Muat
+                    // v20.0.3 & v20.2.11: Hybrid Muat Population
                     const muatGdSel = document.getElementById('muat_gudang');
                     if (muatGdSel && muatGdSel.options.length <= 1) {
-                        stockRes.warehouses.forEach(w => {
-                            muatGdSel.appendChild(new Option(w, w));
-                        });
+                        stockRes.warehouses.forEach(w => muatGdSel.appendChild(new Option(w, w)));
+                        // Add HINO as it is critical for current operations
+                        if (!stockRes.warehouses.includes('GUDANG HINO')) muatGdSel.appendChild(new Option('GUDANG HINO', 'GUDANG HINO'));
                     }
-                }
+
 
                 // v19.1: Populate muat material dropdown
                 const muatMatSel = document.getElementById('muat_material');
