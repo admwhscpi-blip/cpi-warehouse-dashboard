@@ -216,6 +216,41 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ANALYSA CSS */
+        .analysa-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 30px; margin-top: 30px; }
+        .progress-container { margin-bottom: 25px; background: #fff; padding: 20px; border-radius: 20px; border: 1px solid var(--border-soft); box-shadow: var(--card-shadow); }
+        .progress-label { display: flex; justify-content: space-between; font-family: 'Orbitron'; font-size: 0.65rem; font-weight: 800; margin-bottom: 10px; color: var(--text-main); }
+        .progress-bar-bg { height: 12px; background: #f1f5f9; border-radius: 6px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent-blue), #22d3ee); transition: 1s cubic-bezier(0.4, 0, 0.2, 1); width: 0%; }
+        .stats-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px; }
+        .chart-box { background: #fff; border-radius: 24px; padding: 25px; border: 1px solid var(--border-soft); box-shadow: var(--card-shadow); }
+        /* MAINTENANCE REMINDER CSS */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 15px; background: #f8fafc; padding: 20px; border-radius: 25px; border: 1px solid #eee; }
+        .cal-head { font-family: 'Orbitron'; font-size: 0.55rem; font-weight: 900; color: #94a3b8; text-align: center; padding-bottom: 10px; }
+        .cal-date { height: 40px; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron'; font-size: 0.75rem; font-weight: 900; background: #fff; border-radius: 12px; border: 1px solid #eee; position: relative; color: #64748b; }
+        .cal-date.has-due { border: 2px solid var(--accent-orange); color: var(--accent-orange); box-shadow: 0 0 15px rgba(245, 158, 11, 0.15); }
+        .cal-date.today { background: var(--accent-blue); color: #fff; border: none; }
+        .cal-dot { position: absolute; bottom: 5px; width: 5px; height: 5px; background: var(--accent-orange); border-radius: 50%; box-shadow: 0 0 5px var(--accent-orange); }
+
+        @keyframes pulse-due { 
+            0% { box-shadow: 0 0 0px rgba(245, 158, 11, 0.4); border-color: var(--accent-orange); }
+            50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.9); border-color: #fb923c; transform: scale(1.05); }
+            100% { box-shadow: 0 0 0px rgba(245, 158, 11, 0.4); border-color: var(--accent-orange); }
+        }
+        .cal-date.has-due { animation: pulse-due 2s infinite; background: rgba(245, 158, 11, 0.05); z-index: 5; }
+        
+        .reminder-card { background: #fff; border-radius: 24px; padding: 20px; border: 1px solid var(--border-soft); box-shadow: var(--card-shadow); margin-bottom: 20px; display: grid; grid-template-columns: 60px 1fr 120px; align-items: center; gap: 20px; animation: fadeIn 0.4s; transition: 0.3s; }
+        .reminder-card:hover { transform: translateX(5px); border-color: var(--accent-blue); }
+        .rem-icon { width: 50px; height: 50px; background: rgba(14, 165, 233, 0.1); border-radius: 15px; display: flex; align-items: center; justify-content: center; color: var(--accent-blue); font-size: 1.2rem; }
+        .countdown-pill { text-align: center; background: #f8fafc; border: 1px solid #eee; padding: 8px; border-radius: 15px; }
+        .countdown-val { font-family: 'Orbitron'; font-size: 0.75rem; font-weight: 900; color: var(--accent-orange); display: block; }
+        .countdown-lbl { font-size: 0.45rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+
+        @media (max-width: 768px) {
+            .reminder-card { grid-template-columns: 1fr; text-align: center; }
+            .rem-icon { margin: 0 auto; }
+        }
     </style>
 </head>
 
@@ -257,7 +292,9 @@
         <nav class="nav-menu">
             <div class="nav-item active" onclick="switchView('dashboard', this)"><i class="fas fa-th"></i><span>DASHBOARD</span></div>
             <div class="nav-item" onclick="switchView('checklist', this)"><i class="fas fa-broom"></i><span>CHECKLIST KEBERSIHAN</span></div>
-            <div class="nav-item" onclick="switchView('issues', this)"><i class="fas fa-tools"></i><span>KENDALA UNIT</span></div>
+            <div class="nav-item" onclick="switchView('issues', this)"><i class="fas fa-tools"></i><span>MAINTENANCE</span></div>
+            <div class="nav-item" onclick="switchView('analysa-cleaning', this)"><i class="fas fa-broom" style="font-size:0.9rem;"></i><span>ANALISA KEBERSIHAN</span></div>
+            <div class="nav-item" onclick="switchView('analysa-maintenance', this)"><i class="fas fa-toolbox" style="font-size:0.9rem;"></i><span>ANALISA MAINTENANCE</span></div>
             <div class="nav-item" onclick="switchView('history', this)"><i class="fas fa-history"></i><span>HISTORY DATA</span></div>
         </nav>
     </aside>
@@ -304,7 +341,14 @@
 
         <!-- CEKLIS KEBERSIHAN -->
         <section id="view-checklist" class="view-content">
-            <div class="form-card">
+            <!-- TAB SUB-MENU BEFORE & AFTER -->
+            <div class="tab-wrap" style="margin-bottom: 25px;">
+                <div class="tab-btn active" id="tab_c_before" onclick="switchChecklistTab('before')">1. BEFORE (MULAI)</div>
+                <div class="tab-btn" id="tab_c_after" onclick="switchChecklistTab('after')">2. AFTER (SELESAI)</div>
+            </div>
+
+            <!-- BAGIAN BEFORE -->
+            <div id="c_form_before" class="form-card">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
                     <div><label>TANGGAL</label><input type="date" id="c_date"></div>
                     <div><label>SHIFT</label><select id="c_shift"><option>SHIFT 1</option><option>SHIFT 2</option><option>SHIFT 3</option></select></div>
@@ -329,9 +373,9 @@
                             <input type="text" id="c_item_other" placeholder="Tulis item di sini..." style="border: 1px solid var(--accent-blue);">
                         </div>
                     </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <div><label>JAM AWAL</label><input type="time" id="c_start"></div>
-                        <div><label>JAM SELESAI</label><input type="time" id="c_end"></div>
+                    <div>
+                        <label>JAM AWAL</label>
+                        <input type="time" id="c_start">
                     </div>
                 </div>
                 <!-- PHOTO AREA -->
@@ -352,15 +396,28 @@
                     </div>
                 </div>
                 <input type="hidden" id="c_url"><br>
-                <button class="btn-act" style="background:var(--accent-blue); color:#fff; width:100%; padding:20px; font-weight:900;" onclick="submitChecklist()">SIMPAN CEKLIS 🛡️</button>
+                <button class="btn-act" style="background:var(--accent-blue); color:#fff; width:100%; padding:20px; font-weight:900;" onclick="submitChecklist()">SIMPAN FOTO BEFORE 🛡️</button>
+            </div>
+
+            <!-- BAGIAN AFTER -->
+            <div id="c_list_after" style="display:none;">
+                <div style="background:#fff; border-radius:24px; padding:25px; border:1px solid var(--border-soft); overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; min-width:800px;">
+                        <thead style="font-family:'Orbitron'; font-size:0.6rem; color:var(--text-muted); text-align:left;">
+                            <tr><th style="padding:15px;">TGL / SHIFT</th><th>UNIT</th><th>ITEM (AREA)</th><th>START</th><th>B-PHOTO</th><th>AKSI</th></tr>
+                        </thead>
+                        <tbody id="c_after_body" style="font-size:0.8rem; font-weight:700;"></tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
         <!-- KENDALA UNIT (3-PHASE) -->
         <section id="view-issues" class="view-content">
             <div class="tab-wrap">
-                <div class="tab-btn active" id="tab_lapor" onclick="switchIssueTab('lapor')">FASE 1: KRANI (LAPOR)</div>
-                <div class="tab-btn" id="tab_kelola" onclick="switchIssueTab('kelola')">FASE 2 & 3: SUPERVISOR (KELOLA)</div>
+                <div id="tab_lapor" class="tab-btn active" onclick="switchIssueTab('lapor')">FASE 1: LAPOR</div>
+                <div id="tab_kelola" class="tab-btn" onclick="switchIssueTab('kelola')">FASE 2: KELOLA</div>
+                <div id="tab_reminder" class="tab-btn" onclick="switchIssueTab('reminder')">FASE 3: REMINDER</div>
             </div>
 
             <!-- TAB: LAPOR (KRANI) -->
@@ -423,6 +480,88 @@
                     </table>
                 </div>
             </div>
+
+            <!-- FASE 3: REMINDER -->
+            <div id="issue_reminder" style="display:none; animation: fadeIn 0.4s;">
+                <div class="analysa-grid" style="max-width:1000px; margin: 0 auto;">
+                    <!-- CALENDAR -->
+                    <div class="chart-box">
+                        <div style="font-family:'Orbitron'; font-size:0.7rem; font-weight:900; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>MINI CALENDAR</span>
+                            <span id="cal_month" style="color:var(--accent-blue); font-size:0.6rem;">-</span>
+                        </div>
+                        <div id="cal_grid" class="calendar-grid">
+                            <!-- JS RENDER -->
+                        </div>
+                    </div>
+
+                    <!-- TASK REMINDER -->
+                    <div class="chart-box">
+                        <div style="font-family:'Orbitron'; font-size:0.7rem; font-weight:900; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">MONITORING DEADLINE (FASE 3)</div>
+                        <div id="rem_task_list" style="max-height:500px; overflow-y:auto; padding-right:10px;">
+                            <!-- CONTENT -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ANALISA KEBERSIHAN -->
+        <section id="view-analysa-cleaning" class="view-content">
+            <div class="form-card" style="max-width:1000px; margin-bottom:30px;">
+                <div style="font-family:'Orbitron'; font-size:0.8rem; font-weight:900; color:var(--accent-blue); margin-bottom:20px; letter-spacing:2px;">FILTER ANALISA KEBERSIHAN</div>
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px;">
+                    <div><label>DARI TANGGAL</label><input type="date" id="ac_start" onchange="renderAnalysaCleaning()"></div>
+                    <div><label>SAMPAI TANGGAL</label><input type="date" id="ac_end" onchange="renderAnalysaCleaning()"></div>
+                    <div><label>GUDANG</label><select id="ac_wh" onchange="renderAnalysaCleaning()"><option value="SEMUA">-- SEMUA GUDANG --</option><option>GUDANG A</option><option>GUDANG B</option><option>GUDANG C</option><option>GUDANG D</option><option>GUDANG E</option><option>GUDANG F</option><option>GUDANG HINO</option><option>GUDANG RM</option></select></div>
+                    <div><label>SHIFT</label><select id="ac_shift" onchange="renderAnalysaCleaning()"><option value="SEMUA">-- SEMUA SHIFT --</option><option>SHIFT 1</option><option>SHIFT 2</option><option>SHIFT 3</option></select></div>
+                </div>
+            </div>
+
+            <div class="stats-row" style="max-width:1000px; margin: 0 auto 25px auto;">
+                <div class="top-card" style="border-left-color: var(--accent-blue)"><div><div class="lbl">TOTAL AKTIVITAS</div><div class="val" id="ac_total_act">0</div></div><i class="fas fa-tasks"></i></div>
+                <div class="top-card" style="border-left-color: var(--accent-orange)"><div><div class="lbl">ITEM TERBANYAK</div><div class="val" id="ac_top_item" style="font-size:1.1rem;">-</div></div><i class="fas fa-fire"></i></div>
+            </div>
+
+            <div class="analysa-grid" style="max-width:1000px; margin: 0 auto;">
+                <div class="chart-box">
+                    <div style="font-family:'Orbitron'; font-size:0.7rem; font-weight:900; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">DISTRIBUSI PEKERJAAN (%)</div>
+                    <canvas id="ac_dist_chart" style="max-height:300px;"></canvas>
+                </div>
+                <div class="chart-box">
+                    <div style="font-family:'Orbitron'; font-size:0.7rem; font-weight:900; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">RINCIAN PER GUDANG & SHIFT</div>
+                    <div id="ac_unit_breakdown" style="max-height:500px; overflow-y:auto; padding-right:10px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ANALISA MAINTENANCE -->
+        <section id="view-analysa-maintenance" class="view-content">
+            <div class="form-card" style="max-width:1000px; margin-bottom:30px;">
+                <div style="font-family:'Orbitron'; font-size:0.8rem; font-weight:900; color:var(--accent-orange); margin-bottom:20px; letter-spacing:2px;">FILTER ANALISA MAINTENANCE (DONE ONLY)</div>
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px;">
+                    <div><label>DARI TANGGAL</label><input type="date" id="am_start" onchange="renderAnalysaMaintenance()"></div>
+                    <div><label>SAMPAI TANGGAL</label><input type="date" id="am_end" onchange="renderAnalysaMaintenance()"></div>
+                    <div><label>GUDANG</label><select id="am_wh" onchange="renderAnalysaMaintenance()"><option value="SEMUA">-- SEMUA GUDANG --</option><option>GUDANG A</option><option>GUDANG B</option><option>GUDANG C</option><option>GUDANG D</option><option>GUDANG E</option><option>GUDANG F</option><option>GUDANG HINO</option><option>GUDANG RM</option></select></div>
+                    <div><label>SHIFT</label><select id="am_shift" onchange="renderAnalysaMaintenance()"><option value="SEMUA">-- SEMUA SHIFT --</option><option>SHIFT 1</option><option>SHIFT 2</option><option>SHIFT 3</option></select></div>
+                </div>
+            </div>
+
+            <div class="stats-row" style="max-width:1000px; margin: 0 auto 25px auto;">
+                <div class="top-card" style="border-left-color: var(--accent-orange)"><div><div class="lbl">TOTAL PERBAIKAN</div><div class="val" id="am_total_act">0</div></div><i class="fas fa-check-double"></i></div>
+                <div class="top-card" style="border-left-color: var(--accent-red)"><div><div class="lbl">KENDALA DOMINAN</div><div class="val" id="am_top_item" style="font-size:1.1rem;">-</div></div><i class="fas fa-wrench"></i></div>
+            </div>
+
+            <div class="analysa-grid" style="max-width:1000px; margin: 0 auto;">
+                <div class="chart-box">
+                    <div style="font-family:'Orbitron'; font-size:0.7rem; font-weight:900; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">DISTRIBUSI KENDALA (%)</div>
+                    <canvas id="am_dist_chart" style="max-height:300px;"></canvas>
+                </div>
+                <div class="chart-box">
+                    <div style="font-family:'Orbitron'; font-size:0.7rem; font-weight:900; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">PENYELESAIAN PER GUDANG</div>
+                    <div id="am_unit_breakdown" style="max-height:500px; overflow-y:auto; padding-right:10px;"></div>
+                </div>
+            </div>
         </section>
 
         <!-- HISTORY -->
@@ -469,7 +608,7 @@
             <div style="margin-bottom:20px;">
                 <label>FILTER ITEM PEKERJAAN</label>
                 <select id="l_filter" onchange="renderSmartGrid()" style="border:2.5px solid var(--accent-blue); font-size:0.8rem;">
-                    <option value="SEMUA">SEMUA PEKERJAAN (GLOBAL)</option>
+                    <option value="SEMUA">TERAKHIR DIBERSIHKAN (GLOBAL)</option>
                     <option value="DRAINASE">DRAINASE (SALURAN)</option>
                     <option value="SAWANG ATAP">SAWANG ATAP</option>
                     <option value="LANTAI">LANTAI UNIT</option>
@@ -485,6 +624,38 @@
                 <div id="l_staff" style="font-size:0.7rem; margin-top:3px; font-weight:700;">Petugas: -</div>
             </div>
             <button class="btn-act" style="width:100%; margin-top:20px; background:#f1f5f9; color:var(--text-main); border:none; padding:15px; font-family:'Orbitron'; font-weight:800;" onclick="document.getElementById('l_modal').style.display='none'">KEMBALI KE DASHBOARD</button>
+        </div>
+    </div>
+
+    <!-- MODAL SELESAI CEKLIS (AFTER) -->
+    <div id="m_checklist_after" class="modal" onclick="if(event.target===this) this.style.display='none'">
+        <div class="m-box">
+            <h3 style="font-family:'Orbitron'; color:var(--accent-blue); margin-bottom:25px;">2. AFTER (SELESAI)</h3>
+            <div style="margin-bottom:20px;">
+                <label>JAM SELESAI</label>
+                <input type="time" id="ca_end">
+            </div>
+            
+            <label>FOTO HASIL (AFTER)</label>
+            <div class="photo-btn" style="background:var(--accent-green); color:#fff;" onclick="openPhotoPicker('ca_cam', 'ca_gal')">
+                <i class="fas fa-camera"></i>
+                <span>AMBIL / UNGGAH FOTO AFTER</span>
+            </div>
+            <input type="file" id="ca_cam" accept="image/*" capture="environment" style="display:none" onchange="uploadPhoto(this, 'ca_url', 'ca_prev')">
+            <input type="file" id="ca_gal" accept="image/*" style="display:none" onchange="uploadPhoto(this, 'ca_url', 'ca_prev')">
+            
+            <div id="ca_prev_wrap" style="margin-top:15px; display:none; position:relative;">
+                <img id="ca_prev" style="width:100%; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
+                <div onclick="resetPhoto('ca_cam', 'ca_gal', 'ca_prev_wrap', 'ca_url')" style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.9); color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+            <input type="hidden" id="ca_url">
+            <input type="hidden" id="ca_id">
+            
+            <br>
+            <button class="btn-act" style="background:var(--accent-green); color:#fff; width:100%; padding:20px; font-weight:900;" onclick="submitAfterChecklist()">SIMPAN DATA SELESAI 🏁</button>
+            <button class="btn-act" style="width:100%; margin-top:10px; background:#f1f5f9; color:var(--text-main); border:none; padding:15px; font-family:'Orbitron'; font-weight:800;" onclick="document.getElementById('m_checklist_after').style.display='none'">BATAL</button>
         </div>
     </div>
 
@@ -543,6 +714,21 @@
                     btn.classList.add('active'); 
                 }
 
+                if(v === 'checklist') {
+                    switchChecklistTab('before');
+                }
+                
+                if(v === 'analysa') {
+                    // Set default dates if empty
+                    if(!document.getElementById('a_start').value) {
+                        const now = new Date();
+                        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                        document.getElementById('a_start').valueAsDate = firstDay;
+                        document.getElementById('a_end').valueAsDate = now;
+                    }
+                    renderAnalysa();
+                }
+
                 // Hide loading
                 document.getElementById('global_loader').style.display = 'none';
 
@@ -552,6 +738,80 @@
                     toggleSidebar();
                 }
             }, 300);
+        }
+
+        // --- CHECKLIST TAB SWITCHER ---
+        function switchChecklistTab(t) {
+            document.querySelectorAll('#view-checklist .tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab_c_' + t).classList.add('active');
+            
+            if(t === 'before') {
+                document.getElementById('c_form_before').style.display = 'block';
+                document.getElementById('c_list_after').style.display = 'none';
+            } else {
+                document.getElementById('c_form_before').style.display = 'none';
+                document.getElementById('c_list_after').style.display = 'block';
+                renderAfterList();
+            }
+        }
+
+        function renderAfterList() {
+            const body = document.getElementById('c_after_body');
+            let h = '';
+            window.cleaningHistory.slice().reverse().forEach(l => {
+                if(!l.notes.includes('"type":"CLEAN"')) return;
+                const meta = JSON.parse(l.notes);
+                if(meta.status !== 'PROSES') return;
+
+                h += `<tr style="border-bottom:1px solid #eee">
+                    <td style="padding:15px;"><div style="font-size:0.7rem; color:#64748b;">${new Date(l.tanggal).toLocaleDateString('id-ID')}</div><div>${meta.shift || '-'}</div></td>
+                    <td>${l.gudang}</td>
+                    <td><div style="color:var(--accent-blue)">${meta.item}</div><div style="font-size:0.6rem; color:#94a3b8;">AREA: ${meta.pts.join(',')}</div></td>
+                    <td><span class="badge" style="background:#f1f5f9; color:var(--text-main);">${meta.start}</span></td>
+                    <td style="text-align:center;"><i class="fas fa-image" style="color:#0ea5e9; cursor:pointer;" onclick="Swal.fire({imageUrl:'${l.photoUrl}', imageWidth:'100%', borderRadius:'20px'})"></i></td>
+                    <td>
+                        <button class="btn-act" style="background:var(--accent-green); color:#fff; font-size:0.65rem; border:none;" onclick="openAfterModal('${l.tanggal}')">UPDATE AFTER</button>
+                    </td>
+                </tr>`;
+            });
+            body.innerHTML = h || '<tr><td colspan="6" style="padding:40px; text-align:center; color:#94a3b8;">TIDAK ADA TUGAS BERJALAN</td></tr>';
+        }
+
+        function openAfterModal(id) {
+            const l = window.cleaningHistory.find(x => x.tanggal === id);
+            if(!l) return;
+            document.getElementById('ca_id').value = id;
+            document.getElementById('ca_url').value = "";
+            document.getElementById('ca_prev_wrap').style.display = 'none';
+            document.getElementById('m_checklist_after').style.display = 'flex';
+        }
+
+        async function submitAfterChecklist() {
+            const id = document.getElementById('ca_id').value;
+            const end = document.getElementById('ca_end').value;
+            const photo_after = document.getElementById('ca_url').value;
+
+            if(!end || !photo_after) return Swal.fire('Error', 'Lengkapi Jam Selesai & Foto After!', 'error');
+
+            const oldLog = window.cleaningHistory.find(l => l.tanggal === id);
+            const oldMeta = JSON.parse(oldLog.notes);
+            
+            const newMeta = { 
+                ...oldMeta, 
+                status: "DONE", 
+                end: end, 
+                photo_after: photo_after 
+            };
+            
+            const p = { 
+                action: 'saveCleaningReport', 
+                tanggal: id, 
+                gudang: oldLog.gudang, 
+                petugas: oldLog.petugas, 
+                photoUrl: photo_after, // Kita update photoUrl utama jadi After photo
+                notes: JSON.stringify(newMeta) 
+            };
+            await performSync(p);
         }
 
         async function loadData() {
@@ -588,6 +848,17 @@
             renderDashboard();
         }
 
+        function calculateDuration(start, end) {
+            if(!start || !end) return "-";
+            const [h1, m1] = start.split(':').map(Number);
+            const [h2, m2] = end.split(':').map(Number);
+            let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+            if(diff < 0) diff += 24 * 60;
+            const h = Math.floor(diff / 60);
+            const m = diff % 60;
+            return (h > 0 ? h + "j " : "") + m + "m";
+        }
+
         function renderDashboard() {
             const grid = document.getElementById('integrated_grid');
             const warehouses = ["GUDANG A", "GUDANG B", "GUDANG C", "GUDANG D", "GUDANG E", "GUDANG F", "GUDANG HINO", "GUDANG RM"];
@@ -595,19 +866,80 @@
 
             if(currentDashMode === 'ONE') {
                 warehouses.forEach(wh => {
-                    const score = 80 + Math.floor(Math.random()*15);
-                    grid.innerHTML += `
-                        <div class="mini-card" style="border-top:4px solid var(--accent-blue)">
-                            <div style="font-family:'Orbitron'; font-size:0.75rem; font-weight:900; margin-bottom:15px;">${wh}</div>
-                            <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
-                                <div class="gauge-wrap" style="width:70px; height:70px; position:relative;">
-                                    <svg width="70" height="70"><circle class="gauge-bg" cx="35" cy="35" r="30" style="fill:none; stroke:#f1f5f9; stroke-width:6;"></circle>
-                                    <circle cx="35" cy="35" r="30" style="fill:none; stroke:var(--accent-green); stroke-width:6; stroke-dasharray:${(score/100)*188.5},188.5; transform:rotate(-90deg); transform-origin:center; stroke-linecap:round; transition:1s;"></circle></svg>
-                                    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'Orbitron'; font-size:0.8rem; font-weight:900;">${score}%</div>
-                                </div>
-                                <div style="font-size:0.6rem; font-weight:800; color:var(--accent-green);">UNIT CLEAN</div>
+                    // Filter logs for this warehouse that are cleaning reports
+                    const logs = window.cleaningHistory.filter(l => l.gudang === wh && l.notes.includes('"type":"CLEAN"')).reverse();
+                    
+                    // Find if there is an active task (PROSES)
+                    const activeLog = logs.find(l => {
+                        try {
+                            const m = JSON.parse(l.notes);
+                            return m.status === 'PROSES';
+                        } catch(e) { return false; }
+                    });
+
+                    // Find the last completed task (DONE)
+                    const lastDone = logs.find(l => {
+                        try {
+                            const m = JSON.parse(l.notes);
+                            return m.status === 'DONE';
+                        } catch(e) { return false; }
+                    });
+
+                    let scoreText = 'IDLE';
+                    let scoreColor = 'var(--text-muted)';
+                    let activityHtml = '';
+                    
+                    if(activeLog) {
+                        const m = JSON.parse(activeLog.notes);
+                        const pct = Math.round((m.pts ? m.pts.length : 0) / 20 * 100);
+                        scoreText = `${pct}%`;
+                        scoreColor = 'var(--accent-orange)';
+                        
+                        activityHtml = `
+                            <div style="position:relative; margin-bottom:10px;">
+                                <img src="${m.photo_before || ''}" style="width:100%; height:80px; object-fit:cover; border-radius:8px; opacity:0.6; background:#e2e8f0;">
+                                <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-family:'Orbitron'; font-size:0.6rem; font-weight:900; background:rgba(0,0,0,0.3); text-shadow:0 0 5px #000;">PROGRESS CLEANING</div>
                             </div>
-                            <div class="action-btns">
+                            <div style="text-align:center;">
+                                <div style="font-size:0.65rem; font-weight:900; color:var(--text-main); margin-bottom:2px;">${m.item || '-'}</div>
+                                <div style="font-size:0.55rem; font-weight:800; color:var(--accent-orange);">MULAI: ${m.start || '-'}</div>
+                            </div>
+                        `;
+                    } else {
+                        // Jika tidak ada PROSES, maka IDLE (biarpun aktivitas terakhir DONE)
+                        scoreText = 'IDLE';
+                        scoreColor = 'var(--text-muted)';
+                        
+                        const lastAny = logs[0];
+                        if(lastAny) {
+                            const lastDate = new Date(lastAny.tanggal).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
+                            const lastTime = new Date(lastAny.tanggal).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+                            activityHtml = `
+                                <div style="text-align:center; padding:20px;">
+                                    <div style="font-size:0.7rem; font-weight:900; color:var(--text-muted); letter-spacing:1px; margin-bottom:5px;">STATUS: IDLE</div>
+                                    <div style="font-size:0.55rem; color:#94a3b8; font-weight:700;">TERAKHIR: ${lastDate} ${lastTime}</div>
+                                </div>
+                            `;
+                        } else {
+                            activityHtml = `
+                                <div style="text-align:center; padding:20px;">
+                                    <div style="font-size:0.7rem; font-weight:900; color:var(--text-muted); letter-spacing:1px;">STATUS: IDLE</div>
+                                    <div style="font-size:0.55rem; color:#94a3b8; margin-top:5px; font-weight:700;">BELUM PERNAH DIBERSIHKAN</div>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    grid.innerHTML += `
+                        <div class="mini-card" style="border-top:4px solid ${activeLog ? 'var(--accent-orange)' : 'var(--accent-blue)'}">
+                            <div style="font-family:'Orbitron'; font-size:0.75rem; font-weight:900; margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+                                <span>${wh}</span>
+                                <span style="font-size:0.65rem; color:${scoreColor};">${scoreText}</span>
+                            </div>
+                            
+                            ${activityHtml}
+
+                            <div class="action-btns" style="margin-top:15px;">
                                 <div class="btn-act" onclick="showLastLayout('${wh}')">LAYOUT</div>
                                 <div class="btn-act" onclick="showMaintenanceShortcut('${wh}')">MAINTENANCE</div>
                             </div>
@@ -666,6 +998,142 @@
             document.getElementById('tab_' + t).classList.add('active');
             document.getElementById('issue_form_krani').style.display = t === 'lapor' ? 'block' : 'none';
             document.getElementById('issue_list_sv').style.display = t === 'kelola' ? 'block' : 'none';
+            document.getElementById('issue_reminder').style.display = t === 'reminder' ? 'block' : 'none';
+            if(t === 'reminder') renderMaintenanceReminder();
+        }
+
+        function renderMaintenanceReminder() {
+            const list = document.getElementById('rem_task_list');
+            const calWrapper = document.getElementById('cal_grid');
+            list.innerHTML = '';
+            calWrapper.innerHTML = '';
+            calWrapper.style.display = 'block'; // Make it stackable
+
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+            const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+
+            // 1. FILTER DATA PHASE 3 (IN PROGRESS)
+            const tasks = window.cleaningHistory.filter(l => {
+                if(!l.notes.includes('"type":"ISSUE"')) return false;
+                const m = JSON.parse(l.notes);
+                return m.status === 'IN PROGRESS';
+            }).sort((a,b) => {
+                const ma = JSON.parse(a.notes);
+                const mb = JSON.parse(b.notes);
+                return new Date(ma.v_due) - new Date(mb.v_due);
+            });
+
+            const deadlines = tasks.map(t => JSON.parse(t.notes).v_due);
+
+            // 2. FIND MAX DUE DATE FOR MONTH RANGE
+            let maxDueMonth = currentMonth;
+            let maxDueYear = currentYear;
+            tasks.forEach(t => {
+                const d = new Date(JSON.parse(t.notes).v_due);
+                if(d.getFullYear() > maxDueYear || (d.getFullYear() === maxDueYear && d.getMonth() > maxDueMonth)) {
+                    maxDueYear = d.getFullYear();
+                    maxDueMonth = d.getMonth();
+                }
+            });
+            const monthDiff = (maxDueYear - currentYear) * 12 + (maxDueMonth - currentMonth);
+
+            // 3. RENDER ALL MONTHS IN RANGE
+            for(let m=0; m<=monthDiff; m++) {
+                const renderDate = new Date(currentYear, currentMonth + m, 1);
+                const rYear = renderDate.getFullYear();
+                const rMonth = renderDate.getMonth();
+                
+                let monthHtml = `
+                    <div style="margin-bottom:25px; animation: fadeIn 0.5s;">
+                        <div style="font-family:'Orbitron'; font-size:0.6rem; font-weight:900; color:var(--accent-blue); margin-bottom:12px; text-align:center; border-bottom:1px dashed #cbd5e1; padding-bottom:8px; letter-spacing:1.5px;">${monthNames[rMonth]} ${rYear}</div>
+                        <div class="calendar-grid" style="margin-top:0; padding:15px; background:rgba(248, 250, 252, 0.5); border-radius:20px;">
+                            <div class="cal-head">S</div><div class="cal-head">M</div><div class="cal-head">T</div>
+                            <div class="cal-head">W</div><div class="cal-head">T</div><div class="cal-head">F</div><div class="cal-head">S</div>
+                `;
+                
+                const firstDay = new Date(rYear, rMonth, 1).getDay();
+                const daysInMonth = new Date(rYear, rMonth + 1, 0).getDate();
+                for(let i=0; i<firstDay; i++) monthHtml += '<div></div>';
+                
+                for(let i=1; i<=daysInMonth; i++) {
+                    const dateStr = `${rYear}-${String(rMonth+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                    const isToday = i === now.getDate() && rMonth === now.getMonth() && rYear === currentYear;
+                    const hasDue = deadlines.includes(dateStr);
+                    monthHtml += `
+                        <div class="cal-date ${isToday ? 'today':''} ${hasDue ? 'has-due':''}">
+                            ${i}
+                            ${hasDue ? '<div class="cal-dot"></div>':''}
+                        </div>
+                    `;
+                }
+                monthHtml += `</div></div>`;
+                calWrapper.innerHTML += monthHtml;
+            }
+
+            // 4. RENDER TASK CARDS
+            tasks.forEach(t => {
+                const m = JSON.parse(t.notes);
+                const due = new Date(m.v_due);
+                const diff = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+                const urgencyColor = diff <= 1 ? 'var(--accent-red)' : (diff <= 3 ? 'var(--accent-orange)' : 'var(--accent-blue)');
+
+                list.innerHTML += `
+                    <div class="reminder-card" style="cursor:pointer;" onclick="if(event.target.tagName !== 'BUTTON' && event.target.tagName !== 'I') showIssueDetail('${t.tanggal}')">
+                        <div class="rem-icon"><i class="fas fa-tools"></i></div>
+                        <div>
+                            <div style="font-family:'Orbitron'; font-size:0.7rem; font-weight:900; color:var(--text-main); margin-bottom:5px;">${t.gudang} | ${m.cat}</div>
+                            <div style="font-size:0.6rem; color:var(--text-muted); font-weight:700;">PIC: ${m.v_pic || 'TBA'}</div>
+                            <div style="font-size:0.52rem; color:#94a3b8; font-weight:800; margin-top:3px;">TARGET: ${new Date(m.v_due).toLocaleDateString('id-ID')}</div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <div class="countdown-pill" style="border-color:${urgencyColor}44; width:100%; box-sizing:border-box;">
+                                <span class="countdown-val" style="color:${urgencyColor}">${diff === 0 ? 'HARI INI' : (diff < 0 ? 'OVERDUE' : diff + ' HARI')}</span>
+                                <span class="countdown-lbl">${diff < 0 ? 'TERLAMBAT' : 'SISA WAKTU'}</span>
+                            </div>
+                            <button class="btn-act" style="width:100%; border-color:var(--accent-green); color:var(--accent-green); font-size:0.5rem; padding:6px; font-weight:900; background:rgba(16, 185, 129, 0.05);" onclick="openCloseModal('${t.tanggal}', '${t.gudang}')">
+                                <i class="fas fa-check-circle"></i> UPDATE AFTER
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if(tasks.length === 0) list.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8; font-weight:700;">TIDAK ADA TUGAS FASE 3</div>';
+        }
+
+        function showIssueDetail(id) {
+            const l = window.cleaningHistory.find(x => x.tanggal === id);
+            if(!l) return;
+            const m = JSON.parse(l.notes);
+            Swal.fire({
+                title: `<div style="font-family:'Orbitron'; font-size:1rem; color:var(--accent-blue);">DETAIL LAPORAN: ${l.gudang}</div>`,
+                html: `
+                    <div style="display:grid; grid-template-columns:1fr; gap:15px; text-align:left; font-family:'Inter'; font-size:0.8rem;">
+                        <div style="position:relative;">
+                            <img src="${l.photoUrl}" style="width:100%; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.1); aspect-ratio:4/3; object-fit:cover;">
+                            <span style="position:absolute; bottom:10px; left:10px; background:rgba(245,158,11,0.9); color:#fff; font-size:0.6rem; font-weight:900; padding:5px 12px; border-radius:8px; font-family:'Orbitron';">FOTO BEFORE</span>
+                        </div>
+                        <div style="background:#f8fafc; padding:20px; border-radius:20px; border:1px solid #eee; display:grid; grid-template-columns:105px 1fr; gap:10px; line-height:1.4;">
+                            <b style="color:#64748b;">KATEGORI:</b> <span style="font-weight:900; color:var(--accent-blue);">${m.cat}</span>
+                            <b style="color:#64748b;">URGENSI:</b> <span style="font-weight:900; color:${m.urgency === 'TINGGI' ? 'var(--accent-red)' : 'var(--accent-blue)'};">${m.urgency}</span>
+                            <b style="color:#64748b;">LOKASI:</b> <span style="font-weight:700;">${m.loc || '-'}</span>
+                            <b style="color:#64748b;">PELAPOR:</b> <span>${l.petugas} (${m.shift || '-'})</span>
+                            <b style="color:#64748b;">DESKRIPSI:</b> <span style="color:#475569;">${m.desc || '-'}</span>
+                            <hr style="grid-column: span 2; width:100%; border:0.5px dashed #cbd5e1; margin:10px 0;">
+                            <b style="color:#64748b;">TINDAKAN:</b> <span style="font-weight:700;">${m.v_dec || '-'}</span>
+                            <b style="color:#64748b;">PIC TUGAS:</b> <span style="font-weight:900; color:var(--accent-green);">${m.v_pic || '-'}</span>
+                            <b style="color:#64748b;">DUE DATE:</b> <span style="font-weight:900;">${new Date(m.v_due).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</span>
+                        </div>
+                    </div>
+                `,
+                confirmButtonText: 'TUTUP',
+                confirmButtonColor: 'var(--accent-blue)',
+                width: '500px',
+                padding: '1.5rem',
+                borderRadius: '30px'
+            });
         }
 
         function renderIssueBoard() {
@@ -802,6 +1270,8 @@
             document.querySelectorAll('section').forEach(s => s.style.display = 'none');
             document.getElementById('view-' + v).style.display = 'block';
             if(btn) { document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); btn.classList.add('active'); }
+            if(v === 'analysa-cleaning') renderAnalysaCleaning();
+            if(v === 'analysa-maintenance') renderAnalysaMaintenance();
         }
 
         let currentWhForLayout = "";
@@ -820,36 +1290,90 @@
             const grid = document.getElementById('l_grid');
             grid.innerHTML = '';
 
+            // --- TAMPILAN TERAKHIR DIBERSIHKAN (DARI SEMUA / GLOBAL) ---
+            if(filter === 'SEMUA') {
+                grid.classList.remove('floor-grid');
+                grid.style.display = 'block';
+                grid.style.aspectRatio = 'auto';
+                grid.style.height = 'auto';
+                grid.style.background = 'transparent';
+                grid.style.padding = '0';
+                grid.style.border = 'none';
+
+                const logs = window.cleaningHistory.filter(l => l.gudang === currentWhForLayout && l.notes.includes('"type":"CLEAN"')).reverse();
+                const last = logs[0];
+
+                if(last) {
+                    const m = JSON.parse(last.notes);
+                    const dur = calculateDuration(m.start, m.end);
+                    const d = new Date(last.tanggal);
+                    const dateStr = d.toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+                    const timeStr = d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+
+                    grid.innerHTML = `
+                        <div style="background:#fff; border-radius:24px; border:1px solid #eee; overflow:hidden; animation:fadeIn 0.5s; box-shadow: 0 10px 40px rgba(0,0,0,0.05);">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; background:#f8fafc; padding:20px; border-bottom:1px solid #eee;">
+                                <div style="text-align:center;">
+                                    <div style="font-size:0.6rem; font-weight:800; color:#64748b; margin-bottom:10px;">FOTO BEFORE</div>
+                                    <img src="${m.photo_before}" style="width:100%; border-radius:15px; aspect-ratio:4/3; object-fit:cover; border:1px solid #ddd; box-shadow:0 5px 15px rgba(0,0,0,0.05);">
+                                </div>
+                                <div style="text-align:center;">
+                                    <div style="font-size:0.6rem; font-weight:800; color:var(--accent-green); margin-bottom:10px;">FOTO AFTER</div>
+                                    <img src="${m.photo_after || ''}" style="width:100%; border-radius:15px; aspect-ratio:4/3; object-fit:cover; border:1px solid #ddd; background:#fff; box-shadow:0 5px 15px rgba(0,0,0,0.05);" onerror="this.src='https://via.placeholder.com/300x225?text=BELUM+ADA+FOTO+AFTER'">
+                                </div>
+                            </div>
+                            <div style="padding:25px; display:grid; grid-template-columns:repeat(2, 1fr); gap:20px; font-size:0.8rem;">
+                                <div><label style="font-size:0.55rem; color:#94a3b8; font-weight:900; margin-bottom:5px; display:block;">PETUGAS</label><div style="font-weight:900; color:var(--text-main); font-family:'Orbitron'; font-size:0.75rem;">${last.petugas}</div></div>
+                                <div><label style="font-size:0.55rem; color:#94a3b8; font-weight:900; margin-bottom:5px; display:block;">WAKTU AKTIVITAS</label><div style="font-weight:800;">${dateStr} <span style="color:#cbd5e1;">|</span> ${timeStr}</div></div>
+                                <div><label style="font-size:0.55rem; color:#94a3b8; font-weight:900; margin-bottom:5px; display:block;">ITEM PEKERJAAN</label><div style="font-weight:900; color:var(--accent-blue);">${m.item}</div></div>
+                                <div><label style="font-size:0.55rem; color:#94a3b8; font-weight:900; margin-bottom:5px; display:block;">DURASI PENGERJAAN</label><div style="font-weight:900; color:var(--accent-green);"><i class="fas fa-clock" style="margin-right:5px;"></i> ${dur} (${m.start} - ${m.end || '?'})</div></div>
+                                <div><label style="font-size:0.55rem; color:#94a3b8; font-weight:900; margin-bottom:5px; display:block;">SHIFT</label><div style="font-weight:800;">${m.shift || '-'}</div></div>
+                                <div><label style="font-size:0.55rem; color:#94a3b8; font-weight:900; margin-bottom:5px; display:block;">AREA YANG DIBERSIHKAN</label><div style="font-weight:800; color:var(--accent-blue);">AREA [${m.pts ? m.pts.join(', ') : '-'}]</div></div>
+                            </div>
+                        </div>`;
+                } else {
+                    grid.innerHTML = `<div style="padding:60px; text-align:center; color:#94a3b8; font-weight:700;">BELUM ADA RIWAYAT PENGERJAAN DI GUDANG INI</div>`;
+                }
+                return;
+            }
+
+            // --- TAMPILAN LAYOUT GRID (UNTUK FILTER KATEGORI LAIN) ---
+            grid.classList.add('floor-grid');
+            grid.style.display = 'grid';
+            grid.style.aspectRatio = '5/4';
+            grid.style.background = '#e2e8f0';
+            grid.style.padding = '10px';
+            grid.style.border = '5px solid var(--accent-blue)';
+
             // Build Point History Map
             const pointMap = {}; 
-            for(let i=1; i<=20; i++) pointMap[i] = { date: '', staff: '' };
+            for(let i=1; i<=20; i++) pointMap[i] = { date: '', staff: '', item: '', photo_before: '', photo_after: '', start: '', end: '', duration: '', shift: '' };
 
             // Scan history from oldest to newest to get latest
             window.cleaningHistory.forEach(l => {
                 if(l.gudang !== currentWhForLayout) return;
                 
-                let pts = [];
-                let item = "";
-                let ok = false;
-
+                let m = {};
                 if(l.notes.startsWith('{')) {
-                    const meta = JSON.parse(l.notes);
-                    pts = meta.pts || [];
-                    item = meta.item || "";
-                } else if(l.notes.includes('Area:[')) {
-                    pts = l.notes.split('Area:[')[1].split(']')[0].split(',').map(n => parseInt(n));
-                    if(l.notes.includes('Item:[')) item = l.notes.split('Item:[')[1].split(']')[0];
-                }
+                    m = JSON.parse(l.notes);
+                    if(m.type !== 'CLEAN') return;
+                } else return;
 
-                if(filter === 'SEMUA' || item.includes(filter)) {
+                if(filter === 'SEMUA' || m.item.includes(filter)) {
+                    const pts = m.pts || [];
                     pts.forEach(p => {
                         const d = new Date(l.tanggal);
                         pointMap[p] = { 
-                            date: d.toLocaleDateString('id-ID', {day:'numeric', month:'numeric'}),
+                            date: d.toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'}),
                             time: d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}),
                             staff: l.petugas,
-                            photo: l.photoUrl,
-                            item: item
+                            item: m.item,
+                            photo_before: m.photo_before,
+                            photo_after: m.photo_after,
+                            start: m.start,
+                            end: m.end,
+                            duration: calculateDuration(m.start, m.end),
+                            shift: m.shift
                         };
                     });
                 }
@@ -867,23 +1391,35 @@
                     d.style.color = '#fff';
                     d.style.cursor = 'pointer';
                     d.onclick = () => {
+                        const p = pointMap[i];
                         Swal.fire({
-                            title: `AREA [${i}] - ${pointMap[i].item}`,
-                            html: `<div style="text-align:left; font-family:'Inter';">
-                                    <b>Petugas:</b> ${pointMap[i].staff}<br>
-                                    <b>Waktu:</b> ${pointMap[i].date} pukul ${pointMap[i].time}
-                                   </div>`,
-                            imageUrl: pointMap[i].photo,
-                            imageWidth: '100%',
-                            imageAlt: 'Bukti Pengerjaan',
+                            title: `DETAIL AREA [${i}] - ${p.item}`,
+                            html: `
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+                                    <div style="text-align:center;">
+                                        <div style="font-size:0.55rem; font-weight:800; color:#64748b; margin-bottom:5px;">FOTO BEFORE</div>
+                                        <img src="${p.photo_before}" style="width:100%; border-radius:10px; border:1px solid #eee; aspect-ratio:4/3; object-fit:cover;">
+                                    </div>
+                                    <div style="text-align:center;">
+                                        <div style="font-size:0.55rem; font-weight:800; color:var(--accent-green); margin-bottom:5px;">FOTO AFTER</div>
+                                        <img src="${p.photo_after || ''}" style="width:100%; border-radius:10px; border:1px solid #eee; background:#f8fafc; aspect-ratio:4/3; object-fit:cover;" onerror="this.src='https://via.placeholder.com/150?text=BELUM+ADAFTER'">
+                                    </div>
+                                </div>
+                                <div style="text-align:left; font-family:'Inter'; font-size:0.75rem; background:#f8fafc; padding:15px; border-radius:15px; display:grid; grid-template-columns:100px 1fr; gap:8px;">
+                                    <b style="color:#64748b;">PETUGAS:</b> <span style="font-weight:800;">${p.staff}</span>
+                                    <b style="color:#64748b;">WAKTU:</b> <span style="font-weight:800;">${p.date} (${p.start} - ${p.end || '?'})</span>
+                                    <b style="color:#64748b;">DURASI:</b> <span style="font-weight:800; color:var(--accent-green);"><i class="fas fa-clock"></i> ${p.duration}</span>
+                                    <b style="color:#64748b;">SHIFT:</b> <span style="font-weight:800;">${p.shift}</span>
+                                </div>
+                            `,
                             confirmButtonText: 'TUTUP',
                             confirmButtonColor: 'var(--accent-blue)',
-                            background: '#fff',
-                            borderRadius: '25px'
+                            borderRadius: '25px',
+                            width: '500px'
                         });
                     };
                     html = `
-                        <div style="font-size:0.5rem; font-weight:900;">${pointMap[i].date}</div>
+                        <div style="font-size:0.5rem; font-weight:900;">${pointMap[i].date.split(' ')[0]} ${pointMap[i].date.split(' ')[1]}</div>
                         <div style="font-size:0.4rem; opacity:0.8;">${pointMap[i].time}</div>
                         <div style="font-size:0.35rem; font-weight:800; margin-top:2px;">${pointMap[i].staff.split(' ')[0]}</div>
                     `;
@@ -984,7 +1520,8 @@
             const petugas = document.getElementById('c_staff').value;
             let item = document.getElementById('c_item').value;
             const start = document.getElementById('c_start').value;
-            const end = document.getElementById('c_end').value;
+            const date = document.getElementById('c_date').value;
+            const shift = document.getElementById('c_shift').value;
             const photoUrl = document.getElementById('c_url').value;
 
             // Handle Item Lainnya
@@ -994,16 +1531,156 @@
                 item = other.toUpperCase();
             }
 
-            if(!gudang || !petugas || selectedPts.length === 0 || !start || !end || !photoUrl) return Swal.fire('Error', 'Mohon lengkapi data!', 'error');
+            if(!gudang || !petugas || selectedPts.length === 0 || !start || !photoUrl || !date) return Swal.fire('Error', 'Mohon lengkapi data!', 'error');
             
             const meta = { 
                 type:"CLEAN", 
+                status:"PROSES",
+                date: date,
+                shift: shift,
                 item: item,
                 pts:selectedPts, 
-                jam: `${start}-${end}`
+                start: start,
+                photo_before: photoUrl
             };
             const p = { action:'saveCleaningReport', tanggal:new Date().toISOString(), gudang:gudang, petugas:petugas, photoUrl:photoUrl, notes:JSON.stringify(meta) };
             await performSync(p);
+        }
+        // --- ANALYSA LOGIC ---
+        let cleaningChart = null;
+        let maintenanceChart = null;
+
+        function renderAnalysaCleaning() {
+            const start = new Date(document.getElementById('ac_start').value);
+            const end = new Date(document.getElementById('ac_end').value);
+            const whFilter = document.getElementById('ac_wh').value;
+            const shiftFilter = document.getElementById('ac_shift').value;
+            end.setHours(23, 59, 59, 999);
+
+            const filtered = window.cleaningHistory.filter(l => {
+                const d = new Date(l.tanggal);
+                let notes = {}; try { notes = JSON.parse(l.notes); } catch(e) {}
+                const isClean = notes.type === 'CLEAN';
+                const dateMatch = d >= start && d <= end;
+                const whMatch = whFilter === 'SEMUA' || l.gudang === whFilter;
+                const shiftMatch = shiftFilter === 'SEMUA' || notes.shift === shiftFilter;
+                return isClean && dateMatch && whMatch && shiftMatch;
+            });
+
+            document.getElementById('ac_total_act').innerText = filtered.length;
+            const itemCounts = {};
+            filtered.forEach(l => {
+                const notes = JSON.parse(l.notes);
+                const item = notes.item || 'ROUTINE';
+                itemCounts[item] = (itemCounts[item] || 0) + 1;
+            });
+            const sortedItems = Object.entries(itemCounts).sort((a,b) => b[1] - a[1]);
+            document.getElementById('ac_top_item').innerText = sortedItems.length > 0 ? sortedItems[0][0] : '-';
+
+            initAnalysaCharts('ac_dist_chart', itemCounts, 'cleaning');
+            renderUnitBreakdown('ac_unit_breakdown', filtered);
+        }
+
+        function renderAnalysaMaintenance() {
+            const start = new Date(document.getElementById('am_start').value);
+            const end = new Date(document.getElementById('am_end').value);
+            const whFilter = document.getElementById('am_wh').value;
+            const shiftFilter = document.getElementById('am_shift').value;
+            end.setHours(23, 59, 59, 999);
+
+            const filtered = window.cleaningHistory.filter(l => {
+                const d = new Date(l.tanggal);
+                let notes = {}; try { notes = JSON.parse(l.notes); } catch(e) {}
+                const isIssue = notes.type === 'ISSUE' && notes.status === 'RESOLVED';
+                const dateMatch = d >= start && d <= end;
+                const whMatch = whFilter === 'SEMUA' || l.gudang === whFilter;
+                const shiftMatch = shiftFilter === 'SEMUA' || notes.shift === shiftFilter;
+                return isIssue && dateMatch && whMatch && shiftMatch;
+            });
+
+            document.getElementById('am_total_act').innerText = filtered.length;
+            const itemCounts = {};
+            filtered.forEach(l => {
+                const notes = JSON.parse(l.notes);
+                const item = notes.cat || 'LAIN-LAIN';
+                itemCounts[item] = (itemCounts[item] || 0) + 1;
+            });
+            const sortedItems = Object.entries(itemCounts).sort((a,b) => b[1] - a[1]);
+            document.getElementById('am_top_item').innerText = sortedItems.length > 0 ? sortedItems[0][0] : '-';
+
+            initAnalysaCharts('am_dist_chart', itemCounts, 'maintenance');
+            renderUnitBreakdown('am_unit_breakdown', filtered, true);
+        }
+
+        function initAnalysaCharts(canvasId, counts, mode) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            const labels = Object.keys(counts);
+            const data = Object.values(counts);
+            
+            if(mode === 'cleaning' && cleaningChart) cleaningChart.destroy();
+            if(mode === 'maintenance' && maintenanceChart) maintenanceChart.destroy();
+            
+            const chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: mode === 'cleaning' ? 
+                            ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'] :
+                            ['#f59e0b', '#ef4444', '#3b82f6', '#10b981', '#94a3b8', '#8b5cf6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Orbitron', size: 10 } } }
+                    }
+                }
+            });
+
+            if(mode === 'cleaning') cleaningChart = chart;
+            else maintenanceChart = chart;
+        }
+
+        function renderUnitBreakdown(containerId, data, isMaintenance = false) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            const groups = {};
+            data.forEach(l => {
+                const notes = JSON.parse(l.notes);
+                const key = isMaintenance ? `${l.gudang}` : `${l.gudang} | ${notes.shift || 'SHIFT -'}`;
+                if(!groups[key]) groups[key] = { total: 0, items: {} };
+                
+                const item = isMaintenance ? (notes.cat || 'LAIN-LAIN') : (notes.item || 'ROUTINE');
+                groups[key].items[item] = (groups[key].items[item] || 0) + 1;
+                groups[key].total++;
+            });
+
+            Object.entries(groups).forEach(([key, val]) => {
+                let itemsHtml = '';
+                Object.entries(val.items).forEach(([item, count]) => {
+                    const pct = Math.round((count / val.total) * 100);
+                    itemsHtml += `
+                        <div class="progress-label"><span>${item}</span><span>${pct}%</span></div>
+                        <div class="progress-bar-bg" style="margin-bottom:10px;"><div class="progress-fill" style="width:${pct}%; background:${isMaintenance ? 'var(--accent-orange)' : 'var(--accent-blue)'}"></div></div>
+                    `;
+                });
+
+                container.innerHTML += `
+                    <div class="progress-container">
+                        <div style="font-family:'Orbitron'; font-size:0.7rem; font-weight:900; color:${isMaintenance ? 'var(--accent-orange)' : 'var(--accent-blue)'}; margin-bottom:15px; border-bottom:1px dashed #cbd5e1; padding-bottom:5px;">${key}</div>
+                        ${itemsHtml}
+                    </div>
+                `;
+            });
+
+            if(Object.keys(groups).length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8;">DATA TIDAK DITEMUKAN</div>';
+            }
         }
     </script>
 </body>
