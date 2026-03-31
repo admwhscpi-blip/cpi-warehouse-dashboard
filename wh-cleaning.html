@@ -150,25 +150,27 @@
 
         /* --- MOBILE RESPONSIVE --- */
         .mob-toggle { 
-            display: none; position: fixed; top: 15px; left: 15px; z-index: 2100; background: #020617; 
+            display: none; position: fixed; top: 15px; left: 15px; z-index: 2200; background: #020617; 
             color: #06b6d4; width: 45px; height: 45px; border-radius: 12px; align-items: center; justify-content: center; 
             cursor: pointer; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); border: 1.5px solid rgba(6, 182, 212, 0.3);
         }
 
         @media (max-width: 768px) {
+            body { display: block; overflow: auto; height: auto; }
             .mob-toggle { display: flex; }
             .sidebar { 
-                position: fixed; left: -280px; top: 0; bottom: 0; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-                box-shadow: 20px 0 50px rgba(0,0,0,0.5);
+                position: fixed; left: 0; transform: translateX(-110%); top: 0; bottom: 0; 
+                width: 280px; z-index: 2300; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: none;
             }
-            .sidebar.open { left: 0; }
+            .sidebar.open { transform: translateX(0); box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
             .sidebar-overlay { 
                 display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); 
-                backdrop-filter: blur(5px); z-index: 1000; 
+                backdrop-filter: blur(5px); z-index: 2250; 
             }
             .sidebar-overlay.show { display: block; }
             
-            .main-content { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .main-content { margin-left: 0 !important; width: 100%; overflow-x: auto; padding: 0; }
             .dashboard-view, .view-content { padding: 80px 15px 30px 15px; min-width: 320px; }
             
             .top-stats { grid-template-columns: 1fr; gap: 12px; }
@@ -177,6 +179,15 @@
             .form-card { padding: 20px; border-radius: 15px; }
             .tab-wrap { flex-direction: column; width: 100%; gap: 5px; }
             .tab-btn { width: 100%; text-align: center; padding: 10px; }
+
+            /* Force Form Groups to stack if needed */
+            [style*="display:grid; grid-template-columns:1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+                gap: 15px !important;
+            }
+
+            /* Fix Image rendering in form */
+            #captured_image { max-width: 100%; height: auto; }
 
             /* Grid Layout Table Fix */
             .floor-grid { width: 100% !important; max-width: 100%; } 
@@ -192,6 +203,18 @@
             #i_global_item { width: 100%; }
         }
 
+        /* --- LOADING OVERLAY --- */
+        .loading-overlay {
+            position: fixed; inset: 0; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; gap: 20px;
+        }
+        .loader-ring {
+            width: 60px; height: 60px; border: 4px solid rgba(6, 182, 212, 0.1); border-top: 4px solid var(--accent-blue);
+            border-radius: 50%; animation: spin 1s linear infinite; box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+        }
+        .loading-text { font-family: 'Orbitron'; font-size: 0.8rem; color: var(--accent-blue); letter-spacing: 3px; text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -199,6 +222,12 @@
     <!-- MOBILE UI -->
     <div class="mob-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
     <div class="sidebar-overlay" id="sidebar_overlay" onclick="toggleSidebar()"></div>
+    
+    <!-- LOADING -->
+    <div class="loading-overlay" id="global_loader">
+        <div class="loader-ring"></div>
+        <div class="loading-text">SMART LOADING...</div>
+    </div>
 
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
@@ -286,15 +315,43 @@
                 </div>
                 <div id="grid_pan" style="display:none; margin-bottom:30px;"><label style="text-align:center;">MAPPING AREA (20 TITIK)</label><div id="f_grid" class="floor-grid"></div></div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
-                    <div><label>ITEM</label><select id="c_item"><option>DRAINASE</option><option>SAWANG ATAP</option><option>LANTAI</option><option>DINDING</option></select></div>
+                    <div>
+                        <label>ITEM</label>
+                        <select id="c_item" onchange="toggleOtherField(this.value, 'other_c_item_wrap')">
+                            <option>DRAINASE</option>
+                            <option>SAWANG ATAP</option>
+                            <option>LANTAI</option>
+                            <option>DINDING</option>
+                            <option value="LAINNYA">LAINNYA (TULIS SENDIRI)</option>
+                        </select>
+                        <div id="other_c_item_wrap" style="display:none; margin-top:10px; animation: fadeIn 0.3s;">
+                            <label style="color:var(--accent-blue); font-size:0.6rem;">SEBUTKAN ITEM LAINNYA</label>
+                            <input type="text" id="c_item_other" placeholder="Tulis item di sini..." style="border: 1px solid var(--accent-blue);">
+                        </div>
+                    </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                         <div><label>JAM AWAL</label><input type="time" id="c_start"></div>
                         <div><label>JAM SELESAI</label><input type="time" id="c_end"></div>
                     </div>
                 </div>
-                <label>FOTO HASIL</label>
-                <div style="background:#f1f5f9; padding:20px; border-radius:15px; text-align:center; cursor:pointer;" onclick="document.getElementById('c_photo').click()"><i class="fas fa-camera"></i> TAP UNTUK FOTO<input type="file" id="c_photo" accept="image/*" capture="environment" style="display:none;" onchange="uploadPhoto(this, 'c_url', 'c_prev')"></div>
-                <input type="hidden" id="c_url"><center><img id="c_prev" style="max-height:150px; margin-top:15px; border-radius:12px; display:none;"></center><br>
+                <!-- PHOTO AREA -->
+                <div style="margin-top:20px;">
+                    <label style="display:block; font-family:'Orbitron'; font-size:0.7rem; color:#64748b; margin-bottom:10px;">FOTO HASIL</label>
+                    <div class="photo-btn" onclick="openPhotoPicker('c_cam', 'c_gal')">
+                        <i class="fas fa-camera"></i>
+                        <span>AMBIL / UNGGAH FOTO</span>
+                    </div>
+                    <input type="file" id="c_cam" accept="image/*" capture="environment" style="display:none" onchange="uploadPhoto(this, 'c_url', 'c_prev')">
+                    <input type="file" id="c_gal" accept="image/*" style="display:none" onchange="uploadPhoto(this, 'c_url', 'c_prev')">
+                    
+                    <div id="c_prev_wrap" style="margin-top:15px; display:none; position:relative;">
+                        <img id="c_prev" style="width:100%; border-radius:15px; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
+                        <div onclick="resetPhoto('c_cam', 'c_gal', 'c_prev_wrap', 'c_url')" style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.9); color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                            <i class="fas fa-times"></i>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="c_url"><br>
                 <button class="btn-act" style="background:var(--accent-blue); color:#fff; width:100%; padding:20px; font-weight:900;" onclick="submitChecklist()">SIMPAN CEKLIS 🛡️</button>
             </div>
         </section>
@@ -320,11 +377,38 @@
                     <div><label>TINGKAT URGENSI</label><select id="i_urgency"><option value="RENDAH">RENDAH</option><option value="SEDANG">SEDANG</option><option value="TINGGI">TINGGI / KRITIS</option></select></div>
                 </div>
                 <label>LOKASI SPESIFIK</label><input type="text" id="i_loc" placeholder="Misal: Lorong B, Rak No. 4">
-                <br><label>KATEGORI KERUSAKAN</label><select id="i_cat"><option>ATAP BOCOR</option><option>KELISTRIKAN</option><option>PIPA / AIR</option><option>PINTU / JENDELA</option><option>LANTAI</option><option>LAIN-LAIN</option></select>
+                <br><label>KATEGORI KERUSAKAN</label>
+                <select id="i_cat" onchange="toggleOtherField(this.value, 'other_i_cat_wrap')">
+                    <option>ATAP BOCOR</option>
+                    <option>KELISTRIKAN</option>
+                    <option>PIPA / AIR</option>
+                    <option>PINTU / JENDELA</option>
+                    <option>LANTAI</option>
+                    <option value="LAINNYA">LAIN-LAIN (TULIS SENDIRI)</option>
+                </select>
+                <div id="other_i_cat_wrap" style="display:none; margin-top:10px; animation: fadeIn 0.3s;">
+                    <label style="color:var(--accent-orange); font-size:0.6rem;">SEBUTKAN KENDALA LAINNYA</label>
+                    <input type="text" id="i_cat_other" placeholder="Tulis kendala di sini..." style="border: 1px solid var(--accent-orange);">
+                </div>
+
                 <br><label>DESKRIPSI DETAIL</label><textarea id="i_desc" rows="4" placeholder="Ceritakan detail kerusakannya..."></textarea>
+                
                 <br><label>FOTO KERUSAKAN</label>
-                <div style="background:#f1f5f9; padding:20px; border-radius:15px; text-align:center; cursor:pointer;" onclick="document.getElementById('i_photo_in').click()"><i class="fas fa-camera"></i> CAPTURE FOTO<input type="file" id="i_photo_in" accept="image/*" capture="environment" style="display:none;" onchange="uploadPhoto(this, 'i_url', 'i_prev')"></div>
-                <input type="hidden" id="i_url"><center><img id="i_prev" style="max-height:150px; margin-top:15px; border-radius:12px; display:none;"></center><br>
+                <div class="photo-btn" style="background:var(--accent-orange); color:#fff;" onclick="openPhotoPicker('i_cam', 'i_gal')">
+                    <i class="fas fa-camera"></i>
+                    <span>AMBIL / UNGGAH FOTO</span>
+                </div>
+                <input type="file" id="i_cam" accept="image/*" capture="environment" style="display:none" onchange="uploadPhoto(this, 'i_url', 'i_prev')">
+                <input type="file" id="i_gal" accept="image/*" style="display:none" onchange="uploadPhoto(this, 'i_url', 'i_prev')">
+                
+                <input type="hidden" id="i_url">
+                <div id="i_prev_wrap" style="margin-top:15px; display:none; position:relative;">
+                    <img id="i_prev" style="width:100%; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
+                    <div onclick="resetPhoto('i_cam', 'i_gal', 'i_prev_wrap', 'i_url')" style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.9); color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                        <i class="fas fa-times"></i>
+                    </div>
+                </div>
+                <br>
                 <button class="btn-act" style="background:var(--accent-orange); color:#fff; width:100%; padding:20px; font-weight:900;" onclick="submitIssue()">KIRIM LAPORAN KENDALA 🚨</button>
             </div>
 
@@ -438,24 +522,40 @@
             }, 1000);
         }
 
-        // --- NAVIGATION ---
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('sidebar_overlay').classList.toggle('show');
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('sidebar_overlay');
+            if(!sb || !ov) return;
+            sb.classList.toggle('open');
+            ov.classList.toggle('show');
         }
 
-        function switchView(v, btn) {
-            document.querySelectorAll('section').forEach(s => s.style.display = 'none');
-            document.getElementById('view-' + v).style.display = 'block';
-            if(btn) { 
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); 
-                btn.classList.add('active'); 
-            }
-            // Close sidebar on mobile after selection
-            if(window.innerWidth <= 768) toggleSidebar();
+        async function switchView(v, btn) {
+            // Show brief loading for smooth transition
+            document.getElementById('global_loader').style.display = 'flex';
+            
+            setTimeout(() => {
+                document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+                document.getElementById('view-' + v).style.display = 'block';
+                
+                if(btn) { 
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); 
+                    btn.classList.add('active'); 
+                }
+
+                // Hide loading
+                document.getElementById('global_loader').style.display = 'none';
+
+                // Auto-close sidebar on mobile
+                const sb = document.getElementById('sidebar');
+                if(window.innerWidth <= 768 && sb.classList.contains('open')) {
+                    toggleSidebar();
+                }
+            }, 300);
         }
 
         async function loadData() {
+            document.getElementById('global_loader').style.display = 'flex';
             try {
                 const r = await fetch(`${API_URL}?action=getCleaningData`);
                 const d = await r.json();
@@ -465,7 +565,11 @@
                     renderIssueBoard();
                     renderFullHistory();
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error("Load failed", e);
+            } finally {
+                document.getElementById('global_loader').style.display = 'none';
+            }
         }
 
         // --- DASHBOARD ---
@@ -618,6 +722,33 @@
             document.getElementById('v_id').value = id;
             document.getElementById('v_pic').value = "";
             document.getElementById('m_verify').style.display = 'flex';
+        }
+
+        // --- PHOTO UTILITIES ---
+        async function openPhotoPicker(camId, galId) {
+            const { value: source } = await Swal.fire({
+                title: 'SUMBER FOTO',
+                text: 'Pilih metode pengambilan gambar:',
+                icon: 'question',
+                showDenyButton: true,
+                confirmButtonText: '<i class="fas fa-camera"></i> KAMERA',
+                denyButtonText: '<i class="fas fa-images"></i> GALERI',
+                confirmButtonColor: 'var(--accent-blue)',
+                denyButtonColor: '#64748b'
+            });
+            if (source === true) document.getElementById(camId).click();
+            else if (source === false) document.getElementById(galId).click();
+        }
+
+        function resetPhoto(camId, galId, wrapId, urlId) {
+            document.getElementById(camId).value = '';
+            document.getElementById(galId).value = '';
+            document.getElementById(wrapId).style.display = 'none';
+            document.getElementById(urlId).value = '';
+        }
+
+        function toggleOtherField(v, wrapId) {
+            document.getElementById(wrapId).style.display = (v === 'LAINNYA') ? 'block' : 'none';
         }
 
         async function submitVerification() {
@@ -843,17 +974,35 @@
             }
         }
 
+        function toggleOtherItem(v) {
+            const wrap = document.getElementById('other_item_wrap');
+            wrap.style.display = (v === 'LAINNYA') ? 'block' : 'none';
+        }
+
         async function submitChecklist() {
-            const wh = document.getElementById('c_wh').value;
-            const staff = document.getElementById('c_staff').value;
-            if(!wh || !staff || selectedPts.length === 0) return Swal.fire('Lengkapi Data!');
+            const gudang = document.getElementById('c_wh').value;
+            const petugas = document.getElementById('c_staff').value;
+            let item = document.getElementById('c_item').value;
+            const start = document.getElementById('c_start').value;
+            const end = document.getElementById('c_end').value;
+            const photoUrl = document.getElementById('c_url').value;
+
+            // Handle Item Lainnya
+            if(item === 'LAINNYA') {
+                const other = document.getElementById('c_item_other').value;
+                if(!other) return Swal.fire('Error', 'Sebutkan item lainnya!', 'error');
+                item = other.toUpperCase();
+            }
+
+            if(!gudang || !petugas || selectedPts.length === 0 || !start || !end || !photoUrl) return Swal.fire('Error', 'Mohon lengkapi data!', 'error');
+            
             const meta = { 
                 type:"CLEAN", 
-                item: document.getElementById('c_item').value,
+                item: item,
                 pts:selectedPts, 
-                jam:`${document.getElementById('c_start').value}-${document.getElementById('c_end').value}` 
+                jam: `${start}-${end}`
             };
-            const p = { action:'saveCleaningReport', tanggal:new Date().toISOString(), gudang:wh, petugas:staff, photoUrl:document.getElementById('c_url').value, notes:JSON.stringify(meta) };
+            const p = { action:'saveCleaningReport', tanggal:new Date().toISOString(), gudang:gudang, petugas:petugas, photoUrl:photoUrl, notes:JSON.stringify(meta) };
             await performSync(p);
         }
     </script>
