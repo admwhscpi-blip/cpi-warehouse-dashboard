@@ -123,21 +123,39 @@ const TrackingApp = {
             const obj = {};
             (row.c || []).forEach((cell, i) => {
                 if (!headers[i]) return;
+                
+                // Extract raw and formatted data
                 let val = cell ? cell.v : null;
-                if (val === null || val === undefined) { obj[headers[i]] = ''; return; }
+                let formatted = (cell && cell.f) ? String(cell.f) : '';
 
-                // Google encodes dates as "Date(y,m,d)" strings in JSON
-                if (typeof val === 'string' && val.startsWith('Date(')) {
-                    const m = val.match(/Date\((\d+),(\d+),(\d+)/);
-                    if (m) val = `${m[1]}-${String(parseInt(m[2])+1).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+                // v20.2.11: Handle Google's "Date(y,m,d,h,m,s)" strings with flexible whitespace
+                if (val instanceof Date) {
+                    val = `${val.getFullYear()}-${String(val.getMonth() + 1).padStart(2, '0')}-${String(val.getDate()).padStart(2, '0')} ${String(val.getHours()).padStart(2, '0')}:${String(val.getMinutes()).padStart(2, '0')}:${String(val.getSeconds()).padStart(2, '0')}`;
+                } else if (typeof val === 'string' && val.startsWith('Date(')) {
+                    // Match y, m, d and optional h, m, s with optional spaces around each
+                    const m = val.match(/Date\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+))?\s*\)/);
+                    if (m) {
+                        let y = m[1], mon = String(parseInt(m[2]) + 1).padStart(2, '0'), d = String(m[3]).padStart(2, '0');
+                        let hh = String(m[4] || '0').padStart(2, '0'), mm = String(m[5] || '0').padStart(2, '0'), ss = String(m[6] || '0').padStart(2, '0');
+                        val = `${y}-${mon}-${d} ${hh}:${mm}:${ss}`;
+                    }
                 }
 
-                // Use formatted value (cell.f) if raw value is unhelpful
-                let finalVal = (val !== null && val !== '') ? String(val) : '';
-                if (finalVal === '' && cell && cell.f) finalVal = String(cell.f);
+
+                // Final value selection: Prefer ISO/DT val, then formatted, then raw
+                let finalVal = (val !== null && val !== '') ? String(val) : formatted;
 
                 obj[headers[i]] = finalVal;
+
+                // v20.2.9: Explicit Column Mapping (Fixed for 100% accuracy)
+                if (i === 0) obj['TANGGAL_A'] = finalVal;
+                if (i === 7) obj['JENIS_TRUCK_X'] = finalVal.toUpperCase().trim();
+                if (i === 20) obj['FINISH_TIME_X'] = finalVal.trim();
+                if (i === 23) obj['ARRIVAL_DATE_X'] = finalVal.trim();
+                if (i === 24) obj['ARRIVAL_TIME_X'] = finalVal.trim();
             });
+
+
 
             // === ALIAS MAPPING ===
             // Map actual sheet column names to the field names used in the rest of this file.
@@ -215,17 +233,16 @@ const TrackingApp = {
     },
 
     processContainerData: function () {
-        // Filter: >= 19 Feb 2026, ONLY include trucks with "Container" (e.g., Container 20ft, Container 40ft)
+        // v20.2.8: Strict Filter - Only Container 40ft and 20ft (Column H)
         this.containerData = this.allData.filter(row => {
             let tglStr = this.normalizeDate(row['TANGGAL']);
             if (!tglStr || tglStr < '2026-02-19') return false;
 
-            let truckType = String(row['JENIS_TRUCK'] || '').trim().toUpperCase();
-            if (truckType.includes('CONTAINER')) {
-                return true;
-            }
-            return false;
+            let truckType = String(row['JENIS_TRUCK_X'] || row['JENIS_TRUCK'] || '').trim().toUpperCase();
+            // ONLY match "CONTAINER 40FT" or "CONTAINER 20FT"
+            return (truckType === 'CONTAINER 40FT' || truckType === 'CONTAINER 20FT');
         });
+
 
         // Group by Date for fast lookup
         this.dataByDate = {};
@@ -395,7 +412,27 @@ const TrackingApp = {
     parseDateTimeStr: function (dateStr, timeStr) {
         if (!dateStr || String(dateStr).trim() === '') return null;
         
-        let normDate = this.normalizeDate(dateStr); // Gets "YYYY-MM-DD" reliably
+        // v20.2.11: Support both YYYY-MM-DD and YYYY-MM-DD HH:mm:ss
+        let ds = String(dateStr).trim();
+        let ts = String(timeStr || '').trim();
+
+        // If timeStr itself is still a Date(y,m,d,h,m,s) string after parsing, try extracting time manually
+        if (ts.startsWith('Date(')) {
+            const tmArr = ts.match(/Date\(\s*\d+\s*,\s*\d+\s*,\s*\d+(?:\s*,\s*(\d+)\s*,\s*(\d+))?/);
+            if (tmArr && tmArr[1]) ts = `${tmArr[1]}:${tmArr[2] || '00'}`;
+        }
+
+        // If dateStr already has time, split it
+        let baseDateStr = ds;
+        let baseTimeStr = ts;
+
+        if (ds.includes(' ') || ds.includes('T')) {
+            let pts = ds.split(/[\sT]+/);
+            baseDateStr = pts[0];
+            if (!ts) baseTimeStr = pts[1]; 
+        }
+
+        let normDate = this.normalizeDate(baseDateStr);
         if (!normDate) return null;
         
         let parts = normDate.split('-');
@@ -403,17 +440,13 @@ const TrackingApp = {
         let month = parseInt(parts[1]) - 1;
         let day = parseInt(parts[2]);
 
-        // Parse time
+        // Parse time from baseTimeStr (Handles HH:mm, HH.mm, and HH:mm:ss)
         let hh = 0, mm = 0;
-        const ts = String(timeStr || '').trim();
-        if (ts) {
-            const tm = ts.match(/^(\d{1,2}):(\d{2})/);
+        if (baseTimeStr) {
+            const tm = baseTimeStr.match(/(\d{1,2})[:\.](\d{2})/);
             if (tm) { hh = parseInt(tm[1]); mm = parseInt(tm[2]); }
-            else {
-                const tmDot = ts.match(/^(\d{1,2})\.(\d{2})$/);
-                if (tmDot) { hh = parseInt(tmDot[1]); mm = parseInt(tmDot[2]); }
-            }
         }
+
 
         const result = new Date(year, month, day, hh, mm);
         if (isNaN(result.getTime())) return null;
@@ -425,19 +458,21 @@ const TrackingApp = {
      * Returns { arrDate, arrTime, finDate, finTime, hasArrival, hasFinish }
      */
     _resolveArrivalFinish: function (row) {
-        // STRICTLY: ARRIVAL_DATE (Kolom X) & ARRIVAL_TIME (Kolom Y) vs TANGGAL (Kolom A) & FINISH (Kolom U)
-        let arrDate = String(row['ARRIVAL_DATE'] || '').trim();
-        let arrTime = String(row['ARRIVAL_TIME'] || '').trim();
+        // v20.2.9: STRICTLY Column X+Y vs A+U (Normalized and robust)
+        let arrDate = row['ARRIVAL_DATE_X'] || '';
+        let arrTime = row['ARRIVAL_TIME_X'] || '';
 
-        // Finish: TANGGAL + FINISH
-        let finDate = String(row['TANGGAL'] || '').trim();
-        let finTime = String(row['FINISH_BONGKAR'] || row['FINISH_TIME'] || row['FINISH'] || '').trim();
+        // Finish: TANGGAL (Col A) + FINISH (Col U)
+        let finDate = row['TANGGAL_A'] || row['TANGGAL'] || '';
+        let finTime = row['FINISH_TIME_X'] || '';
 
-        let hasArrival = arrDate && arrDate !== '-' && arrTime && arrTime !== '-';
-        let hasFinish = finDate && finDate !== '-' && finTime && finTime !== '-';
+        let hasArrival = arrDate && arrDate !== '-' && arrTime && arrTime !== '-' && arrDate !== 'No Data' && arrTime !== 'No Data';
+        let hasFinish = finDate && finDate !== '-' && finTime && finTime !== '-' && finDate !== 'No Data' && finTime !== 'No Data';
 
         return { arrDate, arrTime, finDate, finTime, hasArrival, hasFinish };
     },
+
+
 
     calculateMetrics: function (data) {
         let total = data.length;
@@ -461,13 +496,14 @@ const TrackingApp = {
             let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
 
             if (dArr && dFin) {
-                if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
+                // v20.2.8: Precise timestamp diff (handles cross-date natively)
                 let diffMs = dFin.getTime() - dArr.getTime();
                 let durH = diffMs / (1000 * 60 * 60);
 
                 if (durH >= 24) countInap++;
                 else if (durH >= 0) countTidakInap++;
             } else {
+
                 countNoData++;
             }
         });
@@ -622,13 +658,13 @@ const TrackingApp = {
                 let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
 
                 if (dArr && dFin) {
-                    if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
                     let diffMs = dFin.getTime() - dArr.getTime();
                     let durH = diffMs / (1000 * 60 * 60);
 
                     if (durH >= 24) inapCount++;
                     else if (durH >= 0) tdkInapCount++;
                 } else {
+
                     noDataCount++;
                 }
             });
@@ -715,26 +751,18 @@ const TrackingApp = {
                 let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
 
                 if (dArr && dFin) {
-                    // If finish < arrival, must have crossed midnight
-                    if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
-
                     let diffMs = dFin.getTime() - dArr.getTime();
                     let diffMins = Math.floor(diffMs / (1000 * 60));
                     let h = Math.floor(diffMins / 60);
                     let m = diffMins % 60;
 
-                    if (diffMs < 0) {
-                        durasiHtml = `<span style="color:#f59e0b;">-</span>`;
-                        statusInap = 'DATA TIDAK LENGKAP';
-                        colorInap = '#f59e0b';
-                    } else {
-                        if (h >= 24) {
-                            statusInap = 'INAP';
-                            colorInap = 'var(--danger)';
-                        }
-                        durasiHtml = `<span style="font-size:0.85rem; color:#fff;">${h}</span><span style="font-size:0.55rem; color:#64748b; margin:0 3px;">h</span><span style="font-size:0.85rem; color:#fff;">${m}</span><span style="font-size:0.55rem; color:#64748b;">m</span>`;
+                    if (h >= 24) {
+                        statusInap = 'INAP';
+                        colorInap = 'var(--danger)';
                     }
+                    durasiHtml = `<span style="font-size:0.85rem; color:#fff;">${h}</span><span style="font-size:0.55rem; color:#64748b; margin:0 3px;">h</span><span style="font-size:0.85rem; color:#fff;">${m}</span><span style="font-size:0.55rem; color:#64748b;">m</span>`;
                 } else {
+
                     durasiHtml = `<span style="color:#f59e0b;">-</span>`;
                     statusInap = 'DATA TIDAK LENGKAP';
                     colorInap = '#f59e0b';
