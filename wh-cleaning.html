@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SMART WAREHOUSE V2.0 - MAINTENANCE SYSTEM</title>
+
+    <!-- UI LIBS -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&family=Rajdhani:wght@500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-page: #f9f7f2;
+            --sidebar-black: #ffffff;
+            --neon-blue: #0ea5e9;
+            --neon-cyan: #07869b;
+            --accent-blue: #0ea5e9;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-soft: rgba(14, 165, 233, 0.1);
+            --card-shadow: 0 4px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar { width: 280px; background: #020617; border-right: 1px solid rgba(14, 165, 233, 0.2); display: flex; flex-direction: column; padding: 20px; flex-shrink: 0; z-index: 100; backdrop-filter: blur(20px);}
+        
+        .brand { padding: 20px 10px; position: relative; overflow: hidden; }
+        .brand h1 { font-family: 'Orbitron'; font-size: 1.2rem; color: #06b6d4; letter-spacing: 2px; text-shadow: 0 0 15px rgba(6, 182, 212, 0.4); margin: 0; line-height: 1.1; }
+        .brand-glow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.2), transparent); transform: translateX(-100%); animation: neon-scan 3s infinite; pointer-events: none; }
+        .brand span { display: inline-block; font-size: 0.6rem; color: #000; background: #06b6d4; padding: 1px 4px; border-radius: 3px; font-weight: 800; margin-left: 5px; box-shadow: 0 0 10px #06b6d4; }
+        .brand-sub { font-size: 0.55rem; color: #475569; margin-top: 8px; letter-spacing: 2px; font-family: 'Orbitron'; text-transform: uppercase; opacity: 0.8; }
+
+        @keyframes neon-scan { 0% { transform: translateX(-100%); } 50%, 100% { transform: translateX(100%); } }
+
+        .nav-menu { display: flex; flex-direction: column; gap: 12px; margin-top: 30px; }
+        .nav-item { 
+            position: relative; padding: 15px 20px; border-radius: 12px; color: #94a3b8; text-decoration: none; 
+            font-family: 'Orbitron'; font-size: 0.75rem; display: flex; align-items: center; gap: 15px; 
+            cursor: pointer; font-weight: 600; transition: 0.4s; text-transform: uppercase;
+            overflow: hidden; border: 1px solid transparent;
+        }
+
+        /* ELECTRIC CARD EFFECT */
+        .nav-item::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.3), transparent);
+            transition: 0.5s;
+        }
+
+        .nav-item:hover::before, .nav-item.active::before { left: 100%; transition: 0.7s; }
+
+        .nav-item:hover, .nav-item.active { 
+            background: rgba(6, 182, 212, 0.1); color: #06b6d4; 
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.1), inset 0 0 10px rgba(6, 182, 212, 0.05);
+            text-shadow: 0 0 12px rgba(6, 182, 212, 0.8);
+        }
+
+        .nav-item.active {
+            border-left: 4px solid #06b6d4;
+            animation: electric-pulse 2s infinite alternate;
+        }
+
+        @keyframes electric-pulse {
+            0% { box-shadow: 0 0 5px rgba(6, 182, 212, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.4); }
+        }
+
+        .nav-item i { transition: 0.3s; }
+        .nav-item:hover i { transform: scale(1.2) rotate(5deg); color: #22d3ee; }
+
+        /* --- CLOCK SIDEBAR --- */
+        .mini-clock-wrapper { margin-top: 20px; transform: scale(0.65); transform-origin: left top; width: 150%; padding-left: 10px; }
+        .clock-container { display: flex; align-items: center; gap: 15px; padding: 10px 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 40px; font-family: 'Orbitron', sans-serif; color: #fff; height: 75px; box-shadow: 0 0 20px rgba(14, 165, 233, 0.1); }
+        .clock-date-group { display: flex; flex-direction: column; align-items: flex-end; min-width: 130px; line-height: 1.1; }
+        .clock-day { font-size: 0.6rem; color: #06b6d4; letter-spacing: 1.5px; }
+        .clock-date-txt { font-size: 1.1rem; font-weight: 900; white-space: nowrap; }
+        .clock-visual { position: relative; width: 55px; height: 55px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .clock-circle { position: absolute; inset: 0; border: 2px solid rgba(14, 165, 233, 0.1); border-radius: 50%; }
+        .clock-progress { position: absolute; inset: 0; border: 2px solid transparent; border-top: 2px solid #06b6d4; border-radius: 50%; box-shadow: 0 0 10px #06b6d4; transition: transform 1s linear; }
+        .clock-time-group { display: flex; flex-direction: column; align-items: center; z-index: 5; }
+        .clock-ampm { font-size: 0.45rem; font-weight: 800; color: #06b6d4; margin-bottom: -2px; }
+        .clock-time-val { font-size: 1.2rem; font-weight: 900; line-height: 1; }
+
+        /* --- MAIN CONTENT --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; position: relative; }
+        .header { display: none; }
+
+        /* --- DASHBOARD --- */
+        .dashboard-view { padding: 30px 40px; }
+        .top-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .top-card { padding: 25px; border-radius: 20px; border: 1px solid var(--border-soft); background: #fff; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--card-shadow); border-left: 4px solid var(--accent-blue); }
+        .top-card .lbl { font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; }
+        .top-card .val { font-family: 'Orbitron'; font-size: 1.6rem; font-weight: 900; }
+
+        .integrated-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .mini-card { background: #fff; border-radius: 24px; padding: 20px; border: 1px solid var(--border-soft); box-shadow: var(--card-shadow); transition: 0.3s; }
+        .mini-card:hover { transform: translateY(-5px); }
+        .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-act { border: 1.5px solid var(--border-soft); background: #fff; padding: 10px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; color: var(--text-main); cursor: pointer; text-align: center; }
+        .btn-act:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+        /* --- FORMS --- */
+        .view-content { display: none; padding: 30px 40px; animation: fadeIn 0.4s ease; }
+        .form-card { background: #fff; border-radius: 30px; padding: 40px; border: 1px solid var(--border-soft); box-shadow: var(--card-shadow); max-width: 850px; margin: 0 auto; }
+        label { display: block; font-family: 'Orbitron'; font-size: 0.6rem; color: var(--text-muted); font-weight: 800; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;}
+        select, input, textarea { width: 100%; background: #f8fafc; border: 1.5px solid var(--border-soft); padding: 12px 15px; border-radius: 12px; font-family: 'Rajdhani'; font-weight: 700; font-size: 1rem; box-sizing: border-box; }
+        
+        /* TABS */
+        .tab-wrap { display: flex; gap: 10px; margin-bottom: 30px; background: #fff; padding: 10px; border-radius: 15px; border: 1px solid var(--border-soft); width: fit-content; }
+        .tab-btn { padding: 12px 25px; border-radius: 10px; font-family: 'Orbitron'; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); cursor: pointer; transition: 0.3s; }
+        .tab-btn.active { background: var(--accent-blue); color: #fff; box-shadow: 0 5px 15px rgba(14, 165, 233, 0.2); }
+
+        /* STATUS BADGES */
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.6rem; font-weight: 900; font-family: 'Orbitron'; text-transform: uppercase; }
+        .badge-open { background: var(--accent-orange); color: #fff; }
+        .badge-progress { background: var(--accent-blue); color: #fff; }
+        .badge-resolved { background: var(--accent-green); color: #fff; }
+        .urgency-high { color: var(--accent-red); }
+
+        /* MODALS */
+        .modal { position: fixed; inset: 0; background: rgba(15,23,42,0.9); z-index: 1000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .m-box { background: #fff; width: 90%; max-width: 550px; padding: 40px; border-radius: 30px; box-shadow: 0 50px 1000px rgba(0,0,0,0.4); }
+
+        .grid-cell.selected { background: var(--accent-blue); color: #fff; }
+
+        /* GRID FIX */
+        .floor-grid { 
+            display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr); gap: 5px; 
+            background: #e2e8f0; padding: 10px; border-radius: 15px; margin: 0 auto; border: 5px solid var(--accent-blue);
+            aspect-ratio: 5 / 4; box-sizing: border-box; overflow: hidden;
+        }
+        .grid-cell { background: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron'; font-size: 0.65rem; font-weight: 900; color: #cbd5e1; cursor: pointer; border-radius: 5px; height: 100%; width: 100%; }
+
+        /* --- MOBILE RESPONSIVE --- */
+        .mob-toggle { 
+            display: none; position: fixed; top: 15px; left: 15px; z-index: 2100; background: #020617; 
+            color: #06b6d4; width: 45px; height: 45px; border-radius: 12px; align-items: center; justify-content: center; 
+            cursor: pointer; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); border: 1.5px solid rgba(6, 182, 212, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .mob-toggle { display: flex; }
+            .sidebar { 
+                position: fixed; left: -280px; top: 0; bottom: 0; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 20px 0 50px rgba(0,0,0,0.5);
+            }
+            .sidebar.open { left: 0; }
+            .sidebar-overlay { 
+                display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); 
+                backdrop-filter: blur(5px); z-index: 1000; 
+            }
+            .sidebar-overlay.show { display: block; }
+            
+            .main-content { overflow-x: hidden; }
+            .dashboard-view, .view-content { padding: 80px 20px 30px 20px; }
+            
+            .top-stats { grid-template-columns: 1fr; gap: 15px; }
+            .integrated-grid { grid-template-columns: 1fr; gap: 15px; }
+            
+            .form-card { padding: 25px; border-radius: 20px; }
+            .tab-wrap { flex-direction: column; width: 100%; }
+            .tab-btn { width: 100%; text-align: center; }
+
+            .m-box { padding: 25px; border-radius: 20px; }
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+
+            /* Dashboard Toggle Fix */
+            #view-dashboard div[style*="display:flex; justify-content:space-between"] {
+                flex-direction: column; align-items: flex-start !important; gap: 15px;
+            }
+            #dash_global_filter { width: 100%; }
+            #i_global_item { width: 100%; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+
+    <!-- MOBILE UI -->
+    <div class="mob-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+    <div class="sidebar-overlay" id="sidebar_overlay" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="brand">
+            <div class="brand-glow"></div>
+            <h1>SMART WAREHOUSE<span>V2.0</span></h1>
+            <div class="brand-sub">WAREHOUSE MANAGEMENT SYSTEM</div>
+        </div>
+
+        <div class="mini-clock-wrapper">
+            <div class="clock-container">
+                <div class="clock-date-group">
+                    <div class="clock-day" id="clock_day">TUESDAY</div>
+                    <div class="clock-date-txt" id="clock_date">MARCH 31</div>
+                </div>
+                <div class="clock-visual">
+                    <div class="clock-circle"></div>
+                    <div class="clock-progress" id="clock_ring"></div>
+                    <div class="clock-time-group">
+                        <div class="clock-ampm" id="clock_ampm">PM</div>
+                        <div class="clock-time-val" id="clock_time">02:22</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <div class="nav-item active" onclick="switchView('dashboard', this)"><i class="fas fa-th"></i><span>DASHBOARD</span></div>
+            <div class="nav-item" onclick="switchView('checklist', this)"><i class="fas fa-broom"></i><span>CHECKLIST KEBERSIHAN</span></div>
+            <div class="nav-item" onclick="switchView('issues', this)"><i class="fas fa-tools"></i><span>KENDALA UNIT</span></div>
+            <div class="nav-item" onclick="switchView('history', this)"><i class="fas fa-history"></i><span>HISTORY DATA</span></div>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="header"></header>
+
+        <!-- DASHBOARD -->
+        <section id="view-dashboard" class="dashboard-view" style="display:block;">
+            <div class="top-stats">
+                <div class="top-card"><div><div class="lbl">TOTAL GUDANG</div><div class="val">8</div></div><i class="fas fa-warehouse"></i></div>
+                <div class="top-card" style="border-left-color: var(--accent-green)"><div><div class="lbl">SKOR KEBERSIHAN</div><div class="val">94%</div></div><i class="fas fa-check-double"></i></div>
+                <div class="top-card" style="border-left-color: var(--accent-orange)"><div><div class="lbl">PENDING ISSUES</div><div class="val" id="total_open">0</div></div><i class="fas fa-exclamation-triangle"></i></div>
+            </div>
+
+            <!-- DASHBOARD MODE TOGGLE -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:#fff; padding:15px; border-radius:20px; border:1px solid var(--border-soft);">
+                <div class="tab-wrap" style="margin:0;">
+                    <div class="tab-btn active" id="btn_dash_one" onclick="switchDashMode('ONE')">LIHAT SATU SATU</div>
+                    <div class="tab-btn" id="btn_dash_all" onclick="switchDashMode('ALL')">GLOBAL MONITOR (GRID)</div>
+                </div>
+                <div id="dash_global_filter" style="display:none; display:flex; align-items:center; gap:10px;">
+                    <label style="margin:0;">LIHAT KONDISI:</label>
+                    <select id="i_global_item" onchange="renderDashboard()" style="min-width:200px; border:2px solid var(--accent-blue);">
+                        <optgroup label="KEBERSIHAN">
+                            <option value="SEMUA">GLOBAL (SEMUA)</option>
+                            <option value="DRAINASE">DRAINASE</option>
+                            <option value="SAWANG ATAP">SAWANG ATAP</option>
+                            <option value="LANTAI">LANTAI UNIT</option>
+                            <option value="DINDING">DINDING / KACA</option>
+                        </optgroup>
+                        <optgroup label="KENDALA UNIT">
+                            <option value="ATAP BOCOR">ATAP BOCOR</option>
+                            <option value="KELISTRIKAN">KELISTRIKAN</option>
+                            <option value="PIPA">PIPA / AIR</option>
+                            <option value="PINTU">PINTU / JENDELA</option>
+                            <option value="LAIN-LAIN">KENDALA LAIN</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            <div class="integrated-grid" id="integrated_grid"></div>
+        </section>
+
+        <!-- CEKLIS KEBERSIHAN -->
+        <section id="view-checklist" class="view-content">
+            <div class="form-card">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
+                    <div><label>TANGGAL</label><input type="date" id="c_date"></div>
+                    <div><label>SHIFT</label><select id="c_shift"><option>SHIFT 1</option><option>SHIFT 2</option><option>SHIFT 3</option></select></div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:30px;">
+                    <div><label>PETUGAS</label><input type="text" id="c_staff" placeholder="Nama Krani..."></div>
+                    <div><label>GUDANG</label><select id="c_wh" onchange="initGrid(this.value)"><option value="" disabled selected>-- PILIH --</option><option>GUDANG A</option><option>GUDANG B</option><option>GUDANG C</option><option>GUDANG D</option><option>GUDANG E</option><option>GUDANG F</option><option>GUDANG HINO</option><option>GUDANG RM</option></select></div>
+                </div>
+                <div id="grid_pan" style="display:none; margin-bottom:30px;"><label style="text-align:center;">MAPPING AREA (20 TITIK)</label><div id="f_grid" class="floor-grid"></div></div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
+                    <div><label>ITEM</label><select id="c_item"><option>DRAINASE</option><option>SAWANG ATAP</option><option>LANTAI</option><option>DINDING</option></select></div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div><label>JAM AWAL</label><input type="time" id="c_start"></div>
+                        <div><label>JAM SELESAI</label><input type="time" id="c_end"></div>
+                    </div>
+                </div>
+                <label>FOTO HASIL</label>
+                <div style="background:#f1f5f9; padding:20px; border-radius:15px; text-align:center; cursor:pointer;" onclick="document.getElementById('c_photo').click()"><i class="fas fa-camera"></i> TAP UNTUK FOTO<input type="file" id="c_photo" accept="image/*" capture="environment" style="display:none;" onchange="uploadPhoto(this, 'c_url', 'c_prev')"></div>
+                <input type="hidden" id="c_url"><center><img id="c_prev" style="max-height:150px; margin-top:15px; border-radius:12px; display:none;"></center><br>
+                <button class="btn-act" style="background:var(--accent-blue); color:#fff; width:100%; padding:20px; font-weight:900;" onclick="submitChecklist()">SIMPAN CEKLIS 🛡️</button>
+            </div>
+        </section>
+
+        <!-- KENDALA UNIT (3-PHASE) -->
+        <section id="view-issues" class="view-content">
+            <div class="tab-wrap">
+                <div class="tab-btn active" id="tab_lapor" onclick="switchIssueTab('lapor')">FASE 1: KRANI (LAPOR)</div>
+                <div class="tab-btn" id="tab_kelola" onclick="switchIssueTab('kelola')">FASE 2 & 3: SUPERVISOR (KELOLA)</div>
+            </div>
+
+            <!-- TAB: LAPOR (KRANI) -->
+            <div id="issue_form_krani" class="form-card">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
+                    <div><label>NAMA PETUGAS (KRANI)</label><input type="text" id="i_staff" placeholder="Nama pelapor..."></div>
+                    <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:10px;">
+                        <div><label>TANGGAL TEMUAN</label><input type="date" id="i_date"></div>
+                        <div><label>SHIFT</label><select id="i_shift"><option>SHIFT 1</option><option>SHIFT 2</option><option>SHIFT 3</option></select></div>
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:20px; margin-bottom:20px;">
+                    <div><label>PILIHAN GUDANG</label><select id="i_wh"><option>GUDANG A</option><option>GUDANG B</option><option>GUDANG C</option><option>GUDANG D</option><option>GUDANG E</option><option>GUDANG F</option><option>GUDANG HINO</option><option>GUDANG RM</option></select></div>
+                    <div><label>TINGKAT URGENSI</label><select id="i_urgency"><option value="RENDAH">RENDAH</option><option value="SEDANG">SEDANG</option><option value="TINGGI">TINGGI / KRITIS</option></select></div>
+                </div>
+                <label>LOKASI SPESIFIK</label><input type="text" id="i_loc" placeholder="Misal: Lorong B, Rak No. 4">
+                <br><label>KATEGORI KERUSAKAN</label><select id="i_cat"><option>ATAP BOCOR</option><option>KELISTRIKAN</option><option>PIPA / AIR</option><option>PINTU / JENDELA</option><option>LANTAI</option><option>LAIN-LAIN</option></select>
+                <br><label>DESKRIPSI DETAIL</label><textarea id="i_desc" rows="4" placeholder="Ceritakan detail kerusakannya..."></textarea>
+                <br><label>FOTO KERUSAKAN</label>
+                <div style="background:#f1f5f9; padding:20px; border-radius:15px; text-align:center; cursor:pointer;" onclick="document.getElementById('i_photo_in').click()"><i class="fas fa-camera"></i> CAPTURE FOTO<input type="file" id="i_photo_in" accept="image/*" capture="environment" style="display:none;" onchange="uploadPhoto(this, 'i_url', 'i_prev')"></div>
+                <input type="hidden" id="i_url"><center><img id="i_prev" style="max-height:150px; margin-top:15px; border-radius:12px; display:none;"></center><br>
+                <button class="btn-act" style="background:var(--accent-orange); color:#fff; width:100%; padding:20px; font-weight:900;" onclick="submitIssue()">KIRIM LAPORAN KENDALA 🚨</button>
+            </div>
+
+            <!-- TAB: KELOLA (SUPERVISOR) -->
+            <div id="issue_list_sv" style="display:none;">
+                <div style="background:#fff; border-radius:24px; padding:25px; border:1px solid var(--border-soft); overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; min-width:900px;">
+                        <thead style="font-family:'Orbitron'; font-size:0.6rem; color:var(--text-muted); text-align:left;">
+                            <tr><th style="padding:15px;">WAKTU</th><th>UNIT</th><th>KATEGORI</th><th>PELAPOR</th><th>STAT</th><th>AKSI</th></tr>
+                        </thead>
+                        <tbody id="issue_table_body" style="font-size:0.8rem; font-weight:700;"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- HISTORY -->
+        <section id="view-history" class="view-content">
+            <div style="background:#fff; border-radius:24px; padding:25px; border:1px solid var(--border-soft); overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; min-width:850px;"><thead style="font-family:'Orbitron'; font-size:0.6rem; color:var(--text-muted); text-align:left;"><tr><th style="padding:15px;">TGL</th><th>UNIT</th><th>ACTIVITY</th><th>PIC</th><th>URL</th><th>AKSI</th></tr></thead><tbody id="full_hist_body" style="font-size:0.8rem; font-weight:700;"></tbody></table>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL FASE 2: VERIFIKASI SUPERVISOR -->
+    <div id="m_verify" class="modal" onclick="if(event.target===this) this.style.display='none'">
+        <div class="m-box">
+            <h3 style="font-family:'Orbitron'; color:var(--accent-blue); margin-bottom:25px;">FASE 2: VERIFIKASI</h3>
+            <label>KEPUTUSAN / TINDAKAN</label><select id="v_dec"><option>PANGGIL PEMILIK GUDANG</option><option>TIM MAINTENANCE INTERNAL</option><option>TUNDA / DITOLAK</option></select>
+            <br><label>NAMA PIC (TUKANG / VENDOR)</label><input type="text" id="v_pic" placeholder="Nama yang bertugas...">
+            <br><label>TANGGAL TENGGAT (DUE DATE)</label><input type="date" id="v_due">
+            <br><label>CATATAN SUPERVISOR</label><textarea id="v_note" rows="3" placeholder="Instruksi khusus..."></textarea>
+            <input type="hidden" id="v_id"><br>
+            <button class="btn-act" style="background:var(--accent-blue); color:#fff; width:100%; padding:20px; font-weight:900;" onclick="submitVerification()">VERIFIKASI & TUGASKAN ✅</button>
+            <button class="btn-act" style="width:100%; margin-top:10px; background:#f1f5f9; color:var(--text-main); border:none; padding:15px; font-family:'Orbitron'; font-weight:800;" onclick="document.getElementById('m_verify').style.display='none'">KEMBALI</button>
+        </div>
+    </div>
+
+    <!-- MODAL FASE 3: CLOSING -->
+    <div id="m_close" class="modal" onclick="if(event.target===this) this.style.display='none'">
+        <div class="m-box">
+            <h3 style="font-family:'Orbitron'; color:var(--accent-green); margin-bottom:25px;">FASE 3: CLOSING</h3>
+            <label>TANGGAL SELESAI AKTUAL</label><input type="date" id="z_date">
+            <br><label>FOTO HASIL PERBAIKAN</label>
+            <div style="background:#f1f5f9; padding:20px; border-radius:15px; text-align:center; cursor:pointer;" onclick="document.getElementById('z_photo_in').click()"><i class="fas fa-check-circle"></i> UPLOAD BUKTI SELESAI<input type="file" id="z_photo_in" accept="image/*" style="display:none;" onchange="uploadPhoto(this, 'z_url', 'z_prev')"></div>
+            <input type="hidden" id="z_url"><center><img id="z_prev" style="max-height:150px; margin-top:15px; border-radius:12px; display:none;"></center>
+            <input type="hidden" id="z_id"><br>
+            <button class="btn-act" style="background:var(--accent-green); color:#fff; width:100%; padding:20px; font-weight:900;" onclick="submitClosing()">SELESAIKAN LAPORAN 🏁</button>
+            <button class="btn-act" style="width:100%; margin-top:10px; background:#f1f5f9; color:var(--text-main); border:none; padding:15px; font-family:'Orbitron'; font-weight:800;" onclick="document.getElementById('m_close').style.display='none'">KEMBALI</button>
+        </div>
+    </div>
+
+    <!-- MODAL LAYOUT MONITOR -->
+    <div id="l_modal" class="modal" onclick="if(event.target===this) this.style.display='none'">
+        <div class="m-box">
+            <h3 id="l_title" style="margin:0; font-family:'Orbitron'; font-size:1rem; margin-bottom:15px;">SMART LAYOUT MONITOR</h3>
+            
+            <div style="margin-bottom:20px;">
+                <label>FILTER ITEM PEKERJAAN</label>
+                <select id="l_filter" onchange="renderSmartGrid()" style="border:2.5px solid var(--accent-blue); font-size:0.8rem;">
+                    <option value="SEMUA">SEMUA PEKERJAAN (GLOBAL)</option>
+                    <option value="DRAINASE">DRAINASE (SALURAN)</option>
+                    <option value="SAWANG ATAP">SAWANG ATAP</option>
+                    <option value="LANTAI">LANTAI UNIT</option>
+                    <option value="DINDING">DINDING / KACA</option>
+                </select>
+            </div>
+
+            <div id="l_grid" class="floor-grid" style="pointer-events:auto;"></div>
+            
+            <div id="l_info" style="margin-top:20px; text-align:left; border-top:1px solid #eee; padding-top:15px;">
+                <div style="font-size:0.5rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Statistik Terakhir:</div>
+                <div id="l_time" style="font-family:'Orbitron'; font-size:0.8rem; color:var(--accent-green); font-weight:900;">-</div>
+                <div id="l_staff" style="font-size:0.7rem; margin-top:3px; font-weight:700;">Petugas: -</div>
+            </div>
+            <button class="btn-act" style="width:100%; margin-top:20px; background:#f1f5f9; color:var(--text-main); border:none; padding:15px; font-family:'Orbitron'; font-weight:800;" onclick="document.getElementById('l_modal').style.display='none'">KEMBALI KE DASHBOARD</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbyUUqAdiw-xXIS1h0UtSGLLoxoLYzR-0uwyic1oGGp9kieVKoQwLFsxjQPxZAc_7JdZng/exec";
+        window.cleaningHistory = [];
+        let selectedPts = [];
+
+        window.onload = function() {
+            initClock();
+            document.querySelectorAll('input[type="date"]').forEach(i => i.valueAsDate = new Date());
+            loadData();
+        };
+
+        function initClock() {
+            setInterval(() => {
+                const now = new Date();
+                const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+                const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+
+                document.getElementById('clock_day').innerText = days[now.getDay()];
+                document.getElementById('clock_date').innerText = months[now.getMonth()] + " " + now.getDate();
+                
+                let h = now.getHours();
+                const m = now.getMinutes().toString().padStart(2, '0');
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                h = h % 12;
+                h = h ? h : 12;
+                document.getElementById('clock_time').innerText = h.toString().padStart(2, '0') + ":" + m;
+                document.getElementById('clock_ampm').innerText = ampm;
+
+                const sec = now.getSeconds();
+                const ring = document.getElementById('clock_ring');
+                ring.style.transform = `rotate(${sec * 6}deg)`;
+            }, 1000);
+        }
+
+        // --- NAVIGATION ---
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebar_overlay').classList.toggle('show');
+        }
+
+        function switchView(v, btn) {
+            document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+            document.getElementById('view-' + v).style.display = 'block';
+            if(btn) { 
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); 
+                btn.classList.add('active'); 
+            }
+            // Close sidebar on mobile after selection
+            if(window.innerWidth <= 768) toggleSidebar();
+        }
+
+        async function loadData() {
+            try {
+                const r = await fetch(`${API_URL}?action=getCleaningData`);
+                const d = await r.json();
+                if(d.success) {
+                    window.cleaningHistory = d.rows;
+                    renderDashboard();
+                    renderIssueBoard();
+                    renderFullHistory();
+                }
+            } catch(e) {}
+        }
+
+        // --- DASHBOARD ---
+        let currentDashMode = 'ONE';
+
+        function switchDashMode(m) {
+            currentDashMode = m;
+            document.querySelectorAll('#btn_dash_one, #btn_dash_all').forEach(b => b.classList.remove('active'));
+            if(m === 'ONE') {
+                document.getElementById('btn_dash_one').classList.add('active');
+                document.getElementById('dash_global_filter').style.display = 'none';
+            } else {
+                document.getElementById('btn_dash_all').classList.add('active');
+                document.getElementById('dash_global_filter').style.display = 'flex';
+            }
+            renderDashboard();
+        }
+
+        function renderDashboard() {
+            const grid = document.getElementById('integrated_grid');
+            const warehouses = ["GUDANG A", "GUDANG B", "GUDANG C", "GUDANG D", "GUDANG E", "GUDANG F", "GUDANG HINO", "GUDANG RM"];
+            grid.innerHTML = '';
+
+            if(currentDashMode === 'ONE') {
+                warehouses.forEach(wh => {
+                    const score = 80 + Math.floor(Math.random()*15);
+                    grid.innerHTML += `
+                        <div class="mini-card" style="border-top:4px solid var(--accent-blue)">
+                            <div style="font-family:'Orbitron'; font-size:0.75rem; font-weight:900; margin-bottom:15px;">${wh}</div>
+                            <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">
+                                <div class="gauge-wrap" style="width:70px; height:70px; position:relative;">
+                                    <svg width="70" height="70"><circle class="gauge-bg" cx="35" cy="35" r="30" style="fill:none; stroke:#f1f5f9; stroke-width:6;"></circle>
+                                    <circle cx="35" cy="35" r="30" style="fill:none; stroke:var(--accent-green); stroke-width:6; stroke-dasharray:${(score/100)*188.5},188.5; transform:rotate(-90deg); transform-origin:center; stroke-linecap:round; transition:1s;"></circle></svg>
+                                    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'Orbitron'; font-size:0.8rem; font-weight:900;">${score}%</div>
+                                </div>
+                                <div style="font-size:0.6rem; font-weight:800; color:var(--accent-green);">UNIT CLEAN</div>
+                            </div>
+                            <div class="action-btns">
+                                <div class="btn-act" onclick="showLastLayout('${wh}')">LAYOUT</div>
+                                <div class="btn-act" onclick="showMaintenanceShortcut('${wh}')">MAINTENANCE</div>
+                            </div>
+                        </div>`;
+                });
+            } else {
+                const itemFilter = document.getElementById('i_global_item').value;
+                warehouses.forEach(wh => {
+                    const points = getWHStatusGrid(wh, itemFilter);
+                    let gridHtml = `<div class="floor-grid" style="width:100%; aspect-ratio:5/4; grid-template-columns:repeat(5,1fr); padding:5px; pointer-events:none;">`;
+                    for(let i=1; i<=20; i++) {
+                        const style = points[i] ? `background:var(--accent-green);` : `background:#f1f5f9; opacity:0.3;`;
+                        gridHtml += `<div class="grid-cell" style="${style} font-size:0.4rem; height:100%; width:100%;">${i}</div>`;
+                    }
+                    gridHtml += `</div>`;
+
+                    grid.innerHTML += `
+                        <div class="mini-card" style="border-top:4px solid var(--accent-orange)">
+                            <div style="font-family:'Orbitron'; font-size:0.7rem; font-weight:900; margin-bottom:10px; display:flex; justify-content:space-between;">
+                                <span>${wh}</span>
+                                <span style="font-size:0.5rem; color:var(--accent-orange);">${itemFilter}</span>
+                            </div>
+                            ${gridHtml}
+                            <div style="margin-top:10px;"><button class="btn-act" style="width:100%; font-size:0.65rem;" onclick="showLastLayout('${wh}')">LIHAT DETAIL</button></div>
+                        </div>`;
+                });
+            }
+        }
+
+        function getWHStatusGrid(wh, filter) {
+            const res = {};
+            window.cleaningHistory.forEach(l => {
+                if(l.gudang !== wh) return;
+                let pts = [], item = "";
+                if(l.notes.startsWith('{')) {
+                    const m = JSON.parse(l.notes); pts = m.pts || []; item = m.item || "";
+                    if(m.type === 'ISSUE') item = m.cat || ""; // Handle Issue category as item in global search
+                } else if(l.notes.includes('Area:[')) {
+                    pts = l.notes.split('Area:[')[1].split(']')[0].split(',').map(n => parseInt(n));
+                }
+                if(filter === 'SEMUA' || item.includes(filter)) {
+                    pts.forEach(p => res[p] = true);
+                }
+            });
+            return res;
+        }
+
+        function showMaintenanceShortcut(wh) {
+            switchView('issues', document.querySelectorAll('.nav-item')[2]);
+            switchIssueTab('kelola');
+        }
+
+        // --- ISSUES LOGIC ---
+        function switchIssueTab(t) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab_' + t).classList.add('active');
+            document.getElementById('issue_form_krani').style.display = t === 'lapor' ? 'block' : 'none';
+            document.getElementById('issue_list_sv').style.display = t === 'kelola' ? 'block' : 'none';
+        }
+
+        function renderIssueBoard() {
+            const body = document.getElementById('issue_table_body');
+            let h = '';
+            let openCount = 0;
+            window.cleaningHistory.slice().reverse().forEach(l => {
+                if(!l.notes || !l.notes.includes('{"type":"ISSUE"')) return;
+                const meta = JSON.parse(l.notes);
+                if(meta.status === 'RESOLVED') return;
+                openCount++;
+                
+                const badge = meta.status === 'OPEN' ? 'badge-open' : 'badge-progress';
+                const act = meta.status === 'OPEN' ? 
+                    `<button class="badge" style="background:var(--accent-blue); border:none; cursor:pointer;" onclick="openVerifyModal('${l.tanggal}', '${l.gudang}')">VERIFIKASI</button>` :
+                    `<button class="badge" style="background:var(--accent-green); border:none; cursor:pointer;" onclick="openCloseModal('${l.tanggal}', '${l.gudang}')">CLOSE</button>`;
+
+                h += `<tr style="border-bottom:1px solid #eee">
+                    <td style="padding:15px; font-size:0.6rem; color:#aaa;">${new Date(l.tanggal).toLocaleString('id-ID')}</td>
+                    <td>${l.gudang} <span class="urgency-high">${meta.urgency === 'TINGGI' ? '⚠️':''}</span></td>
+                    <td>${meta.cat}</td>
+                    <td>${l.petugas}</td>
+                    <td><span class="badge ${badge}">${meta.status}</span></td>
+                    <td>${act}</td>
+                </tr>`;
+            });
+            body.innerHTML = h;
+            document.getElementById('total_open').innerText = openCount;
+        }
+
+        async function submitIssue() {
+            const wh = document.getElementById('i_wh').value;
+            const staff = document.getElementById('i_staff').value;
+            const date = document.getElementById('i_date').value;
+            const shift = document.getElementById('i_shift').value;
+            const url = document.getElementById('i_url').value;
+            if(!wh || !staff || !date || !url) return Swal.fire('Lengkapi Data & Foto!');
+            
+            const meta = { 
+                type:"ISSUE", 
+                status:"OPEN", 
+                date:date,
+                shift:shift,
+                cat:document.getElementById('i_cat').value, 
+                urgency:document.getElementById('i_urgency').value, 
+                loc:document.getElementById('i_loc').value, 
+                desc:document.getElementById('i_desc').value 
+            };
+            const p = { action:'saveCleaningReport', tanggal:new Date().toISOString(), gudang:wh, petugas:staff, photoUrl:url, notes:JSON.stringify(meta) };
+            await performSync(p);
+        }
+
+        function openVerifyModal(id, wh) {
+            document.getElementById('v_id').value = id;
+            document.getElementById('v_pic').value = "";
+            document.getElementById('m_verify').style.display = 'flex';
+        }
+
+        async function submitVerification() {
+            const id = document.getElementById('v_id').value;
+            const oldLog = window.cleaningHistory.find(l => l.tanggal === id);
+            const oldMeta = JSON.parse(oldLog.notes);
+            
+            const newMeta = { ...oldMeta, phase: 2, status: "IN PROGRESS", v_dec: document.getElementById('v_dec').value, v_pic: document.getElementById('v_pic').value, v_due: document.getElementById('v_due').value, v_note: document.getElementById('v_note').value, v_time: new Date().toISOString() };
+            
+            const p = { action: 'saveCleaningReport', tanggal: id, gudang: oldLog.gudang, petugas: oldLog.petugas, photoUrl: oldLog.photoUrl, notes: JSON.stringify(newMeta) };
+            await performSync(p);
+        }
+
+        function openCloseModal(id, wh) {
+            document.getElementById('z_id').value = id;
+            document.getElementById('m_close').style.display = 'flex';
+        }
+
+        async function submitClosing() {
+            const id = document.getElementById('z_id').value;
+            const oldLog = window.cleaningHistory.slice().reverse().find(l => l.tanggal === id);
+            const oldMeta = JSON.parse(oldLog.notes);
+            const url = document.getElementById('z_url').value;
+            if(!url) return Swal.fire('Butuh Foto Hasil!');
+
+            const newMeta = { ...oldMeta, phase: 3, status: "RESOLVED", z_date: document.getElementById('z_date').value, z_photo: url };
+            const p = { action: 'saveCleaningReport', tanggal: id, gudang: oldLog.gudang, petugas: oldLog.petugas, photoUrl: url, notes: JSON.stringify(newMeta) };
+            await performSync(p);
+        }
+
+        // --- HELPERS ---
+        async function performSync(p) {
+            Swal.fire({ title: 'SINKRONISASI...', didOpen: () => Swal.showLoading()});
+            await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
+            Swal.fire('BERHASIL!').then(() => location.reload());
+        }
+
+        async function uploadPhoto(input, urlId, prevId) {
+            const file = input.files[0]; if(!file) return;
+            Swal.fire({title:'Uploading...', didOpen:()=>Swal.showLoading()});
+            const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', 'wh_cleaning');
+            const r = await fetch('https://api.cloudinary.com/v1_1/doxv3khr7/image/upload', {method:'POST', body:fd});
+            const d = await r.json();
+            document.getElementById(urlId).value = d.secure_url;
+            document.getElementById(prevId).src = d.secure_url;
+            document.getElementById(prevId).style.display = 'block';
+            Swal.fire('Cloud Ready ☁️');
+        }
+
+        function switchView(v, btn) {
+            document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+            document.getElementById('view-' + v).style.display = 'block';
+            if(btn) { document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); btn.classList.add('active'); }
+        }
+
+        let currentWhForLayout = "";
+
+        function showLastLayout(whName) {
+            currentWhForLayout = whName;
+            const m = document.getElementById('l_modal');
+            document.getElementById('l_title').innerText = "SMART MONITOR : " + whName;
+            document.getElementById('l_filter').value = "SEMUA";
+            m.style.display = 'flex';
+            renderSmartGrid();
+        }
+
+        function renderSmartGrid() {
+            const filter = document.getElementById('l_filter').value;
+            const grid = document.getElementById('l_grid');
+            grid.innerHTML = '';
+
+            // Build Point History Map
+            const pointMap = {}; 
+            for(let i=1; i<=20; i++) pointMap[i] = { date: '', staff: '' };
+
+            // Scan history from oldest to newest to get latest
+            window.cleaningHistory.forEach(l => {
+                if(l.gudang !== currentWhForLayout) return;
+                
+                let pts = [];
+                let item = "";
+                let ok = false;
+
+                if(l.notes.startsWith('{')) {
+                    const meta = JSON.parse(l.notes);
+                    pts = meta.pts || [];
+                    item = meta.item || "";
+                } else if(l.notes.includes('Area:[')) {
+                    pts = l.notes.split('Area:[')[1].split(']')[0].split(',').map(n => parseInt(n));
+                    if(l.notes.includes('Item:[')) item = l.notes.split('Item:[')[1].split(']')[0];
+                }
+
+                if(filter === 'SEMUA' || item.includes(filter)) {
+                    pts.forEach(p => {
+                        const d = new Date(l.tanggal);
+                        pointMap[p] = { 
+                            date: d.toLocaleDateString('id-ID', {day:'numeric', month:'numeric'}),
+                            time: d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}),
+                            staff: l.petugas,
+                            photo: l.photoUrl,
+                            item: item
+                        };
+                    });
+                }
+            });
+
+            for(let i=1; i<=20; i++) {
+                const d = document.createElement('div');
+                d.className = 'grid-cell';
+                d.style.flexDirection = 'column';
+                d.style.padding = '2px';
+                
+                let html = `<div style="font-size:0.6rem; opacity:0.3;">${i}</div>`;
+                if(pointMap[i].date) {
+                    d.style.background = 'var(--accent-green)';
+                    d.style.color = '#fff';
+                    d.style.cursor = 'pointer';
+                    d.onclick = () => {
+                        Swal.fire({
+                            title: `AREA [${i}] - ${pointMap[i].item}`,
+                            html: `<div style="text-align:left; font-family:'Inter';">
+                                    <b>Petugas:</b> ${pointMap[i].staff}<br>
+                                    <b>Waktu:</b> ${pointMap[i].date} pukul ${pointMap[i].time}
+                                   </div>`,
+                            imageUrl: pointMap[i].photo,
+                            imageWidth: '100%',
+                            imageAlt: 'Bukti Pengerjaan',
+                            confirmButtonText: 'TUTUP',
+                            confirmButtonColor: 'var(--accent-blue)',
+                            background: '#fff',
+                            borderRadius: '25px'
+                        });
+                    };
+                    html = `
+                        <div style="font-size:0.5rem; font-weight:900;">${pointMap[i].date}</div>
+                        <div style="font-size:0.4rem; opacity:0.8;">${pointMap[i].time}</div>
+                        <div style="font-size:0.35rem; font-weight:800; margin-top:2px;">${pointMap[i].staff.split(' ')[0]}</div>
+                    `;
+                }
+                d.innerHTML = html;
+                grid.appendChild(d);
+            }
+
+            // Update footer info with most recent overall
+            const lastLog = window.cleaningHistory.slice().reverse().find(l => l.gudang === currentWhForLayout);
+            if(lastLog) {
+                document.getElementById('l_time').innerText = new Date(lastLog.tanggal).toLocaleString();
+                document.getElementById('l_staff').innerText = "Update Terakhir oleh: " + lastLog.petugas;
+            }
+        }
+
+        function initGrid(wh) {
+            document.getElementById('grid_pan').style.display = 'block';
+            selectedPts = [];
+            const g = document.getElementById('f_grid'); g.innerHTML = '';
+            for(let i=1; i<=20; i++) {
+                const c = document.createElement('div'); c.className = 'grid-cell'; c.innerText = i;
+                c.onclick = () => { c.classList.toggle('selected'); if(selectedPts.includes(i)) selectedPts=selectedPts.filter(p=>p!==i); else selectedPts.push(i); };
+                g.appendChild(c);
+            }
+        }
+
+        function renderFullHistory() {
+            const b = document.getElementById('full_hist_body');
+            let h = '';
+            window.cleaningHistory.slice().reverse().forEach(l => {
+                let act = "ROUTINE CLEAN";
+                if(l.notes.includes('ISSUE')) {
+                    const m = JSON.parse(l.notes);
+                    act = `[${m.status}] ${m.cat}`;
+                } else if(l.notes.includes('"type":"CLEAN"')) {
+                    const m = JSON.parse(l.notes);
+                    act = `CLEAN: ${m.item || 'UNIT'}`;
+                }
+
+                // Perbaikan tampilan Ikon Foto (Interaktif)
+                const photoHtml = l.photoUrl ? 
+                    `<i class="fas fa-image" style="color:var(--accent-blue); cursor:pointer; font-size:1.1rem;" onclick="Swal.fire({imageUrl:'${l.photoUrl}', imageWidth:'100%', borderRadius:'20px', confirmButtonColor:'var(--accent-blue)'})"></i>` : 
+                    `<span style="color:#cbd5e1; font-size:0.8rem;">-</span>`;
+
+                h += `
+                    <tr style="border-bottom:1px solid #eee">
+                        <td style="padding:15px; font-size:0.7rem;">${new Date(l.tanggal).toLocaleDateString('id-ID')}</td>
+                        <td style="font-weight:700;">${l.gudang}</td>
+                        <td style="font-size:0.75rem;">${act}</td>
+                        <td>${l.petugas}</td>
+                        <td style="text-align:center;">${photoHtml}</td>
+                        <td><button class="badge" style="background:rgba(239,68,68,0.1); color:var(--accent-red); border:none; cursor:pointer; padding:8px 12px;" onclick="deleteRecord('${l.tanggal}')"><i class="fas fa-trash"></i></button></td>
+                    </tr>`;
+            });
+            b.innerHTML = h;
+        }
+
+        async function deleteRecord(ts) {
+            const { isConfirmed } = await Swal.fire({
+                title: 'HAPUS DATA?',
+                text: "Data yang dihapus tidak dapat dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: 'var(--accent-red)',
+                cancelButtonColor: 'var(--text-muted)',
+                confirmButtonText: 'YA, HAPUS! 🗑️',
+                cancelButtonText: 'BATAL'
+            });
+
+            if (isConfirmed) {
+                Swal.fire({ title: 'MENGHAPUS...', didOpen: () => Swal.showLoading() });
+                try {
+                    // Gunakan pola yang sama dengan performSync (POST + no-cors) agar stabil
+                    const p = { action: 'deleteCleaningData', tanggal: ts };
+                    await fetch(API_URL, { 
+                        method: 'POST', 
+                        mode: 'no-cors', 
+                        body: JSON.stringify(p) 
+                    });
+                    
+                    Swal.fire('TERHAPUS!', 'Data berhasil dihapus.', 'success').then(() => {
+                        location.reload(); // Reload untuk memastikan data benar-benar sinkron
+                    });
+                } catch(e) {
+                    Swal.fire('ERROR', 'Koneksi bermasalah.', 'error');
+                }
+            }
+        }
+
+        async function submitChecklist() {
+            const wh = document.getElementById('c_wh').value;
+            const staff = document.getElementById('c_staff').value;
+            if(!wh || !staff || selectedPts.length === 0) return Swal.fire('Lengkapi Data!');
+            const meta = { 
+                type:"CLEAN", 
+                item: document.getElementById('c_item').value,
+                pts:selectedPts, 
+                jam:`${document.getElementById('c_start').value}-${document.getElementById('c_end').value}` 
+            };
+            const p = { action:'saveCleaningReport', tanggal:new Date().toISOString(), gudang:wh, petugas:staff, photoUrl:document.getElementById('c_url').value, notes:JSON.stringify(meta) };
+            await performSync(p);
+        }
+    </script>
+</body>
+
+</html>
