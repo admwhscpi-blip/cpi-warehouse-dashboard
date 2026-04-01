@@ -231,8 +231,15 @@ body{background:var(--bg-primary);background-image:radial-gradient(at 15% 30%,va
 
 /* MOBILE */
 @media(max-width:900px){
-    .clock-container{display:none;}
-    .hamburger-btn{display:flex;}
+    .header-bar{padding:10px 14px;flex-direction:column;gap:8px;align-items:center;}
+    .header-left{width:100%;justify-content:space-between;gap:5px;}
+    .brand-box h1{font-size:.92rem;}
+    .brand-box h1 span{font-size:.45rem;}
+    .brand-sub{font-size:.42rem;}
+    .clock-container{width:100%;justify-content:center;height:40px;gap:10px;padding:4px 10px;}
+    .clock-date{font-size:.78rem;}
+    .clock-time{font-size:.9rem;}
+    .clock-visual{width:32px;height:32px;}
     .main-wrap{padding:18px 14px 40px;}
     .title-section h1{font-size:1.35rem;letter-spacing:2px;}
     .kpi-row{grid-template-columns:repeat(3,1fr);gap:8px;}
@@ -302,7 +309,6 @@ body{background:var(--bg-primary);background-image:radial-gradient(at 15% 30%,va
 <!-- HEADER -->
 <header class="header-bar">
     <div class="header-left">
-        <button class="hamburger-btn" onclick="openMobileMenu()"><i class="fas fa-bars"></i></button>
         <a href="homepage-v1.html" class="back-btn"><i class="fas fa-chevron-left"></i> KEMBALI</a>
         <div class="brand-box"><div class="brand-glow"></div><h1>SMART WAREHOUSE <span>V2.0</span></h1><div class="brand-sub">WAREHOUSE MANAGEMENT SYSTEM</div></div>
     </div>
