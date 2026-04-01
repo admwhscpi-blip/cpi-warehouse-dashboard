@@ -3,6 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ANTI CACHE BROWSER -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script>
+        if(window.location.search.indexOf('nocache=')===-1){
+            window.location.replace(window.location.href.split('?')[0]+'?nocache='+new Date().getTime());
+        }
+    </script>
     <title>SMART WAREHOUSE V2.0 - RM Treatment</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -332,13 +341,20 @@ body{background:var(--bg-primary);background-image:radial-gradient(at 15% 30%,va
             </div>
             <select id="gudang-select" style="display:none;" onchange="renderViz()"></select>
         </div>
-        <div class="filter-chips" id="filter-chips">
-            <button class="chip active" data-filter="all" onclick="setFilter('all')">Semua</button>
-            <button class="chip" data-filter="FUMIGASI" onclick="setFilter('FUMIGASI')">🔥 Fumigasi</button>
-            <button class="chip" data-filter="PROSES LANGSIR" onclick="setFilter('PROSES LANGSIR')">🚚 Langsir</button>
-            <button class="chip" data-filter="BANGUN STAPEL" onclick="setFilter('BANGUN STAPEL')">🏗️ Stapel</button>
-            <button class="chip" data-filter="HOLD_ALL" onclick="setFilter('HOLD_ALL')">📋 Hold</button>
-            <button class="chip" data-filter="RBF" onclick="setFilter('RBF')" style="border-color:rgba(239,68,68,.3);color:#dc2626;">🌾 RBF</button>
+        <div class="filter-wrapper" style="display:flex; align-items:center; gap:20px; flex-wrap:wrap; background:rgba(255,255,255,0.5); padding:6px 14px; border-radius:12px; border:1px solid rgba(14,165,233,0.1);">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-family:'Orbitron'; font-size:0.6rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:1px;">Default</span>
+                <button class="chip active" data-filter="all" onclick="setFilter('all')">🌟 Semua Data</button>
+            </div>
+            <div style="width:2px; height:20px; background:rgba(0,0,0,0.06);"></div>
+            <div class="filter-chips" id="filter-chips" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span style="font-family:'Orbitron'; font-size:0.6rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-right:4px;">Filter</span>
+                <button class="chip" data-filter="FUMIGASI" onclick="setFilter('FUMIGASI')">🔥 Fumigasi</button>
+                <button class="chip" data-filter="PROSES LANGSIR" onclick="setFilter('PROSES LANGSIR')">🚚 Langsir</button>
+                <button class="chip" data-filter="BANGUN STAPEL" onclick="setFilter('BANGUN STAPEL')">🏗️ Stapel</button>
+                <button class="chip" data-filter="HOLD_ALL" onclick="setFilter('HOLD_ALL')">📋 Hold</button>
+                <button class="chip" data-filter="RBF" onclick="setFilter('RBF')" style="border-color:rgba(239,68,68,.3);color:#dc2626;background:rgba(239,68,68,0.05);">🌾 RBF</button>
+            </div>
         </div>
     </div>
 
@@ -581,7 +597,7 @@ function renderSummary(){
                 const isFumi=t.type==='FUMIGASI';
                 const cls=isFumi?'fumi':'nitro';
                 const count=d.riwayatFumigasi?`Ke-${d.riwayatFumigasi}`:'Ke-1';
-                html+=`<div class="sg-item">
+                html+=`<div class="sg-item" style="cursor:pointer;" onclick="openModal(allData[${allData.indexOf(d)}])">
                     <div><span class="sg-badge ${cls}">${d.lot}</span></div>
                     <div class="sg-umur">${d.umur} hr</div>
                     <div class="sg-item-right ${cls}">${count}</div>
@@ -594,7 +610,7 @@ function renderSummary(){
             <div class="sg-list-header"><span>Lot</span><span>Umur</span><span class="sgh-right">Riwayat Fumigasi</span></div>`;
             nonLots.forEach(d=>{
                 const date=d.tglFumigasi?formatDate(d.tglFumigasi):'Belum Ada';
-                html+=`<div class="sg-item">
+                html+=`<div class="sg-item" style="cursor:pointer;" onclick="openModal(allData[${allData.indexOf(d)}])">
                     <div><span class="sg-badge non">${d.lot}</span></div>
                     <div class="sg-umur">${d.umur} hr</div>
                     <div class="sg-item-right non">${date}</div>
