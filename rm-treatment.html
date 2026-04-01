@@ -105,14 +105,28 @@ body{background:var(--bg-primary);background-image:radial-gradient(at 15% 30%,va
 .summary-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
 .summary-title{font-family:'Orbitron';font-size:.85rem;font-weight:700;color:var(--text-primary);}
 .summary-stat{display:inline-flex;align-items:center;gap:5px;font-family:'Rajdhani';font-size:.82rem;font-weight:700;padding:4px 12px;border-radius:10px;}
-.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;}
-.sg-card{background:rgba(14,165,233,.03);border:1px solid rgba(14,165,233,.08);border-radius:10px;padding:10px 12px;}
-.sg-card .sg-name{font-family:'Orbitron';font-size:.65rem;color:var(--text-muted);letter-spacing:.5px;margin-bottom:6px;}
-.sg-card .sg-row{display:flex;justify-content:space-between;font-family:'Rajdhani';font-size:.75rem;font-weight:600;color:var(--text-secondary);padding:2px 0;border-bottom:1px solid rgba(0,0,0,.03);}
-.sg-card .sg-row:last-child{border:none;}
-.sg-card .sg-val{font-weight:800;}
-.sg-val.v-fumi{color:#dc2626;}.sg-val.v-nitro{color:#6d28d9;}.sg-val.v-none{color:#546e7a;}
-@media(max-width:900px){.summary-grid{grid-template-columns:1fr 1fr;gap:7px;}.sg-card{padding:8px;}.summary-stat{font-size:.72rem;padding:3px 8px;}}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;}
+.sg-card{background:rgba(255,255,255,.4);border:1px solid rgba(14,165,233,.12);border-radius:12px;padding:12px 14px;box-shadow:0 4px 15px rgba(0,0,0,.02);}
+.sg-card .sg-name{font-family:'Orbitron';font-size:.75rem;color:var(--text-primary);letter-spacing:.5px;border-bottom:1px solid rgba(0,0,0,.04);padding-bottom:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.sg-card .sg-name span:last-child{font-family:'Rajdhani';font-size:.7rem;color:var(--text-muted);background:rgba(0,0,0,.03);padding:2px 6px;border-radius:6px;font-weight:700;}
+.sg-sect{margin-bottom:10px;}
+.sg-sect:last-child{margin-bottom:0;}
+.sg-sect-title{font-size:.62rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:5px;letter-spacing:.5px;}
+.sg-item, .sg-list-header {display:grid;grid-template-columns:52px 55px 1fr;gap:8px;align-items:center;}
+.sg-list-header {font-family:'Inter';font-size:.53rem;text-transform:uppercase;font-weight:700;color:var(--text-muted);letter-spacing:.5px;padding:2px 10px 5px 10px;border-bottom:1px solid rgba(0,0,0,.04);margin-bottom:3px;}
+.sgh-right {text-align:right;}
+.sg-item{padding:7px 10px;background:rgba(255,255,255,.6);border:1px solid rgba(14,165,233,.12);border-radius:9px;margin-bottom:5px;transition:.3s;}
+.sg-item:hover{background:#fff;border-color:rgba(14,165,233,.3);box-shadow:0 4px 12px rgba(0,0,0,.04);transform:translateY(-1px);}
+.sg-badge{font-family:'Orbitron';font-size:.65rem;font-weight:800;padding:3px 0;text-align:center;border-radius:6px;letter-spacing:.5px;display:block;}
+.sg-badge.fumi{background:rgba(220,38,38,.1);color:#dc2626;border:1px solid rgba(220,38,38,.2);}
+.sg-badge.nitro{background:rgba(109,40,217,.1);color:#6d28d9;border:1px solid rgba(109,40,217,.2);}
+.sg-badge.non{background:rgba(148,163,184,.1);color:#475569;border:1px solid rgba(148,163,184,.2);}
+.sg-umur{font-family:'Rajdhani';font-size:.65rem;font-weight:700;color:var(--text-secondary);}
+.sg-item-right{font-family:'Rajdhani';font-size:.62rem;font-weight:700;text-align:right;}
+.sg-item-right.fumi{color:#dc2626;}
+.sg-item-right.nitro{color:#6d28d9;}
+.sg-item-right.non{color:var(--text-muted);font-size:.58rem;}
+@media(max-width:900px){.summary-grid{grid-template-columns:1fr 1fr;gap:8px;}.sg-card{padding:10px;}.summary-stat{font-size:.72rem;padding:3px 8px;}}
 @media(max-width:480px){.summary-grid{grid-template-columns:1fr;}}
 
 /* WAREHOUSE */
@@ -174,12 +188,12 @@ body{background:var(--bg-primary);background-image:radial-gradient(at 15% 30%,va
 @keyframes pulse-ring{0%{opacity:1;transform:scale(1)}70%{opacity:0;transform:scale(1.15)}100%{opacity:0;transform:scale(1.15)}}
 
 /* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(6px);z-index:5000;display:none;justify-content:center;align-items:center;animation:fadeIn .25s;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(6px);z-index:5000;display:none;justify-content:center;align-items:flex-start;padding:30px 20px;overflow-y:auto;animation:fadeIn .25s;}
 .modal-overlay.show{display:flex;}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.modal-card{background:#fff;border-radius:18px;padding:28px;max-width:460px;width:92%;box-shadow:0 22px 55px rgba(0,0,0,.14);position:relative;animation:modalSlide .3s cubic-bezier(.4,0,.2,1);}
+.modal-card{background:#fff;border-radius:18px;padding:28px;margin:auto;max-width:460px;width:100%;box-shadow:0 22px 55px rgba(0,0,0,.14);position:relative;animation:modalSlide .3s cubic-bezier(.4,0,.2,1);}
 @keyframes modalSlide{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
-.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-muted);transition:.2s;}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-muted);transition:.2s;z-index:10;}
 .modal-close:hover{color:var(--text-primary);transform:rotate(90deg);}
 .modal-title{font-family:'Orbitron';font-size:1.1rem;margin-bottom:4px;display:flex;align-items:center;gap:9px;}
 .modal-subtitle{font-size:.78rem;color:var(--text-muted);margin-bottom:18px;}
@@ -245,8 +259,8 @@ body{background:var(--bg-primary);background-image:radial-gradient(at 15% 30%,va
     .brand-box h1{font-size:.7rem;}
     .brand-sub{display:none;}
 }
-.mobile-menu{display:none;position:fixed;top:0;left:0;width:85%;max-width:320px;height:100vh;background:#0d1117;z-index:6000;flex-direction:column;padding:20px;transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1);box-shadow:5px 0 30px rgba(0,0,0,.4);}
-.mobile-menu.open{transform:translateX(0);}
+.mobile-menu{display:flex;position:fixed;top:0;left:0;width:85%;max-width:320px;height:100vh;background:#0d1117;z-index:6000;flex-direction:column;padding:20px;transform:translateX(-100%);visibility:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1),visibility 0s linear .35s;box-shadow:5px 0 30px rgba(0,0,0,.4);}
+.mobile-menu.open{transform:translateX(0);visibility:visible;transition:transform .35s cubic-bezier(.4,0,.2,1),visibility 0s;}
 .mobile-menu-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:5999;}
 .mobile-menu-overlay.open{display:block;}
 .mobile-menu .mm-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;padding-bottom:15px;border-bottom:1px solid rgba(255,255,255,.08);}
@@ -510,8 +524,9 @@ function openModal(d){
         <div class="modal-field"><label>Tgl Terakhir Fumigasi</label><div class="val">${formatDate(d.tglFumigasi)}</div></div>
         <div class="modal-field"><label>Riwayat Fumigasi/N₂</label><div class="val">${d.riwayatFumigasi?d.riwayatFumigasi+'x':'-'}</div></div>`;
     document.getElementById('lot-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
 }
-function closeModal(){document.getElementById('lot-modal').classList.remove('show');}
+function closeModal(){document.getElementById('lot-modal').classList.remove('show');document.body.style.overflow = '';}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
 /* TABLE */
@@ -539,28 +554,54 @@ function renderSummary(){
     const filtered=applyFilter(allData);
     const total=filtered.length;
     let fumiCnt=0,nitroCnt=0,nonCnt=0;
-    filtered.forEach(d=>{const t=getTreatment(d);if(t.type==='FUMIGASI')fumiCnt++;else if(t.type==='NITRO'||t.type==='N2')nitroCnt++;else if(t.type==='HOLD_ALL'||t.type==='EMPTY')nonCnt++;});
-    const fumiPct=total?Math.round(fumiCnt/total*100):0;
-    const nitroPct=total?Math.round(nitroCnt/total*100):0;
+    filtered.forEach(d=>{const t=getTreatment(d);if(t.type==='FUMIGASI')fumiCnt++;else if(t.type==='NITRO'||t.type==='N2')nitroCnt++;else nonCnt++;});
     const filterLabel=activeFilter==='RBF'?'Material RBF':activeFilter==='FUMIGASI'?'Fumigasi':activeFilter==='PROSES LANGSIR'?'Proses Langsir':activeFilter==='BANGUN STAPEL'?'Bangun Stapel':activeFilter==='HOLD_ALL'?'Hold (Tanpa Treatment)':activeFilter;
-    let html=`<div class="summary-header"><span class="summary-title">📊 Rangkuman: ${filterLabel}</span>`;
-    html+=`<span class="summary-stat" style="background:rgba(14,165,233,.08);color:var(--accent-blue);">Total: <b>${total}</b> lot</span>`;
-    if(fumiCnt)html+=`<span class="summary-stat" style="background:rgba(220,38,38,.1);color:#dc2626;">🔥 Fumigasi: <b>${fumiCnt}</b> (${fumiPct}%)</span>`;
-    if(nitroCnt)html+=`<span class="summary-stat" style="background:rgba(109,40,217,.1);color:#6d28d9;">❄️ N₂: <b>${nitroCnt}</b> (${nitroPct}%)</span>`;
+    let html=`<div class="summary-header"><span class="summary-title">📊 Analisis Detail: ${filterLabel}</span>`;
+    html+=`<span class="summary-stat" style="background:rgba(14,165,233,.08);color:var(--accent-blue);">Total: <b>${total}</b> Lot</span>`;
+    if(fumiCnt||nitroCnt)html+=`<span class="summary-stat" style="background:rgba(220,38,38,.1);color:#dc2626;">🔥 Treatment Lanjutan: <b>${fumiCnt+nitroCnt}</b> Lot</span>`;
+    if(nonCnt)html+=`<span class="summary-stat" style="background:rgba(148,163,184,.15);color:#475569;">📋 Diluar Treatment: <b>${nonCnt}</b> Lot</span>`;
     html+=`</div>`;
-    // Mini table per gudang
+    
     const gudangs=getGudangList();
     html+=`<div class="summary-grid">`;
     gudangs.forEach(g=>{
         const gLots=filtered.filter(d=>d.gudang===g);
         if(!gLots.length)return;
-        let gF=0,gN=0,gNon=0;
-        gLots.forEach(d=>{const t=getTreatment(d);if(t.type==='FUMIGASI')gF++;else if(t.type==='NITRO'||t.type==='N2')gN++;else if(!t.active)gNon++;});
-        html+=`<div class="sg-card"><div class="sg-name">${g}</div>`;
-        html+=`<div class="sg-row"><span>Total Lot</span><span class="sg-val">${gLots.length}</span></div>`;
-        html+=`<div class="sg-row"><span>🔥 Fumigasi</span><span class="sg-val v-fumi">${gF}</span></div>`;
-        html+=`<div class="sg-row"><span>❄️ Nitro/N₂</span><span class="sg-val v-nitro">${gN}</span></div>`;
-        html+=`<div class="sg-row"><span>📋 Non-Treatment</span><span class="sg-val v-none">${gNon}</span></div>`;
+        
+        const activeLots=gLots.filter(d=>{const t=getTreatment(d);return t.type==='FUMIGASI'||t.type==='NITRO'||t.type==='N2';});
+        const nonLots=gLots.filter(d=>{const t=getTreatment(d);return !(t.type==='FUMIGASI'||t.type==='NITRO'||t.type==='N2');});
+        
+        html+=`<div class="sg-card"><div class="sg-name"><span>${g}</span><span>${gLots.length} Lot</span></div>`;
+        
+        if(activeLots.length){
+            html+=`<div class="sg-sect"><div class="sg-sect-title">🔥 Sedang Treatment (Fumi/N₂)</div>
+            <div class="sg-list-header"><span>Lot</span><span>Umur</span><span class="sgh-right">Fumigasi Ke-</span></div>`;
+            activeLots.forEach(d=>{
+                const t=getTreatment(d);
+                const isFumi=t.type==='FUMIGASI';
+                const cls=isFumi?'fumi':'nitro';
+                const count=d.riwayatFumigasi?`Ke-${d.riwayatFumigasi}`:'Ke-1';
+                html+=`<div class="sg-item">
+                    <div><span class="sg-badge ${cls}">${d.lot}</span></div>
+                    <div class="sg-umur">${d.umur} hr</div>
+                    <div class="sg-item-right ${cls}">${count}</div>
+                </div>`;
+            });
+            html+=`</div>`;
+        }
+        if(nonLots.length){
+            html+=`<div class="sg-sect"><div class="sg-sect-title">📋 Diluar Treatment (Langsir/Hold/Dll)</div>
+            <div class="sg-list-header"><span>Lot</span><span>Umur</span><span class="sgh-right">Riwayat Fumigasi</span></div>`;
+            nonLots.forEach(d=>{
+                const date=d.tglFumigasi?formatDate(d.tglFumigasi):'Belum Ada';
+                html+=`<div class="sg-item">
+                    <div><span class="sg-badge non">${d.lot}</span></div>
+                    <div class="sg-umur">${d.umur} hr</div>
+                    <div class="sg-item-right non">${date}</div>
+                </div>`;
+            });
+            html+=`</div>`;
+        }
         html+=`</div>`;
     });
     html+=`</div>`;
