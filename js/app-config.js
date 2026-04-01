@@ -9,6 +9,7 @@ const CONFIG = {
     BKK_DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbxlr7oTe5pD6psW9DC4gKMdLH2XqWHcK3E-cBYvzQrml1-7-U-JKH-5JoyBMBBjuL3W/exec?action=getDowntimeQuery",
     OVERTIME_API_URL: "https://script.google.com/macros/s/AKfycbwjxJVAhHSpYY9taTQ5SR7A00M3pQfHdm9lXO33Zr88EDS1awbrFj2xkpeN0rOGomaI/exec",
     AGING_API_URL: "https://script.google.com/macros/s/AKfycbzYHxeRD0CIQs3P30YB-pPtg34Rs2qaIrApm4FibPTsEqX7RMkH_9WGeLhoGDaeir7nxw/exec",
+    TREATMENT_API_URL: "https://script.google.com/macros/s/AKfycbzzB0fl9Z_AkBIcRoKWx60Xqi9w71aMKIItzD8a76vGIC9kp2UocJNDaxrE-2w1WM_XYg/exec",
 
 
     // Konfigurasi konversi satuan
