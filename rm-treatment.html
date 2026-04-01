@@ -42,8 +42,6 @@ body{background:var(--bg-primary);background-image:radial-gradient(at 15% 30%,va
 /* HEADER */
 .header-bar{background:var(--header-bg);border-bottom:1px solid var(--header-border);padding:12px 28px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000;backdrop-filter:blur(10px);}
 .header-left{display:flex;align-items:center;gap:16px;}
-.back-btn{color:var(--text-muted);text-decoration:none;font-size:.82rem;display:flex;align-items:center;gap:5px;transition:.3s;font-family:'Rajdhani';font-weight:600;}
-.back-btn:hover{color:#fff;}
 .brand-box{display:flex;flex-direction:column;position:relative;overflow:hidden;}
 .brand-box h1{font-family:'Orbitron';font-size:1.05rem;color:var(--neon-cyan);text-shadow:0 0 15px rgba(6,182,212,0.4);letter-spacing:3px;line-height:1.1;}
 .brand-box h1 span{display:inline-block;font-size:.5rem;color:#000;background:var(--neon-cyan);padding:1px 5px;border-radius:3px;font-weight:800;margin-left:4px;box-shadow:0 0 10px var(--neon-cyan);animation:flicker-v2 2s infinite;}
@@ -232,7 +230,7 @@ body{background:var(--bg-primary);background-image:radial-gradient(at 15% 30%,va
 /* MOBILE */
 @media(max-width:900px){
     .header-bar{padding:10px 14px;flex-direction:column;gap:8px;align-items:center;}
-    .header-left{width:100%;justify-content:space-between;gap:5px;}
+    .header-left{width:100%;justify-content:flex-start;gap:5px;}
     .brand-box h1{font-size:.92rem;}
     .brand-box h1 span{font-size:.45rem;}
     .brand-sub{font-size:.42rem;}
@@ -309,7 +307,6 @@ body{background:var(--bg-primary);background-image:radial-gradient(at 15% 30%,va
 <!-- HEADER -->
 <header class="header-bar">
     <div class="header-left">
-        <a href="homepage-v1.html" class="back-btn"><i class="fas fa-chevron-left"></i> KEMBALI</a>
         <div class="brand-box"><div class="brand-glow"></div><h1>SMART WAREHOUSE <span>V2.0</span></h1><div class="brand-sub">WAREHOUSE MANAGEMENT SYSTEM</div></div>
     </div>
     <div class="clock-container" id="desktop-clock">
