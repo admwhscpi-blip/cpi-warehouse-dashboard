@@ -1325,9 +1325,15 @@
             // 1. Ambil dari Cache Lokal dulu agar cepat tampil (UI instan)
             const s = localStorage.getItem('smart_surveys');
             if(s) {
-                surveys = JSON.parse(s);
+                const cachedData = JSON.parse(s);
+                // Deduplikasi cache agar tidak ada duplikat historis
+                const dedupMap = new Map();
+                cachedData.forEach(item => { if(item.id) dedupMap.set(item.id, item); });
+                surveys = Array.from(dedupMap.values());
+                
                 renderMarkers();
                 renderList();
+                renderSimulationList();
             }
 
             // 2. Lakukan Sinkronisasi Real-time ke Cloud (Bypass Browser Cache)
@@ -1370,6 +1376,7 @@
                         localStorage.setItem('smart_surveys', JSON.stringify(surveys));
                         renderMarkers();
                         renderList();
+                        renderSimulationList(); // Pastikan simulasi juga terupdate
                     }
                 })
                 .catch(e => console.warn("Sinkronisasi Cloud Tertunda:", e))
