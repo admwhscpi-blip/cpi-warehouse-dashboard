@@ -379,10 +379,50 @@
             .dm-grid { grid-template-columns:1fr !important; }
             .form-grid { grid-template-columns: 1fr; }
             .form-group.full { grid-column: span 1; }
+            .sim-container { flex-direction: column !important; }
+            .sim-picker { width: 100% !important; border-right: none !important; border-bottom: 1px solid var(--glass-border); }
         }
 
+        /* SIMULASI DEAL STYLES */
+        .sim-container { display: flex; gap: 0; background: #f8fafc; min-height: calc(100vh - 0px); }
+        .sim-picker { width: 350px; background: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .sim-picker-header { padding: 25px; border-bottom: 1px solid #f1f5f9; background: #fff; z-index: 10; }
+        .sim-list { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; }
+        
+        .sim-item { 
+            background: #fff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.3s; 
+        }
+        .sim-item:hover { border-color: var(--accent-blue); transform: translateX(5px); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1); }
+        .sim-item.active { border-color: var(--accent-blue); background: rgba(14, 165, 233, 0.05); }
+        
+        .sim-check { 
+            width: 22px; height: 22px; border: 2px solid #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: 0.3s; color: transparent; font-size: 0.7rem; 
+        }
+        .sim-item.active .sim-check { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; box-shadow: 0 0 10px rgba(14, 165, 233, 0.5); }
+        
+        .sim-info { flex: 1; }
+        .sim-name { font-family: 'Orbitron'; font-size: 0.75rem; font-weight: 900; color: var(--text-main); margin-bottom: 3px; text-transform: uppercase; }
+        .sim-meta { font-size: 0.65rem; color: var(--text-muted); font-weight: 700; }
+
+        .sim-result { flex: 1; padding: 40px; background: radial-gradient(circle at top right, #0f172a, #020617); position: relative; overflow-y: auto; color: #fff; display: flex; flex-direction: column; }
+        .sim-watermark { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20rem; color: rgba(6, 182, 212, 0.03); pointer-events: none; }
+        
+        .calc-header { margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; z-index: 1; }
+        .calc-title { font-family: 'Orbitron'; font-size: 1.5rem; font-weight: 900; color: var(--neon-cyan); letter-spacing: 2px; }
+        
+        .calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; z-index: 1; }
+        .calc-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 20px; padding: 25px; backdrop-filter: blur(10px); }
+        .calc-label { font-family: 'Orbitron'; font-size: 0.7rem; letter-spacing: 2px; color: #94a3b8; margin-bottom: 15px; text-transform: uppercase; }
+        .calc-math { font-size: 0.85rem; color: #cbd5e1; margin-bottom: 15px; font-weight: 600; line-height: 1.6; }
+        .calc-total { font-family: 'Orbitron'; font-size: 1.8rem; font-weight: 900; color: #10b981; text-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+        
+        .calc-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .calc-table th { text-align: left; font-size: 0.65rem; color: #64748b; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .calc-table td { padding: 12px 0; font-size: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .calc-name { font-family: 'Orbitron'; font-weight: 800; color: var(--neon-cyan); }
     </style>
 </head>
+
 <body>
 
     <!-- MAIN APP LOADER -->
@@ -430,6 +470,7 @@
         <nav class="nav-menu">
             <a class="nav-item active" id="nav-map" onclick="switchTab('map')"><i class="fas fa-map-marked-alt"></i><span>Map View</span></a>
             <a class="nav-item" id="nav-list" onclick="switchTab('list')"><i class="fas fa-list"></i><span>Survey Data</span></a>
+            <a class="nav-item" id="nav-sim" onclick="switchTab('sim')"><i class="fas fa-calculator"></i><span>Simulasi Deal</span></a>
         </nav>
     </aside>
 
@@ -481,6 +522,36 @@
             </div>
             <div id="survey-list-container">
                 <!-- Javascript will render items here -->
+            </div>
+        </div>
+
+        <!-- SIMULASI DEAL VIEW -->
+        <div id="view-simulasi" style="display:none;">
+            <div class="sim-container">
+                <div class="sim-picker">
+                    <div class="sim-picker-header">
+                        <h3 style="font-family:'Orbitron'; font-size:1rem; margin:0;"><i class="fas fa-box-open" style="color:var(--accent-blue)"></i> PILIH GUDANG</h3>
+                        <p style="font-size:0.65rem; color:var(--text-muted); margin:5px 0 0 0; font-weight:700;">Klik untuk memasukkan ke kalkulasi deal</p>
+                    </div>
+                    <div id="sim-list" class="sim-list">
+                        <!-- JS WILL RENDER -->
+                    </div>
+                </div>
+                <div class="sim-result">
+                    <div class="sim-watermark"><i class="fas fa-calculator"></i></div>
+                    
+                    <div class="calc-header">
+                        <div class="calc-title"><i class="fas fa-microchip"></i> STRATEGIC DEAL ANALYTICS</div>
+                        <div style="font-size:0.7rem; color:#64748b; font-weight:700; margin-top:5px; letter-spacing:2px;">CONSOLIDATED WAREHOUSE SIMULATION</div>
+                    </div>
+
+                    <div id="calc-content">
+                        <div style="text-align:center; padding:100px 0; color:#475569;">
+                            <i class="fas fa-hand-pointer" style="font-size:3rem; margin-bottom:20px; opacity:0.3;"></i>
+                            <div style="font-family:'Orbitron'; font-size:0.8rem; letter-spacing:2px;">SILAKAN PILIH GUDANG DI PANEL KIRI</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -639,11 +710,14 @@
             
             document.getElementById('view-map').style.display = tab === 'map' ? 'block' : 'none';
             document.getElementById('view-list').style.display = tab === 'list' ? 'block' : 'none';
+            document.getElementById('view-simulasi').style.display = tab === 'sim' ? 'block' : 'none';
             
             if(tab === 'map' && map) {
                 map.invalidateSize();
             } else if (tab === 'list') {
                 renderList();
+            } else if (tab === 'sim') {
+                renderSimulationList();
             }
         }
 
@@ -1556,23 +1630,116 @@
             });
         }
 
-        function movePrio(id, dir) {
-            const tbody = document.querySelector('#prioTable tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            const idx = rows.findIndex(r => r.getAttribute('data-id') === id);
-            if(idx < 0) return;
-            const newIdx = idx + dir;
-            if(newIdx < 0 || newIdx >= rows.length) return;
+        // --- SIMULASI DEAL LOGIC ---
+        let selectedSimIds = new Set();
 
-            // Swap DOM rows
-            if(dir === -1) tbody.insertBefore(rows[idx], rows[newIdx]);
-            else tbody.insertBefore(rows[newIdx], rows[idx]);
-
-            // Renumber
-            Array.from(tbody.querySelectorAll('tr')).forEach((tr, i) => {
-                tr.querySelector('td').textContent = i + 1;
+        function renderSimulationList() {
+            const listEl = document.getElementById('sim-list');
+            listEl.innerHTML = '';
+            
+            // Sort by priority for consistency
+            let sorted = surveys.slice().sort((a, b) => (parseInt(a.prioritas) || 999) - (parseInt(b.prioritas) || 999));
+            
+            sorted.forEach(s => {
+                const isActive = selectedSimIds.has(s.id);
+                listEl.innerHTML += `
+                    <div class="sim-item ${isActive ? 'active' : ''}" onclick="toggleSimItem('${s.id}')">
+                        <div class="sim-check"><i class="fas fa-check"></i></div>
+                        <div class="sim-info">
+                            <div class="sim-name">${s.nama}</div>
+                            <div class="sim-meta">${s.luas || 0} m² • ${s.hargaMeter || '-'}</div>
+                        </div>
+                    </div>
+                `;
             });
+            updateSimCalc();
         }
+
+        function toggleSimItem(id) {
+            if(selectedSimIds.has(id)) selectedSimIds.delete(id);
+            else selectedSimIds.add(id);
+            renderSimulationList();
+        }
+
+        function updateSimCalc() {
+            const content = document.getElementById('calc-content');
+            if(selectedSimIds.size === 0) {
+                content.innerHTML = `
+                    <div style="text-align:center; padding:100px 0; color:#475569;">
+                        <i class="fas fa-hand-pointer" style="font-size:3rem; margin-bottom:20px; opacity:0.3;"></i>
+                        <div style="font-family:'Orbitron'; font-size:0.8rem; letter-spacing:2px;">SILAKAN PILIH GUDANG DI PANEL KIRI</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let selectedSurveys = surveys.filter(s => selectedSimIds.has(s.id));
+            
+            // 1. CALCULATE AREA (MATH VIEW)
+            let areaSum = 0;
+            let areaMath = selectedSurveys.map(s => {
+                let v = parseFloat(s.luas) || 0;
+                areaSum += v;
+                return v;
+            }).join(' + ');
+
+            // 2. CALCULATE DISTANCE BREAKDOWN
+            let distMath = selectedSurveys.map(s => {
+                let d = 0;
+                try { d = (map.distance([FACTORY_LAT, FACTORY_LNG], [s.lat, s.lng]) / 1000).toFixed(1); } catch(e) {}
+                return `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${s.nama}</span> <b style="color:var(--neon-cyan)">${d} km</b></div>`;
+            }).join('');
+
+            // 3. PRICE EXTRACTION & CALC
+            let totalPriceStr = "";
+            let priceMath = selectedSurveys.map(s => {
+                // Try to extract number from "Rp. 25.000 / m"
+                let clean = String(s.hargaMeter || "").replace(/[^0-9]/g, "");
+                let val = parseInt(clean) || 0;
+                return { name: s.nama, val: val, raw: s.hargaMeter };
+            });
+
+            let priceTableRows = priceMath.map(p => `
+                <tr>
+                    <td class="calc-name">${p.name}</td>
+                    <td style="color:#94a3b8;">${p.raw || 'N/A'}</td>
+                </tr>
+            `).join('');
+
+            content.innerHTML = `
+                <div class="calc-grid">
+                    <!-- AREA CALC -->
+                    <div class="calc-card">
+                        <div class="calc-label"><i class="fas fa-th-large"></i> TOTAL LUAS GUDANG</div>
+                        <div class="calc-math">${areaMath}</div>
+                        <div class="calc-total">= ${areaSum.toLocaleString()} m²</div>
+                    </div>
+
+                    <!-- DISTANCE ANALYTICS -->
+                    <div class="calc-card">
+                        <div class="calc-label"><i class="fas fa-route"></i> DETAIL JARAK KE PABRIK</div>
+                        <div style="margin-top:10px;">${distMath}</div>
+                    </div>
+
+                    <!-- PRICE RECAP -->
+                    <div class="calc-card" style="grid-column: span 1.5;">
+                        <div class="calc-label"><i class="fas fa-tags"></i> RINGKASAN HARGA PENAWARAN</div>
+                        <table class="calc-table">
+                            <thead><tr><th>GUDANG</th><th>PENAWARAN HARGA</th></tr></thead>
+                            <tbody>${priceTableRows}</tbody>
+                        </table>
+                        <div style="margin-top:20px; font-size:0.6rem; color:#475569; font-style:italic; font-weight:700;">
+                            * NILAI DI ATAS ADALAH HARGA SEWA UNIT PERBULAN SESUAI DOKUMEN PENAWARAN.
+                        </div>
+                    </div>
+                </div>
+
+                <button class="header-btn" style="margin-top:30px; width:250px; background:var(--accent-blue);" onclick="window.print()">
+                    <i class="fas fa-print"></i> CETAK RINGKASAN DEAL
+                </button>
+            `;
+        }
+
 
     </script>
 </body>
