@@ -183,46 +183,71 @@
         #main-loader {
             position: fixed;
             inset: 0;
-            background: radial-gradient(circle at center, #0f172a, #020617);
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
             z-index: 9999;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             transition: 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
         }
-        .loader-content { position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; }
-        .loader-circle { 
+        #main-loader::before {
+            content: "";
+            position: absolute;
+            width: 200%; height: 200%;
+            background-image: 
+                linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: perspective(500px) rotateX(60deg) translateY(-100px);
+            animation: grid-move 5s linear infinite;
+        }
+        @keyframes grid-move { from { transform: perspective(500px) rotateX(60deg) translateY(-100px); } to { transform: perspective(500px) rotateX(60deg) translateY(0); } }
+
+        .loader-content { position: relative; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; }
+        .loader-ring { 
             position: absolute; 
             inset: 0; 
-            border: 4px solid rgba(14, 165, 233, 0.1); 
+            border: 2px solid transparent; 
             border-top-color: var(--neon-cyan); 
             border-radius: 50%; 
-            animation: spin 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite; 
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+            animation: spin 2s linear infinite; 
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
         }
+        .loader-ring:nth-child(2) { inset: 20px; border-top-color: #f59e0b; animation: spin-rev 1.5s linear infinite; box-shadow: 0 0 10px rgba(245, 158, 11, 0.2); }
+        .loader-ring:nth-child(3) { inset: 40px; border-top-color: #ef4444; animation: spin 1s linear infinite; }
+        
         .loader-logo { 
             font-family: 'Orbitron'; 
-            font-size: 1.5rem; 
+            font-size: 1.8rem; 
             color: var(--neon-cyan); 
-            text-shadow: 0 0 15px rgba(6, 182, 212, 0.6); 
-            animation: flicker-v2 2s infinite; 
-            display: flex; 
-            flex-direction: column; 
+            text-shadow: 0 0 15px rgba(6, 182, 212, 0.8); 
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
             align-items: center;
         }
         .loader-text {
-            margin-top: 30px;
+            margin-top: 40px;
             font-family: 'Orbitron';
-            font-size: 0.7rem;
-            letter-spacing: 4px;
-            color: #94a3b8;
+            font-size: 0.8rem;
+            letter-spacing: 5px;
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-cyan);
             text-transform: uppercase;
+            animation: pulse-glow 2s infinite;
         }
-        #main-loader.hidden { opacity: 0; pointer-events: none; transform: scale(1.1); }
+        @keyframes spin-rev { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+        @keyframes pulse-glow { 0%, 100% { opacity: 0.7; text-shadow: 0 0 5px var(--neon-cyan); } 50% { opacity: 1; text-shadow: 0 0 20px var(--neon-cyan); } }
+        #main-loader.hidden { opacity: 0; pointer-events: none; transform: translateY(-50px); }
 
-        /* MINI LEGEND */
-        .map-legend { position: absolute; bottom: 30px; left: 20px; z-index: 400; background: #fff; padding: 15px; border-radius: 15px; box-shadow: var(--card-shadow); border: 1px solid var(--border-soft); }
+        /* GALLERY & SPINNER */
+        .swal2-container { z-index: 3100 !important; }
+        .gallery-container { position: relative; width: 100%; height: 350px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #000; border-radius: 15px; border: 1px solid var(--neon-cyan); box-shadow: 0 0 20px rgba(14, 165, 233, 0.2); }
+        .gal-spinner { position: absolute; width: 40px; height: 40px; border: 4px solid rgba(14, 165, 233, 0.1); border-top-color: var(--neon-cyan); border-radius: 50%; animation: spin 1s linear infinite; display: none; z-index: 5; }
+        .gallery-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; transition: opacity 0.3s; z-index: 1; opacity: 0; }
+        .gallery-img.show { opacity: 1; }
         .legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; }
         .legend-item:last-child { margin-bottom: 0; }
         .leg-dot { width: 12px; height: 12px; border-radius: 50%; }
@@ -363,10 +388,11 @@
     <!-- MAIN APP LOADER -->
     <div id="main-loader">
         <div class="loader-content">
-            <div class="loader-circle"></div>
+            <div class="loader-ring"></div>
+            <div class="loader-ring"></div>
+            <div class="loader-ring"></div>
             <div class="loader-logo">
-                <i class="fas fa-microchip"></i>
-                <div style="font-size:0.5rem; margin-top:5px; border:1px solid var(--neon-cyan); padding:2px 5px; border-radius:4px;">SYNCING</div>
+                <i class="fas fa-satellite-dish"></i>
             </div>
         </div>
         <div class="loader-text">INITIALIZING COMMAND CENTER</div>
@@ -573,8 +599,8 @@
         let draftFotos = [];
 
         window.onload = () => {
-            initData();
             initMap();
+            initData();
             setInterval(updateClock, 1000);
             updateClock();
         }
@@ -669,8 +695,9 @@
 
             let htmlString = `
                 <div class="gallery-container">
+                    <div id="gallerySpinner" class="gal-spinner" style="display:block;"></div>
                     <button class="gal-btn gal-prev" onclick="changeGal(-1)"><i class="fas fa-chevron-left"></i></button>
-                    <img id="swalGalleryImg" class="gallery-img" src="${activeGalleryPhotos[galleryIndex]}">
+                    <img id="swalGalleryImg" class="gallery-img" src="${activeGalleryPhotos[galleryIndex]}" onload="imageLoaded()">
                     <button class="gal-btn gal-next" onclick="changeGal(1)"><i class="fas fa-chevron-right"></i></button>
                     <div class="gal-counter" id="swalGalleryCount">1 / ${activeGalleryPhotos.length}</div>
                 </div>
@@ -686,16 +713,28 @@
             });
         }
 
+        function imageLoaded() {
+            document.getElementById('gallerySpinner').style.display = 'none';
+            document.getElementById('swalGalleryImg').classList.add('show');
+        }
+
         function changeGal(dir) {
             galleryIndex += dir;
             if(galleryIndex < 0) galleryIndex = activeGalleryPhotos.length - 1;
             else if(galleryIndex >= activeGalleryPhotos.length) galleryIndex = 0;
             
-            document.getElementById('swalGalleryImg').src = activeGalleryPhotos[galleryIndex];
+            const img = document.getElementById('swalGalleryImg');
+            const spinner = document.getElementById('gallerySpinner');
+            
+            img.classList.remove('show');
+            spinner.style.display = 'block';
+            img.src = activeGalleryPhotos[galleryIndex];
+            
             document.getElementById('swalGalleryCount').innerText = `${galleryIndex + 1} / ${activeGalleryPhotos.length}`;
         }
 
         function renderMarkers() {
+            if(!map) return;
             if(window.markerGroup) map.removeLayer(window.markerGroup);
             window.markerGroup = L.layerGroup().addTo(map);
 
