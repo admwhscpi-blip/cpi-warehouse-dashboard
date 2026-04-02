@@ -1582,6 +1582,24 @@
             })
         }
 
+        function movePrio(id, dir) {
+            const tbody = document.querySelector('#prioTable tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const idx = rows.findIndex(r => r.getAttribute('data-id') === id);
+            if(idx === -1) return;
+
+            if(dir === -1 && idx > 0) {
+                tbody.insertBefore(rows[idx], rows[idx - 1]);
+            } else if(dir === 1 && idx < rows.length - 1) {
+                tbody.insertBefore(rows[idx + 1], rows[idx]);
+            }
+
+            // Renumbering the index column
+            tbody.querySelectorAll('tr').forEach((tr, i) => {
+                tr.cells[0].innerText = i + 1;
+            });
+        }
+
         // --- PRIORITY EDITOR ---
         function openPriorityEditor() {
             Swal.fire({
