@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>SMART WAREHOUSE SURVEY</title>
 
     <!-- FONTS -->
@@ -381,17 +384,19 @@
             .form-group.full { grid-column: span 1; }
             .form-group.full { grid-column: span 1; }
             .sim-container { flex-direction: row !important; height: 100vh !important; overflow: hidden !important; }
-            .sim-picker { width: 80px !important; border-right: 1px solid var(--accent-blue) !important; border-bottom: none !important; }
+            .sim-picker { width: 140px !important; border-right: 1px solid var(--accent-blue) !important; border-bottom: none !important; }
             .sim-picker-header h3, .sim-picker-header p { display: none; }
             .sim-picker-header { padding: 10px !important; text-align: center; }
-            .sim-picker-header::after { content: "\f0ca"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: var(--accent-blue); font-size: 1.2rem; }
+            .sim-picker-header::after { content: "\f0ca"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: var(--accent-blue); font-size: 1rem; }
             .sim-list { flex-direction: column !important; overflow-y: auto !important; overflow-x: hidden !important; padding: 5px !important; height: auto !important; }
-            .sim-item { min-width: unset !important; width: 100% !important; padding: 10px 5px !important; flex-direction: column !important; text-align: center; }
-            .sim-info { display: none; } /* Hide text on very small mobile picker */
-            .sim-check { margin: 0 auto; }
+            .sim-item { min-width: unset !important; width: 100% !important; padding: 10px 5px !important; flex-direction: column !important; text-align: center; gap: 5px !important; }
+            .sim-info { display: block !important; } 
+            .sim-name { font-size: 0.55rem !important; line-height: 1.2; }
+            .sim-meta { display: none; }
+            .sim-check { margin: 0 auto; width: 18px !important; height: 18px !important; }
             .sim-result { padding: 15px !important; flex: 1 !important; }
             .calc-grid { grid-template-columns: 1fr !important; }
-            .calc-title { font-size: 1.1rem !important; }
+            .calc-title { font-size: 1rem !important; }
         }
 
         /* SIMULASI DEAL STYLES */
@@ -684,6 +689,8 @@
         window.onload = () => {
             initMap();
             initData();
+            // Polling data tiap 60 detik (Auto-Sync antar user)
+            setInterval(initData, 60000);
             setInterval(updateClock, 1000);
             updateClock();
         }
@@ -824,8 +831,10 @@
             if(window.markerGroup) map.removeLayer(window.markerGroup);
             window.markerGroup = L.layerGroup().addTo(map);
 
+            let bounds = [];
             surveys.forEach((s, idx) => {
                 if(!s.lat || !s.lng) return;
+                bounds.push([s.lat, s.lng]);
 
                 let dynIcon = L.divIcon({
                     html: `
@@ -841,6 +850,11 @@
                     openFullscreenDetail(s);
                 });
             });
+
+            // Zoom Peta Otomatis (Wide View) Agar Semua Gudang Terlihat
+            if(bounds.length > 0) {
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
 
             // Update HUD Leaderboard
             renderHudLeaderboard();
@@ -1705,12 +1719,11 @@
                 return v;
             }).join(' + ');
 
-            // 2. PRICE CALC (NEW LOGIC: ANNUAL / 12 / AREA)
+            // 2. PRICE CALC (NEW LOGIC: AS-IS FROM DATABASE)
             let priceData = selectedSurveys.map(s => {
-                let annual = parseRupiah(s.hargaMeter);
-                let area = parseFloat(s.luas) || 1; // avoid div zero
-                let pricePerM2 = annual > 0 ? (annual / 12) / area : 0;
-                return { id: s.id, nama: s.nama, annual: annual, area: area, pM2: pricePerM2 };
+                let pM2 = parseRupiah(s.hargaMeter);
+                let area = parseFloat(s.luas) || 1; 
+                return { id: s.id, nama: s.nama, raw: s.hargaMeter, area: area, pM2: pM2 };
             });
 
             // Calculate average for N/A
@@ -1724,13 +1737,12 @@
                 totalMonthlySpend += monthlyCost;
 
                 let isEstimated = p.pM2 === 0;
-                let displayPM2 = formatRupiah(finalPM2);
                 let displayNote = isEstimated ? `<span style="color:#f59e0b; font-size:0.6rem;">(ESTIMASI RATA-RATA)</span>` : `<span style="color:#10b981; font-size:0.6rem;">(DATA HARGA)</span>`;
 
                 return `
                     <tr>
                         <td class="calc-name">${p.nama}</td>
-                        <td>${displayPM2} <br> ${displayNote}</td>
+                        <td>${formatRupiah(finalPM2)} <br> ${displayNote}</td>
                         <td style="text-align:right; font-weight:800; color:var(--neon-cyan);">${formatRupiah(monthlyCost)}</td>
                     </tr>
                 `;
@@ -1744,11 +1756,6 @@
             }).join('');
 
             content.innerHTML = `
-                <!-- FORMAL NOTE -->
-                <div style="background:rgba(6, 182, 212, 0.1); border:1px solid var(--neon-cyan); padding:15px; border-radius:12px; margin-bottom:25px; font-size:0.75rem; color:#cbd5e1; line-height:1.5;">
-                    <i class="fas fa-info-circle"></i> <b>CATATAN TEKNIS:</b> Seluruh perhitungan harga dikonversi menjadi satuan biaya per meter persegi (m²) per bulan, dengan membagi total penawaran tahunan dengan 12 bulan dan luas total unit. Unit tanpa data harga otomatis menggunakan nilai rata-rata pasar dari unit lain yang dipilih.
-                </div>
-
                 <div class="calc-grid">
                     <div class="calc-card">
                         <div class="calc-label"><i class="fas fa-th-large"></i> TOTAL LUAS GUDANG</div>
@@ -1762,6 +1769,11 @@
                     </div>
 
                     <div class="calc-card" style="grid-column: span 1.5;">
+                        <!-- FORMAL NOTE -->
+                        <div style="background:rgba(6, 182, 212, 0.1); border-left:4px solid var(--neon-cyan); padding:12px; border-radius:4px; margin-bottom:20px; font-size:0.65rem; color:#cbd5e1; line-height:1.5; font-style:italic;">
+                            <i class="fas fa-info-circle"></i> <b>KETERANGAN TEKNIS:</b> Seluruh perhitungan harga per unit menggunakan basis biaya per meter persegi (m²) per bulan sesuai penawaran. Unit tanpa data harga otomatis menggunakan estimasi rata-rata pasar dari unit lain yang dipilih dalam simulasi ini.
+                        </div>
+
                         <div class="calc-label"><i class="fas fa-tags"></i> RINGKASAN HARGA PENAWARAN (PER BULAN)</div>
                         <table class="calc-table">
                             <thead><tr><th>GUDANG</th><th>HARGA/M²</th><th style="text-align:right;">BIAYA BULANAN</th></tr></thead>
