@@ -1328,7 +1328,11 @@
                 const cachedData = JSON.parse(s);
                 // Deduplikasi cache agar tidak ada duplikat historis
                 const dedupMap = new Map();
-                cachedData.forEach(item => { if(item.id) dedupMap.set(item.id, item); });
+                cachedData.forEach(item => { 
+                    // Gunakan Nama (seterlah dipangkas spasi) sebagai kunci utama untuk merapatkan duplikat nama
+                    const key = (item.nama ? item.nama.toLowerCase().trim() : '') || item.id;
+                    if(key) dedupMap.set(key, item); 
+                });
                 surveys = Array.from(dedupMap.values());
                 
                 renderMarkers();
@@ -1342,12 +1346,14 @@
                 .then(res => res.json())
                 .then(data => {
                     if(data && Array.isArray(data)) {
-                        // --- DEDUPLIKASI DATA (Hanya ambil versi terbaru setiap ID) ---
+                        // --- DEDUPLIKASI DATA (Hanya ambil versi terbaru setiap Nama/ID) ---
                         const dedupMap = new Map();
                         data.forEach(item => {
                             // Karena Google Sheets biasanya mengembalikan baris secara kronologis,
                             // Map.set akan menimpa baris lama dengan baris yang lebih baru (terakhir ditemukan).
-                            if(item.id) dedupMap.set(item.id, item);
+                            // Kita gunakan Nama sebagai kunci utama untuk menangkap duplikat akibat "Edit" yang jadi "Add"
+                            const key = (item.nama ? item.nama.toLowerCase().trim() : '') || item.id;
+                            if(key) dedupMap.set(key, item);
                         });
                         const freshData = Array.from(dedupMap.values());
 
