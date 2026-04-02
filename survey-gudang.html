@@ -377,7 +377,7 @@
         const CLOUDINARY_PRESET = 'wh_cleaning';
         const FACTORY_LAT = -6.7887464;
         const FACTORY_LNG = 108.6323567;
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwRbKMPbJnjo7a8sxXPtXruE_i7WqQ7Wx-9SngnPeE_td95JYNnUA3OefZDfhoqVgyM/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbywSW89oLNF8A4to28rHCFiyg8QnhOe0T0V8YfLdkX55orZ_I1AcLcJLy6FapFlx4Ii/exec';
         
         let map;
         let surveys = [];
@@ -905,8 +905,22 @@
 
         // --- DATA BINDING ---
         function initData() {
+            // 1. Ambil dari Cache Lokal dulu agar cepat tampil
             const s = localStorage.getItem('smart_surveys');
             if(s) surveys = JSON.parse(s);
+
+            // 2. Lakukan Sinkronisasi Latar Belakang ke Cloud (Google Sheets)
+            fetch(API_URL + '?action=read')
+                .then(res => res.json())
+                .then(data => {
+                    if(data && Array.isArray(data)) {
+                        surveys = data; // Timpa dengan data paling segar dari Database Cloud
+                        localStorage.setItem('smart_surveys', JSON.stringify(surveys));
+                        renderMarkers();
+                        renderList();
+                    }
+                })
+                .catch(e => console.warn("Sinkronisasi Cloud Tertunda:", e));
         }
 
         function submitSurvey() {
