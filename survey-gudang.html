@@ -188,9 +188,63 @@
         /* --- SIDEBAR MODE GELAP & JAM DINAMIS --- */
         .sidebar { width: 280px; background: rgba(2, 6, 23, 0.98); border-right: 1px solid rgba(14, 165, 233, 0.2); display: flex; flex-direction: column; padding: 20px; flex-shrink: 0; z-index: 2500; transition: 0.4s;}
         
-        .brand { padding: 10px 0; margin-bottom:15px; text-align:center;}
-        .brand h1 { font-family: 'Orbitron'; font-size: 1.3rem; color: #06b6d4; text-shadow: 0 0 15px rgba(6, 182, 212, 0.6); margin: 0; font-weight: 900;}
-        .brand-sub { font-size: 0.65rem; color: #94a3b8; font-weight: 900; letter-spacing: 3px; margin-top: 5px; }
+        .brand {
+            padding: 25px 20px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(to bottom, rgba(6, 182, 212, 0.05), transparent);
+        }
+
+        .brand h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+            letter-spacing: 3px;
+            line-height: 1.1;
+            position: relative;
+            display: inline-block;
+        }
+
+        .brand-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.2), transparent);
+            transform: translateX(-100%);
+            animation: neon-scan 3s infinite;
+            pointer-events: none;
+        }
+
+        .brand span {
+            display: inline-block;
+            font-size: 0.65rem;
+            color: #000;
+            background: var(--neon-cyan);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-weight: 800;
+            margin-left: 5px;
+            box-shadow: 0 0 10px var(--neon-cyan);
+            animation: flicker-v2 2s infinite;
+        }
+
+        .brand-sub {
+            font-size: 0.6rem;
+            color: #475569;
+            margin-top: 8px;
+            letter-spacing: 2px;
+            font-family: 'Orbitron';
+            text-transform: uppercase;
+            opacity: 0.6;
+            animation: wms-glitch 5s infinite;
+        }
+
+        @keyframes neon-scan { 0%, 100% { transform: translateX(-100%); } 50% { transform: translateX(100%); } }
+        @keyframes flicker-v2 { 0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--neon-cyan); } 50% { opacity: 0.7; box-shadow: none; } }
+        @keyframes wms-glitch { 0%, 90%, 100% { transform: translate(0); } 92% { transform: translate(-2px, 2px); } 94% { transform: translate(2px, -2px); } 96% { transform: translate(-1px, -1px); } }
 
         .nav-menu { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
         .nav-item { position: relative; padding: 14px 20px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-decoration: none; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.4s; overflow: hidden; border: 1px solid transparent; font-family:'Orbitron'; text-transform:uppercase; letter-spacing:1px; }
@@ -222,6 +276,9 @@
         .cyber-input { background: rgba(0,0,0,0.5) !important; border: 1px solid rgba(14, 165, 233, 0.5) !important; color: #fff !important; text-align: center; font-family: 'Orbitron'; letter-spacing: 2px; transition: 0.3s; margin-top:10px !important;}
         .cyber-input:focus { border-color: var(--neon-cyan) !important; box-shadow: 0 0 15px rgba(14, 165, 233, 0.5) !important; }
         
+        /* GALLERY ABOVE ALL */
+        .swal2-container { z-index: 3100 !important; }
+        
         .gallery-container { position: relative; width: 100%; height: 300px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #000; border-radius: 15px; border: 1px solid var(--neon-cyan); box-shadow: 0 0 20px rgba(14, 165, 233, 0.2); }
         .gallery-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; transition: opacity 0.3s; }
         .gal-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(14, 165, 233, 0.2); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 10px 15px; font-size: 1.2rem; cursor: pointer; border-radius: 5px; transition: 0.3s; z-index: 10; }
@@ -243,7 +300,13 @@
             .header-title { font-size: 0.8rem !important; text-align:center;}
             .header-btn { font-size:0.7rem !important; width: 100%;}
             .map-legend { bottom: 15px !important; left: 15px !important; }
-            .hud-panel { position:fixed !important; top:auto !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; border-radius:16px 16px 0 0 !important; max-height:40vh; overflow-y:auto; }
+            .hud-panel { position:fixed !important; top: 15px !important; bottom: auto !important; left: auto !important; right: 15px !important; width: 150px !important; border-radius: 12px !important; max-height: 40vh; overflow-y: auto; padding: 10px !important; box-shadow: 0 0 20px rgba(0,0,0,0.5) !important; translate: 0 50px; }
+            .hud-total { font-size: 1.2rem !important; margin-bottom: 5px !important; }
+            .hud-sub { font-size: 0.45rem !important; margin-bottom: 8px !important; }
+            .hud-row { padding: 5px 8px !important; gap: 6px !important; }
+            .hud-rank { min-width: 18px !important; font-size: 0.6rem !important; }
+            .hud-name { font-size: 0.6rem !important; }
+            .hud-dist { font-size: 0.5rem !important; }
             .modal-box { width: 100% !important; border-radius: 0 !important; height: 100vh !important; max-height: 100vh !important; }
             .detail-modal-box { margin:0 !important; padding:20px !important; }
             .dm-grid { grid-template-columns:1fr !important; }
@@ -262,12 +325,9 @@
     <!-- SIDEBAR -->
     <aside class="sidebar" id="main-sidebar">
         <div class="brand">
-            <h1>
-                <div class="brand-glow"></div>
-                SMART WAREHOUSE
-                <span><i class="fas fa-bolt"></i></span>
-            </h1>
-            <div class="brand-sub">V2.0</div>
+            <div class="brand-glow"></div>
+            <h1>SMART<br>WAREHOUSE <span>V2.0</span></h1>
+            <div class="brand-sub">WAREHOUSE MANAGEMENT SYSTEM</div>
         </div>
 
         <div class="mini-clock-wrapper">
@@ -306,7 +366,6 @@
             
             <!-- HUD LEADERBOARD PANEL -->
             <div class="hud-panel" id="hudPanel">
-                <div class="hud-title"><i class="fas fa-trophy"></i> LEADERBOARD GUDANG</div>
                 <div class="hud-total" id="hudTotal">0</div>
                 <div class="hud-sub">TOTAL GUDANG TERDAFTAR</div>
                 <div class="hud-list" id="hudList">
@@ -626,7 +685,7 @@
                 try { dist = (map.distance([FACTORY_LAT, FACTORY_LNG], [s.lat, s.lng]) / 1000).toFixed(1); } catch(e) {}
                 let rankClass = i === 0 ? 'gold' : (i === 1 ? 'silver' : (i === 2 ? 'bronze' : ''));
                 return `
-                    <div class="hud-row" onclick="openFullscreenDetail(surveys.find(x=>x.id==='${s.id}'))">
+                    <div class="hud-row" onclick="focusMarker('${s.id}')">
                         <div class="hud-rank ${rankClass}">#${i + 1}</div>
                         <div class="hud-name">${s.nama}</div>
                         <div class="hud-dist">${dist} km</div>
@@ -764,6 +823,16 @@
         function closeDetailModal() {
             document.getElementById('detailModal').style.display = 'none';
             document.body.style.overflow = '';
+        }
+
+        function focusMarker(id) {
+            const s = surveys.find(x => x.id === id);
+            if(s && map) {
+                map.setView([s.lat, s.lng], 16, { animate: true, duration: 1.5 });
+                
+                // Optional: toggle mobile sidebar if open
+                if(window.innerWidth <= 768) toggleSidebar();
+            }
         }
 
         // --- WA NUMBER PARSING ------
@@ -1253,19 +1322,37 @@
 
         function deleteSurvey(id) {
             Swal.fire({
-                title: 'Hapus Data?',
-                text: "Anda yakin ingin menghapus laporan ini?",
-                icon: 'warning',
-                showCancelButton: true,
+                title: '<div class="cyber-login-title"><i class="fas fa-shield-alt"></i> AKSES TERBATAS</div>',
+                html: `<div style="color:#cbd5e1; font-size:0.75rem; margin-bottom:10px;">Hanya admin ARIF yang bisa menghapus data.</div>
+                       <input type="text" id="swal-user-del" class="cyber-input swal2-input" placeholder="USERNAME">
+                       <input type="password" id="swal-pass-del" class="cyber-input swal2-input" placeholder="PASSWORD">`,
+                confirmButtonText: '<i class="fas fa-trash"></i> KONFIRMASI HAPUS',
                 confirmButtonColor: '#ef4444',
-                confirmButtonText: 'Ya, Hapus!'
+                showCancelButton: true,
+                cancelButtonText: 'BATAL',
+                background: 'rgba(5, 5, 10, 0.95)',
+                customClass: { popup: 'cyber-login-popup' },
+                backdrop: 'rgba(0,0,0,0.95)',
+                preConfirm: () => {
+                    const u = document.getElementById('swal-user-del').value.toUpperCase();
+                    const p = document.getElementById('swal-pass-del').value;
+                    if(u !== 'ARIF' || p !== '1891') { Swal.showValidationMessage('Akses Diterima: Salah Kredensial!'); return false; }
+                    return true;
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
                     surveys = surveys.filter(s => s.id !== id);
                     localStorage.setItem('smart_surveys', JSON.stringify(surveys));
+                    
+                    fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: JSON.stringify({ action: 'deleteSurvey', id: id })
+                    }).catch(e => console.warn('Delete sync error:', e));
+
                     renderList();
                     renderMarkers();
-                    Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success');
+                    Swal.fire({ title: 'TERHAPUS!', text: 'Data gudang berhasil dieliminasi dari sistem.', icon: 'success', confirmButtonColor: '#0ea5e9' });
                 }
             })
         }
