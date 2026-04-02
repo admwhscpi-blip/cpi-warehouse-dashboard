@@ -379,8 +379,13 @@
             .dm-grid { grid-template-columns:1fr !important; }
             .form-grid { grid-template-columns: 1fr; }
             .form-group.full { grid-column: span 1; }
-            .sim-container { flex-direction: column !important; }
-            .sim-picker { width: 100% !important; border-right: none !important; border-bottom: 1px solid var(--glass-border); }
+            .sim-container { flex-direction: column !important; height: auto !important; }
+            .sim-picker { width: 100% !important; height: auto !important; border-right: none !important; border-bottom: 2px solid var(--accent-blue); }
+            .sim-picker-header { padding: 15px !important; }
+            .sim-list { flex-direction: row !important; overflow-x: auto !important; padding: 10px !important; gap: 10px !important; height: 100px !important; }
+            .sim-item { min-width: 180px !important; flex-shrink: 0 !important; padding: 8px !important; }
+            .sim-result { padding: 20px !important; min-height: 80vh; }
+            .calc-grid { grid-template-columns: 1fr !important; }
         }
 
         /* SIMULASI DEAL STYLES */
@@ -1633,11 +1638,20 @@
         // --- SIMULASI DEAL LOGIC ---
         let selectedSimIds = new Set();
 
+        function parseRupiah(str) {
+            if(!str || str === 'N/A') return 0;
+            return parseInt(String(str).replace(/[^0-9]/g, "")) || 0;
+        }
+
+        function formatRupiah(num) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+        }
+
         function renderSimulationList() {
             const listEl = document.getElementById('sim-list');
+            if(!listEl) return;
             listEl.innerHTML = '';
             
-            // Sort by priority for consistency
             let sorted = surveys.slice().sort((a, b) => (parseInt(a.prioritas) || 999) - (parseInt(b.prioritas) || 999));
             
             sorted.forEach(s => {
@@ -1647,7 +1661,7 @@
                         <div class="sim-check"><i class="fas fa-check"></i></div>
                         <div class="sim-info">
                             <div class="sim-name">${s.nama}</div>
-                            <div class="sim-meta">${s.luas || 0} m² • ${s.hargaMeter || '-'}</div>
+                            <div class="sim-meta">${s.luas || 0} m² • ${s.hargaMeter || 'N/A'}</div>
                         </div>
                     </div>
                 `;
@@ -1663,6 +1677,7 @@
 
         function updateSimCalc() {
             const content = document.getElementById('calc-content');
+            if(!content) return;
             if(selectedSimIds.size === 0) {
                 content.innerHTML = `
                     <div style="text-align:center; padding:100px 0; color:#475569;">
@@ -1675,61 +1690,84 @@
 
             let selectedSurveys = surveys.filter(s => selectedSimIds.has(s.id));
             
-            // 1. CALCULATE AREA (MATH VIEW)
+            // 1. AREA CALC
             let areaSum = 0;
-            let areaMath = selectedSurveys.map(s => {
+            let areaMathStr = selectedSurveys.map(s => {
                 let v = parseFloat(s.luas) || 0;
                 areaSum += v;
                 return v;
             }).join(' + ');
 
-            // 2. CALCULATE DISTANCE BREAKDOWN
-            let distMath = selectedSurveys.map(s => {
+            // 2. PRICE CALC (NEW LOGIC: ANNUAL / 12 / AREA)
+            let priceData = selectedSurveys.map(s => {
+                let annual = parseRupiah(s.hargaMeter);
+                let area = parseFloat(s.luas) || 1; // avoid div zero
+                let pricePerM2 = annual > 0 ? (annual / 12) / area : 0;
+                return { id: s.id, nama: s.nama, annual: annual, area: area, pM2: pricePerM2 };
+            });
+
+            // Calculate average for N/A
+            let validPrices = priceData.filter(p => p.pM2 > 0);
+            let avgPM2 = validPrices.length > 0 ? validPrices.reduce((a, b) => a + b.pM2, 0) / validPrices.length : 0;
+
+            let totalMonthlySpend = 0;
+            let priceRowsHtml = priceData.map(p => {
+                let finalPM2 = p.pM2 > 0 ? p.pM2 : avgPM2;
+                let monthlyCost = finalPM2 * p.area;
+                totalMonthlySpend += monthlyCost;
+
+                let isEstimated = p.pM2 === 0;
+                let displayPM2 = formatRupiah(finalPM2);
+                let displayNote = isEstimated ? `<span style="color:#f59e0b; font-size:0.6rem;">(ESTIMASI RATA-RATA)</span>` : `<span style="color:#10b981; font-size:0.6rem;">(DATA HARGA)</span>`;
+
+                return `
+                    <tr>
+                        <td class="calc-name">${p.nama}</td>
+                        <td>${displayPM2} <br> ${displayNote}</td>
+                        <td style="text-align:right; font-weight:800; color:var(--neon-cyan);">${formatRupiah(monthlyCost)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // 3. DISTANCE
+            let distHtml = selectedSurveys.map(s => {
                 let d = 0;
                 try { d = (map.distance([FACTORY_LAT, FACTORY_LNG], [s.lat, s.lng]) / 1000).toFixed(1); } catch(e) {}
                 return `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${s.nama}</span> <b style="color:var(--neon-cyan)">${d} km</b></div>`;
             }).join('');
 
-            // 3. PRICE EXTRACTION & CALC
-            let totalPriceStr = "";
-            let priceMath = selectedSurveys.map(s => {
-                // Try to extract number from "Rp. 25.000 / m"
-                let clean = String(s.hargaMeter || "").replace(/[^0-9]/g, "");
-                let val = parseInt(clean) || 0;
-                return { name: s.nama, val: val, raw: s.hargaMeter };
-            });
-
-            let priceTableRows = priceMath.map(p => `
-                <tr>
-                    <td class="calc-name">${p.name}</td>
-                    <td style="color:#94a3b8;">${p.raw || 'N/A'}</td>
-                </tr>
-            `).join('');
-
             content.innerHTML = `
+                <!-- FORMAL NOTE -->
+                <div style="background:rgba(6, 182, 212, 0.1); border:1px solid var(--neon-cyan); padding:15px; border-radius:12px; margin-bottom:25px; font-size:0.75rem; color:#cbd5e1; line-height:1.5;">
+                    <i class="fas fa-info-circle"></i> <b>CATATAN TEKNIS:</b> Seluruh perhitungan harga dikonversi menjadi satuan biaya per meter persegi (m²) per bulan, dengan membagi total penawaran tahunan dengan 12 bulan dan luas total unit. Unit tanpa data harga otomatis menggunakan nilai rata-rata pasar dari unit lain yang dipilih.
+                </div>
+
                 <div class="calc-grid">
-                    <!-- AREA CALC -->
                     <div class="calc-card">
                         <div class="calc-label"><i class="fas fa-th-large"></i> TOTAL LUAS GUDANG</div>
-                        <div class="calc-math">${areaMath}</div>
+                        <div class="calc-math">${areaMathStr}</div>
                         <div class="calc-total">= ${areaSum.toLocaleString()} m²</div>
                     </div>
 
-                    <!-- DISTANCE ANALYTICS -->
                     <div class="calc-card">
                         <div class="calc-label"><i class="fas fa-route"></i> DETAIL JARAK KE PABRIK</div>
-                        <div style="margin-top:10px;">${distMath}</div>
+                        <div style="margin-top:10px;">${distHtml}</div>
                     </div>
 
-                    <!-- PRICE RECAP -->
                     <div class="calc-card" style="grid-column: span 1.5;">
-                        <div class="calc-label"><i class="fas fa-tags"></i> RINGKASAN HARGA PENAWARAN</div>
+                        <div class="calc-label"><i class="fas fa-tags"></i> RINGKASAN HARGA PENAWARAN (PER BULAN)</div>
                         <table class="calc-table">
-                            <thead><tr><th>GUDANG</th><th>PENAWARAN HARGA</th></tr></thead>
-                            <tbody>${priceTableRows}</tbody>
+                            <thead><tr><th>GUDANG</th><th>HARGA/M²</th><th style="text-align:right;">BIAYA BULANAN</th></tr></thead>
+                            <tbody>${priceRowsHtml}</tbody>
+                            <tfoot>
+                                <tr style="border-top:2px solid var(--neon-cyan);">
+                                    <td colspan="2" style="padding-top:20px; font-family:'Orbitron'; font-weight:900; color:#fff;">ESTIMASI TOTAL PENGELUARAN</td>
+                                    <td style="padding-top:20px; text-align:right; font-family:'Orbitron'; font-size:1.2rem; font-weight:900; color:#10b981;">${formatRupiah(totalMonthlySpend)}</td>
+                                </tr>
+                            </tfoot>
                         </table>
-                        <div style="margin-top:20px; font-size:0.6rem; color:#475569; font-style:italic; font-weight:700;">
-                            * NILAI DI ATAS ADALAH HARGA SEWA UNIT PERBULAN SESUAI DOKUMEN PENAWARAN.
+                        <div style="margin-top:25px; font-size:0.65rem; color:#94a3b8; font-style:italic; font-weight:700; border-top:1px dashed rgba(255,255,255,0.1); padding-top:15px;">
+                            * NOMINAL DI ATAS ADALAH ESTIMASI PENGELUARAN OPERASIONAL PER-BULAN JIKA LIST GUDANG YANG DIPILIH INI DISETUJUI UNTUK DISEWA.
                         </div>
                     </div>
                 </div>
@@ -1739,6 +1777,7 @@
                 </button>
             `;
         }
+
 
 
     </script>
