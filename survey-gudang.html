@@ -689,8 +689,6 @@
         window.onload = () => {
             initMap();
             initData();
-            // Polling data tiap 60 detik (Auto-Sync antar user)
-            setInterval(initData, 60000);
             setInterval(updateClock, 1000);
             updateClock();
         }
@@ -1338,7 +1336,16 @@
                 .then(res => res.json())
                 .then(data => {
                     if(data && Array.isArray(data)) {
-                        surveys = data.map(s => {
+                        // --- DEDUPLIKASI DATA (Hanya ambil versi terbaru setiap ID) ---
+                        const dedupMap = new Map();
+                        data.forEach(item => {
+                            // Karena Google Sheets biasanya mengembalikan baris secara kronologis,
+                            // Map.set akan menimpa baris lama dengan baris yang lebih baru (terakhir ditemukan).
+                            if(item.id) dedupMap.set(item.id, item);
+                        });
+                        const freshData = Array.from(dedupMap.values());
+
+                        surveys = freshData.map(s => {
                             // Perbaiki Bug Google Sheets yang menghilangkan titik desimal
                             let latStr = String(s.lat).replace(',', '.');
                             let lngStr = String(s.lng).replace(',', '.');
