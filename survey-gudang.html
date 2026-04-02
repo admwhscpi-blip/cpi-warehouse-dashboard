@@ -179,6 +179,48 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
+        /* MAIN PAGE LOADER */
+        #main-loader {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, #0f172a, #020617);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .loader-content { position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; }
+        .loader-circle { 
+            position: absolute; 
+            inset: 0; 
+            border: 4px solid rgba(14, 165, 233, 0.1); 
+            border-top-color: var(--neon-cyan); 
+            border-radius: 50%; 
+            animation: spin 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite; 
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+        }
+        .loader-logo { 
+            font-family: 'Orbitron'; 
+            font-size: 1.5rem; 
+            color: var(--neon-cyan); 
+            text-shadow: 0 0 15px rgba(6, 182, 212, 0.6); 
+            animation: flicker-v2 2s infinite; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+        }
+        .loader-text {
+            margin-top: 30px;
+            font-family: 'Orbitron';
+            font-size: 0.7rem;
+            letter-spacing: 4px;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+        #main-loader.hidden { opacity: 0; pointer-events: none; transform: scale(1.1); }
+
         /* MINI LEGEND */
         .map-legend { position: absolute; bottom: 30px; left: 20px; z-index: 400; background: #fff; padding: 15px; border-radius: 15px; box-shadow: var(--card-shadow); border: 1px solid var(--border-soft); }
         .legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; }
@@ -317,6 +359,18 @@
     </style>
 </head>
 <body>
+
+    <!-- MAIN APP LOADER -->
+    <div id="main-loader">
+        <div class="loader-content">
+            <div class="loader-circle"></div>
+            <div class="loader-logo">
+                <i class="fas fa-microchip"></i>
+                <div style="font-size:0.5rem; margin-top:5px; border:1px solid var(--neon-cyan); padding:2px 5px; border-radius:4px;">SYNCING</div>
+            </div>
+        </div>
+        <div class="loader-text">INITIALIZING COMMAND CENTER</div>
+    </div>
 
     <!-- MOBILE OVERLAY & HAMBURGER -->
     <div class="mob-toggle" onclick="toggleSidebar()"><i class="fas fa-bars fa-lg"></i></div>
@@ -1128,21 +1182,28 @@
 
         // --- DATA BINDING ---
         function initData() {
-            // 1. Ambil dari Cache Lokal dulu agar cepat tampil
-            const s = localStorage.getItem('smart_surveys');
-            if(s) surveys = JSON.parse(s);
+            // Tampilkan loader saat fetch data utama
+            document.getElementById('main-loader').classList.remove('hidden');
 
-            // 2. Lakukan Sinkronisasi Latar Belakang ke Cloud (Google Sheets)
-            fetch(API_URL + '?action=read')
+            // 1. Ambil dari Cache Lokal dulu agar cepat tampil (UI instan)
+            const s = localStorage.getItem('smart_surveys');
+            if(s) {
+                surveys = JSON.parse(s);
+                renderMarkers();
+                renderList();
+            }
+
+            // 2. Lakukan Sinkronisasi Real-time ke Cloud (Bypass Browser Cache)
+            // Tambahkan timestamp (?t=) agar browser tidak mengambil data lama dari cache
+            fetch(API_URL + '?action=read&t=' + Date.now())
                 .then(res => res.json())
                 .then(data => {
                     if(data && Array.isArray(data)) {
                         surveys = data.map(s => {
-                            // Perbaiki Bug Google Sheets yang menghilangkan titik desimal (pemformatan angka lokal)
+                            // Perbaiki Bug Google Sheets yang menghilangkan titik desimal
                             let latStr = String(s.lat).replace(',', '.');
                             let lngStr = String(s.lng).replace(',', '.');
                             
-                            // Jika titik desimal benar-benar hilang karena terbacanya sebagai jutaan/miliaran
                             if(latStr && !latStr.includes('.') && latStr.startsWith('-6') && latStr.length > 4) {
                                 latStr = latStr.slice(0, 2) + '.' + latStr.slice(2);
                             }
@@ -1153,7 +1214,6 @@
                             s.lat = parseFloat(latStr) || s.lat;
                             s.lng = parseFloat(lngStr) || s.lng;
                             
-                            // Amankan field foto jika Google Sheets mengubahnya jadi object aneh
                             if(typeof s.foto === 'object' && s.foto !== null) {
                                 s.foto = JSON.stringify(s.foto);
                             }
@@ -1166,7 +1226,13 @@
                         renderList();
                     }
                 })
-                .catch(e => console.warn("Sinkronisasi Cloud Tertunda:", e));
+                .catch(e => console.warn("Sinkronisasi Cloud Tertunda:", e))
+                .finally(() => {
+                    // Sembunyikan loader setelah data diproses atau jika error
+                    setTimeout(() => {
+                        document.getElementById('main-loader').classList.add('hidden');
+                    }, 500);
+                });
         }
 
         function submitSurvey() {
