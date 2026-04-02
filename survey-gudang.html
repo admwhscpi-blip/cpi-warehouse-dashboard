@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART WAREHOUSE SURVEY</title>
+
+    <!-- FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- ICONS & UI LIBS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- LEAFLET MAP -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        :root {
+            --bg-page: #f1f5f9;
+            --sidebar-color: #ffffff;
+            --accent-blue: #0ea5e9;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-soft: rgba(14, 165, 233, 0.15);
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; background-color: var(--bg-page); color: var(--text-main); font-family: 'Inter', sans-serif; }
+
+        /* SIDEBAR (Light Dashboard Theme) */
+        .sidebar { width: 260px; background: #fff; border-right: 1px solid var(--border-soft); display: flex; flex-direction: column; padding: 20px 0; z-index: 1000; box-shadow: 5px 0 20px rgba(0,0,0,0.03); }
+        .brand { text-align: center; margin-bottom: 30px; position: relative; }
+        .brand i { font-size: 2rem; color: var(--accent-blue); margin-bottom: 10px; }
+        .brand h1 { font-family: 'Orbitron'; font-size: 1rem; color: var(--text-main); margin: 0; letter-spacing: 1px; font-weight: 900; }
+        .brand-sub { font-size: 0.6rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 2px; }
+
+        .nav-menu { display: flex; flex-direction: column; gap: 5px; padding: 0 15px; }
+        .nav-item { padding: 12px 15px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.3s; }
+        .nav-item:hover { background: #f8fafc; color: var(--accent-blue); }
+        .nav-item.active { background: rgba(14, 165, 233, 0.1); color: var(--accent-blue); }
+        .nav-item i { font-size: 1rem; width: 20px; text-align: center; }
+
+        /* MAIN CONTENT */
+        .main-content { flex: 1; position: relative; display: flex; flex-direction: column; }
+        
+        #map { flex: 1; width: 100%; height: 100%; z-index: 1; }
+
+        /* HEADER OVERLAY ON MAP - Z-index fixed untuk popup overlap */
+        .map-header { position: absolute; top: 20px; left: 20px; z-index: 400; background: #fff; padding: 15px 25px; border-radius: 20px; box-shadow: var(--card-shadow); display: flex; align-items: center; justify-content: space-between; right: 20px; border: 1px solid var(--border-soft); }
+        .header-title { font-family: 'Orbitron'; font-size: 1.1rem; font-weight: 900; color: var(--text-main); }
+        .header-btn { background: var(--accent-blue); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-family: 'Orbitron'; font-weight: 900; letter-spacing: 1px; font-size: 0.8rem; cursor: pointer; box-shadow: 0 5px 15px rgba(14, 165, 233, 0.3); transition: 0.3s; }
+        .header-btn:hover { background: #0284c7; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(14, 165, 233, 0.5); }
+
+        /* MAP CUSTOM ELEMENTS */
+        .leaflet-popup-content-wrapper { border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); padding: 5px; border: 1px solid var(--border-soft); }
+        .leaflet-popup-content { margin: 15px; width: 260px !important; }
+        
+        .popup-header { font-family: 'Orbitron'; font-size: 0.9rem; font-weight: 900; color: var(--text-main); margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; text-transform: uppercase; }
+        .popup-row { display: flex; font-size: 0.75rem; margin-bottom: 6px; line-height: 1.4; }
+        .popup-label { font-weight: 800; color: var(--text-muted); width: 100px; flex-shrink: 0; }
+        .popup-val { font-weight: 600; color: var(--text-main); }
+        .popup-img { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; margin: 10px 0; border: 1px solid #e2e8f0; }
+        .popup-actions { display: flex; gap: 8px; margin-top: 15px; }
+        .btn-rute, .btn-wa { flex: 1; padding: 8px; text-align: center; border-radius: 8px; font-size: 0.7rem; font-weight: 800; color: #fff; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; border: none; }
+        .btn-rute { background: var(--accent-blue); }
+        .btn-wa { background: var(--accent-green); }
+
+        .factory-marker-icon { background: var(--accent-blue); color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 3px solid #fff; box-shadow: 0 5px 15px rgba(14, 165, 233, 0.5); }
+        
+        /* DATA LIST VIEW */
+        #view-list { display: none; padding: 30px; background: #fff; height: 100%; overflow-y: auto; z-index: 10; position: relative; }
+        
+        .list-card { background: #fff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 20px; margin-bottom: 15px; display: grid; grid-template-columns: 120px 1fr auto; gap: 20px; align-items: center; transition: 0.3s; }
+        .list-card:hover { border-color: var(--accent-blue); box-shadow: var(--card-shadow); }
+        .list-img { width: 120px; height: 90px; object-fit: cover; border-radius: 12px; }
+        
+        /* MODAL FORMS */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 2000; backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; }
+        .modal-box { background: #fff; width: 95%; max-width: 800px; max-height: 90vh; border-radius: 24px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.25); animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        .modal-header { padding: 25px 30px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h2 { margin: 0; font-family: 'Orbitron'; font-size: 1.2rem; font-weight: 900; color: var(--accent-blue); }
+        .btn-close { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; }
+        
+        .modal-body { padding: 30px; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 20px 30px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 15px; background: #f8fafc; }
+        
+        /* FORM INPUTS */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group.full { grid-column: span 2; }
+        
+        label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 12px 15px; border-radius: 12px; border: 1.5px solid #cbd5e1; font-family: 'Inter'; font-size: 0.9rem; font-weight: 600; color: var(--text-main); background: #f8fafc; transition: 0.3s; box-sizing: border-box;}
+        input:focus, textarea:focus { outline: none; border-color: var(--accent-blue); background: #fff; box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1); }
+        
+        .btn-submit { background: var(--accent-blue); color: #fff; font-weight: 800; font-family: 'Inter'; padding: 12px 25px; border-radius: 12px; border: none; cursor: pointer; font-size: 0.9rem; transition: 0.3s; }
+        .btn-submit:hover { background: #0369a1; }
+        
+        .btn-cancel { background: #e2e8f0; color: var(--text-main); font-weight: 800; padding: 12px 25px; border-radius: 12px; border: none; cursor: pointer; }
+        
+        /* FILE UPLOAD STYLES & MULTI FOTO GRID */
+        .upload-area { border: 2px dashed #cbd5e1; border-radius: 15px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; background: #f8fafc; }
+        .upload-area:hover { border-color: var(--accent-blue); background: rgba(14, 165, 233, 0.05); }
+        .upload-area i { font-size: 2rem; color: #94a3b8; margin-bottom: 10px; }
+        .upload-area span { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
+        .img-preview { max-width: 100%; height: 150px; object-fit: cover; border-radius: 10px; display: none; margin-top: 15px; border: 1px solid #e2e8f0;}
+        
+        .photo-grid-mini { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; margin-top: 10px; }
+        .photo-grid-mini img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; cursor: pointer; border: 2px solid #e2e8f0; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .photo-grid-mini img:hover { border-color: var(--accent-blue); transform: scale(1.05); box-shadow: 0 5px 15px rgba(14, 165, 233, 0.3); }
+        .preview-hint { font-size: 0.65rem; color: var(--accent-blue); font-family: 'Orbitron'; font-weight: 900; margin-top: 8px; display: block; }
+
+        /* CANVAS LAYOUT */
+        #layout-preview { width: 100%; height: 200px; background: #f1f5f9; border-radius: 15px; border: 1px solid #cbd5e1; margin-top: 10px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        
+        /* LOADER */
+        .loader { border: 3px solid rgba(14,165,233,0.2); border-top: 3px solid var(--accent-blue); border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: none; margin: 0 auto;}
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* MINI LEGEND */
+        .map-legend { position: absolute; bottom: 30px; left: 20px; z-index: 400; background: #fff; padding: 15px; border-radius: 15px; box-shadow: var(--card-shadow); border: 1px solid var(--border-soft); }
+        .legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; }
+        .legend-item:last-child { margin-bottom: 0; }
+        .leg-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+        /* --- SIDEBAR MODE GELAP & JAM DINAMIS --- */
+        .sidebar { width: 280px; background: rgba(2, 6, 23, 0.98); border-right: 1px solid rgba(14, 165, 233, 0.2); display: flex; flex-direction: column; padding: 20px; flex-shrink: 0; z-index: 2500; transition: 0.4s;}
+        
+        .brand { padding: 10px 0; margin-bottom:15px; text-align:center;}
+        .brand h1 { font-family: 'Orbitron'; font-size: 1.3rem; color: #06b6d4; text-shadow: 0 0 15px rgba(6, 182, 212, 0.6); margin: 0; font-weight: 900;}
+        .brand-sub { font-size: 0.65rem; color: #94a3b8; font-weight: 900; letter-spacing: 3px; margin-top: 5px; }
+
+        .nav-menu { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .nav-item { position: relative; padding: 14px 20px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-decoration: none; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.4s; overflow: hidden; border: 1px solid transparent; font-family:'Orbitron'; text-transform:uppercase; letter-spacing:1px; }
+        .nav-item::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.2), transparent); transition: 0.5s; }
+        .nav-item:hover::before, .nav-item.active::before { left: 100%; transition: 0.7s; }
+        .nav-item:hover, .nav-item.active { background: rgba(6, 182, 212, 0.1); color: #06b6d4; border-color: rgba(6, 182, 212, 0.3); box-shadow: 0 0 20px rgba(6, 182, 212, 0.1), inset 0 0 10px rgba(6, 182, 212, 0.05); text-shadow: 0 0 12px rgba(6, 182, 212, 0.8); }
+        .nav-item.active { border-left: 4px solid #06b6d4; animation: electric-pulse 2s infinite alternate; }
+        .nav-item i { transition: 0.3s; font-size: 1rem;}
+        .nav-item:hover i { transform: scale(1.2) rotate(5deg); color: #22d3ee; }
+
+        @keyframes electric-pulse { 0% { box-shadow: 0 0 5px rgba(6, 182, 212, 0.2); } 100% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.4); } }
+
+        /* JAM DINAMIS UI */
+        .mini-clock-wrapper { margin-top: 15px; margin-bottom:20px; display:flex; justify-content:center; }
+        .clock-container { display: flex; align-items: center; gap: 15px; padding: 12px 20px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(14, 165, 233, 0.2); border-radius: 40px; font-family: 'Orbitron'; color: #fff; box-shadow: 0 0 20px rgba(14, 165, 233, 0.1); }
+        .clock-date-group { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
+        .clock-day { font-size: 0.55rem; color: #06b6d4; letter-spacing: 1.5px; font-weight:900; text-transform:uppercase; }
+        .clock-date-txt { font-size: 0.9rem; font-weight: 900; white-space: nowrap; }
+        .clock-visual { position: relative; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; }
+        .clock-circle { position: absolute; inset: 0; border: 2px solid rgba(14, 165, 233, 0.15); border-radius: 50%; }
+        .clock-progress { position: absolute; inset: 0; border: 2px solid transparent; border-top: 2px solid #06b6d4; border-radius: 50%; box-shadow: 0 0 10px #06b6d4; transition: transform 1s linear; }
+        .clock-time-group { display: flex; flex-direction: column; align-items: center; z-index: 5; }
+        .clock-ampm { font-size: 0.4rem; font-weight: 800; color: #06b6d4; margin-bottom: -2px; }
+        .clock-time-val { font-size: 1.1rem; font-weight: 900; line-height: 1; }
+
+        /* CYBER LOGIN & GALLERY MODAL */
+        .cyber-login-popup { background: rgba(10, 10, 15, 0.95) !important; border: 1px solid var(--neon-cyan) !important; box-shadow: 0 0 30px rgba(14, 165, 233, 0.5) !important; border-radius: 20px !important; backdrop-filter: blur(10px); }
+        .cyber-login-title { font-family: 'Orbitron' !important; color: var(--neon-cyan) !important; text-shadow: 0 0 10px rgba(14, 165, 233, 0.8); letter-spacing: 2px; }
+        .cyber-input { background: rgba(0,0,0,0.5) !important; border: 1px solid rgba(14, 165, 233, 0.5) !important; color: #fff !important; text-align: center; font-family: 'Orbitron'; letter-spacing: 2px; transition: 0.3s; margin-top:10px !important;}
+        .cyber-input:focus { border-color: var(--neon-cyan) !important; box-shadow: 0 0 15px rgba(14, 165, 233, 0.5) !important; }
+        
+        .gallery-container { position: relative; width: 100%; height: 300px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #000; border-radius: 15px; border: 1px solid var(--neon-cyan); box-shadow: 0 0 20px rgba(14, 165, 233, 0.2); }
+        .gallery-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; transition: opacity 0.3s; }
+        .gal-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(14, 165, 233, 0.2); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 10px 15px; font-size: 1.2rem; cursor: pointer; border-radius: 5px; transition: 0.3s; z-index: 10; }
+        .gal-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
+        .gal-prev { left: 10px; }
+        .gal-next { right: 10px; }
+        .gal-counter { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); box-shadow: 0 0 10px var(--neon-cyan); border: 1px solid rgba(14, 165, 233, 0.5); color: #fff; padding: 5px 15px; border-radius: 20px; font-family: 'Orbitron'; font-size: 0.8rem; letter-spacing: 1px; z-index: 10; }
+
+        /* MOBILE HAMBURGER & RESPONSIVITY */
+        .mob-toggle { display: none; position: fixed; top: 15px; left: 15px; z-index: 2400; background: #020617; color: #06b6d4; width: 45px; height: 45px; border-radius: 12px; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); border: 1.5px solid rgba(6, 182, 212, 0.3); }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 2450; }
+
+        @media (max-width: 768px) {
+            .mob-toggle { display: flex; }
+            .sidebar { position: fixed; left: 0; transform: translateX(-110%); top: 0; bottom: 0; z-index: 2600; width: 260px; }
+            .sidebar.open { transform: translateX(0); box-shadow: 20px 0 50px rgba(0,0,0,0.7); }
+            .sidebar-overlay.show { display: block; }
+            .map-header { right: 15px !important; left: 70px !important; padding: 10px !important; flex-direction:column; align-items:center; gap:10px; }
+            .header-title { font-size: 0.8rem !important; text-align:center;}
+            .header-btn { font-size:0.7rem !important; width: 100%;}
+            .map-legend { bottom: 15px !important; left: 15px !important; }
+            .modal-box { width: 100% !important; border-radius: 0 !important; height: 100vh !important; max-height: 100vh !important; }
+            .form-grid { grid-template-columns: 1fr; }
+            .form-group.full { grid-column: span 1; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- MOBILE OVERLAY & HAMBURGER -->
+    <div class="mob-toggle" onclick="toggleSidebar()"><i class="fas fa-bars fa-lg"></i></div>
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="main-sidebar">
+        <div class="brand">
+            <h1>
+                <div class="brand-glow"></div>
+                SMART WAREHOUSE
+                <span><i class="fas fa-bolt"></i></span>
+            </h1>
+            <div class="brand-sub">V2.0</div>
+        </div>
+
+        <div class="mini-clock-wrapper">
+            <div class="clock-container">
+                <div class="clock-date-group">
+                    <div class="clock-day" id="c_day">HARI</div>
+                    <div class="clock-date-txt" id="c_date">00 MMMM 0000</div>
+                </div>
+                <div class="clock-visual">
+                    <div class="clock-circle"></div>
+                    <div class="clock-progress" id="c_prog"></div>
+                    <div class="clock-time-group">
+                        <div class="clock-ampm" id="c_ampm">AM</div>
+                        <div class="clock-time-val" id="c_time">00:00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <a class="nav-item active" id="nav-map" onclick="switchTab('map')"><i class="fas fa-map-marked-alt"></i><span>Map View</span></a>
+            <a class="nav-item" id="nav-list" onclick="switchTab('list')"><i class="fas fa-list"></i><span>Survey Data</span></a>
+        </nav>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="main-content">
+        
+        <!-- MAP VIEW -->
+        <div id="view-map" style="width:100%; height:100%; position:relative;">
+            <div class="map-header">
+                <div>
+                    <div class="header-title">WAREHOUSE SURVEY DASHBOARD - CIREBON</div>
+                </div>
+                <button class="header-btn" onclick="openAddModal()"><i class="fas fa-plus"></i> Tambah Survey</button>
+            </div>
+            
+            <div class="map-legend">
+                <div style="font-family:'Orbitron'; font-size:0.75rem; font-weight:900; margin-bottom:10px;">Map Legend</div>
+                <div class="legend-item"><div class="leg-dot" style="background:var(--accent-blue)"></div> Pabrik Utama</div>
+                <div class="legend-item"><div class="leg-dot" style="background:var(--accent-red)"></div> Gudang Terdaftar</div>
+            </div>
+
+            <div id="map"></div>
+        </div>
+
+        <!-- LIST VIEW -->
+        <div id="view-list" style="background:#f1f5f9; padding:40px 30px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;">
+                <h2 style="font-family:'Orbitron'; color:var(--text-main); margin:0; font-weight:900;"><i class="fas fa-server" style="color:var(--accent-blue);"></i> MASTER DATA SURVEI</h2>
+                <button class="header-btn" onclick="openAddModal()"><i class="fas fa-layer-group"></i> ENTRI BARU</button>
+            </div>
+            <div id="survey-list-container">
+                <!-- Javascript will render items here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- FORM SURVEY MODAL -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="modalTitle"><i class="fas fa-bolt" style="margin-right:10px;"></i> FORM SURVEI GUDANG</h2>
+                <button class="btn-close" onclick="closeAddModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <input type="hidden" id="fm_edit_id">
+                
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label>1. NAMA GUDANG</label>
+                        <input type="text" id="fm_nama" placeholder="Cth: Gudang Hino (Selatan)">
+                    </div>
+
+                    <!-- LOKASI & MAPS -->
+                    <div class="form-group full">
+                        <label>2. LOKASI (LINK GOOGLE MAPS)</label>
+                        <input type="text" id="fm_gmaps" placeholder="Paste Link Maps (opsional) atau klik tombol Extract Koordinat..." oninput="extractCoordinates()">
+                        <div style="font-size:0.65rem; color:var(--accent-blue); margin-top:5px;" id="fm_geo_status">Sistem akan otomatis mengekstrak koordinat dari link.</div>
+                        <input type="hidden" id="fm_lat">
+                        <input type="hidden" id="fm_lng">
+                    </div>
+
+                    <!-- DIMENSI -->
+                    <div class="form-group">
+                        <label>3. LUAS TOTAL (M²)</label>
+                        <input type="number" id="fm_luas" placeholder="Cth: 1200" oninput="drawMiniature()">
+                    </div>
+                    <div class="form-group">
+                        <label>PANJANG BANGUNAN (M)</label>
+                        <input type="number" id="fm_panjang" placeholder="Cth: 40" oninput="drawMiniature()">
+                    </div>
+
+                    <div class="form-group full" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:15px; padding:15px;">
+                        <label style="color:var(--accent-blue)">MINIATUR LAYOUT GUDANG (AUTO-GENERATE)</label>
+                        <div id="layout-preview">
+                            <canvas id="layoutCanvas" width="600" height="200" style="width:100%; height:100%;"></canvas>
+                            <div id="layoutText" style="position:absolute; font-family:'Orbitron'; font-size:0.7rem; font-weight:800; color:#94a3b8;">MASUKKAN LUAS & PANJANG</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group full">
+                        <label>4. SPESIFIKASI BANGUNAN</label>
+                        <textarea id="fm_spek" rows="2" placeholder="Tinggi atap, ketebalan lantai, loading dock..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>5. LINGKUNGAN PEMUKIMAN</label>
+                        <input type="text" id="fm_lingkungan" placeholder="Aman / Rawan / Akses Jalan Sempit">
+                    </div>
+                    <div class="form-group">
+                        <label>KONTAK PEMILIK / CALO</label>
+                        <input type="text" id="fm_kontak" placeholder="08xxxx (Tanpa +62 / -)">
+                    </div>
+
+                    <div class="form-group">
+                        <label>6. HARGA PENAWARAN (DOKUMEN)</label>
+                        <div class="upload-area" onclick="document.getElementById('fm_doc').click()">
+                            <i class="fas fa-file-pdf"></i>
+                            <span id="doc_label">Upload Tanda Terima / Penawaran (PDF/IMG)</span>
+                        </div>
+                        <input type="file" id="fm_doc" style="display:none" onchange="handleFileUpload(this, 'fm_doc_url', 'doc_label')">
+                        <input type="hidden" id="fm_doc_url">
+                    </div>
+                    <div class="form-group">
+                        <label>DOKUMENTASI FOTO GUDANG (MULTI-UPLOAD)</label>
+                        <div class="upload-area" onclick="document.getElementById('fm_foto').click()">
+                            <i class="fas fa-images"></i>
+                            <span id="foto_label">Upload Foto Gudang (Bisa Pilih Banyak Sekaligus)</span>
+                        </div>
+                        <input type="file" id="fm_foto" accept="image/*" multiple style="display:none" onchange="handleMultiFileUpload(this)">
+                        <div id="foto_preview_container" class="photo-grid-mini"></div>
+                        <input type="hidden" id="fm_foto_url">
+                    </div>
+
+                    <div class="form-group">
+                        <label>7. HARGA PER-METER</label>
+                        <input type="text" id="fm_hargameter" placeholder="Cth: Rp. 25.000 / m² / bulan">
+                    </div>
+                    <div class="form-group">
+                        <label>MINIMAL SEWA</label>
+                        <input type="text" id="fm_minsewa" placeholder="Cth: 2 Tahun">
+                    </div>
+
+                    <div class="form-group full">
+                        <label>8. KETERANGAN TAMBAHAN</label>
+                        <textarea id="fm_ket" rows="2" placeholder="-"></textarea>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="loader" id="submitLoader"></div>
+                <button class="btn-cancel" onclick="closeAddModal()" id="btnCancel">Batal</button>
+                <button class="btn-submit" onclick="submitSurvey()" id="btnSubmit"><i class="fas fa-save"></i> SIMPAN SURVEI</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCRIPT -->
+    <script>
+        const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/doxv3khr7/image/upload'; // URL sama dengan wh-cleaning
+        const CLOUDINARY_PRESET = 'wh_cleaning';
+        const FACTORY_LAT = -6.7887464;
+        const FACTORY_LNG = 108.6323567;
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwRbKMPbJnjo7a8sxXPtXruE_i7WqQ7Wx-9SngnPeE_td95JYNnUA3OefZDfhoqVgyM/exec';
+        
+        let map;
+        let surveys = [];
+        let draftFotos = [];
+
+        window.onload = () => {
+            initData();
+            initMap();
+            setInterval(updateClock, 1000);
+            updateClock();
+        }
+
+        // --- REALTIME CLOCK ---
+        function updateClock() {
+            const now = new Date();
+            const days = ['MINGGU', 'SENIN', 'SELASA', 'RABU', 'KAMIS', 'JUMAT', 'SABTU'];
+            const months = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES'];
+            
+            document.getElementById('c_day').textContent = days[now.getDay()];
+            document.getElementById('c_date').textContent = `${String(now.getDate()).padStart(2, '0')} ${months[now.getMonth()]} ${now.getFullYear()}`;
+            
+            let h = now.getHours();
+            let m = now.getMinutes();
+            let s = now.getSeconds();
+            let ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12; h = h ? h : 12; 
+
+            document.getElementById('c_time').textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            document.getElementById('c_ampm').textContent = ampm;
+
+            const progress = (s / 60) * 360;
+            document.getElementById('c_prog').style.transform = `rotate(${progress}deg)`;
+        }
+
+        function toggleSidebar() {
+            document.getElementById('main-sidebar').classList.toggle('open');
+            document.querySelector('.sidebar-overlay').classList.toggle('show');
+        }
+
+        // --- TAB SWITCHING ---
+        function switchTab(tab) {
+            document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+            document.getElementById('nav-' + tab).classList.add('active');
+            
+            document.getElementById('view-map').style.display = tab === 'map' ? 'block' : 'none';
+            document.getElementById('view-list').style.display = tab === 'list' ? 'block' : 'none';
+            
+            if(tab === 'map' && map) {
+                map.invalidateSize();
+            } else if (tab === 'list') {
+                renderList();
+            }
+        }
+
+        // --- MAP INIT ---
+        function initMap() {
+            // Leaflet map setup
+            map = L.map('map', {zoomControl: false}).setView([FACTORY_LAT, FACTORY_LNG], 14);
+
+            // Add clean tile layer (OpenStreetMap)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO'
+            }).addTo(map);
+
+            // Add Zoom Control at bottom right
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+            // Custom Factory Marker
+            const factoryIcon = L.divIcon({
+                html: '<div class="factory-marker-icon"><i class="fas fa-industry"></i></div>',
+                className: '',
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });                 L.marker([FACTORY_LAT, FACTORY_LNG], {icon: factoryIcon}).addTo(map)
+             .bindPopup(`<div style="font-family:'Orbitron'; font-weight:900; font-size:1rem; text-align:center;">PT. CHAROEN POKPHAND INDONESIA</div><div style="text-align:center; font-family:'Inter'; font-size:0.75rem;">Pusat Pabrik Cirebon</div>`);
+
+            // Apply global popup setting for autoPan to prevent header completely blocking it.
+            map.on('popupopen', function(e) {
+                var px = map.project(e.target._popup._latlng);
+                px.y -= e.target._popup._container.clientHeight/2;
+                map.panTo(map.unproject(px),{animate: true, paddingTopLeft: [0, 80]}); // Offset for floating header
+            });
+
+            renderMarkers();
+        }
+
+        const surveyIcon = L.divIcon({
+            html: `
+                <div style="background:var(--accent-red); color:#fff; padding:6px 15px; border-radius:20px; font-family:'Orbitron'; font-weight:900; font-size:0.6rem; border:2px solid #fff; box-shadow:0 5px 15px rgba(239, 68, 68, 0.4); display:flex; align-items:center; gap:5px; transform:translate(-50%, -100%);">
+                    <i class="fas fa-map-marker-alt"></i> <span class="marker-text">GUDANG</span>
+                </div>
+            `,
+            className: '',
+            iconSize: [0, 0] // Handle offset completely via HTML CSS translate
+        });
+
+        let activeGalleryPhotos = [];
+        let galleryIndex = 0;
+
+        function openGallery(idxStr) {
+            let photos = idxStr.split('||'); // Kita parsing argumen sebagai string URL digabung '||'
+            if(!photos || photos.length === 0 || photos[0] === '') return;
+            
+            activeGalleryPhotos = photos;
+            galleryIndex = 0;
+
+            let htmlString = `
+                <div class="gallery-container">
+                    <button class="gal-btn gal-prev" onclick="changeGal(-1)"><i class="fas fa-chevron-left"></i></button>
+                    <img id="swalGalleryImg" class="gallery-img" src="${activeGalleryPhotos[galleryIndex]}">
+                    <button class="gal-btn gal-next" onclick="changeGal(1)"><i class="fas fa-chevron-right"></i></button>
+                    <div class="gal-counter" id="swalGalleryCount">1 / ${activeGalleryPhotos.length}</div>
+                </div>
+            `;
+
+            Swal.fire({
+                html: htmlString,
+                width: '85%',
+                showConfirmButton: false,
+                background: 'rgba(5, 5, 10, 0.95)',
+                customClass: { popup: 'cyber-login-popup' },
+                backdrop: `rgba(0,0,0,0.95)`
+            });
+        }
+
+        function changeGal(dir) {
+            galleryIndex += dir;
+            if(galleryIndex < 0) galleryIndex = activeGalleryPhotos.length - 1;
+            else if(galleryIndex >= activeGalleryPhotos.length) galleryIndex = 0;
+            
+            document.getElementById('swalGalleryImg').src = activeGalleryPhotos[galleryIndex];
+            document.getElementById('swalGalleryCount').innerText = `${galleryIndex + 1} / ${activeGalleryPhotos.length}`;
+        }
+
+        function renderMarkers() {
+            // Remove existing markers except factory (simplistic: recreate map or store layers)
+            // For robustness, in standard leaflet, we store markers in an array or featuregroup
+            if(window.markerGroup) map.removeLayer(window.markerGroup);
+            window.markerGroup = L.layerGroup().addTo(map);
+
+            surveys.forEach((s, idx) => {
+                if(!s.lat || !s.lng) return;
+                
+                // Parse WA Number
+                let waNumber = parseWaNumber(s.kontak);
+                let waHtml = waNumber ? `<a href="https://wa.me/${waNumber}" target="_blank" class="btn-wa"><i class="fab fa-whatsapp"></i> Chat Pemilik</a>` : '';
+                
+                // Gmaps direction from Factory
+                let dirHtml = `<a href="https://www.google.com/maps/dir/${FACTORY_LAT},${FACTORY_LNG}/${s.lat},${s.lng}" target="_blank" class="btn-rute"><i class="fas fa-directions"></i> Tampilkan Rute</a>`;
+
+                // Calculate Distance (Haversine simple) - visual estimation
+                let dist = (map.distance([FACTORY_LAT, FACTORY_LNG], [s.lat, s.lng]) / 1000).toFixed(1) + ' KM';
+
+                // MULTI PHOTO UI (Aman Terhadap Format Json atau Teks Biasa Lama)
+                let photos = [];
+                if(s.foto) {
+                    try {
+                        let parsed = JSON.parse(s.foto);
+                        if(Array.isArray(parsed)) photos = parsed;
+                        else photos = [s.foto]; // Fallback jika teks bukan array
+                    } catch(e) {
+                        photos = [s.foto]; // Fallback jika murni string URL lama
+                    }
+                }
+
+                function getSafeDocUrl(u) {
+                    if(!u) return '';
+                    return u.replace(/\.pdf$/i, '.jpg');
+                }
+                let safeDoc = getSafeDocUrl(s.dokumen);
+
+                let galParam = photos.join('||');
+                let firstImg = photos.length > 0 ? photos[0] : 'https://via.placeholder.com/300x150?text=NO+IMAGE';
+                
+                let p_html = `
+                    <div style="position:relative; width:100%; border-radius:10px; overflow:hidden; border:2px solid rgba(14, 165, 233, 0.3); box-shadow:0 0 15px rgba(14, 165, 233, 0.1); margin-top:10px;">
+                        <img class="popup-img" src="${firstImg}" alt="Gudang" style="margin:0; width:100%; display:block; filter: brightness(0.85);" onclick="openGallery('${galParam}')">
+                        <div style="position:absolute; bottom:0; left:0; right:0; padding:10px; background:linear-gradient(to top, rgba(0,0,0,0.9), transparent); text-align:center; font-family:'Orbitron'; font-size:0.65rem; color:var(--neon-cyan); letter-spacing:1px; cursor:pointer;" onclick="openGallery('${galParam}')">
+                            <i class="fas fa-camera"></i> DETAIL ${photos.length} DOKUMENTASI KLIK DI SINI 
+                        </div>
+                    </div>
+                `;
+
+                let docFileHtml = safeDoc ? 
+                    `<div class="popup-row" style="margin-top:10px;"><div class="popup-label">DOKUMEN PENAWARAN:</div><div class="popup-val"><a href="${safeDoc}" target="_blank" style="color:var(--accent-red); text-decoration:none; font-weight:900;"><i class="fas fa-file-image"></i> Lihat Dokumen (Gambar)</a></div></div>` 
+                    : 
+                    `<div class="popup-row" style="margin-top:10px;"><div class="popup-label">DOKUMEN PENAWARAN:</div><div class="popup-val" style="color:var(--accent-orange); font-style:italic; font-weight:800;"><i class="fas fa-clock"></i> Masih tunggu dari pemilik</div></div>`;
+
+                let hargaValHtml = s.hargaMeter ? 
+                    `<div class="popup-val" style="color:var(--accent-green); font-weight:900;">${s.hargaMeter}</div>` 
+                    : 
+                    `<div class="popup-val" style="color:var(--accent-orange); font-style:italic; font-weight:800;">Masih tunggu dari pemilik</div>`;
+
+                let popupContent = `
+                    <div class="popup-header">INFORMASI KOMPREHENSIF<br><span style="color:#fff;">${s.nama}</span></div>
+                    
+                    <div class="popup-row"><div class="popup-label">LUAS:</div><div class="popup-val">${s.luas} m²</div></div>
+                    <div class="popup-row"><div class="popup-label">PANJANG:</div><div class="popup-val">${s.panjang || '-'} m</div></div>
+                    <div class="popup-row"><div class="popup-label">HARGA / m²:</div>${hargaValHtml}</div>
+                    <div class="popup-row"><div class="popup-label">MIN SEWA:</div><div class="popup-val">${s.minSewa || '-'}</div></div>
+                    <div class="popup-row"><div class="popup-label">JARAK PABRIK:</div><div class="popup-val">${dist}</div></div>
+                    <div class="popup-row"><div class="popup-label">LINGKUNGAN:</div><div class="popup-val">${s.lingkungan || '-'}</div></div>
+                    
+                    ${docFileHtml}
+                    
+                    <div class="popup-row" style="margin-top:10px;"><div class="popup-label">SPESIFIKASI UMUM:</div></div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); font-style:italic; line-height:1.4; padding-left:10px; border-left:2px solid var(--accent-blue); margin-top:5px;">${s.spek || '-'}</div>
+                    <div class="popup-row" style="margin-top:10px;"><div class="popup-label">KETERANGAN LAIN:</div></div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); font-style:italic; line-height:1.4; padding-left:10px; border-left:2px solid var(--accent-orange); margin-top:5px;">${s.ket || '-'}</div>
+
+                    ${p_html}
+                    
+                    <div class="popup-actions" style="margin-top:15px;">
+                        ${dirHtml}
+                        ${waHtml}
+                    </div>
+                `;
+
+                // Update icon text
+                let dynIcon = L.divIcon({
+                    html: `
+                        <div style="background:var(--accent-red); color:#fff; padding:6px 15px; border-radius:20px; font-family:'Orbitron'; font-weight:900; font-size:0.6rem; border:2px solid #fff; box-shadow:0 5px 15px rgba(239, 68, 68, 0.4); display:flex; align-items:center; justify-content:center; gap:5px; white-space:nowrap; transform:translate(-50%, -100%); position:absolute; top:0; left:0;">
+                            <i class="fas fa-map-marker-alt"></i> <span>${s.nama}</span>
+                        </div>
+                    `,
+                    className: '',
+                    iconSize: [0, 0],
+                    popupAnchor: [0, -30]
+                });
+
+                L.marker([s.lat, s.lng], {icon: dynIcon}).addTo(window.markerGroup).bindPopup(popupContent, {autoPanPaddingTop: L.point(0, 80)});
+            });
+        }
+
+        // --- WA NUMBER PARSING ------
+        function parseWaNumber(phone) {
+            if(!phone) return null;
+            let p = phone.replace(/\D/g, ''); // hapus non-digit
+            if(p.startsWith('08')) p = '628' + p.substring(2);
+            if(p.startsWith('8')) p = '628' + p.substring(1);
+            return p;
+        }
+
+        // --- DRAW MINIATURE ---
+        function drawMiniature() {
+            const canvas = document.getElementById('layoutCanvas');
+            const ctx = canvas.getContext('2d');
+            const luas = parseFloat(document.getElementById('fm_luas').value);
+            const panjang = parseFloat(document.getElementById('fm_panjang').value);
+            const txt = document.getElementById('layoutText');
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if(!luas || !panjang || panjang <= 0) {
+                txt.style.display = 'block';
+                return;
+            }
+
+            txt.style.display = 'none';
+            const lebar = luas / panjang;
+
+            // Mapping to canvas size, add padding
+            const padding = 20;
+            const cw = canvas.width - (padding * 2);
+            const ch = canvas.height - (padding * 2);
+
+            // Determine scale to fit proportionally
+            const scale = Math.min(cw / panjang, ch / lebar);
+            
+            const renderW = panjang * scale;
+            const renderH = lebar * scale;
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            // Draw shadow
+            ctx.shadowColor = 'rgba(0,0,0,0.1)';
+            ctx.shadowBlur = 15;
+            ctx.shadowOffsetX = 5;
+            ctx.shadowOffsetY = 10;
+
+            // Draw warehouse box
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(cx - renderW/2, cy - renderH/2, renderW, renderH);
+
+            ctx.shadowColor = 'transparent';
+
+            // Draw Border
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#0ea5e9';
+            ctx.strokeRect(cx - renderW/2, cy - renderH/2, renderW, renderH);
+
+            // Draw Dimensions Text
+            ctx.fillStyle = '#64748b';
+            ctx.font = "bold 14px Rajdhani";
+            ctx.textAlign = "center";
+            
+            // Panjang
+            ctx.fillText(`${panjang}m (Panjang)`, cx, cy - renderH/2 - 8);
+            
+            // Lebar
+            ctx.save();
+            ctx.translate(cx - renderW/2 - 10, cy);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(`${lebar.toFixed(1)}m (Lebar)`, 0, 0);
+            ctx.restore();
+
+            // Luas inside
+            ctx.fillStyle = '#0ea5e9';
+            ctx.font = "900 16px Orbitron";
+            ctx.fillText(`${luas} m²`, cx, cy + 6);
+        }
+
+        // --- MAPS LINK PARSER ---
+        function extractCoordinates() {
+            const link = document.getElementById('fm_gmaps').value;
+            const status = document.getElementById('fm_geo_status');
+            const latInp = document.getElementById('fm_lat');
+            const lngInp = document.getElementById('fm_lng');
+
+            status.innerText = "Sistem akan otomatis mengekstrak koordinat dari link.";
+            status.style.color = "var(--accent-blue)";
+            
+            if(!link) return;
+
+            // Regex for standard maps coord in url: /@lat,lng
+            const regex = /@(-?\d+\.\d+),(-?\d+\.\d+)/;
+            const match = link.match(regex);
+
+            if(match && match.length >= 3) {
+                latInp.value = match[1];
+                lngInp.value = match[2];
+                status.innerText = `Koordinat Tersimpan: ${match[1]}, ${match[2]}`;
+                status.style.color = "var(--accent-green)";
+            } else {
+                // Secondary check for other format like /query=lat,lng
+                const regex2 = /q=(-?\d+\.\d+),(-?\d+\.\d+)/;
+                const match2 = link.match(regex2);
+                if(match2 && match2.length >= 3) {
+                    latInp.value = match2[1];
+                    lngInp.value = match2[2];
+                    status.innerText = `Koordinat Tersimpan: ${match2[1]}, ${match2[2]}`;
+                    status.style.color = "var(--accent-green)";
+                } else {
+                    status.innerText = "Gagal mendeteksi koordinat dari tautan, gunakan fitur klik di peta atau ganti format link.";
+                    status.style.color = "var(--accent-red)";
+                }
+            }
+        }
+
+        // --- MULTI FILE UPLOADS (CLOUDINARY) ---
+        async function handleMultiFileUpload(input) {
+            const files = input.files;
+            if(!files || files.length === 0) return;
+
+            const lbl = document.getElementById('foto_label');
+            const origText = "Upload Foto Gudang (Bisa Pilih Banyak Sekaligus)";
+            const previewContainer = document.getElementById('foto_preview_container');
+            
+            lbl.innerText = `Mengunggah ${files.length} foto... Tunggu sebentar!`;
+            lbl.style.color = "var(--accent-orange)";
+
+            let promises = [];
+            for(let i = 0; i < files.length; i++) {
+                const fd = new FormData();
+                fd.append('file', files[i]);
+                fd.append('upload_preset', CLOUDINARY_PRESET);
+                fd.append('resource_type', 'auto'); 
+                
+                promises.push(fetch(CLOUDINARY_URL, {method: 'POST', body: fd}).then(res => res.json()));
+            }
+
+            try {
+                const results = await Promise.all(promises);
+                
+                results.forEach(d => {
+                    if(d.secure_url && d.resource_type === "image") {
+                        draftFotos.push(d.secure_url);
+                        previewContainer.innerHTML += `<img src="${d.secure_url}" onclick="showLightbox('${d.secure_url}')">`;
+                    }
+                });
+                
+                document.getElementById('fm_foto_url').value = JSON.stringify(draftFotos);
+                lbl.innerText = `Tersimpan ${draftFotos.length} Foto ✅`;
+                lbl.style.color = "var(--accent-green)";
+                
+            } catch(e) {
+                console.error(e);
+                lbl.innerText = origText;
+                lbl.style.color = '';
+                Swal.fire('Error', 'Sistem Gagal Mengunggah Berkas!', 'error');
+            }
+        }
+
+        async function handleFileUpload(input, urlId, labelId, previewId) {
+            const file = input.files[0];
+            if(!file) return;
+
+            const lbl = document.getElementById(labelId);
+            const origText = lbl.innerText;
+            lbl.innerText = "Mengunggah Dokumen...";
+
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('upload_preset', CLOUDINARY_PRESET);
+            fd.append('resource_type', 'auto'); 
+
+            try {
+                const res = await fetch(CLOUDINARY_URL, {method: 'POST', body: fd});
+                const d = await res.json();
+                
+                if(d.secure_url) {
+                    document.getElementById(urlId).value = d.secure_url;
+                    lbl.innerText = "Berkas PDF Penawaran berhasil diunggah ✅";
+                    lbl.style.color = "var(--accent-green)";
+                } else {
+                    lbl.innerText = "Gagal unggah!";
+                }
+            } catch(e) {
+                console.error(e);
+                lbl.innerText = origText;
+                Swal.fire('Error', 'Sistem Gagal Mengunggah Berkas!', 'error');
+            }
+        }
+
+        // --- MODAL CONTROLS & LOGIN ---
+        function openAddModal(isEditId = null) {
+            Swal.fire({
+                title: '<i class="fas fa-lock" style="font-size:1.5rem; margin-bottom:10px; color:var(--neon-cyan); display:block; filter:drop-shadow(0 0 10px rgba(6,182,212,0.8));"></i>OTORISASI AKSES SYSTEM',
+                html: `
+                    <div style="font-family:'Inter'; text-align:left; margin-top:20px; text-align:center;">
+                        <input type="text" id="log_user" class="swal2-input cyber-input" placeholder="USERNAME" style="margin-top:5px; margin-bottom:15px; width: 80%;">
+                        <input type="password" id="log_pass" class="swal2-input cyber-input" placeholder="PASSWORD" style="margin-top:5px; width: 80%;">
+                    </div>
+                `,
+                confirmButtonText: '<i class="fas fa-fingerprint"></i> INITIATE LOGIN',
+                confirmButtonColor: 'rgba(6,182,212,0.2)',
+                showCancelButton: true,
+                cancelButtonText: 'ABORT',
+                cancelButtonColor: 'rgba(239, 68, 68, 0.2)',
+                focusConfirm: false,
+                customClass: {
+                    popup: 'cyber-login-popup',
+                    title: 'cyber-login-title',
+                    confirmButton: 'cyber-btn',
+                    cancelButton: 'cyber-btn'
+                },
+                background: 'rgba(5, 5, 12, 0.95)',
+                backdrop: `rgba(0,0,0,0.85)`,
+                preConfirm: () => {
+                    const u = document.getElementById('log_user').value;
+                    const p = document.getElementById('log_pass').value;
+                    if (u !== 'ARIF' || p !== '1891') {
+                        Swal.showValidationMessage('Akses Ditolak: Kredensial Tidak Valid!');
+                    }
+                    return true;
+                }
+            }).then((res) => {
+                if(res.isConfirmed) {
+                    showAddModalContent(isEditId);
+                }
+            });
+        }
+
+        function showAddModalContent(editId) {
+            document.getElementById('addModal').style.display = 'flex';
+            // Reset forms
+            document.querySelectorAll('input, textarea').forEach(i => i.value = '');
+            draftFotos = [];
+            document.getElementById('foto_preview_container').innerHTML = '';
+            document.getElementById('fm_foto_url').value = '';
+            document.getElementById('doc_label').innerText = 'Upload Tanda Terima / Penawaran (PDF/IMG)';
+            document.getElementById('doc_label').style.color = '';
+            document.getElementById('foto_label').innerText = 'Upload Foto Gudang (Bisa Pilih Banyak Sekaligus)';
+            document.getElementById('foto_label').style.color = '';
+            document.getElementById('fm_geo_status').innerText = 'Sistem akan otomatis mengekstrak koordinat dari link.';
+            document.getElementById('fm_geo_status').style.color = 'var(--accent-blue)';
+            document.getElementById('fm_edit_id').value = '';
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-bolt" style="margin-right:10px;"></i> FORM SURVEI GUDANG';
+
+            if(editId) {
+                const target = surveys.find(s => s.id === editId);
+                if(target) {
+                    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit" style="margin-right:10px;"></i> EDIT DATA SURVEI';
+                    document.getElementById('fm_edit_id').value = target.id;
+                    document.getElementById('fm_nama').value = target.nama || '';
+                    document.getElementById('fm_lat').value = target.lat || '';
+                    document.getElementById('fm_lng').value = target.lng || '';
+                    document.getElementById('fm_gmaps').value = (target.lat && target.lng) ? `https://maps.google.com/?q=${target.lat},${target.lng}` : '';
+                    document.getElementById('fm_luas').value = target.luas || '';
+                    document.getElementById('fm_panjang').value = target.panjang || '';
+                    document.getElementById('fm_spek').value = target.spek || '';
+                    document.getElementById('fm_lingkungan').value = target.lingkungan || '';
+                    document.getElementById('fm_kontak').value = target.kontak || '';
+                    document.getElementById('fm_hargameter').value = target.hargaMeter || '';
+                    document.getElementById('fm_minsewa').value = target.minSewa || '';
+                    document.getElementById('fm_ket').value = target.ket || '';
+                    
+                    if(target.foto && target.foto !== '') {
+                        try {
+                            const arrData = JSON.parse(target.foto);
+                            draftFotos = arrData;
+                            document.getElementById('fm_foto_url').value = target.foto;
+                            arrData.forEach(ur => {
+                                document.getElementById('foto_preview_container').innerHTML += `<img src="${ur}" onclick="showLightbox('${ur}')">`;
+                            });
+                        } catch(e) {
+                            draftFotos = [target.foto];
+                            document.getElementById('fm_foto_url').value = JSON.stringify(draftFotos);
+                            document.getElementById('foto_preview_container').innerHTML += `<img src="${target.foto}" onclick="showLightbox('${target.foto}')">`;
+                        }
+                    }
+                    if(target.dokumen) {
+                        document.getElementById('fm_doc_url').value = target.dokumen;
+                        document.getElementById('doc_label').innerText = 'Ada Dokumen Lama (Telah Disimpan)';
+                    }
+                }
+            }
+            drawMiniature();
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').style.display = 'none';
+        }
+
+        // --- DATA BINDING ---
+        function initData() {
+            const s = localStorage.getItem('smart_surveys');
+            if(s) surveys = JSON.parse(s);
+        }
+
+        function submitSurvey() {
+            const uId = document.getElementById('fm_edit_id').value;
+            const isEditing = uId !== '';
+
+            const d = {
+                id: isEditing ? uId : ('SURV_' + new Date().getTime()),
+                nama: document.getElementById('fm_nama').value,
+                lat: document.getElementById('fm_lat').value,
+                lng: document.getElementById('fm_lng').value,
+                luas: document.getElementById('fm_luas').value,
+                panjang: document.getElementById('fm_panjang').value,
+                spek: document.getElementById('fm_spek').value,
+                lingkungan: document.getElementById('fm_lingkungan').value,
+                kontak: document.getElementById('fm_kontak').value,
+                dokumen: document.getElementById('fm_doc_url').value,
+                foto: document.getElementById('fm_foto_url').value, // This is now stringified JSON array
+                hargaMeter: document.getElementById('fm_hargameter').value,
+                minSewa: document.getElementById('fm_minsewa').value,
+                ket: document.getElementById('fm_ket').value,
+                tanggal: new Date().toISOString()
+            };
+
+            if(!d.nama || !d.luas) {
+                Swal.fire('Error', 'Nama dan Luas gudang wajib diisi!', 'warning');
+                return;
+            }
+
+            document.getElementById('btnSubmit').style.display = 'none';
+            document.getElementById('btnCancel').style.display = 'none';
+            document.getElementById('submitLoader').style.display = 'block';
+
+            d.action = 'saveSurvey'; // We send it to backend anyway. Backend will append new rows currently, 
+            // In a real DB scenario, backend uses ID to update. For now backend appends, frontend updates smoothly.
+
+            fetch(API_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(d)
+            }).then(() => {
+                if(isEditing) {
+                    const idx = surveys.findIndex(s => s.id === uId);
+                    if(idx !== -1) surveys[idx] = d;
+                } else {
+                    surveys.push(d);
+                }
+                
+                localStorage.setItem('smart_surveys', JSON.stringify(surveys));
+                
+                document.getElementById('submitLoader').style.display = 'none';
+                document.getElementById('btnSubmit').style.display = 'block';
+                document.getElementById('btnCancel').style.display = 'block';
+                
+                closeAddModal();
+                Swal.fire('Tersimpan!', 'Berhasil merekam data survei ke Database Pusat.', 'success');
+                renderMarkers();
+                renderList();
+            }).catch(e => {
+                console.error(e);
+                document.getElementById('submitLoader').style.display = 'none';
+                document.getElementById('btnSubmit').style.display = 'block';
+                document.getElementById('btnCancel').style.display = 'block';
+                Swal.fire('Error', 'Koneksi ke server gagal.', 'error');
+            });
+        }
+
+        // --- LIST VIEW RENDERING ---
+        function renderList() {
+            const c = document.getElementById('survey-list-container');
+            if(surveys.length === 0) {
+                c.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:50px; font-weight:700;">Belum ada data tersedia.</div>';
+                return;
+            }
+
+            c.innerHTML = '';
+            surveys.slice().reverse().forEach(s => {
+                
+                function getSafeDocUrl(u) {
+                    if(!u) return '';
+                    return u.replace(/\.pdf$/i, '.jpg');
+                }
+                let safeDocList = getSafeDocUrl(s.dokumen);
+
+                let docBtn = safeDocList ? 
+                    `<a href="${safeDocList}" target="_blank" class="header-btn" style="background:#f59e0b; text-decoration:none;"><i class="fas fa-file-image"></i> Penawaran (IMG)</a>` 
+                    : 
+                    `<div style="color:var(--accent-orange); font-size:0.7rem; font-weight:800; font-family:'Orbitron'; display:flex; align-items:center; gap:5px; border:1px dashed var(--accent-orange); padding:8px 12px; border-radius:8px;"><i class="fas fa-clock"></i> DOKUMEN: TUNGGU DARI PEMILIK</div>`;
+                
+                let wa = parseWaNumber(s.kontak);
+                let waBtn = wa ? `<a href="https://wa.me/${wa}" target="_blank" style="color:var(--accent-green); text-decoration:none; font-weight:800; font-size:0.75rem;"><i class="fab fa-whatsapp"></i> Chat Pemilik</a>` : '';
+
+                let dist = '? KM';
+                if(s.lat && s.lng) {
+                    let latLng1 = L.latLng(FACTORY_LAT, FACTORY_LNG);
+                    let latLng2 = L.latLng(s.lat, s.lng);
+                    dist = (latLng1.distanceTo(latLng2) / 1000).toFixed(1) + ' KM';
+                }
+
+                // Handle Multi Foto Display in ListView (With Fallback for old data)
+                let photos = [];
+                if(s.foto) {
+                    try {
+                        let parsed = JSON.parse(s.foto);
+                        if(Array.isArray(parsed)) photos = parsed;
+                        else photos = [s.foto];
+                    } catch(e) {
+                        photos = [s.foto];
+                    }
+                }
+                
+                
+                let firstImg = photos.length > 0 ? photos[0] : 'https://via.placeholder.com/150';
+                let galParam = photos.join('||');
+
+                let photoGridHtml = '';
+                if(photos.length > 0) {
+                    photoGridHtml = `
+                    <div style="position:relative; width:100%; border-radius:10px; overflow:hidden; border:2px solid rgba(14, 165, 233, 0.3); margin-top:15px; cursor:pointer;" onclick="openGallery('${galParam}')">
+                        <img src="${firstImg}" style="width:100%; height:120px; object-fit:cover; display:block; filter: brightness(0.7);">
+                        <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#fff; font-family:'Orbitron'; font-weight:900; text-shadow: 0 0 10px rgba(0,0,0,0.8);">
+                            <i class="fas fa-images" style="font-size:1.5rem; color:var(--neon-cyan); margin-bottom:5px;"></i>
+                            <div style="font-size:0.65rem; background:rgba(0,0,0,0.6); padding:4px 10px; border-radius:20px; border:1px solid var(--neon-cyan);">DETAIL (${photos.length}) DOKUMENTASI</div>
+                        </div>
+                    </div>`;
+                }
+
+                let hargaListHtml = s.hargaMeter ? `<b style="color:var(--text-main);">${s.hargaMeter}</b>` : `<b style="color:var(--accent-orange); font-style:italic;">Masih tunggu dari pemilik</b>`;
+
+                c.innerHTML += `
+                    <div class="list-card">
+                        <img class="list-img" src="${firstImg}" onclick="openGallery('${galParam}')" style="box-shadow: 0 0 15px rgba(14, 165, 233, 0.3); border:2px solid rgba(14, 165, 233, 0.2);" />
+                        <div>
+                            <div style="font-family:'Orbitron'; font-size:1.1rem; font-weight:900; color:var(--accent-blue); margin-bottom:5px; text-transform:uppercase;">${s.nama}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px; line-height: 1.5;">
+                                <b>Luas:</b> ${s.luas} m² &bull; <b>Panjang:</b> ${s.panjang || '?'}m &bull; <b style="color:var(--accent-red)"><i class="fas fa-location-arrow"></i> Jarak Pabrik: ${dist}</b> <br>
+                                <b>Harga/m:</b> ${hargaListHtml} &bull; <b>Min Sewa:</b> ${s.minSewa || '-'}
+                            </div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                ${docBtn}
+                                ${waBtn}
+                            </div>
+                            ${photoGridHtml}
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <button class="header-btn" style="background:var(--accent-blue);" onclick="openAddModal('${s.id}')" title="Edit Data"><i class="fas fa-edit"></i> EDIT</button>
+                            <button class="header-btn" style="background:#ef4444;" onclick="deleteSurvey('${s.id}')" title="Hapus Data"><i class="fas fa-trash"></i> DELETE</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function deleteSurvey(id) {
+            Swal.fire({
+                title: 'Hapus Data?',
+                text: "Anda yakin ingin menghapus laporan ini?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Ya, Hapus!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    surveys = surveys.filter(s => s.id !== id);
+                    localStorage.setItem('smart_surveys', JSON.stringify(surveys));
+                    renderList();
+                    renderMarkers();
+                    Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success');
+                }
+            })
+        }
+
+    </script>
+</body>
+</html>
