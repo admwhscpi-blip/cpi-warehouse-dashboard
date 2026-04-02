@@ -379,17 +379,24 @@
             .dm-grid { grid-template-columns:1fr !important; }
             .form-grid { grid-template-columns: 1fr; }
             .form-group.full { grid-column: span 1; }
-            .sim-container { flex-direction: column !important; height: auto !important; }
-            .sim-picker { width: 100% !important; height: auto !important; border-right: none !important; border-bottom: 2px solid var(--accent-blue); }
-            .sim-picker-header { padding: 15px !important; }
-            .sim-list { flex-direction: row !important; overflow-x: auto !important; padding: 10px !important; gap: 10px !important; height: 100px !important; }
-            .sim-item { min-width: 180px !important; flex-shrink: 0 !important; padding: 8px !important; }
-            .sim-result { padding: 20px !important; min-height: 80vh; }
+            .form-group.full { grid-column: span 1; }
+            .sim-container { flex-direction: row !important; height: 100vh !important; overflow: hidden !important; }
+            .sim-picker { width: 80px !important; border-right: 1px solid var(--accent-blue) !important; border-bottom: none !important; }
+            .sim-picker-header h3, .sim-picker-header p { display: none; }
+            .sim-picker-header { padding: 10px !important; text-align: center; }
+            .sim-picker-header::after { content: "\f0ca"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: var(--accent-blue); font-size: 1.2rem; }
+            .sim-list { flex-direction: column !important; overflow-y: auto !important; overflow-x: hidden !important; padding: 5px !important; height: auto !important; }
+            .sim-item { min-width: unset !important; width: 100% !important; padding: 10px 5px !important; flex-direction: column !important; text-align: center; }
+            .sim-info { display: none; } /* Hide text on very small mobile picker */
+            .sim-check { margin: 0 auto; }
+            .sim-result { padding: 15px !important; flex: 1 !important; }
             .calc-grid { grid-template-columns: 1fr !important; }
+            .calc-title { font-size: 1.1rem !important; }
         }
 
         /* SIMULASI DEAL STYLES */
-        .sim-container { display: flex; gap: 0; background: #f8fafc; min-height: calc(100vh - 0px); }
+        /* SIMULASI DEAL STYLES */
+        .sim-container { display: flex; gap: 0; background: #f8fafc; height: 100vh; overflow: hidden; }
         .sim-picker { width: 350px; background: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         .sim-picker-header { padding: 25px; border-bottom: 1px solid #f1f5f9; background: #fff; z-index: 10; }
         .sim-list { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; }
@@ -1771,10 +1778,6 @@
                         </div>
                     </div>
                 </div>
-
-                <button class="header-btn" style="margin-top:30px; width:250px; background:var(--accent-blue);" onclick="window.print()">
-                    <i class="fas fa-print"></i> CETAK RINGKASAN DEAL
-                </button>
             `;
         }
 
