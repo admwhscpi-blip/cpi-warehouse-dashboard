@@ -615,7 +615,7 @@
         // --- WA NUMBER PARSING ------
         function parseWaNumber(phone) {
             if(!phone) return null;
-            let p = phone.replace(/\D/g, ''); // hapus non-digit
+            let p = String(phone).replace(/\D/g, ''); // hapus non-digit
             if(p.startsWith('08')) p = '628' + p.substring(2);
             if(p.startsWith('8')) p = '628' + p.substring(1);
             return p;
