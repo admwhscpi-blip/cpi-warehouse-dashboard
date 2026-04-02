@@ -244,7 +244,7 @@
         <div id="view-map" style="width:100%; height:100%; position:relative;">
             <div class="map-header">
                 <div>
-                    <div class="header-title">WAREHOUSE SURVEY DASHBOARD - CIREBON</div>
+                    <div class="header-title">VISUALISASI LOKASI GUDANG - WH CPI CIREBON</div>
                 </div>
                 <button class="header-btn" onclick="openAddModal()"><i class="fas fa-plus"></i> Tambah Survey</button>
             </div>
@@ -914,7 +914,30 @@
                 .then(res => res.json())
                 .then(data => {
                     if(data && Array.isArray(data)) {
-                        surveys = data; // Timpa dengan data paling segar dari Database Cloud
+                        surveys = data.map(s => {
+                            // Perbaiki Bug Google Sheets yang menghilangkan titik desimal (pemformatan angka lokal)
+                            let latStr = String(s.lat).replace(',', '.');
+                            let lngStr = String(s.lng).replace(',', '.');
+                            
+                            // Jika titik desimal benar-benar hilang karena terbacanya sebagai jutaan/miliaran
+                            if(latStr && !latStr.includes('.') && latStr.startsWith('-6') && latStr.length > 4) {
+                                latStr = latStr.slice(0, 2) + '.' + latStr.slice(2);
+                            }
+                            if(lngStr && !lngStr.includes('.') && lngStr.startsWith('108') && lngStr.length > 5) {
+                                lngStr = lngStr.slice(0, 3) + '.' + lngStr.slice(3);
+                            }
+                            
+                            s.lat = parseFloat(latStr) || s.lat;
+                            s.lng = parseFloat(lngStr) || s.lng;
+                            
+                            // Amankan field foto jika Google Sheets mengubahnya jadi object aneh
+                            if(typeof s.foto === 'object' && s.foto !== null) {
+                                s.foto = JSON.stringify(s.foto);
+                            }
+                            
+                            return s;
+                        }); 
+                        
                         localStorage.setItem('smart_surveys', JSON.stringify(surveys));
                         renderMarkers();
                         renderList();
