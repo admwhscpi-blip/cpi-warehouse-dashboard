@@ -18,6 +18,7 @@
 
     <style>
         :root {
+            --neon-cyan: #06b6d4;
             --bg-page: #f1f5f9;
             --sidebar-color: #ffffff;
             --accent-blue: #0ea5e9;
@@ -51,16 +52,68 @@
         
         #map { flex: 1; width: 100%; height: 100%; z-index: 1; }
 
-        /* HEADER OVERLAY ON MAP - Z-index fixed untuk popup overlap */
+        /* HEADER OVERLAY ON MAP */
         .map-header { position: absolute; top: 20px; left: 20px; z-index: 400; background: #fff; padding: 15px 25px; border-radius: 20px; box-shadow: var(--card-shadow); display: flex; align-items: center; justify-content: space-between; right: 20px; border: 1px solid var(--border-soft); }
         .header-title { font-family: 'Orbitron'; font-size: 1.1rem; font-weight: 900; color: var(--text-main); }
         .header-btn { background: var(--accent-blue); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-family: 'Orbitron'; font-weight: 900; letter-spacing: 1px; font-size: 0.8rem; cursor: pointer; box-shadow: 0 5px 15px rgba(14, 165, 233, 0.3); transition: 0.3s; }
         .header-btn:hover { background: #0284c7; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(14, 165, 233, 0.5); }
 
-        /* MAP CUSTOM ELEMENTS */
-        .leaflet-popup-content-wrapper { border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); padding: 5px; border: 1px solid var(--border-soft); }
-        .leaflet-popup-content { margin: 15px; width: 260px !important; }
-        
+        /* HUD LEADERBOARD PANEL */
+        .hud-panel { position: absolute; top: 90px; right: 20px; z-index: 400; width: 280px; background: rgba(2, 6, 23, 0.92); backdrop-filter: blur(12px); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 16px; padding: 15px; box-shadow: 0 0 25px rgba(6, 182, 212, 0.15); animation: fadeHud 0.5s ease; }
+        @keyframes fadeHud { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+        .hud-title { font-family:'Orbitron'; font-size:0.65rem; color:var(--neon-cyan); font-weight:900; letter-spacing:2px; margin-bottom:10px; display:flex; align-items:center; gap:8px; text-shadow:0 0 8px rgba(6,182,212,.6); }
+        .hud-total { font-family:'Orbitron'; font-size:1.8rem; color:#fff; font-weight:900; text-align:center; margin-bottom:8px; text-shadow:0 0 20px rgba(6,182,212,.5); }
+        .hud-sub { font-size:0.55rem; color:#94a3b8; text-align:center; margin-bottom:12px; font-weight:700; letter-spacing:1px; }
+        .hud-list { max-height: 200px; overflow-y: auto; }
+        .hud-list::-webkit-scrollbar { width:4px; } .hud-list::-webkit-scrollbar-track { background:transparent; } .hud-list::-webkit-scrollbar-thumb { background:rgba(6,182,212,.3); border-radius:4px; }
+        .hud-row { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; margin-bottom:4px; transition:0.3s; cursor:default; border:1px solid transparent; }
+        .hud-row:hover { background:rgba(6,182,212,.08); border-color:rgba(6,182,212,.2); }
+        .hud-rank { font-family:'Orbitron'; font-size:0.7rem; font-weight:900; color:var(--neon-cyan); min-width:24px; text-align:center; }
+        .hud-rank.gold { color:#fbbf24; text-shadow:0 0 8px rgba(251,191,36,.5); }
+        .hud-rank.silver { color:#94a3b8; }
+        .hud-rank.bronze { color:#f97316; }
+        .hud-name { font-size:0.7rem; font-weight:800; color:#e2e8f0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .hud-dist { font-size:0.6rem; color:#64748b; font-weight:700; font-family:'Orbitron'; }
+
+        /* FULLSCREEN DETAIL MODAL */
+        .detail-modal-overlay { position:fixed; inset:0; background:rgba(2,6,23,.92); backdrop-filter:blur(8px); z-index:3000; display:none; overflow-y:auto; animation:fadeIn .3s; }
+        .detail-modal-box { max-width:700px; margin:30px auto; padding:30px; animation: zoomIn .4s cubic-bezier(.175,.885,.32,1.275); }
+        .dm-close { position:fixed; top:20px; right:25px; z-index:3100; background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.4); color:#ef4444; width:45px; height:45px; border-radius:50%; font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.3s; }
+        .dm-close:hover { background:#ef4444; color:#fff; box-shadow:0 0 20px rgba(239,68,68,.5); }
+        .dm-title { font-family:'Orbitron'; font-size:1.4rem; font-weight:900; color:var(--neon-cyan); text-shadow:0 0 15px rgba(6,182,212,.5); margin-bottom:5px; text-transform:uppercase; }
+        .dm-subtitle { font-size:.7rem; color:#64748b; font-weight:700; letter-spacing:2px; margin-bottom:25px; }
+        .dm-section { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:20px; margin-bottom:15px; }
+        .dm-section-title { font-family:'Orbitron'; font-size:.7rem; font-weight:900; color:var(--neon-cyan); letter-spacing:2px; margin-bottom:15px; display:flex; align-items:center; gap:8px; }
+        .dm-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .dm-field { }
+        .dm-label { font-size:.6rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+        .dm-value { font-size:.85rem; font-weight:700; color:#e2e8f0; line-height:1.4; }
+        .dm-value.highlight { color:var(--neon-cyan); font-family:'Orbitron'; }
+        .dm-value.green { color:#10b981; }
+        .dm-value.orange { color:#f59e0b; font-style:italic; }
+        .dm-doc-preview { width:100%; max-height:300px; object-fit:contain; border-radius:12px; border:1px solid rgba(6,182,212,.2); background:#0a0a0f; margin-top:10px; cursor:pointer; transition:.3s; }
+        .dm-doc-preview:hover { box-shadow:0 0 20px rgba(6,182,212,.3); }
+
+        /* NEON ACTION BUTTONS */
+        .neon-btn { display:flex; align-items:center; justify-content:center; gap:10px; padding:14px 20px; border-radius:12px; font-family:'Orbitron'; font-weight:900; font-size:.75rem; letter-spacing:1px; text-decoration:none; cursor:pointer; border:2px solid transparent; transition:.3s; position:relative; overflow:hidden; }
+        .neon-btn::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent); transform:translateX(-100%); transition:.5s; }
+        .neon-btn:hover::before { transform:translateX(100%); }
+        .neon-rute { background:rgba(14,165,233,.15); border-color:rgba(14,165,233,.5); color:#38bdf8; box-shadow:0 0 15px rgba(14,165,233,.2); }
+        .neon-rute:hover { background:rgba(14,165,233,.3); box-shadow:0 0 30px rgba(14,165,233,.4),inset 0 0 15px rgba(14,165,233,.1); text-shadow:0 0 10px rgba(14,165,233,.8); }
+        .neon-wa { background:rgba(16,185,129,.15); border-color:rgba(16,185,129,.5); color:#34d399; box-shadow:0 0 15px rgba(16,185,129,.2); }
+        .neon-wa:hover { background:rgba(16,185,129,.3); box-shadow:0 0 30px rgba(16,185,129,.4),inset 0 0 15px rgba(16,185,129,.1); text-shadow:0 0 10px rgba(16,185,129,.8); }
+        @keyframes neonPulse { 0%,100% { box-shadow:0 0 10px rgba(6,182,212,.2); } 50% { box-shadow:0 0 25px rgba(6,182,212,.4); } }
+
+        /* PRIORITY EDIT MODAL TABLE */
+        .prio-table { width:100%; border-collapse:separate; border-spacing:0 6px; }
+        .prio-table th { font-family:'Orbitron'; font-size:.6rem; color:var(--neon-cyan); text-align:left; padding:8px 12px; letter-spacing:1px; }
+        .prio-table td { padding:10px 12px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); font-size:.8rem; color:#e2e8f0; font-weight:700; }
+        .prio-table tr td:first-child { border-radius:10px 0 0 10px; }
+        .prio-table tr td:last-child { border-radius:0 10px 10px 0; }
+        .prio-btn { background:rgba(6,182,212,.1); border:1px solid rgba(6,182,212,.3); color:var(--neon-cyan); width:30px; height:30px; border-radius:8px; cursor:pointer; font-size:.8rem; transition:.3s; display:inline-flex; align-items:center; justify-content:center; }
+        .prio-btn:hover { background:var(--neon-cyan); color:#000; box-shadow:0 0 12px var(--neon-cyan); }
+
+        /* MAP CUSTOM POPUP — HIDE default Leaflet popup for markers */
         .popup-header { font-family: 'Orbitron'; font-size: 0.9rem; font-weight: 900; color: var(--text-main); margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; text-transform: uppercase; }
         .popup-row { display: flex; font-size: 0.75rem; margin-bottom: 6px; line-height: 1.4; }
         .popup-label { font-weight: 800; color: var(--text-muted); width: 100px; flex-shrink: 0; }
@@ -190,7 +243,10 @@
             .header-title { font-size: 0.8rem !important; text-align:center;}
             .header-btn { font-size:0.7rem !important; width: 100%;}
             .map-legend { bottom: 15px !important; left: 15px !important; }
+            .hud-panel { position:fixed !important; top:auto !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; border-radius:16px 16px 0 0 !important; max-height:40vh; overflow-y:auto; }
             .modal-box { width: 100% !important; border-radius: 0 !important; height: 100vh !important; max-height: 100vh !important; }
+            .detail-modal-box { margin:0 !important; padding:20px !important; }
+            .dm-grid { grid-template-columns:1fr !important; }
             .form-grid { grid-template-columns: 1fr; }
             .form-group.full { grid-column: span 1; }
         }
@@ -246,9 +302,18 @@
                 <div>
                     <div class="header-title">VISUALISASI LOKASI GUDANG - WH CPI CIREBON</div>
                 </div>
-                <button class="header-btn" onclick="openAddModal()"><i class="fas fa-plus"></i> Tambah Survey</button>
             </div>
             
+            <!-- HUD LEADERBOARD PANEL -->
+            <div class="hud-panel" id="hudPanel">
+                <div class="hud-title"><i class="fas fa-trophy"></i> LEADERBOARD GUDANG</div>
+                <div class="hud-total" id="hudTotal">0</div>
+                <div class="hud-sub">TOTAL GUDANG TERDAFTAR</div>
+                <div class="hud-list" id="hudList">
+                    <!-- JS will populate -->
+                </div>
+            </div>
+
             <div class="map-legend">
                 <div style="font-family:'Orbitron'; font-size:0.75rem; font-weight:900; margin-bottom:10px;">Map Legend</div>
                 <div class="legend-item"><div class="leg-dot" style="background:var(--accent-blue)"></div> Pabrik Utama</div>
@@ -258,11 +323,22 @@
             <div id="map"></div>
         </div>
 
+        <!-- FULLSCREEN DETAIL MODAL -->
+        <div class="detail-modal-overlay" id="detailModal">
+            <button class="dm-close" onclick="closeDetailModal()"><i class="fas fa-times"></i></button>
+            <div class="detail-modal-box" id="detailModalBody">
+                <!-- JS will populate -->
+            </div>
+        </div>
+
         <!-- LIST VIEW -->
         <div id="view-list" style="background:#f1f5f9; padding:40px 30px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; flex-wrap:wrap; gap:10px;">
                 <h2 style="font-family:'Orbitron'; color:var(--text-main); margin:0; font-weight:900;"><i class="fas fa-server" style="color:var(--accent-blue);"></i> MASTER DATA SURVEI</h2>
-                <button class="header-btn" onclick="openAddModal()"><i class="fas fa-layer-group"></i> ENTRI BARU</button>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="header-btn" onclick="openAddModal()"><i class="fas fa-layer-group"></i> ENTRI BARU</button>
+                    <button class="header-btn" style="background:#f59e0b;" onclick="openPriorityEditor()"><i class="fas fa-sort-amount-up"></i> EDIT PRIORITAS</button>
+                </div>
             </div>
             <div id="survey-list-container">
                 <!-- Javascript will render items here -->
@@ -377,7 +453,7 @@
         const CLOUDINARY_PRESET = 'wh_cleaning';
         const FACTORY_LAT = -6.7887464;
         const FACTORY_LNG = 108.6323567;
-        const API_URL = 'https://script.google.com/macros/s/AKfycbywSW89oLNF8A4to28rHCFiyg8QnhOe0T0V8YfLdkX55orZ_I1AcLcJLy6FapFlx4Ii/exec';
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwUx8pxxKPwNvg4M9BQlTWHwPmqLaPo6DJmDvn3AKfqhvirnS8IL9xZMe9sI2s0t9DG/exec';
         
         let map;
         let surveys = [];
@@ -454,12 +530,6 @@
             });                 L.marker([FACTORY_LAT, FACTORY_LNG], {icon: factoryIcon}).addTo(map)
              .bindPopup(`<div style="font-family:'Orbitron'; font-weight:900; font-size:1rem; text-align:center;">PT. CHAROEN POKPHAND INDONESIA</div><div style="text-align:center; font-family:'Inter'; font-size:0.75rem;">Pusat Pabrik Cirebon</div>`);
 
-            // Apply global popup setting for autoPan to prevent header completely blocking it.
-            map.on('popupopen', function(e) {
-                var px = map.project(e.target._popup._latlng);
-                px.y -= e.target._popup._container.clientHeight/2;
-                map.panTo(map.unproject(px),{animate: true, paddingTopLeft: [0, 80]}); // Offset for floating header
-            });
 
             renderMarkers();
         }
@@ -513,90 +583,12 @@
         }
 
         function renderMarkers() {
-            // Remove existing markers except factory (simplistic: recreate map or store layers)
-            // For robustness, in standard leaflet, we store markers in an array or featuregroup
             if(window.markerGroup) map.removeLayer(window.markerGroup);
             window.markerGroup = L.layerGroup().addTo(map);
 
             surveys.forEach((s, idx) => {
                 if(!s.lat || !s.lng) return;
-                
-                // Parse WA Number
-                let waNumber = parseWaNumber(s.kontak);
-                let waHtml = waNumber ? `<a href="https://wa.me/${waNumber}" target="_blank" class="btn-wa"><i class="fab fa-whatsapp"></i> Chat Pemilik</a>` : '';
-                
-                // Gmaps direction from Factory
-                let dirHtml = `<a href="https://www.google.com/maps/dir/${FACTORY_LAT},${FACTORY_LNG}/${s.lat},${s.lng}" target="_blank" class="btn-rute"><i class="fas fa-directions"></i> Tampilkan Rute</a>`;
 
-                // Calculate Distance (Haversine simple) - visual estimation
-                let dist = (map.distance([FACTORY_LAT, FACTORY_LNG], [s.lat, s.lng]) / 1000).toFixed(1) + ' KM';
-
-                // MULTI PHOTO UI (Aman Terhadap Format Json atau Teks Biasa Lama)
-                let photos = [];
-                if(s.foto) {
-                    try {
-                        let parsed = JSON.parse(s.foto);
-                        if(Array.isArray(parsed)) photos = parsed;
-                        else photos = [s.foto]; // Fallback jika teks bukan array
-                    } catch(e) {
-                        photos = [s.foto]; // Fallback jika murni string URL lama
-                    }
-                }
-
-                function getSafeDocUrl(u) {
-                    if(!u) return '';
-                    return u.replace(/\.pdf$/i, '.jpg');
-                }
-                let safeDoc = getSafeDocUrl(s.dokumen);
-
-                let galParam = photos.join('||');
-                let firstImg = photos.length > 0 ? photos[0] : 'https://via.placeholder.com/300x150?text=NO+IMAGE';
-                
-                let p_html = `
-                    <div style="position:relative; width:100%; border-radius:10px; overflow:hidden; border:2px solid rgba(14, 165, 233, 0.3); box-shadow:0 0 15px rgba(14, 165, 233, 0.1); margin-top:10px;">
-                        <img class="popup-img" src="${firstImg}" alt="Gudang" style="margin:0; width:100%; display:block; filter: brightness(0.85);" onclick="openGallery('${galParam}')">
-                        <div style="position:absolute; bottom:0; left:0; right:0; padding:10px; background:linear-gradient(to top, rgba(0,0,0,0.9), transparent); text-align:center; font-family:'Orbitron'; font-size:0.65rem; color:var(--neon-cyan); letter-spacing:1px; cursor:pointer;" onclick="openGallery('${galParam}')">
-                            <i class="fas fa-camera"></i> DETAIL ${photos.length} DOKUMENTASI KLIK DI SINI 
-                        </div>
-                    </div>
-                `;
-
-                let docFileHtml = safeDoc ? 
-                    `<div class="popup-row" style="margin-top:10px;"><div class="popup-label">DOKUMEN PENAWARAN:</div><div class="popup-val"><a href="${safeDoc}" target="_blank" style="color:var(--accent-red); text-decoration:none; font-weight:900;"><i class="fas fa-file-image"></i> Lihat Dokumen (Gambar)</a></div></div>` 
-                    : 
-                    `<div class="popup-row" style="margin-top:10px;"><div class="popup-label">DOKUMEN PENAWARAN:</div><div class="popup-val" style="color:var(--accent-orange); font-style:italic; font-weight:800;"><i class="fas fa-clock"></i> Masih tunggu dari pemilik</div></div>`;
-
-                let hargaValHtml = s.hargaMeter ? 
-                    `<div class="popup-val" style="color:var(--accent-green); font-weight:900;">${s.hargaMeter}</div>` 
-                    : 
-                    `<div class="popup-val" style="color:var(--accent-orange); font-style:italic; font-weight:800;">Masih tunggu dari pemilik</div>`;
-
-                let popupContent = `
-                    <div class="popup-header">INFORMASI KOMPREHENSIF<br><span style="color:#fff;">${s.nama}</span></div>
-                    
-                    <div class="popup-row"><div class="popup-label">LUAS:</div><div class="popup-val">${s.luas} m²</div></div>
-                    <div class="popup-row"><div class="popup-label">PANJANG:</div><div class="popup-val">${s.panjang || '-'} m</div></div>
-                    <div class="popup-row"><div class="popup-label">HARGA / m²:</div>${hargaValHtml}</div>
-                    <div class="popup-row"><div class="popup-label">MIN SEWA:</div><div class="popup-val">${s.minSewa || '-'}</div></div>
-                    <div class="popup-row"><div class="popup-label">JARAK PABRIK:</div><div class="popup-val">${dist}</div></div>
-                    <div class="popup-row"><div class="popup-label">LINGKUNGAN:</div><div class="popup-val">${s.lingkungan || '-'}</div></div>
-                    
-                    ${docFileHtml}
-                    
-                    <div class="popup-row" style="margin-top:10px;"><div class="popup-label">SPESIFIKASI UMUM:</div></div>
-                    <div style="font-size:0.75rem; color:var(--text-muted); font-style:italic; line-height:1.4; padding-left:10px; border-left:2px solid var(--accent-blue); margin-top:5px;">${s.spek || '-'}</div>
-                    <div class="popup-row" style="margin-top:10px;"><div class="popup-label">KETERANGAN LAIN:</div></div>
-                    <div style="font-size:0.75rem; color:var(--text-muted); font-style:italic; line-height:1.4; padding-left:10px; border-left:2px solid var(--accent-orange); margin-top:5px;">${s.ket || '-'}</div>
-
-                    ${p_html}
-                    
-                    <div class="popup-actions" style="margin-top:15px;">
-                        ${dirHtml}
-                        ${waHtml}
-                    </div>
-                `;
-
-                // Update icon text
                 let dynIcon = L.divIcon({
                     html: `
                         <div style="background:var(--accent-red); color:#fff; padding:6px 15px; border-radius:20px; font-family:'Orbitron'; font-weight:900; font-size:0.6rem; border:2px solid #fff; box-shadow:0 5px 15px rgba(239, 68, 68, 0.4); display:flex; align-items:center; justify-content:center; gap:5px; white-space:nowrap; transform:translate(-50%, -100%); position:absolute; top:0; left:0;">
@@ -604,12 +596,174 @@
                         </div>
                     `,
                     className: '',
-                    iconSize: [0, 0],
-                    popupAnchor: [0, -30]
+                    iconSize: [0, 0]
                 });
 
-                L.marker([s.lat, s.lng], {icon: dynIcon}).addTo(window.markerGroup).bindPopup(popupContent, {autoPanPaddingTop: L.point(0, 80)});
+                L.marker([s.lat, s.lng], {icon: dynIcon}).addTo(window.markerGroup).on('click', function() {
+                    openFullscreenDetail(s);
+                });
             });
+
+            // Update HUD Leaderboard
+            renderHudLeaderboard();
+        }
+
+        // --- HUD LEADERBOARD ---
+        function renderHudLeaderboard() {
+            const total = surveys.filter(s => s.lat && s.lng).length;
+            document.getElementById('hudTotal').textContent = total;
+            const listEl = document.getElementById('hudList');
+            
+            // Sort by priority (ascending). If no priority, push to end.
+            let sorted = surveys.filter(s => s.lat && s.lng).slice().sort((a, b) => {
+                let pa = parseInt(a.prioritas) || 9999;
+                let pb = parseInt(b.prioritas) || 9999;
+                return pa - pb;
+            });
+
+            listEl.innerHTML = sorted.map((s, i) => {
+                let dist = '?';
+                try { dist = (map.distance([FACTORY_LAT, FACTORY_LNG], [s.lat, s.lng]) / 1000).toFixed(1); } catch(e) {}
+                let rankClass = i === 0 ? 'gold' : (i === 1 ? 'silver' : (i === 2 ? 'bronze' : ''));
+                return `
+                    <div class="hud-row" onclick="openFullscreenDetail(surveys.find(x=>x.id==='${s.id}'))">
+                        <div class="hud-rank ${rankClass}">#${i + 1}</div>
+                        <div class="hud-name">${s.nama}</div>
+                        <div class="hud-dist">${dist} km</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- FULLSCREEN DETAIL MODAL ---
+        function openFullscreenDetail(s) {
+            if(!s) return;
+            const modal = document.getElementById('detailModal');
+            const body = document.getElementById('detailModalBody');
+
+            let waNumber = parseWaNumber(s.kontak);
+            let dist = '?';
+            try { dist = (map.distance([FACTORY_LAT, FACTORY_LNG], [s.lat, s.lng]) / 1000).toFixed(1); } catch(e) {}
+
+            // Photos
+            let photos = [];
+            if(s.foto) {
+                try {
+                    let parsed = JSON.parse(s.foto);
+                    if(Array.isArray(parsed)) photos = parsed;
+                    else photos = [s.foto];
+                } catch(e) { photos = [s.foto]; }
+            }
+            let galParam = photos.join('||');
+            let firstImg = photos.length > 0 ? photos[0] : '';
+
+            // Safe doc URL
+            function getSafeDocUrl(u) { if(!u) return ''; return String(u).replace(/\.pdf$/i, '.jpg'); }
+            let safeDoc = getSafeDocUrl(s.dokumen);
+
+            // Layout canvas dimensions
+            let luasVal = parseFloat(s.luas) || 0;
+            let panjangVal = parseFloat(s.panjang) || 0;
+            let lebarVal = panjangVal > 0 ? (luasVal / panjangVal).toFixed(1) : '?';
+
+            let layoutHtml = '';
+            if(luasVal && panjangVal > 0) {
+                layoutHtml = `
+                    <div class="dm-section">
+                        <div class="dm-section-title"><i class="fas fa-drafting-compass"></i> DENAH LAYOUT GUDANG</div>
+                        <div style="display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,.3); border-radius:12px; position:relative;">
+                            <div style="border:2px solid var(--neon-cyan); border-radius:8px; width:${Math.min(panjangVal * 3.5, 400)}px; height:${Math.min(parseFloat(lebarVal) * 3.5, 200)}px; display:flex; align-items:center; justify-content:center; position:relative; box-shadow:0 0 15px rgba(6,182,212,.2); background:rgba(6,182,212,.05);">
+                                <div style="font-family:'Orbitron'; color:var(--neon-cyan); font-size:.7rem; font-weight:900; text-align:center;">${luasVal} m²</div>
+                                <div style="position:absolute; bottom:-22px; font-family:'Orbitron'; font-size:.55rem; color:#94a3b8; font-weight:800;">P: ${panjangVal}m × L: ${lebarVal}m</div>
+                                <div style="position:absolute; left:-8px; top:50%; transform:translateY(-50%) rotate(-90deg); font-size:.5rem; color:var(--neon-cyan); font-weight:900; font-family:'Orbitron';">${lebarVal}m</div>
+                                <div style="position:absolute; bottom:4px; left:50%; transform:translateX(-50%); font-size:.5rem; color:var(--neon-cyan); font-weight:900; font-family:'Orbitron';">${panjangVal}m</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Photo section
+            let photoHtml = '';
+            if(firstImg) {
+                photoHtml = `
+                    <div class="dm-section">
+                        <div class="dm-section-title"><i class="fas fa-camera"></i> DOKUMENTASI FOTO (${photos.length})</div>
+                        <div style="position:relative; border-radius:12px; overflow:hidden; cursor:pointer; border:1px solid rgba(6,182,212,.2);" onclick="openGallery('${galParam}')">
+                            <img src="${firstImg}" style="width:100%; height:200px; object-fit:cover; display:block; filter:brightness(.8);">
+                            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(to top, rgba(0,0,0,.8), transparent 60%);">
+                                <div style="position:absolute; bottom:15px; font-family:'Orbitron'; font-size:.65rem; color:var(--neon-cyan); font-weight:900; letter-spacing:1px; text-shadow:0 0 10px rgba(6,182,212,.5);"><i class="fas fa-images"></i> KLIK UNTUK SLIDESHOW (${photos.length} FOTO)</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Dokumen Section
+            let docHtml = '';
+            if(safeDoc) {
+                docHtml = `
+                    <div class="dm-section">
+                        <div class="dm-section-title"><i class="fas fa-file-contract"></i> DOKUMEN PENAWARAN</div>
+                        <img class="dm-doc-preview" src="${safeDoc}" onclick="window.open('${safeDoc}','_blank')" onerror="this.parentElement.innerHTML='<div style=color:#f59e0b;font-weight:800;text-align:center;padding:20px;><i class=fas fa-exclamation-triangle></i> Preview tidak tersedia</div>'">
+                    </div>
+                `;
+            } else {
+                docHtml = `
+                    <div class="dm-section">
+                        <div class="dm-section-title"><i class="fas fa-file-contract"></i> DOKUMEN PENAWARAN</div>
+                        <div style="text-align:center; padding:25px; color:#f59e0b; font-family:'Orbitron'; font-size:.75rem; font-weight:900; border:1px dashed rgba(245,158,11,.3); border-radius:12px; background:rgba(245,158,11,.05);">
+                            <i class="fas fa-hourglass-half" style="font-size:1.5rem; display:block; margin-bottom:10px;"></i>
+                            Masih tunggu dari pemilik
+                        </div>
+                    </div>
+                `;
+            }
+
+            let hargaClass = s.hargaMeter ? 'green' : 'orange';
+            let hargaText = s.hargaMeter ? s.hargaMeter : 'Masih tunggu dari pemilik';
+
+            body.innerHTML = `
+                <div class="dm-title">${s.nama}</div>
+                <div class="dm-subtitle">INFORMASI KOMPREHENSIF GUDANG</div>
+
+                <div class="dm-section">
+                    <div class="dm-section-title"><i class="fas fa-info-circle"></i> DATA UTAMA</div>
+                    <div class="dm-grid">
+                        <div class="dm-field"><div class="dm-label">Luas Total</div><div class="dm-value highlight">${s.luas} m²</div></div>
+                        <div class="dm-field"><div class="dm-label">Panjang</div><div class="dm-value">${s.panjang || '-'} m</div></div>
+                        <div class="dm-field"><div class="dm-label">Harga / m²</div><div class="dm-value ${hargaClass}">${hargaText}</div></div>
+                        <div class="dm-field"><div class="dm-label">Min. Sewa</div><div class="dm-value">${s.minSewa || '-'}</div></div>
+                        <div class="dm-field"><div class="dm-label">Jarak Pabrik</div><div class="dm-value highlight">${dist} KM</div></div>
+                        <div class="dm-field"><div class="dm-label">Lingkungan</div><div class="dm-value">${s.lingkungan || '-'}</div></div>
+                    </div>
+                </div>
+
+                <div class="dm-section">
+                    <div class="dm-section-title"><i class="fas fa-clipboard-list"></i> SPESIFIKASI & KETERANGAN</div>
+                    <div class="dm-field" style="margin-bottom:12px;"><div class="dm-label">Spesifikasi Umum</div><div class="dm-value" style="border-left:3px solid var(--neon-cyan); padding-left:12px; margin-top:5px;">${s.spek || '-'}</div></div>
+                    <div class="dm-field"><div class="dm-label">Keterangan Lain</div><div class="dm-value" style="border-left:3px solid #f59e0b; padding-left:12px; margin-top:5px;">${s.ket || '-'}</div></div>
+                </div>
+
+                ${layoutHtml}
+                ${photoHtml}
+                ${docHtml}
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px;">
+                    <a href="https://www.google.com/maps/dir/${FACTORY_LAT},${FACTORY_LNG}/${s.lat},${s.lng}" target="_blank" class="neon-btn neon-rute" style="animation:neonPulse 2s infinite;">
+                        <i class="fas fa-route" style="font-size:1.1rem;"></i> TAMPILKAN RUTE
+                    </a>
+                    ${waNumber ? `<a href="https://wa.me/${waNumber}" target="_blank" class="neon-btn neon-wa" style="animation:neonPulse 2s infinite .5s;"><i class="fab fa-whatsapp" style="font-size:1.3rem;"></i> CHAT PEMILIK</a>` : '<div></div>'}
+                </div>
+            `;
+
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
+            document.body.style.overflow = '';
         }
 
         // --- WA NUMBER PARSING ------
@@ -1114,6 +1268,118 @@
                     Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success');
                 }
             })
+        }
+
+        // --- PRIORITY EDITOR ---
+        function openPriorityEditor() {
+            Swal.fire({
+                title: '<div class="cyber-login-title"><i class="fas fa-shield-alt"></i> AKSES TERBATAS</div>',
+                html: `<input type="text" id="swal-user" class="cyber-input swal2-input" placeholder="USERNAME">
+                       <input type="password" id="swal-pass" class="cyber-input swal2-input" placeholder="PASSWORD">`,
+                confirmButtonText: '<i class="fas fa-unlock"></i> MASUK',
+                confirmButtonColor: '#06b6d4',
+                showCancelButton: true,
+                cancelButtonText: 'BATAL',
+                background: 'rgba(5, 5, 10, 0.95)',
+                customClass: { popup: 'cyber-login-popup' },
+                backdrop: 'rgba(0,0,0,0.95)',
+                preConfirm: () => {
+                    const u = document.getElementById('swal-user').value.toUpperCase();
+                    const p = document.getElementById('swal-pass').value;
+                    if(u !== 'ARIF' || p !== '1891') {
+                        Swal.showValidationMessage('Username / Password salah!');
+                        return false;
+                    }
+                    return true;
+                }
+            }).then(result => {
+                if(result.isConfirmed) showPriorityModal();
+            });
+        }
+
+        function showPriorityModal() {
+            let sorted = surveys.slice().sort((a, b) => {
+                let pa = parseInt(a.prioritas) || 9999;
+                let pb = parseInt(b.prioritas) || 9999;
+                return pa - pb;
+            });
+
+            let rows = sorted.map((s, i) => `
+                <tr data-id="${s.id}">
+                    <td style="text-align:center; font-family:'Orbitron'; color:var(--neon-cyan); font-weight:900;">${i + 1}</td>
+                    <td>${s.nama}</td>
+                    <td style="text-align:center;">
+                        <button class="prio-btn" onclick="movePrio('${s.id}',-1)"><i class="fas fa-chevron-up"></i></button>
+                        <button class="prio-btn" onclick="movePrio('${s.id}',1)"><i class="fas fa-chevron-down"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+
+            Swal.fire({
+                title: '<div class="cyber-login-title" style="font-size:1rem;"><i class="fas fa-trophy"></i> EDIT PRIORITAS GUDANG</div>',
+                html: `
+                    <div style="max-height:50vh; overflow-y:auto; margin-top:15px;">
+                        <table class="prio-table" id="prioTable">
+                            <thead><tr><th>#</th><th>NAMA GUDANG</th><th>AKSI</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `,
+                confirmButtonText: '<i class="fas fa-save"></i> SIMPAN PRIORITAS',
+                confirmButtonColor: '#10b981',
+                showCancelButton: true,
+                cancelButtonText: 'BATAL',
+                background: 'rgba(5, 5, 10, 0.95)',
+                customClass: { popup: 'cyber-login-popup' },
+                backdrop: 'rgba(0,0,0,0.95)',
+                width: '500px',
+                preConfirm: () => {
+                    // Collect new order
+                    const tableRows = document.querySelectorAll('#prioTable tbody tr');
+                    let updates = [];
+                    tableRows.forEach((tr, i) => {
+                        const id = tr.getAttribute('data-id');
+                        updates.push({ id: id, prioritas: i + 1 });
+                        // Update local data
+                        let found = surveys.find(s => s.id === id);
+                        if(found) found.prioritas = i + 1;
+                    });
+                    localStorage.setItem('smart_surveys', JSON.stringify(surveys));
+                    
+                    // Send to backend
+                    fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: JSON.stringify({ action: 'updatePrioritas', data: updates })
+                    }).catch(e => console.warn('Prioritas sync error:', e));
+
+                    return true;
+                }
+            }).then(result => {
+                if(result.isConfirmed) {
+                    renderMarkers();
+                    renderList();
+                    Swal.fire({ title: 'TERSIMPAN!', text: 'Urutan prioritas berhasil diperbarui.', icon: 'success', confirmButtonColor: '#10b981' });
+                }
+            });
+        }
+
+        function movePrio(id, dir) {
+            const tbody = document.querySelector('#prioTable tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const idx = rows.findIndex(r => r.getAttribute('data-id') === id);
+            if(idx < 0) return;
+            const newIdx = idx + dir;
+            if(newIdx < 0 || newIdx >= rows.length) return;
+
+            // Swap DOM rows
+            if(dir === -1) tbody.insertBefore(rows[idx], rows[newIdx]);
+            else tbody.insertBefore(rows[newIdx], rows[idx]);
+
+            // Renumber
+            Array.from(tbody.querySelectorAll('tr')).forEach((tr, i) => {
+                tr.querySelector('td').textContent = i + 1;
+            });
         }
 
     </script>
