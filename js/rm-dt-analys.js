@@ -23,6 +23,17 @@ const AnalysApp = {
     containerData: [], // Data dari Container Tracking
     containerDataByDate: {}, // Grouped containers
 
+    // Process stages: columns O through U in the sheet
+    PROCESS_STAGES: [
+        { key: 'START_PANGGIL', label: 'Start Panggil', icon: 'fa-phone-alt', color: '#06b6d4' },
+        { key: 'TRUCK_READY', label: 'Truck Ready', icon: 'fa-truck', color: '#10b981' },
+        { key: 'START_BONGKAR', label: 'Start Bongkar', icon: 'fa-box-open', color: '#f97316' },
+        { key: 'HOLD_QC', label: 'Hold QC', icon: 'fa-pause-circle', color: '#eab308' },
+        { key: 'RE-START_QC', label: 'Re-Start QC', icon: 'fa-play-circle', color: '#8b5cf6' },
+        { key: 'MANUVER_AKHIR', label: 'Manuver Akhir', icon: 'fa-arrows-alt', color: '#ec4899' },
+        { key: 'FINISH', label: 'Finish', icon: 'fa-flag-checkered', color: '#ef4444' }
+    ],
+
     // CONFIG GOOGLE SHEETS (Container)
     CONTAINER_SHEET_ID: '1m7q1IdtKyaNvjKP5QL85NPsk0FPEGUqV0scSB2CsXJ0',
     CONTAINER_SHEET_NAME: 'DATA BONGKARAN',
@@ -122,54 +133,54 @@ const AnalysApp = {
         }
     },
 
-    fetchContainerData: function () {
-        const callbackName = '_gvizContainerAnalysisCallback';
-        const url = `https://docs.google.com/spreadsheets/d/${this.CONTAINER_SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&sheet=${encodeURIComponent(this.CONTAINER_SHEET_NAME)}&tq=${encodeURIComponent('SELECT A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,AA,AB')}`;
+    fetchContainerData: async function () {
+        // v20.2.15: Use fetch() instead of JSONP to avoid browser size limits
+        // JSONP via <script> tag was silently truncating large responses (46 of 1503 rows)
+        const url = `https://docs.google.com/spreadsheets/d/${this.CONTAINER_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(this.CONTAINER_SHEET_NAME)}`;
 
-        window[callbackName] = (gviz) => {
-            try {
-                if (!gviz || !gviz.table) throw new Error("Invalid Container data");
-                const raw = this.parseGvizTable(gviz.table);
-                console.log(`[ContainerData] Received ${raw.length} rows from Sheet.`);
+        try {
+            const resp = await fetch(url);
+            const text = await resp.text();
+            // Gviz wraps JSON in google.visualization.Query.setResponse({...})
+            const jsonStr = text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
+            const gviz = JSON.parse(jsonStr);
 
-                this.containerData = raw.filter(row => {
-                    let iso = this.normalizeDate(row['TANGGAL']);
-                    return !!iso;
-                });
+            if (!gviz || !gviz.table) throw new Error("Invalid Container data response");
+            const raw = this.parseGvizTable(gviz.table);
+            console.log(`[ContainerData] Received ${raw.length} rows from Sheet.`);
 
-                console.log(`[ContainerData] ${this.containerData.length} rows successfully normalized and filtered.`);
-                if (this.containerData.length > 0) {
-                    const dates = this.containerData.map(r => r['TANGGAL']).sort();
-                    console.log(`[ContainerData] Date range: ${dates[0]} to ${dates[dates.length-1]}`);
-                    console.log(`[ContainerData] Sample row:`, this.containerData[0]);
-                }
+            this.containerData = raw.filter(row => {
+                let iso = this.normalizeDate(row['TANGGAL']);
+                return !!iso;
+            });
 
-                // Update filter dropdown with months from container data
-                this.initGlobalFilter();
-
-                // Group by Date for fast lookup
-                this.containerDataByDate = {};
-                this.containerData.forEach(row => {
-                    let d = this.normalizeDate(row['TANGGAL']);
-                    if (!this.containerDataByDate[d]) this.containerDataByDate[d] = [];
-                    this.containerDataByDate[d].push(row);
-                });
-
-                console.log('Container analysis data loaded:', this.containerData.length);
-                
-                // RE-RENDER UI after container data arrives
-                this.renderAllCharts();
-                this.renderKPIs();
-                this.initMaterialFeed();
-            } catch (err) {
-                console.error("CONTAINER FETCH ERROR:", err);
+            console.log(`[ContainerData] ${this.containerData.length} rows successfully normalized and filtered.`);
+            if (this.containerData.length > 0) {
+                const dates = this.containerData.map(r => r['TANGGAL']).sort();
+                console.log(`[ContainerData] Date range: ${dates[0]} to ${dates[dates.length-1]}`);
+                console.log(`[ContainerData] Sample row:`, this.containerData[0]);
             }
-            delete window[callbackName];
-        };
 
-        const script = document.createElement('script');
-        script.src = url;
-        document.head.appendChild(script);
+            // Update filter dropdown with months from container data
+            this.initGlobalFilter();
+
+            // Group by Date for fast lookup
+            this.containerDataByDate = {};
+            this.containerData.forEach(row => {
+                let d = this.normalizeDate(row['TANGGAL']);
+                if (!this.containerDataByDate[d]) this.containerDataByDate[d] = [];
+                this.containerDataByDate[d].push(row);
+            });
+
+            console.log('Container analysis data loaded:', this.containerData.length);
+            
+            // RE-RENDER UI after container data arrives
+            this.renderAllCharts();
+            this.renderKPIs();
+            this.initMaterialFeed();
+        } catch (err) {
+            console.error("CONTAINER FETCH ERROR:", err);
+        }
     },
 
     parseGvizTable: function (table) {
@@ -193,10 +204,16 @@ const AnalysApp = {
                 let val = cell ? cell.v : null;
                 if (val === null || val === undefined) { obj[headers[i]] = ''; return; }
 
-                // Google encodes dates as "Date(y,m,d)" strings in JSON
+                // Google encodes dates as "Date(y,m,d,h,m,s)" strings in JSON
                 if (typeof val === 'string' && val.startsWith('Date(')) {
-                    const m = val.match(/Date\((\d+),(\d+),(\d+)/);
-                    if (m) val = `${m[1]}-${String(parseInt(m[2]) + 1).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+                    const m = val.match(/Date\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*(\d+))?)?\s*\)/);
+                    if (m) {
+                        let dateStr = `${m[1]}-${String(parseInt(m[2]) + 1).padStart(2, '0')}-${String(m[3]).padStart(2, '0')}`;
+                        if (m[4] !== undefined) {
+                            dateStr += ` ${String(m[4]).padStart(2, '0')}:${String(m[5] || '0').padStart(2, '0')}:${String(m[6] || '0').padStart(2, '0')}`;
+                        }
+                        val = dateStr;
+                    }
                 }
                 
                 // Use formatted value (cell.f) if raw value is unhelpful
@@ -227,31 +244,35 @@ const AnalysApp = {
         });
     },
 
-    // v20.2.6: Robust volume extraction (handles Kg/MT and field name changes)
+    // v20.2.16: Final Robust volume extraction
     getUnloadingVol: function (row) {
         if (!row) return 0;
         
         let val = 0;
-        // 1. Check for explicit Kg/MT fields
-        if (row['NETTO_KG'] !== undefined && row['NETTO_KG'] !== '') val = parseFloat(row['NETTO_KG']) || 0;
-        else if (row['REAL_BONGKAR_KG'] !== undefined && row['REAL_BONGKAR_KG'] !== '') val = parseFloat(row['REAL_BONGKAR_KG']) || 0;
-        else if (row['REAL_BONGKAR_MT'] !== undefined && row['REAL_BONGKAR_MT'] !== '') val = parseFloat(String(row['REAL_BONGKAR_MT']).replace(/,/g, '')) || 0;
-        else if (row['NETTO_TS'] !== undefined && row['NETTO_TS'] !== '') val = parseFloat(String(row['NETTO_TS']).replace(/,/g, '')) || 0;
-        else if (row['NETTO'] !== undefined && row['NETTO'] !== '') val = parseFloat(String(row['NETTO']).replace(/,/g, '')) || 0;
-        else {
-            // Broad Catch-all for any column containing 'NETTO', 'KG', 'MT', 'BRUTO', or 'VOL'
-            for (let key in row) {
-                let k = key.toUpperCase();
-                if ((k.includes('NETTO') || k.includes('_KG') || k.includes('MT') || k.includes('BERAT') || k.includes('VOLUME') || k.includes('BRUTO')) && row[key] !== '' && row[key] !== null) {
-                    let n = parseFloat(String(row[key]).replace(/,/g, '')) || 0;
-                    if (n > 0) { val = n; break; }
+        // Search ONLY in known weight-related columns
+        // REAL_BONGKAR_KG comes from V2 API template (already in KG, no conversion needed)
+        const fields = ['REAL_BONGKAR_KG', 'REAL_BONGKAR_MT', 'NETTO_KG', 'NETTO_TS', 'NETTO', 'NETTO (KG)', 'BERAT', 'WEIGHT', 'TOTAL KG', 'COL_17', 'COL_18'];
+        for (let f of fields) {
+            if (row[f] !== undefined && row[f] !== null && row[f] !== '') {
+                let sVal = String(row[f]).trim();
+                // Handle Indonesian/US separators
+                if (sVal.includes('.') && sVal.includes(',')) {
+                    sVal = sVal.replace(/\./g, '').replace(',', '.');
+                } else if (sVal.includes(',')) {
+                    let pts = sVal.split(',');
+                    if (pts[1].length === 3) sVal = sVal.replace(/,/g, '');
+                    else sVal = sVal.replace(',', '.');
+                } else if (sVal.includes('.') && sVal.split('.').pop().length === 3) {
+                    sVal = sVal.replace(/\./g, '');
                 }
+                let n = parseFloat(sVal) || 0;
+                if (n > 0) { val = n; break; }
             }
         }
-
-
-        // AUTO-DETECT MT (If value < 250, likely in Metric Tons so convert to KG)
-        if (val > 0 && val < 250) return val * 1000;
+        
+        // Safety guard: Must be < 150 TON to be a truck load, otherwise it is potentially a PO number
+        if (val > 0 && val < 150) return val * 1000;
+        if (val > 150000) return 0; // PO number safety
         return val;
     },
 
@@ -447,7 +468,7 @@ const AnalysApp = {
         this.renderProdTeam(this.currentProdTeamPeriod);
         this.renderSummaryGudang('sumBongkar', 'BONGKAR', this.currentSumBongkarPeriod);
         this.renderSummaryGudang('sumMuat', 'MUAT', this.currentSumMuatPeriod);
-        this.renderTungguQC(this.currentTungguQCPeriod);
+        // QC Wait Time chart removed per request
     },
 
     // ... (KPI Logic Unchanged) ...
@@ -472,40 +493,28 @@ const AnalysApp = {
 
 
         // INTEGRATION: Unified Unloading Aggregation
-        // Step 1: Add all from Container Data (Source of truth for containers/Rice Bran)
-        const countedContainers = new Set(); // Track unique identifiers if possible, or just sum
-        this.containerData.forEach(row => {
+        const countedRows = new Set(); // Multi-source deduplication key
+
+        // Step 1: Add all from Container Data (Priority for Rice Bran)
+        this.containerData.forEach((row, idx) => {
             let tgl = this.normalizeDate(row['TANGGAL']);
             if (tgl && tgl.startsWith(selectedMonth)) {
                 let vol = this.getUnloadingVol(row);
-                sumBongkar += vol;
-                totalVol += vol;
-                // If it's a specific container, we might want to mark it as counted
-                // For now, we assume ALL rows in containerData are valid unloading
-            }
-        });
-
-        // Step 2: Add materials from V2 Template that are NOT in containerData
-        // Convention: ContainerData usually covers RICE BRAN. Other materials come from V2 API.
-        const v2Template = this.data.template || [];
-        v2Template.forEach(row => {
-            let tgl = this.normalizeDate(row['TANGGAL']);
-            if (tgl && tgl.startsWith(selectedMonth)) {
-                let activity = String(row['KEGIATAN'] || '').toUpperCase();
-                if (activity === 'BONGKAR') {
-                    let mat = String(row['MATERIAL'] || row['JENIS_RM'] || '').toUpperCase();
-                    // CRITICAL: Ensure we read material even if field names vary
-                    let volKG = this.getUnloadingVol(row);
-                    
-                    // AVOID DOUBLE COUNTING: 
-                    // If the material is RICE BRAN, we skip it here because it's already in containerData loop
-                    if (!mat.includes('RICE BRAN')) {
-                        sumBongkar += volKG;
-                        totalVol += volKG;
-                    }
+                let mat = String(row['MATERIAL'] || row['JENIS_RM'] || '').toUpperCase();
+                let nopol = String(row['NOPOL'] || '').toUpperCase();
+                let key = `${tgl}_${nopol}_${mat}_${vol}_${idx}`;
+                
+                if (!countedRows.has(key)) {
+                    sumBongkar += vol;
+                    totalVol += vol;
+                    countedRows.add(key);
                 }
             }
         });
+
+        // NOTE: V2 Template bongkar is NOT added here because dailyActivity.bongkar
+        // already includes the sum of all V2 template BONGKAR entries for each day.
+        // Adding them again would cause double-counting.
 
         this.animateValue('kpi-total-vol', 0, totalVol, 2000, " KG");
         if (document.getElementById('kpi-vol-bongkar')) document.getElementById('kpi-vol-bongkar').innerText = sumBongkar.toLocaleString();
@@ -688,31 +697,8 @@ const AnalysApp = {
             }
         });
 
-        // Add V2 Template Multi-Material Unloading
-        const v2Tpl_ops = this.data.template || [];
-        v2Tpl_ops.forEach(row => {
-            let tgl = this.normalizeDate(row['TANGGAL']);
-            if (tgl && tgl.startsWith(selectedMonth)) {
-                let act = String(row['KEGIATAN'] || '').toUpperCase();
-                if (act === 'BONGKAR') {
-                    let mat = String(row['MATERIAL'] || row['JENIS_RM'] || '').toUpperCase();
-                    if (!mat.includes('RICE BRAN')) {
-                        let key = tgl;
-                        if (period === 'monthly') key = tgl.substring(0, 7);
-                        else if (period === 'weekly') {
-                            let day = parseInt(tgl.split('-')[2]);
-                            let weekNum = Math.ceil(day / 7);
-                            key = `W${weekNum}`;
-                        }
-                        if (!grouped[key]) grouped[key] = this.createEmptyGroup();
-                        let volKG = this.getUnloadingVol(row);
-                        grouped[key].sum.bongkar += volKG;
-                        if (!grouped[key].materials) grouped[key].materials = new Set();
-                        grouped[key].materials.add(mat.split(' (')[0]);
-                    }
-                }
-            }
-        });
+        // NOTE: V2 Template bongkar is NOT added because dailyActivity.bongkar
+        // already includes the sum of all V2 template BONGKAR entries.
 
         const sortedKeys = Object.keys(grouped).sort();
         const labels = sortedKeys.map(k => this.formatDateSimple(k, period));
@@ -753,61 +739,390 @@ const AnalysApp = {
     // MATERIAL FEED (REAL DATA)
     // =========================================================
 
-    initMaterialFeed: function () { this.filterMaterialFeed(); },
+    initMaterialFeed: function () {
+        this.eliminatedPivotRecords = new Set();
+        this.populatePivotFilters();
+        this.renderPivotTable();
+    },
 
     filterMaterialFeed: function () {
-        const searchInput = document.getElementById('material-search');
-        if (!searchInput) return;
-        let input = searchInput.value.toUpperCase().trim();
-        let elList = document.getElementById('material-matches');
-        let items = this.data.template || [];
+        this.renderPivotTable();
+    },
 
-        // HIDE LIST IF INPUT IS EMPTY
-        if (input.length === 0) {
-            elList.innerHTML = '<div style="padding:20px; text-align:center; color:#64748b;">Type to search material...</div>';
-            document.getElementById('mat-min').innerText = "-";
-            document.getElementById('mat-max').innerText = "-";
-            document.getElementById('mat-avg').innerText = "-";
-            return;
-        }
+    onPivotFilterChange: function () {
+        this.populatePivotFilters(true);
+        this.renderPivotTable();
+    },
 
-        let durations = [];
-        let html = "";
-        let count = 0;
+    eliminatePivotRow: function (id) {
+        if (!this.eliminatedPivotRecords) this.eliminatedPivotRecords = new Set();
+        this.eliminatedPivotRecords.add(id);
+        this.renderPivotTable();
+    },
 
-        items.forEach(row => {
-            let jenisRM = String(row['JENIS_RM'] || '').toUpperCase();
-            if (jenisRM.includes(input)) {
-                if (count < 50) {
-                    let dur = this.parseTime(row['DURASI_BONGKAR']);
-                    let durStr = dur !== null ? `${dur}m` : '-';
-                    if (dur) durations.push(dur);
+    _getPivotBaseData: function () {
+        const selMonth = this.currentMonth;
+        let startInput = document.getElementById('pivot-start-date');
+        let endInput = document.getElementById('pivot-end-date');
+        let startDate = startInput ? startInput.value : '';
+        let endDate = endInput ? endInput.value : '';
 
-                    html += `
-                    <div class="feed-item">
-                        <div>
-                            <div style="color:#fff; font-weight:600;">${row['JENIS_RM']}</div>
-                            <div style="color:#64748b; font-size:0.7em;">${row['TANGGAL']} | ${row['LOKASI'] || 'GUDANG'}</div>
-                        </div>
-                        <div class="feed-val text-cyan">${durStr}</div>
-                    </div>`;
-                    count++;
-                }
+        // Unified Base Data: Combine Container Tracking and V2 Template
+        let combined = [...(this.containerData || [])];
+        
+        // Add "BONGKAR" records from template to the pivot data
+        (this.data.template || []).forEach(row => {
+            let act = String(row['KEGIATAN'] || row['JENIS KEGIATAN'] || row['JENIS_KEGIATAN'] || '').toUpperCase();
+            if (act.includes('BONGKAR') || act.includes('KULHAR')) {
+                combined.push(row);
             }
         });
 
-        if (count === 0) html = '<div style="padding:20px; text-align:center; color:#64748b;">No materials found.</div>';
-        elList.innerHTML = html;
+        return combined.filter(row => {
+            let tgl = this.normalizeDate(row['TANGGAL']);
+            if (!tgl) return false;
 
-        if (durations.length > 0) {
-            document.getElementById('mat-min').innerText = Math.min(...durations) + "m";
-            document.getElementById('mat-max').innerText = Math.max(...durations) + "m";
-            document.getElementById('mat-avg').innerText = Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) + "m";
-        } else {
-            document.getElementById('mat-min').innerText = "-";
-            document.getElementById('mat-max').innerText = "-";
-            document.getElementById('mat-avg').innerText = "-";
+            // Generate row ID for elimination tracking
+            let mat = String(row['MATERIAL'] || row['JENIS_RM'] || '').trim();
+            let nopol = String(row['NOPOL'] || '').trim();
+            let tm = String(row['START_PANGGIL'] || row['PB_START'] || '').trim();
+            let rowId = tgl + '_' + mat + '_' + nopol + '_' + tm;
+            
+            if (this.eliminatedPivotRecords && this.eliminatedPivotRecords.has(rowId)) return false;
+
+            if (startDate && endDate) {
+                return tgl >= startDate && tgl <= endDate;
+            } else if (startDate) {
+                return tgl >= startDate;
+            } else if (endDate) {
+                return tgl <= endDate;
+            } else {
+                return tgl.startsWith(selMonth);
+            }
+        });
+    },
+
+    populatePivotFilters: function (cascading) {
+        const matSel = document.getElementById('pivot-material-filter');
+        const slocSel = document.getElementById('pivot-sloc-filter');
+        const truckSel = document.getElementById('pivot-truck-filter');
+        if (!matSel || !truckSel) return;
+
+        const curMat = matSel.value;
+        const curSloc = slocSel ? slocSel.value : '';
+        const curTruck = truckSel.value;
+
+        const baseData = this._getPivotBaseData();
+
+        let allMaterials = new Set();
+        baseData.forEach(row => {
+            let mat = String(row['MATERIAL'] || row['JENIS_RM'] || '').trim().toUpperCase();
+            if (mat) allMaterials.add(mat);
+        });
+
+        let slocSource = baseData;
+        let truckSource = baseData;
+
+        if (cascading && curMat) {
+            slocSource = slocSource.filter(r => String(r['MATERIAL'] || r['JENIS_RM'] || '').trim().toUpperCase() === curMat);
+            truckSource = truckSource.filter(r => String(r['MATERIAL'] || r['JENIS_RM'] || '').trim().toUpperCase() === curMat);
         }
+        if (cascading && curSloc && slocSel) {
+            truckSource = truckSource.filter(r => String(r['SLOC'] || '').trim().toUpperCase() === curSloc);
+        }
+
+        let allSlocs = new Set();
+        slocSource.forEach(row => {
+            let sloc = String(row['SLOC'] || '').trim().toUpperCase();
+            if (sloc) allSlocs.add(sloc);
+        });
+
+        let allTrucks = new Set();
+        truckSource.forEach(row => {
+            let truck = String(row['JENIS_TRUCK'] || '').trim().toUpperCase();
+            if (truck) allTrucks.add(truck);
+        });
+
+        matSel.innerHTML = '<option value="">-- SEMUA MATERIAL --</option>';
+        Array.from(allMaterials).sort().forEach(m => {
+            let o = document.createElement('option'); o.value = m; o.text = m;
+            matSel.appendChild(o);
+        });
+        if (curMat && allMaterials.has(curMat)) matSel.value = curMat;
+
+        if (slocSel) {
+            slocSel.innerHTML = '<option value="">-- SEMUA SLOC --</option>';
+            Array.from(allSlocs).sort().forEach(s => {
+                let o = document.createElement('option'); o.value = s; o.text = s;
+                slocSel.appendChild(o);
+            });
+            if (curSloc && allSlocs.has(curSloc)) slocSel.value = curSloc;
+        }
+
+        truckSel.innerHTML = '<option value="">-- SEMUA TRUCK --</option>';
+        Array.from(allTrucks).sort().forEach(t => {
+            let o = document.createElement('option'); o.value = t; o.text = t;
+            truckSel.appendChild(o);
+        });
+        if (curTruck && allTrucks.has(curTruck)) truckSel.value = curTruck;
+    },
+
+    renderPivotTable: function () {
+        const container = document.getElementById('pivot-table-content');
+        const summaryContainer = document.getElementById('pivot-analytics-summary');
+        if (!container) return;
+
+        const selMat = (document.getElementById('pivot-material-filter') || {}).value || '';
+        const selSloc = (document.getElementById('pivot-sloc-filter') || {}).value || '';
+        const selTruck = (document.getElementById('pivot-truck-filter') || {}).value || '';
+
+        // Generate filtered details
+        let filtered = this._getPivotBaseData().filter(row => {
+            if (selMat) {
+                let mat = String(row['MATERIAL'] || row['JENIS_RM'] || '').trim().toUpperCase();
+                if (mat !== selMat) return false;
+            }
+            if (selSloc) {
+                let sloc = String(row['SLOC'] || '').trim().toUpperCase();
+                if (sloc !== selSloc) return false;
+            }
+            if (selTruck) {
+                let truck = String(row['JENIS_TRUCK'] || '').trim().toUpperCase();
+                if (truck !== selTruck) return false;
+            }
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding:60px; color:var(--text-muted);">
+                <i class="fas fa-database" style="font-size:2.5rem; opacity:0.15; margin-bottom:12px;"></i><br>
+                <span style="font-family:'Orbitron'; font-size:0.75rem; letter-spacing:2px;">NO DATA FOUND</span><br>
+                <span style="font-size:0.7rem; margin-top:6px; display:block;">Coba ubah filter atau pilih periode lain</span>
+            </div>`;
+            if (summaryContainer) summaryContainer.style.display = 'none';
+            return;
+        }
+
+        // --- Render Mini Summary (Premium Style) ---
+        if (summaryContainer) {
+            let totalVolume = filtered.reduce((sum, row) => sum + this.getUnloadingVol(row), 0);
+            let slocCounts = {};
+            let truckCounts = {};
+            filtered.forEach(row => {
+                let s = String(row['SLOC'] || '-').trim();
+                let t = String(row['JENIS_TRUCK'] || '-').trim();
+                slocCounts[s] = (slocCounts[s] || 0) + 1;
+                truckCounts[t] = (truckCounts[t] || 0) + 1;
+            });
+            
+            let htmlStr = `
+            <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(56,189,248,0.3); border-radius:12px; padding:16px; margin-bottom:20px; display:flex; flex-wrap:wrap; gap:20px; backdrop-filter:blur(10px); box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+                <div style="flex:1.2; min-width:240px;">
+                    <div style="font-family:'Orbitron'; font-size:0.75rem; color:#38bdf8; margin-bottom:12px; display:flex; align-items:center;">
+                        <span style="width:8px; height:8px; background:#38bdf8; border-radius:50%; margin-right:8px; box-shadow:0 0 8px #38bdf8;"></span>
+                        RANGKUMAN ANALISA
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <div style="color:#94a3b8; font-size:0.6rem; text-transform:uppercase;">Unit Armada</div>
+                            <div style="color:#fff; font-family:'Orbitron'; font-size:1.1rem; font-weight:700;">${filtered.length} <span style="font-size:0.7rem; color:var(--primary);">TRUCK</span></div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <div style="color:#94a3b8; font-size:0.6rem; text-transform:uppercase;">Volume Total</div>
+                            <div style="color:#10b981; font-family:'Orbitron'; font-size:1.1rem; font-weight:700;">${(totalVolume/1000).toLocaleString('id-ID', {maximumFractionDigits:1})} <span style="font-size:0.7rem;">TON</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div style="flex:1; min-width:200px; border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;">
+                    <div style="font-size:0.65rem; color:#94a3b8; margin-bottom:8px; font-family:'Orbitron'; text-transform:uppercase; letter-spacing:1px;">Distribusi SLOC</div>
+                    <div style="display:flex; flex-direction:column; gap:6px; max-height:85px; overflow-y:auto; padding-right:8px;" class="custom-scroll">`;
+            
+            Object.keys(slocCounts).sort((a,b)=>slocCounts[b]-slocCounts[a]).forEach(s => {
+                let pct = ((slocCounts[s] / filtered.length) * 100).toFixed(1);
+                htmlStr += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem;">
+                    <span style="color:#cbd5e1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px;" title="${s}">${s}</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:60px; height:4px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden;">
+                            <div style="width:${pct}%; height:100%; background:linear-gradient(90deg, #0ea5e9, #38bdf8);"></div>
+                        </div>
+                        <span style="color:#38bdf8; font-weight:600; font-family:'Orbitron'; min-width:45px; text-align:right;">${pct}%</span>
+                    </div>
+                </div>`;
+            });
+
+            htmlStr += `</div></div>
+                <div style="flex:1; min-width:200px; border-left:1px solid rgba(255,255,255,0.1); padding-left:16px;">
+                    <div style="font-size:0.65rem; color:#94a3b8; margin-bottom:8px; font-family:'Orbitron'; text-transform:uppercase; letter-spacing:1px;">Jenis Truck</div>
+                    <div style="display:flex; flex-direction:column; gap:6px; max-height:85px; overflow-y:auto; padding-right:8px;" class="custom-scroll">`;
+
+            Object.keys(truckCounts).sort((a,b)=>truckCounts[b]-truckCounts[a]).forEach(t => {
+                let pct = ((truckCounts[t] / filtered.length) * 100).toFixed(1);
+                htmlStr += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem;">
+                    <span style="color:#cbd5e1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px;" title="${t}">${t}</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:60px; height:4px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden;">
+                            <div style="width:${pct}%; height:100%; background:linear-gradient(90deg, #8b5cf6, #a78bfa);"></div>
+                        </div>
+                        <span style="color:#8b5cf6; font-weight:600; font-family:'Orbitron'; min-width:45px; text-align:right;">${pct}%</span>
+                    </div>
+                </div>`;
+            });
+
+            htmlStr += `</div></div></div>`;
+            summaryContainer.innerHTML = htmlStr;
+            summaryContainer.style.display = 'block';
+        }
+
+        const stages = this.PROCESS_STAGES.filter(s => {
+            return filtered.some(row => {
+                let v = row[s.key];
+                return v && v !== '' && this.parseTime(v) !== null;
+            });
+        });
+
+        if (stages.length < 2) {
+            container.innerHTML = `<div style="text-align:center; padding:60px; color:var(--text-muted);">
+                <span style="font-family:'Orbitron'; font-size:0.75rem;">INSUFFICIENT TIME DATA</span>
+            </div>`;
+            if (summaryContainer) summaryContainer.style.display = 'none';
+            return;
+        }
+
+        let transitions = [];
+        for (let i = 0; i < stages.length - 1; i++) {
+            transitions.push({ from: stages[i], to: stages[i + 1], label: stages[i].label + ' → ' + stages[i + 1].label, values: [], isTotal: false });
+        }
+        let totalFrom = this.PROCESS_STAGES[0];
+        let totalTo = this.PROCESS_STAGES[this.PROCESS_STAGES.length - 1];
+        transitions.push({ from: totalFrom, to: totalTo, label: 'TOTAL', values: [], isTotal: true });
+
+        let rowDetails = [];
+        filtered.forEach(row => {
+            let tgl = this.normalizeDate(row['TANGGAL']);
+            let mat = String(row['MATERIAL'] || row['JENIS_RM'] || '').trim();
+            let nopol = String(row['NOPOL'] || '').trim();
+            let tm = String(row['START_PANGGIL'] || '').trim();
+            let rowId = tgl + '_' + mat + '_' + nopol + '_' + tm;
+
+            let detail = {
+                id: rowId,
+                date: tgl,
+                material: mat || '-',
+                truck: row['JENIS_TRUCK'] || '-',
+                nopol: nopol || '-',
+                durations: {}
+            };
+            transitions.forEach(tr => {
+                let t1 = this.parseTime(row[tr.from.key]);
+                let t2 = this.parseTime(row[tr.to.key]);
+                if (t1 !== null && t2 !== null) {
+                    let diff = t2 - t1;
+                    if (diff < 0) diff += 1440;
+                    detail.durations[tr.label] = diff;
+                    tr.values.push(diff);
+                } else {
+                    detail.durations[tr.label] = null;
+                }
+            });
+            rowDetails.push(detail);
+        });
+
+        let html = '';
+
+        // 1. Avg Summary cards
+        html += '<div class="pivot-summary-grid">';
+        transitions.forEach((tr, idx) => {
+            let avg = tr.values.length > 0 ? Math.round(tr.values.reduce((a, b) => a + b, 0) / tr.values.length) : 0;
+            let min = tr.values.length > 0 ? Math.min(...tr.values) : 0;
+            let max = tr.values.length > 0 ? Math.max(...tr.values) : 0;
+            let color = tr.isTotal ? '#f97316' : tr.from.color;
+            let icon = tr.isTotal ? 'fa-clock' : tr.from.icon;
+            html += `
+            <div class="pivot-summary-card" style="--card-color: ${color}; animation-delay: ${idx * 0.08}s;">
+                <div class="pivot-card-icon" style="color:${color};"><i class="fas ${icon}"></i></div>
+                <div class="pivot-card-label">${tr.label}</div>
+                <div class="pivot-card-value">${avg}<span class="pivot-card-unit" style="color:${color};">m</span></div>
+                <div class="pivot-card-range">
+                    <span style="color:#06b6d4;">${min}m</span> ~ <span style="color:#8b5cf6;">${max}m</span>
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+
+        // 2. Stats bar (MIN / MAX only)
+        html += `
+        <div style="margin:16px 0 8px; padding:12px 16px; background:rgba(6,182,212,0.04); border:1px solid rgba(6,182,212,0.15); border-radius:10px; overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.65rem;">
+                <thead><tr>
+                    <th style="text-align:left; color:#94a3b8; font-family:'Orbitron'; padding:4px 6px; width:60px;"></th>`;
+        transitions.forEach(tr => {
+            let col = tr.isTotal ? 'var(--secondary)' : 'var(--primary)';
+            html += `<th style="text-align:center; color:${col}; font-family:'Orbitron'; padding:4px 4px; font-size:0.5rem; letter-spacing:0.5px; white-space:nowrap;">${tr.isTotal ? 'TOTAL' : tr.label}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        html += `<tr><td style="color:#10b981; font-family:'Orbitron'; font-weight:700; padding:4px 6px; font-size:0.6rem;">MIN</td>`;
+        transitions.forEach(tr => {
+            let min = tr.values.length > 0 ? Math.min(...tr.values) : '-';
+            html += `<td style="text-align:center; color:#10b981; font-weight:600; padding:4px 4px;">${min !== '-' ? min + 'm' : '-'}</td>`;
+        });
+        html += '</tr>';
+
+        html += `<tr><td style="color:var(--primary); font-family:'Orbitron'; font-weight:700; padding:4px 6px; font-size:0.6rem;">AVG</td>`;
+        transitions.forEach(tr => {
+            let avg = tr.values.length > 0 ? Math.round(tr.values.reduce((a, b) => a + b, 0) / tr.values.length) : '-';
+            html += `<td style="text-align:center; color:var(--primary); font-weight:600; padding:4px 4px;">${avg !== '-' ? avg + 'm' : '-'}</td>`;
+        });
+        html += '</tr>';
+
+        html += `<tr><td style="color:#f43f5e; font-family:'Orbitron'; font-weight:700; padding:4px 6px; font-size:0.6rem;">MAX</td>`;
+        transitions.forEach(tr => {
+            let max = tr.values.length > 0 ? Math.max(...tr.values) : '-';
+            html += `<td style="text-align:center; color:#f43f5e; font-weight:600; padding:4px 4px;">${max !== '-' ? max + 'm' : '-'}</td>`;
+        });
+        html += '</tr>';
+
+        html += '</tbody></table></div>';
+
+        // 3. Detail table
+        html += `
+        <div class="pivot-detail-section">
+            <div style="font-family:'Orbitron'; font-size:0.7rem; color:var(--text-muted); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                <span><i class="fas fa-table" style="color:var(--primary); margin-right:8px;"></i>DETAIL RECORDS</span>
+                <span class="pivot-count-badge">${filtered.length} entries</span>
+            </div>
+            <div style="overflow-x:auto;">
+            <table class="pivot-table">
+                <thead><tr>
+                    <th>Date</th>
+                    <th>Material</th>
+                    <th>Nopol</th>`;
+        transitions.forEach(tr => {
+            html += `<th class="${tr.isTotal ? 'total-col' : ''}">${tr.isTotal ? 'TOTAL' : tr.label}</th>`;
+        });
+        html += `<th style="width:40px; text-align:center;"><i class="fas fa-trash-alt" style="color:#ef4444; opacity:0.5;"></i></th></tr></thead><tbody>`;
+
+        rowDetails.forEach((rd, idx) => {
+            html += `<tr class="pivot-row" style="animation-delay: ${Math.min(idx * 0.02, 1)}s;">
+                <td class="date-cell">${rd.date || '-'}</td>
+                <td>${rd.material}</td>
+                <td class="nopol-cell">${rd.nopol}</td>`;
+            transitions.forEach(tr => {
+                let val = rd.durations[tr.label];
+                let display = val !== null ? val + 'm' : '-';
+                let cls = tr.isTotal ? 'total-val' : (val !== null && val > 60 ? 'high-val' : val !== null && val <= 10 ? 'low-val' : '');
+                html += `<td class="${cls}">${display}</td>`;
+            });
+            html += `<td style="text-align:center;">
+                <button onclick="AnalysApp.eliminatePivotRow('${rd.id}')" style="background:transparent; border:none; color:#ef4444; font-size:0.8rem; cursor:pointer;" title="Eliminasi Analisa">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>`;
+            html += '</tr>';
+        });
+
+        html += '</tbody></table></div></div>';
+        container.innerHTML = html;
     },
 
     // =========================================================
@@ -986,21 +1301,7 @@ const AnalysApp = {
                     grouped[iso] += this.getUnloadingVol(row);
                 }
             });
-            // V2 Template Multi-Material
-            const v2Tpl = this.data.template || [];
-            v2Tpl.forEach(row => {
-                let iso = this.normalizeDate(row['TANGGAL']);
-                if (iso && iso.startsWith(selectedMonth)) {
-                    let act = String(row['KEGIATAN'] || '').toUpperCase();
-                    if (act === 'BONGKAR' || act.includes('KULHAR')) {
-                        let mat = String(row['MATERIAL'] || row['JENIS_RM'] || '').toUpperCase();
-                        if (!mat.includes('RICE BRAN')) {
-                            if (!grouped[iso]) grouped[iso] = 0;
-                            grouped[iso] += this.getUnloadingVol(row);
-                        }
-                    }
-                }
-            });
+            // NOTE: V2 Template bongkar already counted via items filter above.
         }
 
         let sortedKeys = Object.keys(grouped).sort();
@@ -1225,11 +1526,17 @@ const AnalysApp = {
 
     parseTime: function (strVal) {
         if (!strVal) return null;
-        let str = String(strVal);
+        let str = String(strVal).trim();
+        // Handle datetime format: "yyyy-mm-dd HH:MM:SS" -> extract "HH:MM:SS"
+        if (str.includes(' ')) {
+            let parts = str.split(' ');
+            str = parts[parts.length - 1]; // Take the time portion
+        }
         let h = 0, m = 0;
         if (str.includes(':')) {
             let parts = str.split(':');
             h = parseInt(parts[0]); m = parseInt(parts[1]);
+            if (isNaN(h) || isNaN(m)) return null;
             return (h * 60) + m;
         }
         return parseInt(str) || null;
@@ -1238,56 +1545,54 @@ const AnalysApp = {
     normalizeDate: function (str) {
         if (!str) return null;
 
-        // Handle "DD MMM" format (e.g. "01 JAN", "05 FEB")
+        let s = String(str).trim().toUpperCase();
+        if (s === '-' || s === '') return null;
+
+        // 1. Handle Excel/Google Sheets Serial Numbers (e.g. 46110)
+        let n = parseFloat(s);
+        if (!isNaN(n) && n > 40000 && n < 60000) {
+            let d = new Date((n - 25569) * 86400 * 1000);
+            return d.toISOString().split('T')[0];
+        }
+
+        // 2. Handle Indo Month Names (MAR, APR, MEI, AGU, OKT, DES)
         const monthMap = {
-            'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04', 'MAY': '05', 'JUN': '06',
-            'JUL': '07', 'AUG': '08', 'SEP': '09', 'OCT': '10', 'NOV': '11', 'DEC': '12'
+            'JAN': '01', 'FEB': '02', 'MAR': '03', 'APR': '04', 'MEI': '05', 'JUN': '06',
+            'JUL': '07', 'AGU': '08', 'SEP': '09', 'OKT': '10', 'NOP': '11', 'DES': '12',
+            'JANUARI': '01', 'FEBRUARI': '02', 'MARET': '03', 'APRIL': '04', 'MEI': '05', 'JUNI': '06',
+            'JULI': '07', 'AGUSTUS': '08', 'SEPTEMBER': '09', 'OKTOBER': '10', 'NOVEMBER': '11', 'DESEMBER': '12'
         };
 
-        let s = String(str).trim().toUpperCase();
-        
-        // Handle ISO Direct (yyyy-mm-dd)
-        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-
-        let parts = s.split(' ');
-        if (parts.length === 2 && monthMap[parts[1]]) {
+        // Match "DD MMM YYYY" or "DD MONTH YYYY"
+        let parts = s.split(/[\s\/\-\.]+/);
+        if (parts.length >= 3) {
             let day = parts[0].padStart(2, '0');
-            let m = monthMap[parts[1]];
-            let y = new Date().getFullYear();
-            if (this.currentMonth) y = this.currentMonth.split('-')[0];
-            return `${y}-${m}-${day}`;
+            let mon = parts[1];
+            let year = parts[2];
+            
+            // Fix year (YY to YYYY)
+            if (year.length === 2) year = '20' + year;
+            
+            // Handle month names
+            if (monthMap[mon]) mon = monthMap[mon];
+            else if (!isNaN(parseInt(mon))) mon = mon.padStart(2, '0');
+            else return null;
+
+            if (day.length === 2 && mon.length === 2 && year.length === 4) {
+                return `${year}-${mon}-${day}`;
+            }
         }
 
-        // Handle dd-MMM-yyyy (e.g. "26-Mar-2026")
-        let m2 = s.match(/^(\d{1,2})[\-\/\s\.](JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[\-\/\s\.](\d{4})$/i);
-        if (m2) {
-            let day = m2[1].padStart(2, '0');
-            let mon = monthMap[m2[2].toUpperCase().substring(0, 3)];
-            let year = m2[3];
-            return `${year}-${mon}-${day}`;
+        // 3. Fallback to Native Date
+        let dNative = new Date(str);
+        if (!isNaN(dNative.getTime())) {
+            let y = dNative.getFullYear();
+            let m = String(dNative.getMonth() + 1).padStart(2, '0');
+            let d = String(dNative.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
         }
 
-        // Handle dd/MM/yyyy or dd.MM.yyyy
-        let m3 = s.match(/^(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{4})$/);
-        if (m3) {
-            let day = m3[1].padStart(2, '0');
-            let mon = m3[2].padStart(2, '0');
-            let year = m3[3];
-            return `${year}-${mon}-${day}`;
-        }
-
-        let d = new Date(str);
-        if (isNaN(d.getTime())) return null;
-        
-        // v20.2.4 TZ-Safe: Use individual components to avoid UTC shift
-        let y = d.getFullYear();
-        let m = String(d.getMonth() + 1).padStart(2, '0');
-        let day = String(d.getDate()).padStart(2, '0');
-        
-        // Check for 1899 glitch (common in cell time values)
-        if (y < 1910) return null; 
-
-        return `${y}-${m}-${day}`;
+        return null;
     },
 
     populateElements: function (id, dataList) {
@@ -1329,12 +1634,12 @@ const AnalysApp = {
             }
         });
 
-        // INTEGRATION: Add Container Unloading to Calendar
+        // INTEGRATION: Unified Calendar Vol
         this.containerData.forEach(row => {
             let tgl = this.normalizeDate(row['TANGGAL']);
             if (tgl && tgl.startsWith(this.currentMonth)) {
                 let dayNum = parseInt(tgl.split('-')[2]);
-                let vol = parseFloat(row['NETTO_KG']) || 0;
+                let vol = this.getUnloadingVol(row);
                 volMap[dayNum] = (volMap[dayNum] || 0) + vol;
             }
         });
@@ -1447,19 +1752,18 @@ const AnalysApp = {
         });
 
 
-        // INTEGRATION: Add Container Unloading to Daily Details (Source of Truth for Rice Bran Containers)
+        // INTEGRATION: Add Container Unloading to Daily Details
         if (this.containerDataByDate && this.containerDataByDate[isoDate]) {
             this.containerDataByDate[isoDate].forEach(row => {
-                let mat = (row['MATERIAL'] || row['JENIS RM'] || 'RICE BRAN').toUpperCase();
-                // Clean naming
-                let key = mat;
-                if (mat.includes('(')) key = mat.split(' (')[0].trim();
-
-                let vol = this.getUnloadingVol(row);
+                let mat = (row['MATERIAL'] || 'RICE BRAN').toUpperCase();
+                let groupMat = mat.split(' (')[0].trim();
+                let val = this.getUnloadingVol(row);
                 
-                if (!bMats[key]) bMats[key] = 0;
-                bMats[key] += vol;
-                totalDayVol += vol;
+                if (val > 0) {
+                    if (!bMats[groupMat]) bMats[groupMat] = 0;
+                    bMats[groupMat] += val;
+                    totalDayVol += val;
+                }
             });
         }
 

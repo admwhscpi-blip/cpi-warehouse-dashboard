@@ -395,6 +395,279 @@
             display: flex;
             gap: 5px;
         }
+
+        /* ===== PIVOT TABLE STYLES ===== */
+        .pivot-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .pivot-summary-card {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.98));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 18px 14px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: pivotCardIn 0.6s ease-out both;
+        }
+
+        .pivot-summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--card-color, #06b6d4), transparent);
+            opacity: 0.8;
+        }
+
+        .pivot-summary-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 0%, var(--card-color, #06b6d4), transparent 70%);
+            opacity: 0.04;
+            pointer-events: none;
+        }
+
+        .pivot-summary-card:hover {
+            transform: translateY(-4px) scale(1.03);
+            border-color: var(--card-color, #06b6d4);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 25px rgba(6, 182, 212, 0.15);
+        }
+
+        .pivot-card-icon {
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 0 10px currentColor);
+        }
+
+        .pivot-card-label {
+            font-size: 0.55rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .pivot-card-value {
+            font-family: 'Orbitron';
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.15));
+        }
+
+        .pivot-card-unit {
+            font-size: 0.65rem;
+            margin-left: 2px;
+        }
+
+        .pivot-card-range {
+            font-size: 0.55rem;
+            color: #64748b;
+            margin-top: 6px;
+            font-family: 'Outfit';
+        }
+
+        .pivot-table {
+            width: 100%;
+            table-layout: fixed; /* Make sure it doesn't overflow container */
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.70rem;
+        }
+
+        .pivot-table thead th {
+            background: rgba(6, 182, 212, 0.08);
+            color: var(--primary);
+            font-family: 'Orbitron';
+            font-size: 0.50rem; /* shrink font */
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px; /* compact */
+            padding: 8px 2px; /* compact padding */
+            text-align: center;
+            border-bottom: 2px solid rgba(6, 182, 212, 0.3);
+            white-space: normal; /* allow wrapping for line breaks */
+            line-height: 1.2;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+        .pivot-table thead th:first-child {
+            text-align: left;
+            border-radius: 8px 0 0 0;
+            width: 80px; 
+        }
+
+        .pivot-table thead th:nth-child(2) {
+            width: 100px; 
+        }
+
+        .pivot-table thead th:nth-child(3) {
+            width: 80px; 
+        }
+
+        .pivot-table thead th:last-child {
+            border-radius: 0 8px 0 0;
+            width: 40px;
+        }
+
+        .pivot-table thead th.total-col {
+            background: rgba(249, 115, 22, 0.12);
+            color: var(--secondary);
+            border-bottom-color: rgba(249, 115, 22, 0.4);
+        }
+
+        .pivot-table tbody tr {
+            transition: all 0.3s ease;
+            animation: pivotRowIn 0.4s ease-out both;
+        }
+
+        .pivot-table tbody tr:hover {
+            background: rgba(6, 182, 212, 0.06);
+        }
+
+        .pivot-table tbody td {
+            padding: 6px 2px; /* shrink */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            text-align: center;
+            color: #cbd5e1;
+            font-size: 0.60rem; /* stretch text */
+            word-break: break-word; /* prevent overflow */
+        }
+
+        .pivot-table tbody td:first-child {
+            text-align: left;
+        }
+
+        .pivot-table tbody td.date-cell {
+            font-family: 'Orbitron';
+            font-size: 0.6rem;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+
+        .pivot-table tbody td.nopol-cell {
+            font-family: 'Orbitron';
+            font-size: 0.6rem;
+            color: #64748b;
+        }
+
+        .pivot-table tbody td.total-val {
+            color: var(--secondary);
+            font-weight: 700;
+            font-family: 'Orbitron';
+            text-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
+        }
+
+        .pivot-table tbody td.high-val {
+            color: #f43f5e;
+            font-weight: 600;
+        }
+
+        .pivot-table tbody td.low-val {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .pivot-detail-section {
+            margin-top: 20px;
+            max-height: 450px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .pivot-count-badge {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--primary);
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: 0.6rem;
+            font-family: 'Orbitron';
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+
+        .pivot-filter-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .pivot-filter-group {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .pivot-filter-group label {
+            font-size: 0.6rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 6px;
+            display: block;
+            font-weight: 600;
+        }
+
+        @keyframes pivotCardIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes pivotRowIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% center;
+            }
+
+            100% {
+                background-position: 200% center;
+            }
+        }
     </style>
 </head>
 
@@ -425,7 +698,7 @@
         <div class="dense-grid">
 
             <!-- ROW 1: KPI STATS (Height ~140px) -->
-            <div class="col-3 bento-card">
+            <div class="col-4 bento-card">
                 <div class="card-title"><b>TOTAL VOLUME</b><span>MT + BKR + STP</span></div>
 
                 <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
@@ -453,7 +726,7 @@
                 </div>
             </div>
 
-            <div class="col-3 bento-card">
+            <div class="col-4 bento-card">
                 <div class="card-title"><b>TOTAL ATTENDANCE</b><span>Daily + Borong</span></div>
 
                 <div style="flex-grow:1; display:flex; flex-direction:column; justify-content:center;">
@@ -485,7 +758,7 @@
                 </div>
             </div>
 
-            <div class="col-3 bento-card">
+            <div class="col-4 bento-card">
                 <div class="card-title"><b>TOP PRODUCTIVITY</b><span>Team Performance</span></div>
                 <div id="kpi-prod-list"
                     style="display:flex; flex-direction:column; gap:8px; margin-top:10px; overflow-y:auto; flex-grow:1; padding-right:5px;">
@@ -494,21 +767,6 @@
                 </div>
             </div>
 
-            <div class="col-3 bento-card">
-                <div class="card-title"><b>AVG QC WAIT TIME</b><span>Efficiency Metric</span></div>
-                <div class="kpi-row">
-                    <div class="kpi-value-lg text-orange" id="kpi-qc-wait">-</div>
-                    <div style="text-align:right; max-width:120px;">
-                        <span style="font-size:0.65rem; color:#94a3b8;">TARGET: < 15m</span>
-                                <div
-                                    style="width:100px; height:6px; background:#334155; border-radius:3px; margin-top:5px; overflow:hidden;">
-                                    <div id="kpi-qc-bar"
-                                        style="width:60%; height:100%; background:var(--secondary); border-radius:3px; box-shadow:0 0 10px var(--secondary);">
-                                    </div>
-                                </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- ROW 2: MAIN CHART -->
             <!-- OPS DAILY (WIDER & TALLER) -->
@@ -635,45 +893,51 @@
                 </div>
             </div>
 
-            <!-- ROW 5: WAIT TIME -->
-            <div class="col-12 bento-card" style="min-height:280px;">
-                <div class="bento-header">
-                    <div class="card-title"><b>QC WAIT TIME ANALYSIS</b><span>Process Efficiency Impact</span></div>
-                </div>
-                <div class="chart-container-full">
-                    <canvas id="chart-tungguQC"></canvas>
-                </div>
-            </div>
 
-            <!-- MATERIAL DURATION FEED (MOVED TO BOTTOM) -->
-            <div class="col-12 bento-card">
+
+            <!-- MATERIAL DURATION PIVOT TABLE -->
+            <div class="col-12 bento-card" style="min-height:400px;">
                 <div class="bento-header">
-                    <div class="card-title"><b>MATERIAL DURATION</b><span>Process Timeline</span></div>
+                    <div class="card-title"><b>MATERIAL DURATION</b><span>Process Stage Analytics</span></div>
                 </div>
-                <div style="margin-bottom:15px;">
-                    <input type="text" id="material-search" class="cyber-input" placeholder="Search Material..."
-                        onkeyup="AnalysApp.filterMaterialFeed()">
-                </div>
-                <!-- STATS ROW -->
-                <div
-                    style="display:flex; justify-content:space-between; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid var(--border-subtle);">
-                    <div style="text-align:center;">
-                        <div style="font-size:0.65rem; color:#94a3b8;">MIN</div>
-                        <div class="value-display text-cyan" id="mat-min" style="font-size:1.2rem;">-</div>
-                    </div>
-                    <div style="text-align:center;">
-                        <div style="font-size:0.65rem; color:#94a3b8;">AVG</div>
-                        <div class="value-display text-orange" id="mat-avg" style="font-size:1.2rem;">-</div>
-                    </div>
-                    <div style="text-align:center;">
-                        <div style="font-size:0.65rem; color:#94a3b8;">MAX</div>
-                        <div class="value-display text-violet" id="mat-max" style="font-size:1.2rem;">-</div>
+                <!-- FILTERS -->
+                <div class="pivot-filter-row" style="margin-bottom:12px;">
+                    <div class="pivot-filter-group">
+                        <label><i class="far fa-calendar-alt" style="color:var(--text-muted); margin-right:4px;"></i> Date Range</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="date" id="pivot-start-date" class="cyber-input" style="cursor:pointer; font-size:0.7rem;" onchange="AnalysApp.onPivotFilterChange()">
+                            <input type="date" id="pivot-end-date" class="cyber-input" style="cursor:pointer; font-size:0.7rem;" onchange="AnalysApp.onPivotFilterChange()">
+                        </div>
                     </div>
                 </div>
-                <!-- FEED LIST -->
-                <div class="material-feed" id="material-matches">
-                    <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.8rem;">
-                        Waiting for input...
+                <div class="pivot-filter-row">
+                    <div class="pivot-filter-group">
+                        <label><i class="fas fa-boxes" style="color:var(--primary); margin-right:4px;"></i> Material</label>
+                        <select id="pivot-material-filter" class="cyber-input" style="cursor:pointer;" onchange="AnalysApp.onPivotFilterChange()">
+                            <option value="">-- SEMUA MATERIAL --</option>
+                        </select>
+                    </div>
+                    <div class="pivot-filter-group">
+                        <label><i class="fas fa-map-marker-alt" style="color:var(--accent); margin-right:4px;"></i> SLOC</label>
+                        <select id="pivot-sloc-filter" class="cyber-input" style="cursor:pointer;" onchange="AnalysApp.onPivotFilterChange()">
+                            <option value="">-- SEMUA SLOC --</option>
+                        </select>
+                    </div>
+                    <div class="pivot-filter-group">
+                        <label><i class="fas fa-truck" style="color:var(--secondary); margin-right:4px;"></i> Jenis Truck</label>
+                        <select id="pivot-truck-filter" class="cyber-input" style="cursor:pointer;" onchange="AnalysApp.onPivotFilterChange()">
+                            <option value="">-- SEMUA TRUCK --</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- MINI ANALYTICS SUMMARY -->
+                <div id="pivot-analytics-summary"></div>
+                <!-- PIVOT TABLE CONTENT -->
+                <div id="pivot-table-content" style="flex-grow:1;">
+                    <div style="text-align:center; padding:50px; color:var(--text-muted);">
+                        <i class="fas fa-chart-bar" style="font-size:2.5rem; opacity:0.15; margin-bottom:12px;"></i><br>
+                        <span style="font-family:'Orbitron'; font-size:0.75rem; letter-spacing:2px;">LOADING
+                            DATA...</span>
                     </div>
                 </div>
             </div>
@@ -682,8 +946,8 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="js/app-config.js?v=20.2.5"></script>
-    <script src="js/rm-dt-analys.js?v=20.2.5"></script>
+    <script src="js/app-config.js?v=20.2.16"></script>
+    <script src="js/rm-dt-analys.js?v=20.2.16"></script>
 
     <!-- INLINE OVERRIDES TO FIX JS REFERENCES IF NEEDED -->
     <script>
