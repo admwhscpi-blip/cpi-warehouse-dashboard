@@ -37,6 +37,7 @@ const AnalysApp = {
     // CONFIG GOOGLE SHEETS (Container)
     CONTAINER_SHEET_ID: '1m7q1IdtKyaNvjKP5QL85NPsk0FPEGUqV0scSB2CsXJ0',
     CONTAINER_SHEET_NAME: 'DATA BONGKARAN',
+    CONTAINER_SHEET_GID: '542397054', // GID for DATA BONGKARAN tab (for CSV export)
 
     init: function () {
         console.log("Analytics Engine V3 (Real Data Mode) Starting...");
@@ -133,54 +134,174 @@ const AnalysApp = {
         }
     },
 
-    fetchContainerData: async function () {
-        // v20.2.15: Use fetch() instead of JSONP to avoid browser size limits
-        // JSONP via <script> tag was silently truncating large responses (46 of 1503 rows)
-        const url = `https://docs.google.com/spreadsheets/d/${this.CONTAINER_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(this.CONTAINER_SHEET_NAME)}`;
+    // v20.2.17: CSV Export approach — BYPASSES Google Sheets filters
+    // The Gviz API respects active sheet filters (was returning 132 of 2999 rows)
+    // The /export?format=csv endpoint returns ALL rows regardless of filter state
+    fetchContainerData: function () {
+        // CSV export URL bypasses filters — gets ALL rows
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${this.CONTAINER_SHEET_ID}/export?format=csv&gid=${this.CONTAINER_SHEET_GID}`;
 
+        // For file:// protocol, fetch() is blocked by CORS
+        // Try CSV export first, fall back to JSONP
+        this._fetchContainerViaCSV(csvUrl);
+    },
+
+    _fetchContainerViaCSV: async function (csvUrl) {
         try {
-            const resp = await fetch(url);
-            const text = await resp.text();
-            // Gviz wraps JSON in google.visualization.Query.setResponse({...})
-            const jsonStr = text.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
-            const gviz = JSON.parse(jsonStr);
-
-            if (!gviz || !gviz.table) throw new Error("Invalid Container data response");
-            const raw = this.parseGvizTable(gviz.table);
-            console.log(`[ContainerData] Received ${raw.length} rows from Sheet.`);
-
-            this.containerData = raw.filter(row => {
-                let iso = this.normalizeDate(row['TANGGAL']);
-                return !!iso;
-            });
-
-            console.log(`[ContainerData] ${this.containerData.length} rows successfully normalized and filtered.`);
-            if (this.containerData.length > 0) {
-                const dates = this.containerData.map(r => r['TANGGAL']).sort();
-                console.log(`[ContainerData] Date range: ${dates[0]} to ${dates[dates.length-1]}`);
-                console.log(`[ContainerData] Sample row:`, this.containerData[0]);
-            }
-
-            // Update filter dropdown with months from container data
-            this.initGlobalFilter();
-
-            // Group by Date for fast lookup
-            this.containerDataByDate = {};
-            this.containerData.forEach(row => {
-                let d = this.normalizeDate(row['TANGGAL']);
-                if (!this.containerDataByDate[d]) this.containerDataByDate[d] = [];
-                this.containerDataByDate[d].push(row);
-            });
-
-            console.log('Container analysis data loaded:', this.containerData.length);
-            
-            // RE-RENDER UI after container data arrives
-            this.renderAllCharts();
-            this.renderKPIs();
-            this.initMaterialFeed();
+            const resp = await fetch(csvUrl);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const csvText = await resp.text();
+            const rows = this._parseCSV(csvText);
+            console.log(`[ContainerData] CSV export: ${rows.length} rows (bypasses filters)`);
+            this._processContainerRows(rows);
         } catch (err) {
-            console.error("CONTAINER FETCH ERROR:", err);
+            console.warn('[ContainerData] CSV fetch failed (CORS/network), trying JSONP:', err.message);
+            // Fallback: JSONP via Gviz (works for file:// but affected by sheet filters)
+            this._fetchContainerViaJSONP();
         }
+    },
+
+    _fetchContainerViaJSONP: function () {
+        const callbackName = '_gvizContainerCB_' + Date.now();
+        const url = `https://docs.google.com/spreadsheets/d/${this.CONTAINER_SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&sheet=${encodeURIComponent(this.CONTAINER_SHEET_NAME)}`;
+
+        window[callbackName] = (gviz) => {
+            try {
+                if (!gviz || !gviz.table) throw new Error("Invalid JSONP response");
+                const raw = this.parseGvizTable(gviz.table);
+                console.log(`[ContainerData] JSONP: ${raw.length} rows (may be filter-limited)`);
+                if (raw.length < 500) {
+                    console.warn('[ContainerData] WARNING: Low row count. Active filter on Google Sheet may be hiding data!');
+                }
+                this._processContainerRows(raw);
+            } catch (err) {
+                console.error('CONTAINER JSONP ERROR:', err);
+            }
+            delete window[callbackName];
+        };
+
+        const script = document.createElement('script');
+        script.src = url;
+        script.onerror = () => {
+            console.error('[ContainerData] JSONP script load failed');
+            delete window[callbackName];
+        };
+        document.head.appendChild(script);
+    },
+
+    // Parse CSV text into array of objects with header keys
+    _parseCSV: function (csvText) {
+        const lines = csvText.split('\n').filter(l => l.trim());
+        if (lines.length < 2) return [];
+
+        // Parse header row
+        const headerCells = this._parseCSVLine(lines[0]);
+        const headers = headerCells.map(h => {
+            let label = String(h || '').trim().toUpperCase().replace(/[\s]+/g, '_');
+            return label;
+        });
+
+        // Map first column (which may have blank/spaces header) to TANGGAL
+        if (!headers[0] || headers[0].trim() === '' || headers[0] === '_') {
+            headers[0] = 'TANGGAL';
+        }
+
+        const rows = [];
+        for (let i = 1; i < lines.length; i++) {
+            const cells = this._parseCSVLine(lines[i]);
+            if (!cells.length || !cells[0]) continue;
+            const obj = {};
+            headers.forEach((key, idx) => {
+                if (!key) return;
+                obj[key] = (cells[idx] || '').trim();
+            });
+
+            // Apply same aliases as parseGvizTable
+            if (obj['NETTO_(KG)'] !== undefined) {
+                obj['NETTO_KG'] = parseFloat(String(obj['NETTO_(KG)']).replace(/,/g, '')) || 0;
+            } else if (obj['NETTO_KG'] !== undefined) {
+                obj['NETTO_KG'] = parseFloat(String(obj['NETTO_KG']).replace(/,/g, '')) || 0;
+            }
+            if (obj['MATERIAL'] !== undefined) obj['JENIS_RM'] = obj['MATERIAL'];
+            if (obj['GUDANG/INTAKE'] !== undefined) obj['GUDANG'] = obj['GUDANG/INTAKE'];
+            if (obj['LOKASI_SIMPAN'] !== undefined) obj['LOKASI'] = obj['LOKASI_SIMPAN'];
+            if (obj['FINISH'] !== undefined && !obj['FINISH_BONGKAR']) obj['FINISH_BONGKAR'] = obj['FINISH'];
+
+            rows.push(obj);
+        }
+        return rows;
+    },
+
+    // Parse a single CSV line handling quoted fields
+    _parseCSVLine: function (line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (inQuotes) {
+                if (ch === '"') {
+                    if (i + 1 < line.length && line[i + 1] === '"') {
+                        current += '"'; i++; // escaped quote
+                    } else {
+                        inQuotes = false;
+                    }
+                } else {
+                    current += ch;
+                }
+            } else {
+                if (ch === '"') {
+                    inQuotes = true;
+                } else if (ch === ',') {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += ch;
+                }
+            }
+        }
+        result.push(current);
+        return result;
+    },
+
+    // Unified processing for both CSV and JSONP data
+    _processContainerRows: function (rows) {
+        console.log(`[ContainerData] Processing ${rows.length} raw rows...`);
+
+        this.containerData = rows.filter(row => {
+            const dateVal = row['TANGGAL'] || row['COL_0'] || '';
+            if (!dateVal) return false;
+            let iso = this.normalizeDate(dateVal);
+            if (iso) {
+                row['TANGGAL'] = iso; // Normalize date in-place
+                return true;
+            }
+            return false;
+        });
+
+        console.log(`[ContainerData] ${this.containerData.length} rows normalized.`);
+        if (this.containerData.length > 0) {
+            const dates = this.containerData.map(r => r['TANGGAL']).sort();
+            console.log(`[ContainerData] Date range: ${dates[0]} to ${dates[dates.length - 1]}`);
+        }
+
+        // Group by Date for fast lookup
+        this.containerDataByDate = {};
+        this.containerData.forEach(row => {
+            let d = row['TANGGAL'];
+            if (!this.containerDataByDate[d]) this.containerDataByDate[d] = [];
+            this.containerDataByDate[d].push(row);
+        });
+
+        console.log(`[ContainerData] FINAL: ${this.containerData.length} rows, ${Object.keys(this.containerDataByDate).length} unique dates`);
+
+        // Update filter dropdown with months from container data
+        this.initGlobalFilter();
+
+        // RE-RENDER UI after container data arrives
+        this.renderAllCharts();
+        this.renderKPIs();
+        this.initMaterialFeed();
     },
 
     parseGvizTable: function (table) {
