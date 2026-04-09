@@ -42,6 +42,12 @@ const TrackingApp = {
         this.renderCalendars();
         this.activeDate = null;
         this.renderDailyPanel(null); // Clear panel
+        
+        const yearSel = document.getElementById('inap-year-filter');
+        if (yearSel) {
+            yearSel.value = this.currentYear;
+            this.renderInapAnalysis();
+        }
     },
 
     // === GOOGLE SHEETS CONFIG (for direct column access) ===
@@ -359,6 +365,16 @@ const TrackingApp = {
 
         this.activeDate = isoDate;
         this.renderDailyPanel(isoDate);
+
+        // Auto-sync the bottom filter to show the INAPs of the clicked month
+        if (isoDate) {
+            const d = new Date(isoDate);
+            const mSel = document.getElementById('inap-month-filter');
+            if (mSel && mSel.value !== String(d.getMonth())) {
+                mSel.value = d.getMonth();
+                this.renderInapAnalysis();
+            }
+        }
     },
 
     // ==========================================
@@ -851,13 +867,12 @@ const TrackingApp = {
         const months = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
         const now = new Date();
 
-        // Month
-        monthSel.innerHTML = '<option value="ALL">SEMUA BULAN</option>';
+        // Month (Default to ALL instead of current month so users see the whole year by default)
+        monthSel.innerHTML = '<option value="ALL" selected>SEMUA BULAN</option>';
         months.forEach((m, i) => {
             let opt = document.createElement('option');
             opt.value = i;
             opt.text = m;
-            if (i === now.getMonth()) opt.selected = true;
             monthSel.appendChild(opt);
         });
 
