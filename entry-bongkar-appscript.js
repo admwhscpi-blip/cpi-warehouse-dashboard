@@ -12,6 +12,7 @@ const SHEET_SETUP = "SETUP";
 const SHEET_ABSENSI = "ABSENSI";
 const SHEET_BONGKARAN = "DATA_BONGKARAN";
 const SHEET_MUATAN = "DATA_MUATAN";
+const SHEET_LOG_ABSENSI = "MASTER_ABSENSI_LOG";
 
 function doPost(e) {
   try {
@@ -20,6 +21,8 @@ function doPost(e) {
     
     if (action === "saveSetup") {
       return handleSaveSetup(data);
+    } else if (action === "saveGlobalAttendance") {
+      return handleSaveGlobalAttendance(data);
     } else if (action === "saveBongkaran") {
       return handleSaveBongkaran(data);
     } else if (action === "saveMuat") {
@@ -38,6 +41,8 @@ function doGet(e) {
   try {
     if (e.parameter.action === "getSetup") {
       return handleGetSetup();
+    } else if (e.parameter.action === "getGlobalAttendance") {
+      return handleGetGlobalAttendance();
     } else if (e.parameter.action === "getPendingLangsiran") {
       return handleGetPendingLangsiran();
     }
@@ -293,4 +298,76 @@ function handleSaveMuat(data) {
   
   return ContentService.createTextOutput(JSON.stringify({ success: true, message: "Data Muatan Berhasil Tersimpan" }))
                        .setMimeType(ContentService.MimeType.JSON);
+}
+function handleSaveGlobalAttendance(data) {
+  const props = PropertiesService.getScriptProperties();
+  const state = {
+    date: data.tanggal,
+    startTime: data.jamAwal,
+    endTime: data.jamAkhir,
+    absensi: data.absensi,
+    timestamp: new Date().getTime()
+  };
+  
+  props.setProperty("GLOBAL_ATTENDANCE_STATE", JSON.stringify(state));
+  
+  // 3. Save to Global Log Sheet (Grouped per Team)
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetLog = ss.getSheetByName(SHEET_LOG_ABSENSI);
+  if (!sheetLog) {
+    const newLog = ss.insertSheet(SHEET_LOG_ABSENSI);
+    newLog.appendRow(["Timestamp", "Tanggal", "Tim", "Kategori", "Jumlah Hadir", "Keterangan (Alpha)"]);
+    newLog.getRange(1, 1, 1, 6).setFontWeight("bold");
+  }
+  
+  const logSheet = ss.getSheetByName(SHEET_LOG_ABSENSI);
+  const ts = new Date();
+  
+  // Group by Team for logging
+  const teams = [...new Set(data.absensi.map(k => k.tim))];
+  teams.forEach(tName => {
+    const kuliInTeam = data.absensi.filter(k => k.tim === tName);
+    const presentCount = kuliInTeam.filter(k => k.status === 'H').length;
+    const absentNames = kuliInTeam.filter(k => k.status === 'A').map(k => k.nama).join(", ");
+    const category = kuliInTeam[0].kategori;
+    
+    logSheet.appendRow([ts, data.tanggal, tName, category, presentCount, absentNames || "-"]);
+  });
+  
+  return ContentService.createTextOutput(JSON.stringify({ success: true, message: "Absensi Global Berhasil Disimpan & Dicatat" }))
+                       .setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleGetGlobalAttendance() {
+  const props = PropertiesService.getScriptProperties();
+  const rawState = props.getProperty("GLOBAL_ATTENDANCE_STATE");
+  
+  if (!rawState) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Belum ada absensi global" }))
+                         .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  const state = JSON.parse(rawState);
+  const now = new Date();
+  const nowStr = Utilities.formatDate(now, Session.getScriptTimeZone(), "HH:mm");
+  
+  const start = state.startTime;
+  const end = state.endTime;
+  
+  let isActive = false;
+  
+  if (start < end) {
+    // Skenario satu hari: 08:00 - 17:00
+    if (nowStr >= start && nowStr <= end) isActive = true;
+  } else {
+    // Skenario lewat tengah malam: 19:00 - 07:00
+    if (nowStr >= start || nowStr <= end) isActive = true;
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({ 
+    success: true, 
+    isActive: isActive,
+    data: state,
+    currentTime: nowStr
+  })).setMimeType(ContentService.MimeType.JSON);
 }

@@ -585,8 +585,9 @@
                 </div>
                 <div class="accordion-content">
                     
-                    <div class="form-grid" style="margin-top: 15px;">
-                        <div class="form-group">
+                    <div class="form-grid" style="margin-top: 15px;" id="grid-setup-primary">
+                        <!-- KRANI FIELDS -->
+                        <div class="form-group ops-field">
                             <label>Pilihan Shift</label>
                             <select class="input-glass" id="cfg_shift">
                                 <option value="1">SHIFT 1</option>
@@ -594,18 +595,57 @@
                                 <option value="3">SHIFT 3</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Standar Lokasi (SLOC)</label>
+                        <div class="form-group ops-field">
+                            <label>Gudang (SLOC)</label>
                             <select class="input-glass" id="cfg_sloc" onchange="renderAbsensi()">
+                                <option value="RM01">GUDANG RM01</option>
                                 <option value="RW01">RW01</option>
-                                <option value="RW05">RW05</option>
+                                <option value="RW02">RW02</option>
                                 <option value="RW03">RW03</option>
-                                <option value="RM01">RM01</option>
+                                <option value="RW04">RW04</option>
+                                <option value="RW05">RW05</option>
+                            </select>
+                        </div>
+
+                        <!-- ARIF FIELDS -->
+                        <div class="form-group arif-field">
+                            <label>Tanggal Absensi</label>
+                            <input type="date" class="input-glass" id="cfg_global_date">
+                        </div>
+                        <div class="form-group arif-field">
+                            <label>Jam Awal Aktif</label>
+                            <input type="time" class="input-glass" id="cfg_global_start">
+                        </div>
+                        <div class="form-group arif-field">
+                            <label>Jam Akhir Aktif</label>
+                            <input type="time" class="input-glass" id="cfg_global_end">
+                        </div>
+
+                        <div class="form-group arif-field">
+                            <label>Pilih Tim Borong</label>
+                            <select class="input-glass" id="cfg_tim_borong" onchange="renderAbsensi()">
+                                <option value="">-- Pilih Tim Borong --</option>
+                                <option value="BADRUN">TIM BADRUN</option>
+                                <option value="KARTONO">TIM KARTONO</option>
+                                <option value="SAHLAN">TIM SAHLAN</option>
+                                <option value="WAWAN">TIM WAWAN</option>
+                                <option value="SURYANA">TIM SURYANA</option>
+                            </select>
+                        </div>
+                        <div class="form-group arif-field">
+                            <label>Pilih Tim Harian</label>
+                            <select class="input-glass" id="cfg_tim_harian" onchange="renderAbsensi()">
+                                <option value="">-- Pilih Tim Harian --</option>
+                                <option value="BADRUN">TIM BADRUN</option>
+                                <option value="KARTONO">TIM KARTONO</option>
+                                <option value="SAHLAN">TIM SAHLAN</option>
+                                <option value="WAWAN">TIM WAWAN</option>
+                                <option value="SURYANA">TIM SURYANA</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="form-grid">
+                    <div class="form-grid ops-field">
                         <div class="form-group">
                             <label>Nama Koordinator</label>
                             <select class="input-glass" id="cfg_koordinator">
@@ -618,23 +658,18 @@
                             <label>Sampling Man</label>
                             <input type="text" class="input-glass" id="cfg_sampling_man" placeholder="Nama Sampling Man">
                         </div>
-                    </div>
-
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Tim Kerja Borong</label>
-                            <select class="input-glass" id="cfg_tim_borong" onchange="renderAbsensi()">
-                                <option value="BADRUN">BADRUN</option>
-                                <option value="KARTONO">KARTONO</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Tim Kerja Harian</label>
-                            <select class="input-glass" id="cfg_tim_harian" onchange="renderAbsensi()">
-                                <option value="WAWAN">WAWAN</option>
-                                <option value="SURYANA">SURYANA</option>
-                                <option value="SAHLAN">SAHLAN</option>
-                            </select>
+                        <div class="form-group" style="grid-column: span 2; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
+                            <label style="color:var(--accent-primary); font-weight:700;">DURASI AKTIF SET-UP OPERASIONAL KRANI</label>
+                            <div style="display:flex; gap:10px; margin-top: 5px;">
+                                <div style="flex:1;">
+                                    <label style="font-size:0.7rem; opacity:0.7;">Jam Awal</label>
+                                    <input type="time" class="input-glass" id="cfg_ops_start">
+                                </div>
+                                <div style="flex:1;">
+                                    <label style="font-size:0.7rem; opacity:0.7;">Jam Akhir</label>
+                                    <input type="time" class="input-glass" id="cfg_ops_end">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -963,11 +998,39 @@
         };
 
         // --- 2. SETUP & ABSENSI LOGIC ---
-        function initSetupSequence() {
-            if(currentUser !== 'ARIF') {
+        let globalAttendanceData = null;
+
+        async function initSetupSequence() {
+            const isArif = (currentUser === 'ARIF');
+            
+            // Toggle visibility setup fields
+            document.querySelectorAll('.ops-field').forEach(el => el.style.display = isArif ? 'none' : 'block');
+            document.querySelectorAll('.arif-field').forEach(el => el.style.display = isArif ? 'block' : 'none');
+
+            if (!isArif) {
                 document.getElementById('absensi-wrapper').style.display = 'none';
+                
+                // Krani: Check master attendance from cloud first
+                try {
+                    const scriptURL = 'https://script.google.com/macros/s/AKfycbwBxIXah7j0pVPiEq8-GY4F8SJEX_BWFSZkyfE9046VMfs6jkN-vK42N17TeyaFDeRd/exec';
+                    const response = await fetch(scriptURL + '?action=getGlobalAttendance');
+                    const result = await response.json();
+                    
+                    if (result.success && result.isActive) {
+                        globalAttendanceData = result.data;
+                        document.getElementById('setup-status-text').innerHTML = `✅ <span style="color:var(--success)">Sesi Absensi Pengepakan Aktif (${result.data.startTime} - ${result.data.endTime})</span>`;
+                    } else if (document.getElementById('cfg_sloc').value !== 'RW01') {
+                        // BLOCK ACCESS
+                        document.getElementById('access-denied-overlay').style.display = 'flex';
+                        document.getElementById('app-wrapper').style.filter = 'blur(10px)';
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Gagal ambil master attendance", e);
+                }
             } else {
                 renderAbsensi(); 
+                document.getElementById('cfg_global_date').value = new Date().toISOString().split('T')[0];
             }
 
             const cachedSetup = localStorage.getItem('RM01_SETUP_ACTIVE');
@@ -976,25 +1039,33 @@
             if (cachedSetup) {
                 const setupObj = JSON.parse(cachedSetup);
                 const now = new Date();
-                const expireDate = new Date(setupObj.expireTimestamp);
+                const nowStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
 
-                if (now < expireDate) {
+                // Check Krani's own operational duration
+                const start = setupObj.opsStart;
+                const end = setupObj.opsEnd;
+                let isOpsActive = false;
+
+                if (start && end) {
+                    if (start < end) {
+                        if (nowStr >= start && nowStr <= end) isOpsActive = true;
+                    } else {
+                        if (nowStr >= start || nowStr <= end) isOpsActive = true;
+                    }
+                }
+
+                if (isOpsActive) {
                     isSetupValid = true;
                     applySetupToUI(setupObj);
                     unlockAccordion('sect-durasi');
-                    document.getElementById('setup-status-text').innerHTML = `<span style="color:var(--success); font-weight:bold;">✅ Setup Aktif (Sesi ${setupObj.jamMulai} - ${setupObj.jamSelesai})</span>`;
                     
-                    document.getElementById('sect-setup').querySelector('.accordion-header').classList.remove('active');
-                    document.getElementById('sect-durasi').querySelector('.accordion-header').classList.add('active');
+                    if (!isArif) {
+                        document.getElementById('sect-setup').querySelector('.accordion-header').classList.remove('active');
+                        document.getElementById('sect-durasi').querySelector('.accordion-header').classList.add('active');
+                    }
                 } else {
                     localStorage.removeItem('RM01_SETUP_ACTIVE'); 
                 }
-            }
-
-            if (!isSetupValid && currentUser !== 'ARIF') {
-                document.getElementById('access-denied-overlay').style.display = 'flex';
-                document.getElementById('app-wrapper').style.filter = 'blur(10px)';
-                document.getElementById('app-wrapper').style.pointerEvents = 'none';
             }
         }
 
@@ -1046,6 +1117,10 @@
 
                 if(timBorong) html += generateKuliHTML(timBorong, "BORONG");
                 if(timHarian) html += generateKuliHTML(timHarian, "HARIAN");
+                
+                if(!timBorong && !timHarian) {
+                    html = '<div style="text-align:center; padding:20px; color:var(--text-secondary); border:1px dashed #ccc; border-radius:10px;">Silakan pilih Tim Borong & Harian terlebih dahulu</div>';
+                }
             }
 
             container.innerHTML = html;
@@ -1066,88 +1141,85 @@
             }
         }
 
-        function saveSetupLokal() {
-            // Automation Jam Shift Pagi (07:00-18:59) / Malam (19:00-06:59)
-            const now = new Date();
-            const currentHour = now.getHours();
-            
-            let mulai = "";
-            let selesai = "";
-            let expireDate = new Date();
+        async function saveSetupLokal() {
+            const isArif = (currentUser === 'ARIF');
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbwBxIXah7j0pVPiEq8-GY4F8SJEX_BWFSZkyfE9046VMfs6jkN-vK42N17TeyaFDeRd/exec';
 
-            if (currentHour >= 7 && currentHour < 19) {
-                // Shift Pagi
-                mulai = "07:00";
-                selesai = "18:59";
-                expireDate.setHours(18, 59, 59, 999);
-            } else {
-                // Shift Malam
-                mulai = "19:00";
-                selesai = "06:59";
-                
-                // Jika saat ini di bawah jam 7 pagi, berarti expire hari INI jam 06:59
-                // Jika di atas jam 19, expire BESOK jam 06:59
-                if(currentHour >= 19) {
-                    expireDate.setDate(expireDate.getDate() + 1);
+            if (isArif) {
+                // ARIF SAVES GLOBAL ATTENDANCE
+                const globalObj = {
+                    action: "saveGlobalAttendance",
+                    tanggal: document.getElementById('cfg_global_date').value,
+                    jamAwal: document.getElementById('cfg_global_start').value,
+                    jamAkhir: document.getElementById('cfg_global_end').value,
+                    timBorong: document.getElementById('cfg_tim_borong').value,
+                    timHarian: document.getElementById('cfg_tim_harian').value,
+                    absensi: activeKuliData // Kirim semua data agar bisa dideteksi siapa yang Alpha
+                };
+
+                if (!globalObj.tanggal || !globalObj.jamAwal || !globalObj.jamAkhir || !globalObj.timBorong || !globalObj.timHarian) {
+                    Swal.fire('Data Belum Lengkap', 'Tanggal, Jam Awal/Akhir, serta Tim Borong & Harian wajib diisi.', 'warning');
+                    return;
                 }
-                expireDate.setHours(6, 59, 59, 999);
+
+                Swal.fire({ title: 'Menyimpan Absensi Global...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+                try {
+                    const response = await fetch(scriptURL, { method: 'POST', body: JSON.stringify(globalObj) });
+                    const result = await response.json();
+                    if (result.success) {
+                        Swal.fire('Berhasil!', 'Absensi Global telah diaktifkan.', 'success').then(() => window.location.reload());
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } catch (e) {
+                    Swal.fire('Gagal', 'Gagal menyimpan ke cloud: ' + e.message, 'error');
+                }
+
+            } else {
+                // KRANI SAVES OPERATIONAL SETUP
+                const setupObj = {
+                    action: "saveSetup", // Still log to sheet for audit
+                    shift: document.getElementById('cfg_shift').value,
+                    sloc: document.getElementById('cfg_sloc').value,
+                    koordinator: document.getElementById('cfg_koordinator').value,
+                    samplingMan: document.getElementById('cfg_sampling_man').value,
+                    opsStart: document.getElementById('cfg_ops_start').value,
+                    opsEnd: document.getElementById('cfg_ops_end').value,
+                    absensi: [] // Krani doesn't handle kuli list
+                };
+
+                if (!setupObj.opsStart || !setupObj.opsEnd) {
+                    Swal.fire('Data Belum Lengkap', 'Jam Awal dan Akhir Operasional wajib diisi.', 'warning');
+                    return;
+                }
+
+                localStorage.setItem('RM01_SETUP_ACTIVE', JSON.stringify(setupObj));
+                
+                Swal.fire({ title: 'Menyimpan Setup Operasional...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+                try {
+                    await fetch(scriptURL, { method: 'POST', body: JSON.stringify(setupObj) });
+                    Swal.fire('Sip!', 'Setup operasional aktif.', 'success').then(() => {
+                        unlockAccordion('sect-durasi');
+                        toggleAccordion('sect-durasi');
+                    });
+                } catch (e) {
+                    Swal.fire('Offline Mode', 'Setup tersimpan lokal.', 'warning').then(() => {
+                        unlockAccordion('sect-durasi');
+                        toggleAccordion('sect-durasi');
+                    });
+                }
             }
-
-            const setupObj = {
-                action: "saveSetup",
-                shift: document.getElementById('cfg_shift').value,
-                sloc: document.getElementById('cfg_sloc').value,
-                koordinator: document.getElementById('cfg_koordinator').value,
-                samplingMan: document.getElementById('cfg_sampling_man').value,
-                timBorong: document.getElementById('cfg_tim_borong').value,
-                timHarian: document.getElementById('cfg_tim_harian').value,
-                jamMulai: mulai,
-                jamSelesai: selesai,
-                expireTimestamp: expireDate.getTime(),
-                absensi: activeKuliData
-            };
-
-            localStorage.setItem('RM01_SETUP_ACTIVE', JSON.stringify(setupObj));
-            
-            Swal.fire({
-                title: 'Menyimpan Setup...',
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
-
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbzJZyOdP5PwNlZzJxlaUtcq8mwFAblDOxbi06F3t-6BjHLjDKTYo5gvV06EcnIpG4sG/exec';
-            
-            fetch(scriptURL, {
-                method: 'POST',
-                body: JSON.stringify(setupObj)
-            }).then(r => r.json()).then(data => {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Sip! Tersimpan',
-                    text: 'Setup siap digunakan. Silakan lanjut isi durasi.',
-                    timer: 1500,
-                    showConfirmButton: false
-                }).then(() => {
-                    unlockAccordion('sect-durasi');
-                    toggleAccordion('sect-durasi'); // Open Section 2
-                });
-            }).catch(e => {
-                Swal.fire('Offline Mode', 'Setup tersimpan lokal (Gagal ke cloud)', 'warning').then(() => {
-                    unlockAccordion('sect-durasi');
-                    toggleAccordion('sect-durasi');
-                });
-            });
         }
 
         function applySetupToUI(obj) {
-            document.getElementById('cfg_shift').value = obj.shift;
-            document.getElementById('cfg_sloc').value = obj.sloc;
-            document.getElementById('cfg_koordinator').value = obj.koordinator;
-            document.getElementById('cfg_sampling_man').value = obj.samplingMan;
-            document.getElementById('cfg_tim_borong').value = obj.timBorong;
-            document.getElementById('cfg_tim_harian').value = obj.timHarian;
-            document.getElementById('cfg_jam_mulai').value = obj.jamMulai;
-            document.getElementById('cfg_jam_selesai').value = obj.jamSelesai;
+            document.getElementById('cfg_shift').value = obj.shift || "1";
+            document.getElementById('cfg_sloc').value = obj.sloc || "RM01";
+            document.getElementById('cfg_koordinator').value = obj.koordinator || "";
+            document.getElementById('cfg_sampling_man').value = obj.samplingMan || "";
+            document.getElementById('cfg_ops_start').value = obj.opsStart || "";
+            document.getElementById('cfg_ops_end').value = obj.opsEnd || "";
         }
 
         // --- 3. ACCORDION & UX LOGIC ---
@@ -1427,6 +1499,27 @@
                 s.innerHTML += '<option disabled>----------------------</option>';
                 s.innerHTML += '<option value="OTHER">--- OTHER (Input Manual) ---</option>';
                 s.value = currentVal;
+            });
+
+            // Update Kuli Selectors based on ARIF Global Attendance
+            const kuliSelectors = document.querySelectorAll('.trk-kuli-type');
+            kuliSelectors.forEach(ks => {
+                const currentVal = ks.value;
+                let html = '';
+                
+                if (globalAttendanceData && globalAttendanceData.absensi) {
+                    const borongNames = globalAttendanceData.absensi.filter(k => k.kategori === 'BORONG').map(k => k.nama).join(', ');
+                    const harianNames = globalAttendanceData.absensi.filter(k => k.kategori === 'HARIAN').map(k => k.nama).join(', ');
+                    
+                    if (borongNames) html += `<option value="KULI BORONG">KULI BORONG (${borongNames})</option>`;
+                    if (harianNames) html += `<option value="KULI HARIAN">KULI HARIAN (${harianNames})</option>`;
+                } else {
+                    html += '<option value="KULI BORONG">KULI BORONG</option>';
+                    html += '<option value="KULI HARIAN">KULI HARIAN</option>';
+                }
+                
+                ks.innerHTML = html;
+                ks.value = currentVal;
             });
         }
 

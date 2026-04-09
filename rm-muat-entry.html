@@ -581,6 +581,8 @@
             document.getElementById('time-widget').innerText = now.toLocaleDateString('id-ID', options);
         }
 
+        let globalAttendanceData = null;
+
         async function initSession() {
             // 1. Cek session dari Hub V2
             const userStr = sessionStorage.getItem('dt_v2_user');
@@ -589,40 +591,44 @@
             document.getElementById('display-username').innerText = currentUser.toUpperCase();
             document.getElementById('m_krani').value = currentUser.toUpperCase();
 
-            // 2. Cek Setup Lokal (Sama dengan Modul Bongkar)
-            const cachedSetup = localStorage.getItem('RM01_SETUP_ACTIVE');
-            let isSetupValid = false;
+            const isArif = (currentUser === 'ARIF');
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbwBxIXah7j0pVPiEq8-GY4F8SJEX_BWFSZkyfE9046VMfs6jkN-vK42N17TeyaFDeRd/exec';
 
-            if (cachedSetup) {
-                const setupObj = JSON.parse(cachedSetup);
-                const now = new Date();
-                const expireDate = new Date(setupObj.expireTimestamp);
-
-                if (now < expireDate) {
-                    isSetupValid = true;
-                    sessionData = setupObj;
-                    applySetupToMuat(setupObj);
-                    hideBarrier();
-                }
-            }
-
-            // 3. Jika Lokal tidak ada, coba ambil dari Server (Backup)
-            if (!isSetupValid) {
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbzJZyOdP5PwNlZzJxlaUtcq8mwFAblDOxbi06F3t-6BjHLjDKTYo5gvV06EcnIpG4sG/exec';
+            // 2. Krani Check: Selalu cek Master Attendance ARIF
+            if (!isArif) {
                 try {
-                    const r = await fetch(scriptURL + '?action=getSetupActive');
-                    const data = await r.json();
+                    const r = await fetch(scriptURL + '?action=getGlobalAttendance');
+                    const result = await r.json();
                     
-                    if(data.success && data.setup) {
-                        sessionData = data.setup;
-                        applySetupToMuat(sessionData);
+                    if(result.success && result.isActive) {
+                        globalAttendanceData = result.data;
                         hideBarrier();
+                    } else if (localStorage.getItem('RM01_SETUP_ACTIVE')) {
+                        // Skenario: Setup operasional ada, tapi global Arif habis
+                        const localSetup = JSON.parse(localStorage.getItem('RM01_SETUP_ACTIVE'));
+                        if (localSetup.sloc === 'RW01') {
+                            hideBarrier(); // Bypass RW01
+                        } else {
+                            document.getElementById('access-denied-overlay').style.display = 'flex';
+                            return;
+                        }
                     } else {
                         document.getElementById('access-denied-overlay').style.display = 'flex';
+                        return;
                     }
                 } catch (e) {
-                    Swal.fire('Koneksi Gagal', 'Gagal memverifikasi setup awal.', 'error');
+                    console.error("Gagal verifikasi global attendance", e);
                 }
+            } else {
+                hideBarrier();
+            }
+
+            // 3. Cek Setup Operasional Lokal
+            const cachedSetup = localStorage.getItem('RM01_SETUP_ACTIVE');
+            if (cachedSetup) {
+                const setupObj = JSON.parse(cachedSetup);
+                sessionData = setupObj;
+                applySetupToMuat(setupObj);
             }
             
             // Set Default Date
@@ -633,7 +639,22 @@
         function applySetupToMuat(setup) {
             if(!setup) return;
             document.getElementById('m_shift').value = setup.shift || "1";
-            document.getElementById('m_tim').value = setup.timHarian || "WAWAN";
+            document.getElementById('m_gudang').value = setup.sloc || "RM01";
+            
+            // Populate Kuli List from Master ARIF
+            const mTim = document.getElementById('m_tim');
+            const currentVal = mTim.value;
+            
+            if (globalAttendanceData && globalAttendanceData.absensi) {
+                const borongNames = globalAttendanceData.absensi.filter(k => k.kategori === 'BORONG').map(k => k.nama).join(', ');
+                const harianNames = globalAttendanceData.absensi.filter(k => k.kategori === 'HARIAN').map(k => k.nama).join(', ');
+                
+                let html = '';
+                if (borongNames) html += `<option value="KULI BORONG">KULI BORONG (${borongNames})</option>`;
+                if (harianNames) html += `<option value="KULI HARIAN">KULI HARIAN (${harianNames})</option>`;
+                mTim.innerHTML = html;
+            }
+            if(currentVal) mTim.value = currentVal;
         }
 
         function hideBarrier() {
