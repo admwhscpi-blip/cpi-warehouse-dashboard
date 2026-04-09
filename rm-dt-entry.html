@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DT V2.0 - DATA ENTRY BONGKAR</title>
+
+    <!-- UI LIBS -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/app-config.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f1f5f9;
+            --surface-color: rgba(255, 255, 255, 0.7);
+            --surface-blur: blur(20px);
+            --border-light: rgba(255, 255, 255, 0.5);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-primary: #0ea5e9;
+            --accent-glow: rgba(14, 165, 233, 0.3);
+            --accent-light: #e0f2fe;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gradient-accent: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+            --shadow-soft: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(14, 165, 233, 0.05), transparent 40%),
+                radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.05), transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Access Barrier Overlay */
+        #login-barrier {
+            position: fixed;
+            inset: 0;
+            background: rgba(241, 245, 249, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        
+        .main-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- TOP HEADER --- */
+        .top-header {
+            background: var(--surface-color);
+            backdrop-filter: var(--surface-blur);
+            -webkit-backdrop-filter: var(--surface-blur);
+            border-bottom: 1px solid var(--border-light);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .header-title-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-title h2 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 1px;
+            margin: 0;
+        }
+
+        .header-title p {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            margin: 2px 0 0 0;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .user-control-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        .user-profile-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            padding: 6px 15px;
+            border-radius: 30px;
+            color: var(--accent-primary);
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .user-profile-badge span {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+        }
+
+        /* --- MAIN DASHBOARD AREA --- */
+        .main-content {
+            flex-grow: 1;
+            padding: 20px 15px 50px 15px;
+        }
+
+        .back-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+        }
+
+        .back-nav:hover {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        /* --- ACCORDION SYSTEM --- */
+        .accordion-item {
+            background: var(--surface-color);
+            backdrop-filter: var(--surface-blur);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .accordion-item.locked {
+            opacity: 0.6;
+            pointer-events: none;
+            filter: grayscale(0.5);
+        }
+
+        .accordion-header {
+            padding: 20px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.4) 100%);
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .accordion-header.active {
+            border-bottom: 1px solid var(--border-light);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .accordion-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .acc-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--accent-light);
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2);
+        }
+
+        .acc-text h3 {
+            margin: 0;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-primary);
+        }
+
+        .acc-text p {
+            margin: 2px 0 0 0;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .acc-toggle-icon {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            transition: transform 0.4s ease;
+        }
+
+        .accordion-header.active .acc-toggle-icon {
+            transform: rotate(180deg);
+            color: var(--accent-primary);
+        }
+
+        .accordion-content {
+            padding: 0 25px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1), padding 0.5s ease;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .accordion-header.active + .accordion-content {
+            padding: 25px;
+            max-height: 2500px; /* Large enough to hold content */
+        }
+
+        /* --- FORM ELEMENTS OVERHAUL --- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-secondary);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .input-glass {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 12px 15px;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .input-glass:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background: #fff;
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        select.input-glass {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        /* --- TIME INPUT SPECIFIC --- */
+        .time-box {
+            position: relative;
+        }
+        
+        .time-box input[type="time"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.6;
+        }
+
+        /* --- ABSENSI KULI UI --- */
+        .absensi-area {
+            background: rgba(255,255,255,0.4);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px dashed var(--border-light);
+        }
+
+        .absensi-header {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .kuli-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .kuli-badge {
+            background: rgba(255,255,255,0.9);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .kuli-badge.checked {
+            background: #ecfdf5;
+            border-color: #34d399;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.1);
+        }
+
+        .kuli-badge.unchecked {
+            background: #fef2f2;
+            border-color: #f87171;
+            opacity: 0.8;
+        }
+
+        .kuli-checkbox {
+            display: none;
+        }
+
+        .kuli-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .check-icon {
+            font-size: 1rem;
+            color: #d1d5db;
+        }
+
+        .kuli-badge.checked .check-icon { color: var(--success); }
+        .kuli-badge.unchecked .check-icon { color: var(--danger); content: '\f00d'; }
+        
+        .kuli-badge.unchecked .check-icon::before {
+            content: '\f00d'; /* Cross icon */
+        }
+
+        /* --- BUTTONS --- */
+        .btn-primary {
+            width: 100%;
+            background: var(--gradient-accent);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(14, 165, 233, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--text-primary);
+            border: 1px solid var(--border-light);
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-secondary:hover {
+            background: white;
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        /* Delay Keterangan Area (Dynamically Displayed) */
+        .delay-space-container {
+            display: none;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            animation: slideDown 0.3s ease-out forwards;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .delay-title {
+            color: #d97706;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- ADVANCED BLOCKED OVERLAY --- */
+        #access-denied-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.9); 
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+        }
+
+        .barrier-content {
+            animation: zoomInBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            padding: 40px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            max-width: 90%;
+            width: 400px;
+        }
+
+        .lock-icon-anim {
+            font-size: 5rem;
+            color: #ef4444; 
+            text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+            margin-bottom: 20px;
+            animation: pulseLock 2s infinite ease-in-out;
+        }
+
+        .barrier-content h2 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin: 0 0 10px 0;
+            background: linear-gradient(to right, #f87171, #dc2626);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .barrier-content p {
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+
+        @keyframes zoomInBounce {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes pulseLock {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.1); filter: brightness(1.5); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Access Denied Overlay (Mewah) -->
+    <div id="access-denied-overlay" style="display:none;">
+        <div class="barrier-content">
+            <div class="lock-icon-anim">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h2>AKSES DIBLOKIR</h2>
+            <p>Belum ada rekaman Absensi Kuli / Setup untuk Shift ini.<br>Harap tunggu <b>ARIF</b> melakukan setup sinkronisasi terlebih dahulu.</p>
+            <a href="rm-dt-v2.html" class="btn-primary" style="max-width:200px; margin: 20px auto 0 auto; text-decoration:none;"><i class="fas fa-arrow-left"></i> KEMBALI</a>
+        </div>
+    </div>
+
+    <!-- Security Check Barrier -->
+    <div id="login-barrier">
+        <i class="fas fa-circle-notch fa-spin" style="font-size: 3rem; color: var(--accent-primary);"></i>
+        <h3 style="margin-top:20px; font-family:'Rajdhani'; color:var(--text-primary);">Verifikasi Sesi...</h3>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div class="main-wrapper" style="display:none;" id="app-wrapper">
+        
+        <!-- HEADER -->
+        <header class="top-header">
+            <div class="header-title-area">
+                <div class="header-title">
+                    <h2>DATA ENTRY BONGKAR</h2>
+                    <p id="time-widget">Loading Time...</p>
+                </div>
+            </div>
+            
+            <div class="user-control-panel">
+                <div class="user-profile-badge">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="display-username">GUEST</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <a href="rm-dt-v2.html" class="back-nav"><i class="fas fa-arrow-left"></i> KEMBALI KE DASHBOARD V2</a>
+
+            <!-- SECTION 1: SETUP AWAL SHIFT & ABSENSI -->
+            <div class="accordion-item" id="sect-setup">
+                <div class="accordion-header active" onclick="toggleAccordion('sect-setup')">
+                    <div class="accordion-title">
+                        <div class="acc-icon"><i class="fas fa-users-cog"></i></div>
+                        <div class="acc-text">
+                            <h3>SETUP AWAL SHIFT</h3>
+                            <p id="setup-status-text">Atur parameter shift dan absensi kuli</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-down acc-toggle-icon"></i>
+                </div>
+                <div class="accordion-content">
+                    
+                    <div class="form-grid" style="margin-top: 15px;">
+                        <div class="form-group">
+                            <label>Pilihan Shift</label>
+                            <select class="input-glass" id="cfg_shift">
+                                <option value="1">SHIFT 1</option>
+                                <option value="2">SHIFT 2</option>
+                                <option value="3">SHIFT 3</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Standar Lokasi (SLOC)</label>
+                            <select class="input-glass" id="cfg_sloc" onchange="renderAbsensi()">
+                                <option value="RW01">RW01</option>
+                                <option value="RW05">RW05</option>
+                                <option value="RW03">RW03</option>
+                                <option value="RM01">RM01</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nama Koordinator</label>
+                            <select class="input-glass" id="cfg_koordinator">
+                                <option value="HADI">HADI</option>
+                                <option value="ADE YANTO">ADE YANTO</option>
+                                <option value="SAFII">SAFII</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Sampling Man</label>
+                            <input type="text" class="input-glass" id="cfg_sampling_man" placeholder="Nama Sampling Man">
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tim Kerja Borong</label>
+                            <select class="input-glass" id="cfg_tim_borong" onchange="renderAbsensi()">
+                                <option value="BADRUN">BADRUN</option>
+                                <option value="KARTONO">KARTONO</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tim Kerja Harian</label>
+                            <select class="input-glass" id="cfg_tim_harian" onchange="renderAbsensi()">
+                                <option value="WAWAN">WAWAN</option>
+                                <option value="SURYANA">SURYANA</option>
+                                <option value="SAHLAN">SAHLAN</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Jam Automasi disembunyikan (Set by System) -->
+                    <input type="hidden" id="cfg_jam_mulai">
+                    <input type="hidden" id="cfg_jam_selesai">
+
+                    <!-- Only inject if User == ARIF -->
+                    <div id="absensi-wrapper">
+                        <div class="absensi-area">
+                            <div class="absensi-header">📋 ABSENSI KULI SHIFT INI</div>
+                            <div id="absensi-list-container">
+                                <!-- Generated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+                        <button class="btn-primary" style="width:auto; padding: 12px 30px;" onclick="saveSetupLokal()">
+                            <i class="fas fa-save"></i> SIMPAN SETUP SESI
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 2: INPUT DATA BONGKARAN (TIMESTAMPS) -->
+            <div class="accordion-item locked" id="sect-durasi">
+                <div class="accordion-header" onclick="toggleAccordion('sect-durasi')">
+                    <div class="accordion-title">
+                        <div class="acc-icon"><i class="fas fa-stopwatch"></i></div>
+                        <div class="acc-text">
+                            <h3>INPUT DURASI BONGKARAN</h3>
+                            <p>Waktu harus diisi secara kronologis / urut</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-down acc-toggle-icon"></i>
+                </div>
+                <div class="accordion-content">
+                    
+                    <div class="form-group" style="margin: 15px 0 25px 0;">
+                        <label>Tipe Bongkaran</label>
+                        <select class="input-glass" id="inp_tipe_bongkaran" style="max-width: 300px; font-weight:bold; color:var(--accent-primary);" onchange="toggleTipeBongkaran()">
+                            <option value="1 Jenis">Bongkaran 1 Jenis</option>
+                            <option value="Bareng">Bongkaran Bareng</option>
+                            <option value="Langsiran">Bongkaran Langsiran 🔄</option>
+                        </select>
+                    </div>
+
+                    <!-- Area Daftar Langsiran (Muncul JIka Pilih Langsiran) -->
+                    <div id="langsiran-section" style="display:none; margin: -10px 0 20px 0; border: 1px solid #ddd6fe; border-radius: 15px; background: rgba(245, 243, 255, 0.5); padding: 20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h5 style="font-family:'Rajdhani'; color:var(--accent-primary); margin:0;"><i class="fas fa-list-check"></i> PILIH DATA LANGSIRAN DARI MUAT</h5>
+                            <button class="btn-primary" style="width:auto; padding: 5px 15px; font-size:0.75rem;" onclick="fetchLangsiranQueue()">
+                                <i class="fas fa-sync"></i> REFRESH LIST
+                            </button>
+                        </div>
+                        <div id="langsiran-list" style="max-height: 300px; overflow-y: auto; display:grid; gap:10px;">
+                            <!-- List ditampung di sini -->
+                            <div style="text-align:center; padding:20px; color:var(--text-secondary); font-size:0.85rem;">
+                                <i class="fas fa-spinner fa-spin"></i> Mengambil data dari server...
+                            </div>
+                        </div>
+
+                        <!-- Opsi Langsiran -->
+                        <div id="langsiran-options" style="display:none; margin-top:10px; padding-top:15px; border-top:1px dashed #c4b5fd;">
+                            <div class="form-group" style="flex-direction:row; align-items:center; gap:10px;">
+                                <input type="checkbox" id="chk_langsiran_sama" style="width:20px; height:20px;" onchange="toggleLangsiranSame()">
+                                <label for="chk_langsiran_sama" style="margin:0; text-transform:none; cursor:pointer; font-weight:bold;">Keterangan data sama semua? (Cepat)</label>
+                            </div>
+                            
+                            <!-- Revisi Fields -->
+                            <div id="langsiran-revisi-area" style="display:none; margin-top:15px; background:white; padding:15px; border-radius:12px; border:1px solid #e2e8f0;">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Revisi Jumlah Bag</label>
+                                        <input type="number" class="input-glass" id="rev_bag">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Revisi Netto (Kg)</label>
+                                        <input type="number" class="input-glass" id="rev_netto">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tombol Simpan Spesifik Langsiran (Selalu Terlihat jika Truck Dipilih) -->
+                        <div id="langsiran-save-area" style="display:none; margin-top:20px; border-top:1px dashed #c4b5fd; padding-top:20px;">
+                            <button class="btn-primary" onclick="submitDataToServer()" style="background:var(--accent-primary); width:100%; border-radius:12px; padding:15px; font-weight:bold; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);">
+                                SIMPAN BONGKARAN LANGSIRAN <i class="fas fa-save" style="margin-left:8px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Grid for Arrival / QC -->
+                    <div id="shared-ab-section">
+                        <h5 style="font-family:'Inter'; color:var(--text-secondary); margin-bottom:10px; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">1. FASE ARRIVAL & SCALING</h5>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>AB-Tanggal</label>
+                                <input type="date" class="input-glass focus-target" id="t_ab_tanggal" onchange="validateTimestamps(this); autoFocusNext(this, 't_ab_arrival')">
+                            </div>
+                            <div class="form-group">
+                                <label>AB-Arrival Time</label>
+                                <input type="time" class="input-glass focus-target" id="t_ab_arrival" onchange="validateTimestamps(this); autoFocusNext(this, 't_ab_qc')">
+                            </div>
+                            <div class="form-group">
+                                <label>AB-QC Time 1</label>
+                                <input type="time" class="input-glass focus-target" id="t_ab_qc" onchange="validateTimestamps(this); autoFocusNext(this, 't_pb_tanggal')">
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 style="font-family:'Inter'; color:var(--text-secondary); margin:25px 0 10px 0; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">2. FASE OPERASIONAL GUDANG</h5>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>PB-Tanggal</label>
+                            <input type="date" class="input-glass focus-target" id="t_pb_tanggal" onchange="validateTimestamps(this); autoFocusNext(this, 't_pb_sampai')">
+                        </div>
+                        <div class="form-group">
+                            <label>PB-Sampai Gudang</label>
+                            <input type="time" class="input-glass focus-target" id="t_pb_sampai" onchange="validateTimestamps(this); autoFocusNext(this, 't_pb_start')">
+                        </div>
+                        <div class="form-group">
+                            <label>PB-Start Bongkar</label>
+                            <input type="time" class="input-glass focus-target" id="t_pb_start" onchange="validateTimestamps(this); autoFocusNext(this, 't_pb_hold')">
+                        </div>
+                    </div>
+
+                    <!-- Keterangan Delay Automations -->
+                    <div class="delay-space-container" id="delay-space-box">
+                        <div class="delay-title"><i class="fas fa-exclamation-triangle"></i> Terdeteksi Delay > 2 Jam (Space)</div>
+                        <select class="input-glass" id="t_delay_space" style="background:#fff;">
+                            <option value="">-- Pilih Keterangan Delay --</option>
+                            <option value="Persiapan Space">Persiapan Space</option>
+                            <option value="Tunggu Space">Tunggu Space</option>
+                            <option value="Sopir tidak respon">Sopir tidak respon</option>
+                            <option value="Jam istirahat">Jam istirahat</option>
+                        </select>
+                    </div>
+
+                    <div class="delay-space-container" id="delay-operasional-box" style="border-color:#fca5a5; background:#fef2f2;">
+                        <div class="delay-title" style="color:#dc2626;"><i class="fas fa-exclamation-circle"></i> Terdeteksi Delay > 1 Jam (Operasional)</div>
+                        <select class="input-glass" id="t_delay_operasional" style="background:#fff;">
+                            <option value="">-- Pilih Keterangan Delay --</option>
+                            <option value="Tunggu Kuli">Tunggu Kuli</option>
+                            <option value="Tunggu QC">Tunggu QC</option>
+                            <option value="Tunggu Pallet">Tunggu Pallet</option>
+                            <option value="Forklift Trouble">Forklift Trouble</option>
+                            <option value="Antri Bongkar">Antri Bongkar</option>
+                            <option value="Jam Istirahat">Jam Istirahat</option>
+                        </select>
+                    </div>
+
+                    <div class="form-grid" style="margin-top:15px;">
+                        <div class="form-group">
+                            <label>PB-Hold QC</label>
+                            <input type="time" class="input-glass focus-target" id="t_pb_hold" onchange="validateTimestamps(this); autoFocusNext(this, 't_pb_restart')">
+                        </div>
+                        <div class="form-group">
+                            <label>PB-Restart QC</label>
+                            <input type="time" class="input-glass focus-target" id="t_pb_restart" onchange="validateTimestamps(this); autoFocusNext(this, 't_pb_finish')">
+                        </div>
+                        <div class="form-group">
+                            <label>PB-Finish</label>
+                            <input type="time" class="input-glass focus-target" id="t_pb_finish" onchange="validateTimestamps(this)">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- SECTION 3: DATA PER-TRUCK -->
+            <div class="accordion-item locked" id="sect-truck">
+                <div class="accordion-header" onclick="toggleAccordion('sect-truck')">
+                    <div class="accordion-title">
+                        <div class="acc-icon"><i class="fas fa-truck-loading"></i></div>
+                        <div class="acc-text">
+                            <h3>DATA PER-TRUCK</h3>
+                            <p>Isi unit bongkaran</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-down acc-toggle-icon"></i>
+                </div>
+                <div class="accordion-content">
+                    
+                    <div id="truck-forms-container">
+                        <!-- Truck Form 1 Default -->
+                        <div class="truck-box" style="padding:15px; border:1px dashed var(--border-light); border-radius:15px; background:rgba(255,255,255,0.4); margin-top:15px;">
+                            <h4 style="margin:0 0 15px 0; color:var(--text-secondary); font-size:0.9rem;">UNIT TRUCK 1</h4>
+                            
+                            <!-- Fase Arrival (AB) - Per Truck for Combined Mode -->
+                            <div class="ab-truck-section" style="display:none; background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #cbd5e1;">
+                                <h5 style="margin:0 0 10px 0; font-size:0.75rem; color:#64748b; font-family:'Inter'; text-transform:uppercase; letter-spacing:1px;">Fase Arrival & Scaling (Truck Ini)</h5>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>AB-Tanggal</label>
+                                        <input type="date" class="input-glass trk-ab-tanggal" onchange="validateTimestamps(this)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>AB-Arrival</label>
+                                        <input type="time" class="input-glass trk-ab-arrival" onchange="validateTimestamps(this)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>AB-QC Time</label>
+                                        <input type="time" class="input-glass trk-ab-qc" onchange="validateTimestamps(this)">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Jenis Truck</label>
+                                    <select class="input-glass trk-jenis" onchange="checkRiceBranAlert(this)">
+                                        <option value="Container 20ft">Container 20ft</option>
+                                        <option value="Container 40ft">Container 40ft</option>
+                                        <option value="Fuso">Fuso</option>
+                                        <option value="Tronton">Tronton</option>
+                                        <option value="Colt Diesel">Colt Diesel</option>
+                                        <option value="Gandengan">Gandengan</option>
+                                        <option value="Wing Box">Wing Box</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Material RM</label>
+                                    <select class="input-glass trk-mat" onchange="checkRiceBranAlert(this); handleOtherMaterial(this)">
+                                        <option value="">-- Dimuat dari API --</option>
+                                    </select>
+                                    <input type="text" class="input-glass trk-mat-other" placeholder="Ketik Material & Kode..." style="display:none; margin-top:8px;">
+                                </div>
+                                <div class="form-group">
+                                    <label>Nopol Truck</label>
+                                    <input type="text" class="input-glass trk-nopol" placeholder="B 1234 XX" style="text-transform:uppercase;">
+                                </div>
+                            </div>
+                            
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Jumlah Bag</label>
+                                    <input type="number" class="input-glass trk-bag" placeholder="Jml">
+                                </div>
+                                <div class="form-group">
+                                    <label>Netto (Kg)</label>
+                                    <input type="number" class="input-glass trk-netto" placeholder="Kg">
+                                </div>
+                                <div class="form-group">
+                                    <label>Lokasi Simpan</label>
+                                    <input type="text" class="input-glass trk-lokasi" placeholder="Blok / Area">
+                                </div>
+                            </div>
+                            
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Kuli Penggarap</label>
+                                    <select class="input-glass trk-kuli-type">
+                                        <option value="KULI BORONG">KULI BORONG</option>
+                                        <option value="KULI HARIAN">KULI HARIAN</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Jumlah Kuli</label>
+                                    <input type="number" class="input-glass trk-jml-kuli" value="1" min="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-secondary" style="width:100%; margin-top:15px; border-style:dashed;" onclick="addAnotherTruck()">
+                        <i class="fas fa-plus"></i> TAMBAH TRUCK LAIN (BONGKARAN BARENG)
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- SUBMIT BIG BUTTON -->
+            <button class="btn-primary" onclick="submitDataToServer()" id="btn-final-submit" style="opacity:0.5; pointer-events:none;">
+                SINKRONISASI DATA KE GOOGLE SHEETS <i class="fas fa-cloud-upload-alt"></i>
+            </button>
+
+        </main>
+    </div>
+
+    <!-- ===== JAVASCRIPT LOGIC ===== -->
+    <script>
+        // --- 1. CORE AUTH & STATE ---
+        let currentUser = "";
+        let activeKuliData = [];
+        let fetchedMaterials = [];
+
+        // Data Kuli Hardcode dari referensi
+        const TIM_KULI = {
+            'BADRUN': ['BADRUN', 'QODIR', 'TEDI', 'JUMARI', 'ROSID', 'SARIP', 'SITA', 'NANTO', 'JUANDI', 'USMAN'],
+            'KARTONO': ['KARTONO', 'AREDI', 'TALIB', 'SELAMET', 'WARYONO', 'YANI', 'YITNO', 'WASTA', 'KASNA', 'IBROHIM'],
+            'SAHLAN': ['AKROM', 'DARDA', 'MUKROMIN', 'MULYADI', 'REYNALDI', 'RIQI', 'SAHLAN', "SYAFI'I", 'SYARIPUDIN'],
+            'WAWAN': ['ABDUROHIM', 'AM MAARIF', 'CALIYA', 'HASAN BISRI', 'MASEDI', 'MUHAMMAD ALAN MAULANA', 'MUKSIN', 'SUHERMAN', 'WAWAN GUNAWAN'],
+            'SURYANA': ['ABDUL WAHAB', 'GILANG RAMADHAN', 'HARUN RASYID', 'MAMAN SURAHMAN', 'MIDRO', 'MISTO', 'SALEH SUDIANA', 'SUMADI', 'SURYANA']
+        };
+
+        window.onload = function() {
+            // Check session
+            currentUser = sessionStorage.getItem('dt_v2_user');
+            if(!currentUser) {
+                window.location.href = 'rm-dt-v2.html';
+                return;
+            }
+            
+            document.getElementById('display-username').innerText = currentUser;
+            
+            // Remove barrier smoothly
+            setTimeout(() => {
+                document.getElementById('login-barrier').style.opacity = '0';
+                document.getElementById('app-wrapper').style.display = 'flex';
+                setTimeout(() => document.getElementById('login-barrier').style.display = 'none', 500);
+                
+                initSetupSequence();
+            }, 800);
+
+            // Start Live Clock
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('time-widget').innerText = now.toLocaleString('id-ID', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit', second:'2-digit' });
+            }, 1000);
+            
+            // Fetch API for materials
+            fetchMaterialsFromAPI();
+        };
+
+        // --- 2. SETUP & ABSENSI LOGIC ---
+        function initSetupSequence() {
+            if(currentUser !== 'ARIF') {
+                document.getElementById('absensi-wrapper').style.display = 'none';
+            } else {
+                renderAbsensi(); 
+            }
+
+            const cachedSetup = localStorage.getItem('RM01_SETUP_ACTIVE');
+            let isSetupValid = false;
+
+            if (cachedSetup) {
+                const setupObj = JSON.parse(cachedSetup);
+                const now = new Date();
+                const expireDate = new Date(setupObj.expireTimestamp);
+
+                if (now < expireDate) {
+                    isSetupValid = true;
+                    applySetupToUI(setupObj);
+                    unlockAccordion('sect-durasi');
+                    document.getElementById('setup-status-text').innerHTML = `<span style="color:var(--success); font-weight:bold;">✅ Setup Aktif (Sesi ${setupObj.jamMulai} - ${setupObj.jamSelesai})</span>`;
+                    
+                    document.getElementById('sect-setup').querySelector('.accordion-header').classList.remove('active');
+                    document.getElementById('sect-durasi').querySelector('.accordion-header').classList.add('active');
+                } else {
+                    localStorage.removeItem('RM01_SETUP_ACTIVE'); 
+                }
+            }
+
+            if (!isSetupValid && currentUser !== 'ARIF') {
+                document.getElementById('access-denied-overlay').style.display = 'flex';
+                document.getElementById('app-wrapper').style.filter = 'blur(10px)';
+                document.getElementById('app-wrapper').style.pointerEvents = 'none';
+            }
+        }
+
+        function renderAbsensi() {
+            if(currentUser !== 'ARIF') return;
+            
+            const sloc = document.getElementById('cfg_sloc').value;
+            const timBorong = document.getElementById('cfg_tim_borong').value;
+            const timHarian = document.getElementById('cfg_tim_harian').value;
+            const container = document.getElementById('absensi-list-container');
+            
+            let html = '';
+            activeKuliData = [];
+
+            if(sloc === 'RW01') {
+                document.getElementById('cfg_tim_borong').closest('.form-group').style.display = 'none';
+                document.getElementById('cfg_tim_harian').closest('.form-group').style.display = 'none';
+                
+                html = `
+                    <div style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin:15px 0 10px 0;">TIM KHUSUS - RW01</div>
+                    <div class="kuli-grid">
+                        <div class="kuli-badge checked" style="cursor:not-allowed; opacity:0.8;">
+                            <i class="fas fa-lock check-icon"></i>
+                            <span class="kuli-name">BURUH LEPAS</span>
+                        </div>
+                    </div>
+                `;
+                activeKuliData.push({ nama: "BURUH LEPAS", kategori: "LEPAS", tim: "RW01", status: "H" });
+            } else {
+                document.getElementById('cfg_tim_borong').closest('.form-group').style.display = 'flex';
+                document.getElementById('cfg_tim_harian').closest('.form-group').style.display = 'flex';
+
+                const generateKuliHTML = (timName, kategori) => {
+                    let htmlStr = `<div style="font-size:0.8rem; font-weight:700; color:var(--text-secondary); margin:15px 0 10px 0;">TIM ${kategori} - ${timName}</div><div class="kuli-grid">`;
+                    const list = TIM_KULI[timName] || [];
+                    list.forEach(nama => {
+                        const idSafe = nama.replace(/ /g, '_');
+                        activeKuliData.push({ nama, kategori, tim: timName, status: 'H' });
+                        htmlStr += `
+                            <div class="kuli-badge checked" id="kuli_${idSafe}" onclick="toggleKuli(this, '${nama}')">
+                                <i class="fas fa-check-circle check-icon"></i>
+                                <span class="kuli-name">${nama}</span>
+                            </div>
+                        `;
+                    });
+                    htmlStr += `</div>`;
+                    return htmlStr;
+                };
+
+                if(timBorong) html += generateKuliHTML(timBorong, "BORONG");
+                if(timHarian) html += generateKuliHTML(timHarian, "HARIAN");
+            }
+
+            container.innerHTML = html;
+        }
+
+        function toggleKuli(el, nama) {
+            const isChecked = el.classList.contains('checked');
+            if(isChecked) {
+                el.classList.replace('checked', 'unchecked');
+            } else {
+                el.classList.replace('unchecked', 'checked');
+            }
+
+            // Update state array
+            const idx = activeKuliData.findIndex(k => k.nama === nama);
+            if(idx !== -1) {
+                activeKuliData[idx].status = isChecked ? 'A' : 'H';
+            }
+        }
+
+        function saveSetupLokal() {
+            // Automation Jam Shift Pagi (07:00-18:59) / Malam (19:00-06:59)
+            const now = new Date();
+            const currentHour = now.getHours();
+            
+            let mulai = "";
+            let selesai = "";
+            let expireDate = new Date();
+
+            if (currentHour >= 7 && currentHour < 19) {
+                // Shift Pagi
+                mulai = "07:00";
+                selesai = "18:59";
+                expireDate.setHours(18, 59, 59, 999);
+            } else {
+                // Shift Malam
+                mulai = "19:00";
+                selesai = "06:59";
+                
+                // Jika saat ini di bawah jam 7 pagi, berarti expire hari INI jam 06:59
+                // Jika di atas jam 19, expire BESOK jam 06:59
+                if(currentHour >= 19) {
+                    expireDate.setDate(expireDate.getDate() + 1);
+                }
+                expireDate.setHours(6, 59, 59, 999);
+            }
+
+            const setupObj = {
+                action: "saveSetup",
+                shift: document.getElementById('cfg_shift').value,
+                sloc: document.getElementById('cfg_sloc').value,
+                koordinator: document.getElementById('cfg_koordinator').value,
+                samplingMan: document.getElementById('cfg_sampling_man').value,
+                timBorong: document.getElementById('cfg_tim_borong').value,
+                timHarian: document.getElementById('cfg_tim_harian').value,
+                jamMulai: mulai,
+                jamSelesai: selesai,
+                expireTimestamp: expireDate.getTime(),
+                absensi: activeKuliData
+            };
+
+            localStorage.setItem('RM01_SETUP_ACTIVE', JSON.stringify(setupObj));
+            
+            Swal.fire({
+                title: 'Menyimpan Setup...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbzJZyOdP5PwNlZzJxlaUtcq8mwFAblDOxbi06F3t-6BjHLjDKTYo5gvV06EcnIpG4sG/exec';
+            
+            fetch(scriptURL, {
+                method: 'POST',
+                body: JSON.stringify(setupObj)
+            }).then(r => r.json()).then(data => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sip! Tersimpan',
+                    text: 'Setup siap digunakan. Silakan lanjut isi durasi.',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    unlockAccordion('sect-durasi');
+                    toggleAccordion('sect-durasi'); // Open Section 2
+                });
+            }).catch(e => {
+                Swal.fire('Offline Mode', 'Setup tersimpan lokal (Gagal ke cloud)', 'warning').then(() => {
+                    unlockAccordion('sect-durasi');
+                    toggleAccordion('sect-durasi');
+                });
+            });
+        }
+
+        function applySetupToUI(obj) {
+            document.getElementById('cfg_shift').value = obj.shift;
+            document.getElementById('cfg_sloc').value = obj.sloc;
+            document.getElementById('cfg_koordinator').value = obj.koordinator;
+            document.getElementById('cfg_sampling_man').value = obj.samplingMan;
+            document.getElementById('cfg_tim_borong').value = obj.timBorong;
+            document.getElementById('cfg_tim_harian').value = obj.timHarian;
+            document.getElementById('cfg_jam_mulai').value = obj.jamMulai;
+            document.getElementById('cfg_jam_selesai').value = obj.jamSelesai;
+        }
+
+        // --- 3. ACCORDION & UX LOGIC ---
+        function toggleAccordion(id) {
+            const el = document.getElementById(id);
+            if(el.classList.contains('locked')) return; // Cannot open locked
+
+            const header = el.querySelector('.accordion-header');
+            
+            // To emulate true accordion, close others if opened (optional)
+            // document.querySelectorAll('.accordion-header').forEach(h => {
+            //    if(h !== header) h.classList.remove('active');
+            // });
+
+            header.classList.toggle('active');
+        }
+
+        function unlockAccordion(id) {
+            document.getElementById(id).classList.remove('locked');
+            checkFinalSubmitUnlock();
+        }
+
+        function toggleTipeBongkaran() {
+            const tipe = document.getElementById('inp_tipe_bongkaran').value;
+            const sharedSection = document.getElementById('shared-ab-section');
+            const truckSections = document.querySelectorAll('.ab-truck-section');
+
+            if(tipe === "Bareng") {
+                sharedSection.style.display = 'none';
+                truckSections.forEach(s => s.style.display = 'block');
+                // Optional: Clear shared inputs if moving to bareng to avoid confusion
+                // document.getElementById('t_ab_tanggal').value = '';
+                // document.getElementById('t_ab_arrival').value = '';
+                // document.getElementById('t_ab_qc').value = '';
+            } else {
+                sharedSection.style.display = 'block';
+                truckSections.forEach(s => s.style.display = 'none');
+            }
+            checkDurasiLengkap();
+        }
+
+        function autoFocusNext(currentEl, nextId) {
+            if(currentEl.value !== "") {
+                const nextEl = document.getElementById(nextId);
+                if(nextEl) setTimeout(() => nextEl.focus(), 100);
+            }
+        }
+
+        // --- 4. TIMESTAMPS & DELAY LOGIC ---
+        function timeToMinutes(timeStr) {
+            if(!timeStr) return 0;
+            const [h, m] = timeStr.split(':').map(Number);
+            return (h * 60) + m;
+        }
+
+        function getDateTimeMs(dateId, timeId, contextEl = null) {
+            let dValue, tValue;
+            if(contextEl && dateId.includes('t_ab_')) {
+                // If context is provided and it's an AB field, try to find it in the truck box
+                const box = contextEl.closest('.truck-box');
+                const tipe = document.getElementById('inp_tipe_bongkaran').value;
+                if(box && tipe === "Bareng") {
+                    const classMapping = {
+                        't_ab_tanggal': 'trk-ab-tanggal',
+                        't_ab_arrival': 'trk-ab-arrival',
+                        't_ab_qc': 'trk-ab-qc'
+                    };
+                    const targetClass = classMapping[dateId] || dateId;
+                    const timeClass = classMapping[timeId] || timeId;
+                    const dInp = box.querySelector('.' + targetClass);
+                    const tInp = box.querySelector('.' + timeClass);
+                    dValue = dInp ? dInp.value : "";
+                    tValue = tInp ? tInp.value : "";
+                } else {
+                    dValue = document.getElementById(dateId) ? document.getElementById(dateId).value : "";
+                    tValue = document.getElementById(timeId) ? document.getElementById(timeId).value : "";
+                }
+            } else {
+                dValue = document.getElementById(dateId) ? document.getElementById(dateId).value : "";
+                tValue = document.getElementById(timeId) ? document.getElementById(timeId).value : "";
+            }
+            
+            if(!dValue || !tValue) return null;
+            return new Date(`${dValue}T${tValue}:00`).getTime();
+        }
+
+        function validateTimestamps(el) {
+            const tipe = document.getElementById('inp_tipe_bongkaran').value;
+            const box = el.closest('.truck-box');
+
+            // 1. Evaluasi Tanggal Mutlak
+            let d1;
+            if (tipe === "Bareng" && box) {
+                const dInp = box.querySelector('.trk-ab-tanggal');
+                d1 = dInp ? dInp.value : "";
+            } else {
+                d1 = document.getElementById('t_ab_tanggal').value;
+            }
+            
+            const d2 = document.getElementById('t_pb_tanggal').value;
+            if (d1 && d2) {
+                if(new Date(d2) < new Date(d1)) {
+                    Swal.fire('Tanggal Mundur!', 'PB-Tanggal tidak boleh lebih awal dari AB-Tanggal.', 'error');
+                    el.value = "";
+                    return;
+                }
+            }
+
+            // 2. Logika Urut Kronologis Waktu
+            const seq = [
+                {d: 't_ab_tanggal', t: 't_ab_arrival', name: 'AB Arrival Time'},
+                {d: 't_ab_tanggal', t: 't_ab_qc', name: 'AB QC Time'},
+                {d: 't_pb_tanggal', t: 't_pb_sampai', name: 'PB Sampai Gudang'},
+                {d: 't_pb_tanggal', t: 't_pb_start', name: 'PB Start Bongkar'},
+                {d: 't_pb_tanggal', t: 't_pb_hold', name: 'PB Hold QC'},
+                {d: 't_pb_tanggal', t: 't_pb_restart', name: 'PB Restart QC'},
+                {d: 't_pb_tanggal', t: 't_pb_finish', name: 'PB Finish'}
+            ];
+
+            let lastValidTime = null;
+            let lastValidName = "";
+
+            for(let i=0; i<seq.length; i++) {
+                const item = seq[i];
+                // Pass el as context to getDateTimeMs
+                let ms = getDateTimeMs(item.d, item.t, el);
+                
+                if(ms) {
+                    if(lastValidTime && ms < lastValidTime) {
+                        let nextDayMs = ms + (24 * 60 * 60 * 1000);
+                        if (nextDayMs >= lastValidTime && (nextDayMs - lastValidTime) <= (16 * 60 * 60 * 1000)) {
+                            ms = nextDayMs;
+                        } else {
+                            Swal.fire('Urutan Waktu Salah', `Waktu ${item.name} secara logika tidak wajar / terdeteksi mundur dari waktu ${lastValidName}.`, 'error');
+                            el.value = ""; 
+                            return; 
+                        }
+                    }
+                    lastValidTime = ms;
+                    lastValidName = item.name;
+                }
+            }
+
+            // Delay checks (Header Fields)
+            const abQC1 = (tipe === "Bareng" && box) ? box.querySelector('.trk-ab-qc').value : document.getElementById('t_ab_qc').value;
+            const pbSampai = document.getElementById('t_pb_sampai').value;
+            const pbStart = document.getElementById('t_pb_start').value;
+
+            if(abQC1 && pbSampai) {
+                const diffSpace = timeToMinutes(pbSampai) - timeToMinutes(abQC1);
+                let actualDiff1 = diffSpace < 0 ? (1440 + diffSpace) : diffSpace;
+                const spaceBox = document.getElementById('delay-space-box');
+                if(actualDiff1 > 120) spaceBox.style.display = 'block';
+                else { spaceBox.style.display = 'none'; document.getElementById('t_delay_space').value = ""; }
+            }
+
+            if(pbSampai && pbStart) {
+                const diffOps = timeToMinutes(pbStart) - timeToMinutes(pbSampai);
+                let actualDiff2 = diffOps < 0 ? (1440 + diffOps) : diffOps;
+                const opsBox = document.getElementById('delay-operasional-box');
+                if(actualDiff2 > 60) opsBox.style.display = 'block';
+                else { opsBox.style.display = 'none'; document.getElementById('t_delay_operasional').value = ""; }
+            }
+
+            checkDurasiLengkap();
+        }
+
+        function checkDurasiLengkap() {
+            const tipe = document.getElementById('inp_tipe_bongkaran').value;
+            const pbFields = ['t_pb_tanggal','t_pb_sampai','t_pb_start','t_pb_hold','t_pb_restart','t_pb_finish'];
+            const abFields = ['t_ab_tanggal','t_ab_arrival','t_ab_qc'];
+            
+            let allFilled = true;
+            pbFields.forEach(id => {
+                if(!document.getElementById(id).value) allFilled = false;
+            });
+
+            if(tipe !== "Bareng") {
+                abFields.forEach(id => {
+                    if(!document.getElementById(id).value) allFilled = false;
+                });
+            }
+
+            if(allFilled) {
+                const sect = document.getElementById('sect-truck');
+                if(sect.classList.contains('locked')) {
+                    unlockAccordion('sect-truck');
+                    document.getElementById('sect-durasi').querySelector('.accordion-header').classList.remove('active');
+                    sect.querySelector('.accordion-header').classList.add('active');
+                }
+            }
+        }
+
+        // --- 5. DATA TRUCK LOGIC ---
+        function addAnotherTruck() {
+            const container = document.getElementById('truck-forms-container');
+            const count = container.querySelectorAll('.truck-box').length + 1;
+            const tipe = document.getElementById('inp_tipe_bongkaran').value;
+            
+            const firstBox = container.querySelector('.truck-box');
+            const clone = firstBox.cloneNode(true);
+            
+            clone.querySelectorAll('input').forEach(inp => {
+                inp.value = '';
+                if(inp.classList.contains('trk-mat-other')) inp.style.display = 'none';
+            });
+            clone.querySelector('.trk-jml-kuli').value = '1';
+            clone.querySelector('h4').innerText = 'UNIT TRUCK ' + count;
+            
+            // Adjust AB section visibility for the new clone
+            const abSection = clone.querySelector('.ab-truck-section');
+            if(tipe === "Bareng") abSection.style.display = 'block';
+            else abSection.style.display = 'none';
+
+            container.appendChild(clone);
+        }
+
+        function handleOtherMaterial(selectEl) {
+            const box = selectEl.closest('.form-group');
+            const otherInput = box.querySelector('.trk-mat-other');
+            if(selectEl.value === "OTHER") {
+                otherInput.style.display = 'block';
+            } else {
+                otherInput.style.display = 'none';
+                otherInput.value = '';
+            }
+        }
+
+        function fetchMaterialsFromAPI() {
+            const staticMaterials = [
+                "Copper Sulphate (81004)", "Allplex B (81030)", "Vitamin - C/EC (Coated) (82010)", "Coxictac 12% (83010)",
+                "Elancoban / Rumensin / Poulcox(83013)", "Nicarbazine (83025)", "SACOX (83028)", "Monteban 45 (83043)",
+                "Maxus 200 (83044)", "Bacitracin Methylen Disalicylate 110 ppm (83049)", "Sodium Bicarbonate (I) (505100)",
+                "MDCP/MCP 21 % (I) (506100)", "DL-Meth./Rhodimet/Met Amino Powder (I) (601100)",
+                "Alimet / MHA / Rhodimet AT88 (I) (603100)", "L-LYSINE SULPHATE  ( I ) (605101)",
+                "L-Lysine Sulphate (L) (605201)", "L-Lysine (L/I) HCL (605300)", "L-Lysine Sulphate (L/I) (605301)",
+                "TRYPTOPHAN 98 % ( I ) (606101)", "Choline Chloride Liquid (I) (608100)",
+                "Mold Inhibitor Powder/Feed Curb Dry(L/I) (609300)", "PH 7 (612301)",
+                "Santoquin / Ethoxiquin Liquid (I) (613100)", "Larvadex / Larvacide 10% (L/I) (621300)",
+                "L-Threonine (I) (628100)", "Fungex-MaxiMils/Preserve (L/I) (630300)", "Tartrazine (635300)",
+                "XAMACOL (638301)", "Hostazyme X15000 EPU (643301)", "CIBENZA DP100 PROTEASE NOVUS (644107)",
+                "HYPHOS GT 20.000 (L/I) (647304)", "Pro Grow Powder (654201)", "Herbs R & D (654205)", "Termin 8 (658300)",
+                "Betaine (661100)", "Nu-Bond Plus (665201)", "VALINE  (I) (672100)", "Quixalud (676300)",
+                "Nuvem (R&D) (677201)", "Cozante (Herb-Kemin) L/I (677302)", "Butipearl (Kemin) Ca Butyarate (683301)",
+                "Hemicell-HT (685300)", "ISOLEUCINE 98.5% (689100)", "ISOLEUCINE 98.5% (L/I) (689300)",
+                "Lecithin oil (I) (706100)", "Premix Y1ABM (900200)", "Y2DM (905200)", "Premix Y3D (907200)",
+                "VB/SL (921200)", "VBBR (922200)", "Premix Sel Mix (933200)", "Molases (414200)", "COCCIGUARD (677310)",
+                "GUTPROTECT (654209)", "LIGNOBON (616300)", "CYGRO 1% / YUMAMYCIN % (83011)",
+                "HYPORIUS 10 (L/I) (647308)", "L-Threonine (L/I) (628300)", "AVATEC (83004)", "AVIAX (83005)",
+                "ROBENIDINE (83053)", "CLINACOX 0.5% / COXIRIL (83007)", "PHYLINK (646306)", "L-LYSINE HCL I (605100)",
+                "MAXIBAN (83051)", "SODIUM BICARBONATE L/I (505300)", "PRO GROW 2 ( NUGEN ) (654203)",
+                "DL-Meth./Rhodimet Powder (L/I) (601300)", "MCP 22.7% ( I ) (507100)", "VITAMIN E 5% (82012)",
+                "AVIAX PLUS (83056)", "MCP 22.7% ( L/I) (507300)", "ARGININE ( L/I ) (679301)", "ARGININE (679101)",
+                "COPPER SULPHATE 25%MNC (85004)", "Y3DMC (909200)", "CGM U.S.A ( I ) (210100)", "CGM CHINA (210101)",
+                "CGM LOKAL (210200)", "CGM U.S.A ( L/I ) (210300)", "DDGS (I) (228100)", "DDGS (L/I) (228300)",
+                "FULLFAT (241300)", "MBM ( I ) (301100)", "MBM ( L/I ) (301300)", "CFM LOKAL (304200)",
+                "BROKEN CORN (101224)", "RICE BRAN (401200)", "BROKEN RICE (403200)", "WHEAT BRAN (405200)",
+                "WHEAT FLOUR ( L ) (406200)", "CASSAVA (410200)", "PALM KARNEL MEAL (412200)",
+                "PALM KARNEL MEAL FATTY (412204)", "BREAD CRUMBS/PANIR (417202)", "CORN COB MEAL / TUMPI (418200)",
+                "BROWN MEAL (424200)", "GREEN LEAF POWDER (425200)", "CORN GERM (435201)",
+                "LIME STONE CHIP MEDIUM (502201)", "LIME STONE COARSER ( L ) (503201)", "SALT (504200)",
+                "BINDER (512200)", "NOODLE MEAL (430200)", "WHEAT FLOUR INDUSTRY ( L ) (407200)",
+                "COOKIE MEAL (417201)", "CORN GLUTEN FEED (232200)", "LIME STONE FINE (503200)",
+                "CANOLA MEAL ( L/I ) (206300)"
+            ];
+
+            const sel = document.querySelectorAll('.trk-mat');
+            sel.forEach(s => {
+                const currentVal = s.value;
+                s.innerHTML = '<option value="">-- Pilih Material --</option>';
+                staticMaterials.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.text = m;
+                    s.appendChild(opt);
+                });
+                s.innerHTML += '<option disabled>----------------------</option>';
+                s.innerHTML += '<option value="OTHER">--- OTHER (Input Manual) ---</option>';
+                s.value = currentVal;
+            });
+        }
+
+        // --- NEW: BONGKARAN LANGSIRAN LOGIC ---
+        function toggleTipeBongkaran() {
+            const tipe = document.getElementById('inp_tipe_bongkaran').value;
+            const container = document.getElementById('truck-forms-container');
+            const lSection = document.getElementById('langsiran-section');
+            const opArea = document.getElementById('sect-durasi');
+
+            if (tipe === "Langsiran") {
+                if(container) container.style.display = 'none';
+                lSection.style.display = 'block';
+                fetchLangsiranQueue();
+            } else {
+                container.style.display = 'block';
+                lSection.style.display = 'none';
+                
+                // Reset form kuli/truck
+                if(trucks.length === 0) {
+                    addTruck();
+                } else if(tipe === "1 Jenis" && trucks.length > 1) {
+                    trucks = trucks.slice(0, 1);
+                    renderTrucks();
+                } else if(tipe === "Bareng") {
+                    renderTrucks();
+                }
+            }
+        }
+
+        async function fetchLangsiranQueue() {
+            const list = document.getElementById('langsiran-list');
+            list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Menghubungkan ke server muatan...</div>';
+            
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbzJZyOdP5PwNlZzJxlaUtcq8mwFAblDOxbi06F3t-6BjHLjDKTYo5gvV06EcnIpG4sG/exec';
+            
+            try {
+                const res = await fetch(scriptURL + '?action=getPendingLangsiran');
+                if (!res.ok) throw new Error('Server Return status: ' + res.status);
+                
+                const data = await res.json();
+                console.log("Langsiran Data:", data);
+                
+                if (data && Array.isArray(data) && data.length > 0) {
+                    list.innerHTML = '';
+                    data.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'langsiran-card';
+                        card.style = 'background:white; border:1px solid #e2e8f0; border-radius:12px; padding:15px; cursor:pointer; transition:all 0.3s; position:relative; margin-bottom:10px;';
+                        card.innerHTML = `
+                            <div style="font-weight:bold; font-size:1.1rem; color:var(--accent-primary);">${item.nopol || 'NO NOPOL'}</div>
+                            <div style="font-size:0.85rem; color:var(--text-secondary); margin-top:5px;">
+                                <i class="fas fa-box"></i> ${item.material || '-'}<br>
+                                <i class="fas fa-calendar"></i> ${item.tanggal || '-'} &nbsp; <i class="fas fa-clock"></i> Muat: ${item.jam_muat || '-'}
+                            </div>
+                            <div style="font-size:0.75rem; background:#f1f5f9; padding:2px 8px; border-radius:5px; display:inline-block; margin-top:8px;">
+                                Shift: ${item.shift_muat || '-'} | Asal: ${item.gudang_asal || 'Gudang RM'}
+                            </div>
+                        `;
+                        card.onclick = () => selectLangsiran(item, card);
+                        list.appendChild(card);
+                    });
+                } else {
+                    list.innerHTML = `
+                        <div style="text-align:center; padding:20px; color:var(--text-secondary);">
+                            <i class="fas fa-info-circle"></i> Tidak ada antrean muatan.<br>
+                            <span style="font-size:0.7rem;">(Pastikan sudah ada data di sheet DATA_MUATAN yang kolom Status Validasi-nya masih kosong)</span>
+                        </div>`;
+                }
+            } catch (e) {
+                console.error("Fetch Error:", e);
+                list.innerHTML = '<div style="text-align:center; padding:20px; color:#ef4444;"><i class="fas fa-triangle-exclamation"></i> Gagal ambil data.<br><small>' + e.message + '</small></div>';
+            }
+        }
+
+        let selectedLangsiran = null;
+
+        function selectLangsiran(item, el) {
+            document.querySelectorAll('.langsiran-card').forEach(c => {
+                c.style.borderColor = '#e2e8f0';
+                c.style.background = 'white';
+            });
+            el.style.borderColor = 'var(--accent-primary)';
+            el.style.background = '#f5f3ff';
+
+            selectedLangsiran = item;
+            document.getElementById('langsiran-options').style.display = 'block';
+            document.getElementById('langsiran-save-area').style.display = 'block';
+            document.getElementById('rev_bag').value = item.jumlah_bag;
+            document.getElementById('rev_netto').value = item.netto;
+
+            // Auto-fill PB Date for consistency
+            document.getElementById('t_pb_tanggal').value = item.tanggal;
+
+            toggleLangsiranSame();
+        }
+
+        function toggleLangsiranSame() {
+            const tipe = document.getElementById('inp_tipe_bongkaran').value;
+            const isSame = document.getElementById('chk_langsiran_sama').checked;
+            const revisiArea = document.getElementById('langsiran-revisi-area');
+            const dataSect = document.getElementById('sect-truck');
+            
+            // Phase elements to lock
+            const phase1 = document.getElementById('shared-ab-section');
+            const pbTanggalInput = document.getElementById('t_pb_tanggal').closest('.form-group');
+            const pbSampaiInput = document.getElementById('t_pb_sampai').closest('.form-group');
+            const pbHoldInput = document.getElementById('t_pb_hold').closest('.form-group');
+            const pbRestartInput = document.getElementById('t_pb_restart').closest('.form-group');
+
+            // --- STANDARD UNTUK SEMUA LANGSIRAN ---
+            if (tipe === "Langsiran") {
+                if(phase1) phase1.style.display = 'none';
+                if(pbTanggalInput) pbTanggalInput.style.display = 'none';
+                if(pbSampaiInput) pbSampaiInput.style.display = 'none';
+                if(pbHoldInput) pbHoldInput.style.display = 'none';
+                if(pbRestartInput) pbRestartInput.style.display = 'none';
+            }
+
+            if (isSame) {
+                revisiArea.style.display = 'none';
+                dataSect.style.display = 'none'; 
+            } else {
+                revisiArea.style.display = 'block';
+                dataSect.style.display = 'block';
+                dataSect.classList.remove('locked');
+                
+                // Prefill truck data for revision
+                const nopolField = document.querySelector('.trk-nopol');
+                const matField = document.querySelector('.trk-mat');
+                const bagField = document.querySelector('.trk-bag');
+                const nettoField = document.querySelector('.trk-netto');
+                
+                if(nopolField && selectedLangsiran) nopolField.value = selectedLangsiran.nopol;
+                if(matField && selectedLangsiran) matField.value = selectedLangsiran.material;
+                if(bagField && selectedLangsiran) bagField.value = selectedLangsiran.jumlah_bag;
+                if(nettoField && selectedLangsiran) nettoField.value = selectedLangsiran.netto;
+
+                checkFinalSubmitUnlock();
+            }
+        }
+
+        function checkRiceBranAlert(inputElem) {
+            const box = inputElem.closest('.truck-box');
+            const jenis = box.querySelector('.trk-jenis').value;
+            const mat = box.querySelector('.trk-mat').value;
+
+            if(mat === "RICE BRAN (401200)" && jenis !== "Colt Diesel") {
+                Swal.fire({
+                    icon: 'question',
+                    title: 'Verifikasi Jenis Truck',
+                    text: 'Material RICE BRAN dipilih. Yakin ini BUKAN truck Colt Diesel?',
+                    confirmButtonText: 'Ya, Lanjutkan',
+                    confirmButtonColor: '#0ea5e9'
+                });
+            }
+        }
+
+        // --- 6. FINAL SUBMISSION ---
+        function checkFinalSubmitUnlock() {
+            const t = document.getElementById('sect-truck');
+            if(!t.classList.contains('locked')) {
+                const btn = document.getElementById('btn-final-submit');
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            }
+        }
+
+        function submitDataToServer() {
+            const tipe = document.getElementById('inp_tipe_bongkaran').value;
+
+            // PRE-SUBMIT VALIDATION: Semua wajib diisi (kecuali Netto)
+            if (tipe === "Langsiran") {
+                // HANYA START DAN FINISH WAJIB UNTUK SEMUA MODE LANGSIRAN
+                if (!document.getElementById('t_pb_start').value || !document.getElementById('t_pb_finish').value) {
+                    Swal.fire('Data Waktu Belum Lengkap', 'PB-Start Bongkar dan PB-Finish wajib diisi.', 'warning');
+                    return;
+                }
+            } else {
+                const pbVars = ['t_pb_tanggal','t_pb_sampai','t_pb_start','t_pb_hold','t_pb_restart','t_pb_finish'];
+                for(let id of pbVars) {
+                    if(!document.getElementById(id).value) {
+                        Swal.fire('Data Waktu Belum Lengkap', 'Seluruh kolom waktu Durasi Operasional Gudang wajib diisi penuh.', 'warning');
+                        return;
+                    }
+                }
+                if(tipe !== "Bareng" && tipe !== "Langsiran") {
+                    const abVars = ['t_ab_tanggal', 't_ab_arrival', 't_ab_qc'];
+                    for(let id of abVars) {
+                        if(!document.getElementById(id).value) {
+                            Swal.fire('Data Arrival Belum Lengkap', 'Seluruh kolom waktu Arrival & Scaling wajib diisi penuh.', 'warning');
+                            return;
+                        }
+                    }
+                }
+            }
+
+            if(document.getElementById('delay-space-box').style.display === 'block' && !document.getElementById('t_delay_space').value) {
+                Swal.fire('Keterangan Delay Space', 'Anda harus memilih alasan Delay > 2 Jam.', 'warning'); return;
+            }
+            if(document.getElementById('delay-operasional-box').style.display === 'block' && !document.getElementById('t_delay_operasional').value) {
+                Swal.fire('Keterangan Delay Operasional', 'Anda harus memilih alasan Delay > 1 Jam.', 'warning'); return;
+            }
+
+            const trucks = [];
+            let isTruckValid = true;
+            document.querySelectorAll('.truck-box').forEach((box, i) => {
+                const jns = box.querySelector('.trk-jenis').value;
+                let mat = box.querySelector('.trk-mat').value;
+                const matOther = box.querySelector('.trk-mat-other').value;
+                const bag = box.querySelector('.trk-bag').value;
+                const nopol = box.querySelector('.trk-nopol').value;
+                const lokasi = box.querySelector('.trk-lokasi').value;
+                
+                // AB Info context aware
+                let abTgl, abArr, abQc;
+                if(tipe === "Bareng") {
+                    abTgl = box.querySelector('.trk-ab-tanggal').value;
+                    abArr = box.querySelector('.trk-ab-arrival').value;
+                    abQc = box.querySelector('.trk-ab-qc').value;
+                    if(!abTgl || !abArr || !abQc) {
+                        Swal.fire('Data Arrival Truck ' + (i+1) + ' Belum Lengkap', 'Setiap truck harus memiliki data Arrival & Scaling jika tipe Bongkaran Bareng.', 'warning');
+                        isTruckValid = false;
+                        return;
+                    }
+                } else {
+                    abTgl = document.getElementById('t_ab_tanggal').value;
+                    abArr = document.getElementById('t_ab_arrival').value;
+                    abQc = document.getElementById('t_ab_qc').value;
+                }
+
+                if(!jns || !mat || !bag || !nopol || !lokasi) {
+                    isTruckValid = false;
+                }
+                if(mat === "OTHER") {
+                    if(!matOther) isTruckValid = false;
+                    mat = matOther; 
+                }
+
+                trucks.push({
+                    jenisTruck: jns,
+                    materialRM: mat,
+                    jumlahBag: bag,
+                    nopol: nopol.toUpperCase(),
+                    netto: box.querySelector('.trk-netto').value, // Boleh Kosong
+                    lokasiSimpan: lokasi,
+                    kuliPenggarap: box.querySelector('.trk-kuli-type').value,
+                    jumlahKuli: box.querySelector('.trk-jml-kuli').value,
+                    abTanggal: abTgl,
+                    abArrival: abArr,
+                    abQc: abQc
+                });
+            });
+
+            if(!isTruckValid) {
+                if(tipe !== "Bareng") Swal.fire('Data Truck Belum Lengkap', 'Harap isi semua kolom wajib untuk setiap truck.', 'warning');
+                return;
+            }
+
+            // PENGINGAT NETTO KOSONG (SMART CHECK)
+            let isNettoKosong = trucks.some(t => !t.netto || t.netto.trim() === "");
+            if(isNettoKosong) {
+                Swal.fire({
+                    title: 'Bongkaran Tanpa Netto ?',
+                    html: 'Ada data <b>Netto (Kg)</b> yang masih kosong!<br>Sistem bisa menyimpannya secara parsial dan Bapak bisa melengkapinya nanti.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0ea5e9',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: '<i class="fas fa-satellite-dish"></i> Ya, Lanjut Simpan',
+                    cancelButtonText: 'Batal, Ingin saya lengkapi'
+                }).then((result) => {
+                    if(result.isConfirmed) {
+                        executeSync(trucks);
+                    }
+                });
+            } else {
+                executeSync(trucks);
+            }
+        }
+
+        function executeSync(trucks) {
+            Swal.fire({
+                title: 'SINKRONISASI DATA...',
+                html: '<i class="fas fa-satellite-dish fa-spin" style="font-size:3rem; color:#0ea5e9; margin:20px 0;"></i><br>Sedang mengirim payload ke Apps Script',
+                allowOutsideClick: false,
+                showConfirmButton: false
+            });
+
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbzJZyOdP5PwNlZzJxlaUtcq8mwFAblDOxbi06F3t-6BjHLjDKTYo5gvV06EcnIpG4sG/exec';
+            
+            const cachedSetup = localStorage.getItem('RM01_SETUP_ACTIVE') ? JSON.parse(localStorage.getItem('RM01_SETUP_ACTIVE')) : {};
+            const tipe = document.getElementById('inp_tipe_bongkaran').value;
+
+            let finalTrucks = [];
+            if (tipe === "Langsiran") {
+                if (!selectedLangsiran) {
+                    Swal.fire('Error', 'Harap pilih salah satu antrean muatan.', 'error');
+                    return;
+                }
+                const isSame = document.getElementById('chk_langsiran_sama').checked;
+                finalTrucks = [{
+                    source_row_id: selectedLangsiran.row_id,
+                    nopol: selectedLangsiran.nopol,
+                    materialRM: selectedLangsiran.material,
+                    jumlahBag: isSame ? selectedLangsiran.jumlah_bag : document.getElementById('rev_bag').value,
+                    netto: isSame ? selectedLangsiran.netto : document.getElementById('rev_netto').value,
+                    jenisTruck: "Langsiran",
+                    lokasiSimpan: "RM01", // Default RM
+                    kuliPenggarap: "Tim Harian",
+                    jumlahKuli: 1
+                }];
+            } else {
+                finalTrucks = trucks;
+            }
+
+            const isLangsiran = (tipe === "Langsiran");
+
+            const payload = {
+                action: "saveBongkaran",
+                tipeBongkaran: tipe,
+                kraniName: currentUser,
+                shift: cachedSetup.shift || "-",
+                sloc: cachedSetup.sloc || "-",
+                abTanggal: tipe === "Langsiran" ? selectedLangsiran.tanggal : (tipe === "Bareng" ? trucks[0].abTanggal : document.getElementById('t_ab_tanggal').value),
+                abArrivalTime: isLangsiran ? "-" : (tipe === "Bareng" ? trucks[0].abArrival : document.getElementById('t_ab_arrival').value),
+                abQcTime1: isLangsiran ? "-" : (tipe === "Bareng" ? trucks[0].abQc : document.getElementById('t_ab_qc').value),
+                pbTanggal: document.getElementById('t_pb_tanggal').value,
+                pbSampaiGudang: isLangsiran ? "-" : document.getElementById('t_pb_sampai').value,
+                pbStartBongkar: document.getElementById('t_pb_start').value, 
+                pbHoldQc: isLangsiran ? "-" : document.getElementById('t_pb_hold').value,
+                pbRestartQc: isLangsiran ? "-" : document.getElementById('t_pb_restart').value,
+                pbFinish: document.getElementById('t_pb_finish').value,
+                delaySpace: isLangsiran ? "-" : (document.getElementById('t_delay_space').value || "-"),
+                delayOperasional: isLangsiran ? "-" : (document.getElementById('t_delay_operasional').value || "-"),
+                trucks: finalTrucks
+            };
+
+            fetch(scriptURL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            }).then(r => r.json()).then(data => {
+                Swal.fire({
+                    icon: data.success ? 'success' : 'warning',
+                    title: data.success ? 'GGMU! DATA TERSIMPAN' : 'Ada Masalah',
+                    text: data.message || 'Berhasil sinkronisasi cloud.',
+                    confirmButtonColor: '#10b981'
+                }).then(() => {
+                    if(data.success) window.location.reload();
+                });
+            }).catch(e => {
+                Swal.fire('Koneksi Gagal', 'Data gagal dikirim ke server', 'error');
+            });
+        }
+
+    </script>
+</body>
+</html>

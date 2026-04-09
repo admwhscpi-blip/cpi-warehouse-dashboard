@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DT V2.0 - DATA ENTRY MUAT</title>
+
+    <!-- UI LIBS -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/app-config.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --surface-color: rgba(255, 255, 255, 0.8);
+            --surface-blur: blur(20px);
+            --border-light: rgba(255, 255, 255, 0.5);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-primary: #8b5cf6; /* Violet for Loading/Muat distinct from Blue for Bongkar */
+            --accent-glow: rgba(139, 92, 246, 0.3);
+            --accent-light: #f5f3ff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gradient-accent: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            --shadow-soft: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.05), transparent 40%),
+                radial-gradient(circle at 85% 30%, rgba(99, 102, 241, 0.05), transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Access Barrier Overlay */
+        #login-barrier {
+            position: fixed;
+            inset: 0;
+            background: rgba(248, 250, 252, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        
+        .main-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- TOP HEADER --- */
+        .top-header {
+            background: var(--surface-color);
+            backdrop-filter: var(--surface-blur);
+            -webkit-backdrop-filter: var(--surface-blur);
+            border-bottom: 1px solid var(--border-light);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .header-title-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-title h2 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 1px;
+            margin: 0;
+        }
+
+        .header-title p {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            margin: 2px 0 0 0;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .user-control-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        .user-profile-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #f5f3ff 0%, #ddd6fe 100%);
+            padding: 6px 15px;
+            border-radius: 30px;
+            color: var(--accent-primary);
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .user-profile-badge span {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+        }
+
+        /* --- MAIN DASHBOARD AREA --- */
+        .main-content {
+            flex-grow: 1;
+            padding: 20px 15px 50px 15px;
+        }
+
+        .back-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+        }
+
+        .back-nav:hover {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--accent-primary);
+            transform: translateX(-5px);
+        }
+
+        /* --- ACCORDION SYSTEM --- */
+        .accordion-item {
+            background: var(--surface-color);
+            backdrop-filter: var(--surface-blur);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .accordion-item.locked {
+            opacity: 0.6;
+            pointer-events: none;
+            filter: grayscale(0.5);
+        }
+
+        .accordion-header {
+            padding: 20px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.4) 100%);
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .accordion-header.active {
+            border-bottom: 1px solid var(--border-light);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .accordion-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .acc-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--accent-light);
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2);
+        }
+
+        .acc-text h3 {
+            margin: 0;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text-primary);
+        }
+
+        .acc-text p {
+            margin: 2px 0 0 0;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .acc-toggle-icon {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            transition: transform 0.4s ease;
+        }
+
+        .accordion-header.active .acc-toggle-icon {
+            transform: rotate(180deg);
+            color: var(--accent-primary);
+        }
+
+        .accordion-content {
+            padding: 0 25px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1), padding 0.5s ease;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .accordion-header.active + .accordion-content {
+            padding: 25px;
+            max-height: 2500px;
+        }
+
+        /* --- FORM ELEMENTS --- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-secondary);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .input-glass {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 12px 15px;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .input-glass:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background: #fff;
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        select.input-glass {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--gradient-accent);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(139, 92, 246, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        #access-denied-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.9); 
+            backdrop-filter: blur(25px);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+        }
+
+        .barrier-content {
+            padding: 40px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 30px;
+            max-width: 90%;
+            width: 400px;
+        }
+
+        /* --- TRUCK BOX FOR MUAT --- */
+        .muat-card {
+            background: rgba(139, 92, 246, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px dashed var(--accent-primary);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Access Denied Overlay -->
+    <div id="access-denied-overlay" style="display:none;">
+        <div class="barrier-content">
+            <div style="font-size: 5rem; color: #ef4444; margin-bottom: 20px;"><i class="fas fa-lock"></i></div>
+            <h2 style="font-family:'Rajdhani'; font-size:2rem; margin-bottom:10px;">AKSES DIBLOKIR</h2>
+            <p>Belum ada rekaman Absensi Kuli / Setup untuk Shift ini.<br>Harap tunggu <b>ARIF</b> melakukan setup sinkronisasi terlebih dahulu.</p>
+            <a href="rm-dt-v2.html" class="btn-primary" style="max-width:200px; margin: 20px auto 0 auto; text-decoration:none;"><i class="fas fa-arrow-left"></i> KEMBALI</a>
+        </div>
+    </div>
+
+    <!-- Security Check Barrier -->
+    <div id="login-barrier">
+        <i class="fas fa-satellite fa-spin" style="font-size: 3rem; color: var(--accent-primary);"></i>
+        <h3 style="margin-top:20px; font-family:'Rajdhani'; color:var(--text-primary);">Menginisialisasi Modul Muat...</h3>
+    </div>
+
+    <div class="main-wrapper" style="display:none;" id="app-wrapper">
+        <header class="top-header">
+            <div class="header-title-area">
+                <div class="header-title">
+                    <h2>DATA ENTRY MUAT</h2>
+                    <p id="time-widget">Loading Time...</p>
+                </div>
+            </div>
+            
+            <div class="user-control-panel">
+                <div class="user-profile-badge">
+                    <i class="fas fa-shipping-fast"></i>
+                    <span id="display-username">GUEST</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <a href="rm-dt-v2.html" class="back-nav"><i class="fas fa-arrow-left"></i> KEMBALI KE DASHBOARD V2</a>
+
+            <!-- SECTION 1: IDENTITAS MUATAN -->
+            <div class="accordion-item" id="sect-setup">
+                <div class="accordion-header active" onclick="toggleAccordion('sect-setup')">
+                    <div class="accordion-title">
+                        <div class="acc-icon"><i class="fas fa-id-card"></i></div>
+                        <div class="acc-text">
+                            <h3>IDENTITAS MUATAN</h3>
+                            <p>Data dasar sesi muat (Data Setup Arif)</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-down acc-toggle-icon"></i>
+                </div>
+                <div class="accordion-content">
+                    <div class="form-grid" style="margin-top: 15px;">
+                        <div class="form-group">
+                            <label>Tanggal Muat</label>
+                            <input type="date" class="input-glass" id="m_tanggal">
+                        </div>
+                        <div class="form-group">
+                            <label>Shift</label>
+                            <select class="input-glass" id="m_shift">
+                                <option value="1">SHIFT 1</option>
+                                <option value="2">SHIFT 2</option>
+                                <option value="3">SHIFT 3</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Kategori Risip</label>
+                            <select class="input-glass" id="m_kategori">
+                                <option value="AUTO">AUTO (SYSTEM)</option>
+                                <option value="MANUAL">MANUAL (WRITE)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Krani Muat</label>
+                            <input type="text" class="input-glass" id="m_krani" readonly style="background:#f1f5f9; cursor:not-allowed;">
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+                        <button class="btn-primary" style="width:auto; padding: 10px 25px; font-size:0.9rem;" onclick="unlockAccordion('sect-par')">
+                            LANJUT KE PARAMETER <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: PARAMETER MUATAN -->
+            <div class="accordion-item locked" id="sect-par">
+                <div class="accordion-header" onclick="toggleAccordion('sect-par')">
+                    <div class="accordion-title">
+                        <div class="acc-icon"><i class="fas fa-box-open"></i></div>
+                        <div class="acc-text">
+                            <h3>PARAMETER MUATAN</h3>
+                            <p>Detail material, unit truck, dan kuli</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-down acc-toggle-icon"></i>
+                </div>
+                <div class="accordion-content">
+                    <div class="muat-card">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Lokasi Gudang Muat</label>
+                                <select class="input-glass" id="m_gudang">
+                                    <option value="" disabled selected>-- PILIH GUDANG --</option>
+                                    <option value="RW01">RW01</option>
+                                    <option value="RW05">RW05</option>
+                                    <option value="RW03">RW03</option>
+                                    <option value="RM01">RM01</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Nopol Truck</label>
+                                <input type="text" class="input-glass" id="m_nopol" placeholder="B 1234 XX">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Material Muat</label>
+                            <select class="input-glass" id="m_material" onchange="handleOtherMaterial(this)">
+                                <!-- Fed by JS -->
+                            </select>
+                            <input type="text" class="input-glass" id="m_mat_other" placeholder="Ketik Material Manual..." style="display:none; margin-top:10px; border-color:var(--accent-primary);">
+                        </div>
+                        <div class="form-grid" style="margin-top:10px;">
+                            <div class="form-group">
+                                <label>Netto (Kg) <small>(Optional)</small></label>
+                                <input type="number" class="input-glass" id="m_netto" placeholder="Kg">
+                            </div>
+                            <div class="form-group">
+                                <label>Jumlah Bag</label>
+                                <input type="number" class="input-glass" id="m_jumlah_bag" placeholder="Jml Bag">
+                            </div>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Tim Kuli</label>
+                                <select class="input-glass" id="m_tim" readonly style="background:#f1f5f9;">
+                                    <option value="WAWAN">WAWAN</option>
+                                    <option value="SAHLAN">SAHLAN</option>
+                                    <option value="SURYANA">SURYANA</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Jumlah Kuli</label>
+                                <input type="number" class="input-glass" id="m_jumlah_kuli" value="1" min="1">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+                        <button class="btn-primary" style="width:auto; padding: 10px 25px; font-size:0.9rem;" onclick="unlockAccordion('sect-dur')">
+                            LANJUT KE DURASI <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: DURASI LOADING -->
+            <div class="accordion-item locked" id="sect-dur">
+                <div class="accordion-header" onclick="toggleAccordion('sect-dur')">
+                    <div class="accordion-title">
+                        <div class="acc-icon"><i class="fas fa-stopwatch"></i></div>
+                        <div class="acc-text">
+                            <h3>DURASI LOADING</h3>
+                            <p>Waktu aktivitas di Loading Bay</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-down acc-toggle-icon"></i>
+                </div>
+                <div class="accordion-content">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>1. Bongkar Stapel</label>
+                            <input type="time" class="input-glass" id="t_bongkar_stapel" onchange="validateTimeline(this)">
+                        </div>
+                        <div class="form-group">
+                            <label>2. Start Muat</label>
+                            <input type="time" class="input-glass" id="t_start_muat" onchange="validateTimeline(this)">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>3. Finish Muat</label>
+                            <input type="time" class="input-glass" id="t_finish" onchange="validateTimeline(this)">
+                        </div>
+                        <div class="form-group">
+                            <label>4. Truck OTW Pabrik</label>
+                            <input type="time" class="input-glass" id="t_otw" onchange="validateTimeline(this)">
+                        </div>
+                    </div>
+
+                    <button class="btn-primary" id="btn-submit" onclick="submitData()">
+                        <i class="fas fa-satellite-dish"></i> SINKRON DATA MUATAN 🚀
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentUser = "";
+        let sessionData = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSession();
+            updateTime();
+            setInterval(updateTime, 60000);
+            fetchMaterials();
+        });
+
+        function updateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            document.getElementById('time-widget').innerText = now.toLocaleDateString('id-ID', options);
+        }
+
+        async function initSession() {
+            // 1. Cek session dari Hub V2
+            const userStr = sessionStorage.getItem('dt_v2_user');
+            currentUser = userStr ? userStr : "GUEST";
+            
+            document.getElementById('display-username').innerText = currentUser.toUpperCase();
+            document.getElementById('m_krani').value = currentUser.toUpperCase();
+
+            // 2. Cek Setup Lokal (Sama dengan Modul Bongkar)
+            const cachedSetup = localStorage.getItem('RM01_SETUP_ACTIVE');
+            let isSetupValid = false;
+
+            if (cachedSetup) {
+                const setupObj = JSON.parse(cachedSetup);
+                const now = new Date();
+                const expireDate = new Date(setupObj.expireTimestamp);
+
+                if (now < expireDate) {
+                    isSetupValid = true;
+                    sessionData = setupObj;
+                    applySetupToMuat(setupObj);
+                    hideBarrier();
+                }
+            }
+
+            // 3. Jika Lokal tidak ada, coba ambil dari Server (Backup)
+            if (!isSetupValid) {
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbzJZyOdP5PwNlZzJxlaUtcq8mwFAblDOxbi06F3t-6BjHLjDKTYo5gvV06EcnIpG4sG/exec';
+                try {
+                    const r = await fetch(scriptURL + '?action=getSetupActive');
+                    const data = await r.json();
+                    
+                    if(data.success && data.setup) {
+                        sessionData = data.setup;
+                        applySetupToMuat(sessionData);
+                        hideBarrier();
+                    } else {
+                        document.getElementById('access-denied-overlay').style.display = 'flex';
+                    }
+                } catch (e) {
+                    Swal.fire('Koneksi Gagal', 'Gagal memverifikasi setup awal.', 'error');
+                }
+            }
+            
+            // Set Default Date
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('m_tanggal').value = today;
+        }
+
+        function applySetupToMuat(setup) {
+            if(!setup) return;
+            document.getElementById('m_shift').value = setup.shift || "1";
+            document.getElementById('m_tim').value = setup.timHarian || "WAWAN";
+        }
+
+        function hideBarrier() {
+            document.getElementById('login-barrier').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('login-barrier').style.display = 'none';
+                document.getElementById('app-wrapper').style.display = 'flex';
+                document.getElementById('access-denied-overlay').style.display = 'none';
+            }, 500);
+        }
+
+        function toggleAccordion(id) {
+            const item = document.getElementById(id);
+            if(item.classList.contains('locked')) return;
+            const header = item.querySelector('.accordion-header');
+            header.classList.toggle('active');
+        }
+
+        function unlockAccordion(id) {
+            const item = document.getElementById(id);
+            item.classList.remove('locked');
+            const header = item.querySelector('.accordion-header');
+            if(!header.classList.contains('active')) {
+                // Close all others first optionally, but here we just open the target
+                header.click();
+            }
+        }
+
+        function fetchMaterials() {
+            const staticMaterials = [
+                "Copper Sulphate (81004)", "Allplex B (81030)", "Vitamin - C/EC (Coated) (82010)", "Coxictac 12% (83010)",
+                "Elancoban / Rumensin / Poulcox(83013)", "Nicarbazine (83025)", "SACOX (83028)", "Monteban 45 (83043)",
+                "Maxus 200 (83044)", "Bacitracin Methylen Disalicylate 110 ppm (83049)", "Sodium Bicarbonate (I) (505100)",
+                "MDCP/MCP 21 % (I) (506100)", "DL-Meth./Rhodimet/Met Amino Powder (I) (601100)",
+                "Alimet / MHA / Rhodimet AT88 (I) (603100)", "L-LYSINE SULPHATE  ( I ) (605101)",
+                "L-Lysine Sulphate (L) (605201)", "L-Lysine (L/I) HCL (605300)", "L-Lysine Sulphate (L/I) (605301)",
+                "TRYPTOPHAN 98 % ( I ) (606101)", "Choline Chloride Liquid (I) (608100)",
+                "Mold Inhibitor Powder/Feed Curb Dry(L/I) (609300)", "PH 7 (612301)",
+                "Santoquin / Ethoxiquin Liquid (I) (613100)", "Larvadex / Larvacide 10% (L/I) (621300)",
+                "L-Threonine (I) (628100)", "Fungex-MaxiMils/Preserve (L/I) (630300)", "Tartrazine (635300)",
+                "XAMACOL (638301)", "Hostazyme X15000 EPU (643301)", "CIBENZA DP100 PROTEASE NOVUS (644107)",
+                "HYPHOS GT 20.000 (L/I) (647304)", "Pro Grow Powder (654201)", "Herbs R & D (654205)", "Termin 8 (658300)",
+                "Betaine (661100)", "Nu-Bond Plus (665201)", "VALINE  (I) (672100)", "Quixalud (676300)",
+                "Nuvem (R&D) (677201)", "Cozante (Herb-Kemin) L/I (677302)", "Butipearl (Kemin) Ca Butyarate (683301)",
+                "Hemicell-HT (685300)", "ISOLEUCINE 98.5% (689100)", "ISOLEUCINE 98.5% (L/I) (689300)",
+                "Lecithin oil (I) (706100)", "Premix Y1ABM (900200)", "Y2DM (905200)", "Premix Y3D (907200)",
+                "VB/SL (921200)", "VBBR (922200)", "Premix Sel Mix (933200)", "Molases (414200)", "COCCIGUARD (677310)",
+                "GUTPROTECT (654209)", "LIGNOBON (616300)", "CYGRO 1% / YUMAMYCIN % (83011)",
+                "HYPORIUS 10 (L/I) (647308)", "L-Threonine (L/I) (628300)", "AVATEC (83004)", "AVIAX (83005)",
+                "ROBENIDINE (83053)", "CLINACOX 0.5% / COXIRIL (83007)", "PHYLINK (646306)", "L-LYSINE HCL I (605100)",
+                "MAXIBAN (83051)", "SODIUM BICARBONATE L/I (505300)", "PRO GROW 2 ( NUGEN ) (654203)",
+                "DL-Meth./Rhodimet Powder (L/I) (601300)", "MCP 22.7% ( I ) (507100)", "VITAMIN E 5% (82012)",
+                "AVIAX PLUS (83056)", "MCP 22.7% ( L/I) (507300)", "ARGININE ( L/I ) (679301)", "ARGININE (679101)",
+                "COPPER SULPHATE 25%MNC (85004)", "Y3DMC (909200)", "CGM U.S.A ( I ) (210100)", "CGM CHINA (210101)",
+                "CGM LOKAL (210200)", "CGM U.S.A ( L/I ) (210300)", "DDGS (I) (228100)", "DDGS (L/I) (228300)",
+                "FULLFAT (241300)", "MBM ( I ) (301100)", "MBM ( L/I ) (301300)", "CFM LOKAL (304200)",
+                "BROKEN CORN (101224)", "RICE BRAN (401200)", "BROKEN RICE (403200)", "WHEAT BRAN (405200)",
+                "WHEAT FLOUR ( L ) (406200)", "CASSAVA (410200)", "PALM KARNEL MEAL (412200)",
+                "PALM KARNEL MEAL FATTY (412204)", "BREAD CRUMBS/PANIR (417202)", "CORN COB MEAL / TUMPI (418200)",
+                "BROWN MEAL (424200)", "GREEN LEAF POWDER (425200)", "CORN GERM (435201)",
+                "LIME STONE CHIP MEDIUM (502201)", "LIME STONE COARSER ( L ) (503201)", "SALT (504200)",
+                "BINDER (512200)", "NOODLE MEAL (430200)", "WHEAT FLOUR INDUSTRY ( L ) (407200)",
+                "COOKIE MEAL (417201)", "CORN GLUTEN FEED (232200)", "LIME STONE FINE (503200)",
+                "CANOLA MEAL ( L/I ) (206300)"
+            ];
+
+            const sel = document.getElementById('m_material');
+            sel.innerHTML = '<option value="" disabled selected>-- PILIH MATERIAL --</option>';
+            staticMaterials.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.text = m;
+                sel.appendChild(opt);
+            });
+            sel.innerHTML += '<option disabled>----------------------</option>';
+            sel.innerHTML += '<option value="OTHER">--- OTHER (Input Manual) ---</option>';
+        }
+
+        function handleOtherMaterial(sel) {
+            const other = document.getElementById('m_mat_other');
+            if(sel.value === "OTHER") other.style.display = 'block';
+            else {
+                other.style.display = 'none';
+                other.value = "";
+            }
+        }
+
+        function validateTimeline(el) {
+            const timeline = [
+                { id: 't_bongkar_stapel', name: 'Bongkar Stapel' },
+                { id: 't_start_muat', name: 'Start Muat' },
+                { id: 't_finish', name: 'Finish Muat' },
+                { id: 't_otw', name: 'Truck OTW Pabrik' }
+            ];
+
+            const idx = timeline.findIndex(t => t.id === el.id);
+            if(idx === -1) return;
+
+            let lastValidTime = null;
+            let lastValidName = "";
+
+            for(let i=0; i <= idx; i++) {
+                const item = timeline[i];
+                const input = document.getElementById(item.id);
+                if(!input.value) continue;
+
+                const currentMs = getTimeMs(input.value);
+                
+                if(lastValidTime !== null) {
+                    if(currentMs < lastValidTime) {
+                         // Smart rollover check
+                         const rolloverMs = currentMs + (24 * 60 * 60 * 1000);
+                         if(rolloverMs >= lastValidTime && (rolloverMs - lastValidTime) <= (16 * 60 * 60 * 1000)) {
+                             // Passed via rollover
+                         } else {
+                             Swal.fire('Timeline Tidak Valid', `Waktu ${item.name} tidak boleh mendahului ${lastValidName}.`, 'error');
+                             el.value = "";
+                             return;
+                         }
+                    }
+                }
+                lastValidTime = currentMs;
+                lastValidName = item.name;
+            }
+        }
+
+        function getTimeMs(timeStr) {
+            if(!timeStr) return 0;
+            const [h, m] = timeStr.split(':').map(Number);
+            const d = new Date();
+            d.setHours(h, m, 0, 0);
+            return d.getTime();
+        }
+
+        async function submitData() {
+            const fields = {
+                tanggal: document.getElementById('m_tanggal').value,
+                shift: document.getElementById('m_shift').value,
+                kategori_risip: document.getElementById('m_kategori').value,
+                gudang: document.getElementById('m_gudang').value,
+                nopol: document.getElementById('m_nopol').value,
+                material: document.getElementById('m_material').value === "OTHER" ? document.getElementById('m_mat_other').value : document.getElementById('m_material').value,
+                netto: document.getElementById('m_netto').value || "-",
+                jumlah_bag: document.getElementById('m_jumlah_bag').value,
+                tim_harian: document.getElementById('m_tim').value,
+                jumlah_kuli: document.getElementById('m_jumlah_kuli').value,
+                krani: document.getElementById('m_krani').value,
+                bongkar_stapel: document.getElementById('t_bongkar_stapel').value,
+                start_muat: document.getElementById('t_start_muat').value,
+                finish: document.getElementById('t_finish').value,
+                otw_pabrik: document.getElementById('t_otw').value
+            };
+
+            // Basic Validation
+            if(!fields.gudang || !fields.nopol || !fields.material || !fields.jumlah_bag || !fields.bongkar_stapel || !fields.otw_pabrik) {
+                Swal.fire('Data Belum Lengkap', 'Pastikan semua parameter muatan dan durasi telah terisi.', 'warning');
+                return;
+            }
+
+            if(fields.netto === "-") {
+                const confirm = await Swal.fire({
+                    title: 'Netto Kosong?',
+                    text: 'Anda belum mengisi Netto (Kg). Lanjutkan simpan?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Simpan',
+                    cancelButtonText: 'Lengkapi'
+                });
+                if(!confirm.isConfirmed) return;
+            }
+
+            Swal.fire({
+                title: 'Menyimpan Data Muat...',
+                html: '<i class="fas fa-satellite fa-spin" style="font-size:3rem; color:var(--accent-primary); margin:20px 0;"></i>',
+                allowOutsideClick: false,
+                showConfirmButton: false
+            });
+
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbzJZyOdP5PwNlZzJxlaUtcq8mwFAblDOxbi06F3t-6BjHLjDKTYo5gvV06EcnIpG4sG/exec';
+            const payload = {
+                action: 'saveMuat',
+                ...fields
+            };
+
+            try {
+                const response = await fetch(scriptURL, { 
+                    method: 'POST', 
+                    body: JSON.stringify(payload) 
+                });
+                const res = await response.json();
+                
+                if(res.success) {
+                    Swal.fire('Berhasil!', 'Data Muatan telah tersimpan di cloud.', 'success').then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Gagal!', res.message || 'Terjadi kesalahan sistem.', 'error');
+                }
+            } catch (e) {
+                Swal.fire('Koneksi Gagal', 'Data gagal dikirim ke server.', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
