@@ -183,7 +183,10 @@ const TrackingApp = {
                 let tFinish = this.parseTime(obj['FINISH'] || obj['FINISH_BONGKAR']);
                 if (tStart !== null && tFinish !== null) {
                     let dur = tFinish - tStart;
-                    if (dur < 0) dur += 1440;
+                    if (dur < 0) {
+                        dur += 720; // Try +12 hours for AM/PM mistakes
+                        if (dur < 0) dur += 720; // If still negative, it's next day, add remaining 12h
+                    }
                     obj['DURASI_BONGKAR'] = String(dur);
                 }
             }
@@ -230,6 +233,19 @@ const TrackingApp = {
             if (isNaN(d.getTime())) return null;
             return d.toISOString().split('T')[0];
         } catch (e) { return null; }
+    },
+
+    cleanTime: function(tStr) {
+        if (!tStr || tStr === 'No Data') return 'No Data';
+        const tm = String(tStr).match(/(\d{1,2})[:\.](\d{2})/);
+        if (tm) return `${String(tm[1]).padStart(2, '0')}:${tm[2]}`;
+        return String(tStr).split(' ')[0];
+    },
+
+    cleanDate: function(dStr) {
+        if (!dStr || dStr === 'No Data' || dStr === '-') return '-';
+        const norm = this.normalizeDate(dStr);
+        return norm ? norm : String(dStr).split(' ')[0];
     },
 
     processContainerData: function () {
@@ -496,6 +512,15 @@ const TrackingApp = {
             let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
 
             if (dArr && dFin) {
+                // Smart compensation: OUT cannot be before IN. If so, they probably meant PM instead of AM (e.g., 2 instead of 14).
+                if (dFin.getTime() < dArr.getTime()) {
+                    dFin.setHours(dFin.getHours() + 12);
+                    // If still less, it might be the next day early morning
+                    if (dFin.getTime() < dArr.getTime()) {
+                        dFin.setHours(dFin.getHours() + 12);
+                    }
+                }
+
                 // v20.2.8: Precise timestamp diff (handles cross-date natively)
                 let diffMs = dFin.getTime() - dArr.getTime();
                 let durH = diffMs / (1000 * 60 * 60);
@@ -658,6 +683,11 @@ const TrackingApp = {
                 let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
 
                 if (dArr && dFin) {
+                    if (dFin.getTime() < dArr.getTime()) {
+                        dFin.setHours(dFin.getHours() + 12);
+                        if (dFin.getTime() < dArr.getTime()) dFin.setHours(dFin.getHours() + 12);
+                    }
+
                     let diffMs = dFin.getTime() - dArr.getTime();
                     let durH = diffMs / (1000 * 60 * 60);
 
@@ -730,11 +760,11 @@ const TrackingApp = {
             // Resolve arrival/finish with fallbacks
             let af = this._resolveArrivalFinish(row);
 
-            // Display labels
-            let arrDateDisplay = af.arrDate || '-';
-            let arrTimeDisplay = af.arrTime || 'No Data';
-            let finDateDisplay = af.finDate || '-';
-            let finTimeDisplay = af.finTime || 'No Data';
+            // Display labels cleanly
+            let arrDateDisplay = this.cleanDate(af.arrDate);
+            let arrTimeDisplay = this.cleanTime(af.arrTime);
+            let finDateDisplay = this.cleanDate(af.finDate);
+            let finTimeDisplay = this.cleanTime(af.finTime);
 
             let statusInap = 'OK';
             let colorInap = 'var(--success)';
@@ -751,6 +781,16 @@ const TrackingApp = {
                 let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
 
                 if (dArr && dFin) {
+                    if (dFin.getTime() < dArr.getTime()) {
+                        dFin.setHours(dFin.getHours() + 12);
+                        if (dFin.getTime() < dArr.getTime()) dFin.setHours(dFin.getHours() + 12);
+                    }
+
+                    // Also format finTimeDisplay cleanly to reflect the "smart" guessed hour (e.g. 14 instead of 02)
+                    let smartH = String(dFin.getHours()).padStart(2, '0');
+                    let smartM = String(dFin.getMinutes()).padStart(2, '0');
+                    finTimeDisplay = `${smartH}:${smartM}`;
+
                     let diffMs = dFin.getTime() - dArr.getTime();
                     let diffMins = Math.floor(diffMs / (1000 * 60));
                     let h = Math.floor(diffMins / 60);
@@ -1114,7 +1154,10 @@ const TrackingApp = {
         let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
 
         if (dArr && dFin) {
-            if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
+            if (dFin.getTime() < dArr.getTime()) {
+                dFin.setHours(dFin.getHours() + 12);
+                if (dFin.getTime() < dArr.getTime()) dFin.setHours(dFin.getHours() + 12);
+            }
             let diffMs = dFin.getTime() - dArr.getTime();
             let durH = diffMs / (1000 * 60 * 60);
             return durH >= 24 ? 'INAP' : 'TIDAK INAP';
@@ -1132,7 +1175,10 @@ const TrackingApp = {
         let dArr = this.parseDateTimeStr(af.arrDate, af.arrTime);
         let dFin = this.parseDateTimeStr(af.finDate, af.finTime);
         if (dArr && dFin) {
-            if (dFin < dArr) dFin.setDate(dFin.getDate() + 1);
+            if (dFin.getTime() < dArr.getTime()) {
+                dFin.setHours(dFin.getHours() + 12);
+                if (dFin.getTime() < dArr.getTime()) dFin.setHours(dFin.getHours() + 12);
+            }
             return (dFin.getTime() - dArr.getTime()) / (1000 * 60 * 60);
         }
         return null;
@@ -1280,8 +1326,11 @@ const TrackingApp = {
             let tgl = this.normalizeDate(row['TANGGAL']) || '-';
             let nopol = row['NOPOL'] || '-';
             let truckType = String(row['JENIS_TRUCK'] || '').replace(/container/gi, '').trim() || 'Container';
-            let arrDate = String(row['ARRIVAL_DATE'] || '-');
-            let arrTime = row['ARRIVAL_TIME'] || '-';
+            
+            let af = this._resolveArrivalFinish(row);
+            let arrDate = this.cleanDate(af.arrDate);
+            let arrTime = this.cleanTime(af.arrTime);
+
             let durH = this._getDurationHours(row);
             let durStr = durH !== null ? Math.floor(durH) + 'h ' + Math.round((durH % 1) * 60) + 'm' : '-';
 

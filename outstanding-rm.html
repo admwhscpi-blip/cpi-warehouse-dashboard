@@ -503,7 +503,7 @@
         /* TIER 3: SCOPE BLOCKS */
         .scope-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 20px;
             margin-top: 20px;
         }
@@ -699,7 +699,7 @@
 
         .dest-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 10px;
         }
 
@@ -845,6 +845,10 @@
                             <div class="dest-name">GEBANG</div>
                             <div class="dest-val">0</div>
                         </div>
+                        <div class="dest-box" id="dest-hino">
+                            <div class="dest-name">HINO</div>
+                            <div class="dest-val">0</div>
+                        </div>
                         <div class="dest-box" id="dest-cpo">
                             <div class="dest-name">CPO</div>
                             <div class="dest-val" id="dest-cpo-val">0</div>
@@ -879,6 +883,13 @@
                     <div
                         style="font-size:0.6rem; color:var(--neon-purple); font-weight:900; margin-top:5px; background:rgba(188,19,254,0.1); padding:2px 6px; border-radius:10px;">
                         MAKSIMAL JAM 24:00 WIB</div>
+                </div>
+                <div class="scope-block" id="block-hino">
+                    <div class="scope-label">RENTAL 3</div>
+                    <div class="scope-icon">🏢</div>
+                    <div class="scope-name">Gd. Hino<br><small>(GUDANG HINO)</small></div>
+                    <div style="font-size:0.6rem; color:var(--neon-green); font-weight:700; margin-top:5px;">FULL DAY 24
+                        JAM</div>
                 </div>
                 <div class="scope-block" id="block-cpo">
                     <div class="scope-label">LIQUID</div>
@@ -1054,6 +1065,7 @@
         function classifyWarehouse(whName) {
             const name = whName.toUpperCase();
             if (name.includes('RM')) return 'RM';
+            if (name.includes('HINO')) return 'HINO';
             if (name.includes('GEBANG')) return 'GEBANG';
             if (name.match(/[C-F]/) || name.includes('SAMPING')) return 'SAMPING';
             return 'RM';
@@ -1103,7 +1115,7 @@
             document.getElementById('count-inap').innerText = inapCount;
 
             // 3. Destinations
-            const dests = { rm: 0, samping: 0, gebang: 0, cpo: 0 };
+            const dests = { rm: 0, samping: 0, gebang: 0, hino: 0, cpo: 0 };
             m.forEach(i => {
                 if (!i.material) return;
                 const matName = i.material.toUpperCase().trim();
@@ -1119,6 +1131,7 @@
                     if (cat === 'RM') dests.rm++;
                     else if (cat === 'SAMPING') dests.samping++;
                     else if (cat === 'GEBANG') dests.gebang++;
+                    else if (cat === 'HINO') dests.hino++;
                 } else {
                     dests.rm++;
                 }
@@ -1127,6 +1140,7 @@
             document.getElementById('dest-rm').querySelector('.dest-val').innerText = dests.rm;
             document.getElementById('dest-samping').querySelector('.dest-val').innerText = dests.samping;
             document.getElementById('dest-gebang').querySelector('.dest-val').innerText = dests.gebang;
+            document.getElementById('dest-hino').querySelector('.dest-val').innerText = dests.hino;
             document.getElementById('dest-cpo-val').innerText = dests.cpo;
         }
 
@@ -1139,6 +1153,7 @@
                 { from: 'dest-rm', to: 'block-rm' },
                 { from: 'dest-samping', to: 'block-samping' },
                 { from: 'dest-gebang', to: 'block-gebang' },
+                { from: 'dest-hino', to: 'block-hino' },
                 { from: 'dest-cpo', to: 'block-cpo' }
             ];
 
