@@ -604,6 +604,10 @@
                                 <option value="RW03">RW03</option>
                                 <option value="RW04">RW04</option>
                                 <option value="RW05">RW05</option>
+                                <option value="RW06">RW06</option>
+                                <option value="RW07">RW07</option>
+                                <option value="RW08">RW08</option>
+                                <option value="RW09">RW09</option>
                             </select>
                         </div>
 
@@ -1019,7 +1023,16 @@
                     if (result.success && result.isActive) {
                         globalAttendanceData = result.data;
                         document.getElementById('setup-status-text').innerHTML = `✅ <span style="color:var(--success)">Sesi Absensi Pengepakan Aktif (${result.data.startTime} - ${result.data.endTime})</span>`;
-                    } else if (document.getElementById('cfg_sloc').value !== 'RW01') {
+                    } else if (localStorage.getItem('RM01_SETUP_ACTIVE')) {
+                        // Skenario: Setup operasional ada, tapi global Arif habis
+                        const localSetup = JSON.parse(localStorage.getItem('RM01_SETUP_ACTIVE'));
+                        if (localSetup.sloc !== 'RW01') {
+                            // BLOCK ACCESS
+                            document.getElementById('access-denied-overlay').style.display = 'flex';
+                            document.getElementById('app-wrapper').style.filter = 'blur(10px)';
+                            return;
+                        }
+                    } else {
                         // BLOCK ACCESS
                         document.getElementById('access-denied-overlay').style.display = 'flex';
                         document.getElementById('app-wrapper').style.filter = 'blur(10px)';
