@@ -14,11 +14,51 @@ const SHEET_BONGKARAN = "DATA_BONGKARAN";
 const SHEET_MUATAN = "DATA_MUATAN";
 const SHEET_LOG_ABSENSI = "MASTER_ABSENSI_LOG";
 
+// === HELPERS ===
+function fmtTime(val) {
+  if (!val) return null;
+  if (val instanceof Date) {
+    let h = val.getHours();
+    let m = val.getMinutes();
+    return (h < 10 ? "0" + h : String(h)) + ":" + (m < 10 ? "0" + m : String(m));
+  }
+  let s = String(val).trim();
+  if (s.includes(':')) return s;
+  return null;
+}
+
+function calcDurMin(startVal, endVal) {
+  const toMin = (v) => {
+    if (!v) return null;
+    if (v instanceof Date) { return v.getHours() * 60 + v.getMinutes(); }
+    let s = String(v).trim();
+    if (s.includes(':')) { let p = s.split(':'); return parseInt(p[0]) * 60 + parseInt(p[1]); }
+    return null;
+  };
+  const s = toMin(startVal), e = toMin(endVal);
+  if (s === null || e === null) return null;
+  let diff = e - s;
+  if (diff < 0) diff += 1440; // day wrap
+  return String(diff);
+}
+
+function findH(headers, variants) {
+  if (!headers || !variants) return -1;
+  const h = headers.map(s => String(s || "").toUpperCase().trim());
+  for (let v of variants) {
+    let idx = h.indexOf(v.toUpperCase().trim());
+    if (idx >= 0) return idx;
+    idx = h.findIndex(str => str.includes(v.toUpperCase().trim()));
+    if (idx >= 0) return idx;
+  }
+  return -1;
+}
+// ===============
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
-    
+
     if (action === "saveSetup") {
       return handleSaveSetup(data);
     } else if (action === "saveGlobalAttendance") {
@@ -32,19 +72,19 @@ function doPost(e) {
     } else if (action === "updateStafelStock") {
       return handleUpdateStafelStock(data);
     }
-    
+
     return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Unknown action" }))
-                         .setMimeType(ContentService.MimeType.JSON);
+      .setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, message: error.toString() }))
-                         .setMimeType(ContentService.MimeType.JSON);
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
 function doGet(e) {
   try {
     const action = (e.parameter.action || "").toLowerCase();
-    
+
     if (action === "getsetup") {
       return handleGetSetup();
     } else if (action === "getglobalattendance") {
@@ -56,27 +96,27 @@ function doGet(e) {
     } else if (action === "getstafeldata") {
       return handleGetStafelData();
     }
-    
-    return ContentService.createTextOutput(JSON.stringify({ 
-      success: false, 
-      message: "API Active - Unknown Action: '" + (e.parameter.action || "none") + "'. Silakan perbarui Deployment (New Deployment) di Editor Apps Script untuk memastikan kode terbaru aktif." 
+
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      message: "API Active - Unknown Action: '" + (e.parameter.action || "none") + "'. Silakan perbarui Deployment (New Deployment) di Editor Apps Script untuk memastikan kode terbaru aktif."
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, message: error.toString() }))
-                         .setMimeType(ContentService.MimeType.JSON);
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
 
 function handleSaveSetup(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
+
   // 1. Save SETUP
   const sheetSetup = ss.getSheetByName(SHEET_SETUP);
   if (!sheetSetup) throw new Error("Sheet SETUP belum dibuat");
-  
+
   const setupTimestamp = new Date();
-  
+
   // Clear previous setup to simulate single active shift (or append, but for simplicity we append)
   // Format: Timestamp | Shift | SLOC | Sampling Man | Tim Borong | Tim Harian | Kordinator | Jam Mulai | Jam Selesai
   sheetSetup.appendRow([
@@ -90,7 +130,7 @@ function handleSaveSetup(data) {
     data.jamMulai,
     data.jamSelesai
   ]);
-  
+
   // 2. Save ABSENSI
   if (data.absensi && data.absensi.length > 0) {
     const sheetAbs = ss.getSheetByName(SHEET_ABSENSI);
@@ -107,15 +147,15 @@ function handleSaveSetup(data) {
       ]);
     });
   }
-  
+
   return ContentService.createTextOutput(JSON.stringify({ success: true, message: "Setup & Absensi berhasil disimppan" }))
-                       .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function handleSaveBongkaran(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_BONGKARAN);
-  
+
   // Auto-create sheet with headers if missing
   const BONGKAR_HEADERS = [
     "Timestamp", "Tipe Bongkaran", "Nama Krani", "Shift", "SLOC",
@@ -126,7 +166,7 @@ function handleSaveBongkaran(data) {
     "Hold QC", "Restart QC", "Finish",
     "Delay Space", "Delay Operasional"
   ];
-  
+
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_BONGKARAN);
     sheet.appendRow(BONGKAR_HEADERS);
@@ -136,9 +176,9 @@ function handleSaveBongkaran(data) {
     sheet.appendRow(BONGKAR_HEADERS);
     sheet.getRange(1, 1, 1, BONGKAR_HEADERS.length).setFontWeight("bold");
   }
-  
+
   const entryDate = new Date();
-  
+
   // The data payload contains an array of unit/truck data along with shared timestamps
   if (data.trucks && data.trucks.length > 0) {
     data.trucks.forEach(truck => {
@@ -148,7 +188,7 @@ function handleSaveBongkaran(data) {
         data.kraniName,
         data.shift,
         data.sloc,
-        
+
         // Data Truck Input
         truck.jenisTruck,
         truck.materialRM,
@@ -158,7 +198,7 @@ function handleSaveBongkaran(data) {
         truck.lokasiSimpan,
         truck.kuliPenggarap,
         truck.jumlahKuli,
-        
+
         // Timestamps (Semua dari Form)
         data.abTanggal,
         data.abArrivalTime,
@@ -169,7 +209,7 @@ function handleSaveBongkaran(data) {
         data.pbHoldQc,
         data.pbRestartQc,
         data.pbFinish,
-        
+
         // Keterangan Auto-Delays
         data.delaySpace || "-",
         data.delayOperasional || "-"
@@ -188,21 +228,21 @@ function handleSaveBongkaran(data) {
       }
     });
   }
-  
+
   return ContentService.createTextOutput(JSON.stringify({ success: true, message: "Data Bongkaran Tersimpan" }))
-                       .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function handleGetPendingLangsiran() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_MUATAN);
   if (!sheet) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
-  
+
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
-  
+
   const headers = data[0].map(h => String(h).trim().toUpperCase());
-  
+
   // Fungsi pembantu agar pencarian kolom lebih fleksibel
   const findCol = (name) => {
     const target = name.toUpperCase();
@@ -220,13 +260,13 @@ function handleGetPendingLangsiran() {
     shift: findCol("SHIFT"),
     gudangMuat: findCol("GUDANG MUAT")
   };
-  
+
   const results = [];
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     // Jika kolom status tidak ditemukan, anggap saja kosong (agar data tetap muncul)
     const statusVal = idx.status === -1 ? "" : String(row[idx.status] || "").trim().toUpperCase();
-    
+
     // Tampilkan jika status kosong, '-', atau unvalidated
     if (statusVal === "" || statusVal === "-" || statusVal === "UNVALIDATED" || statusVal === "UNDEFINED") {
       results.push({
@@ -242,31 +282,31 @@ function handleGetPendingLangsiran() {
       });
     }
   }
-  
+
   return ContentService.createTextOutput(JSON.stringify(results.reverse()))
-                       .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function handleGetSetup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheetSetup = ss.getSheetByName(SHEET_SETUP);
   const sheetAbs = ss.getSheetByName(SHEET_ABSENSI);
-  
+
   if (!sheetSetup) throw new Error("Sheet SETUP hilang");
-  
+
   const setupData = sheetSetup.getDataRange().getValues();
   if (setupData.length <= 1) { // Empty except header
     return ContentService.createTextOutput(JSON.stringify({ success: true, hasActiveSetup: false }))
-                         .setMimeType(ContentService.MimeType.JSON);
+      .setMimeType(ContentService.MimeType.JSON);
   }
-  
+
   // Ambil baris terakhir sebagai Active Setup
   const lastSetupRow = setupData[setupData.length - 1];
-  
+
   // Parse End Time validity (if current time > Jam Selesai, it's expired)
   const today = new Date();
   const setupDate = new Date(lastSetupRow[0]); // Timestamp col A
-  
+
   // Simple same-day validity check based on 'Jam Selesai' logic
   // Assume Jam Selesai format is "HH:MM". If it's valid, return it.
   const activeSetupParams = {
@@ -279,35 +319,35 @@ function handleGetSetup() {
     jamMulai: lastSetupRow[7],
     jamSelesai: lastSetupRow[8]
   };
-  
+
   // Optional: Build list of Absensi to default in frontend
-  
-  return ContentService.createTextOutput(JSON.stringify({ 
-    success: true, 
+
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
     hasActiveSetup: true,
     setupDate: setupDate.toISOString(),
-    data: activeSetupParams 
+    data: activeSetupParams
   }))
-  .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function handleSaveMuat(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_MUATAN);
-  
+
   // Auto-create sheet if missing (like legacy)
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_MUATAN);
     const headers = [
-      "Timestamp", "Tanggal", "Shift", "Kategori", "Nopol", 
-      "Material", "Netto (Kg)", "Jumlah Bag", "Tim Harian", "Jumlah Kuli", 
-      "Nama Krani", "Bongkar Stapel", "Start Muat", "Finish", "OTW Pabrik", 
+      "Timestamp", "Tanggal", "Shift", "Kategori", "Nopol",
+      "Material", "Netto (Kg)", "Jumlah Bag", "Tim Harian", "Jumlah Kuli",
+      "Nama Krani", "Bongkar Stapel", "Start Muat", "Finish", "OTW Pabrik",
       "Status Validasi", "Validator", "SYSTEM_VERSION", "Gudang Muat"
     ];
     sheet.appendRow(headers);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
   }
-  
+
   sheet.appendRow([
     new Date(),                 // A=0: Timestamp
     data.tanggal || '-',         // B=1: Tanggal
@@ -329,9 +369,9 @@ function handleSaveMuat(data) {
     "v20.0.3 ABSOLUTE-SYNC",    // R=17: SYSTEM_VERSION
     data.gudang || 'RM'          // S=18: Gudang Muat (Default RM)
   ]);
-  
+
   return ContentService.createTextOutput(JSON.stringify({ success: true, message: "Data Muatan Berhasil Tersimpan" }))
-                       .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON);
 }
 function handleSaveGlobalAttendance(data) {
   const props = PropertiesService.getScriptProperties();
@@ -342,9 +382,9 @@ function handleSaveGlobalAttendance(data) {
     absensi: data.absensi,
     timestamp: new Date().getTime()
   };
-  
+
   props.setProperty("GLOBAL_ATTENDANCE_STATE", JSON.stringify(state));
-  
+
   // 3. Save to Global Log Sheet (Grouped per Team)
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheetLog = ss.getSheetByName(SHEET_LOG_ABSENSI);
@@ -353,10 +393,10 @@ function handleSaveGlobalAttendance(data) {
     newLog.appendRow(["Timestamp", "Tanggal", "Tim", "Kategori", "Jumlah Hadir", "Keterangan (Alpha)"]);
     newLog.getRange(1, 1, 1, 6).setFontWeight("bold");
   }
-  
+
   const logSheet = ss.getSheetByName(SHEET_LOG_ABSENSI);
   const ts = new Date();
-  
+
   // Group by Team for logging
   const teams = [...new Set(data.absensi.map(k => k.tim))];
   teams.forEach(tName => {
@@ -364,32 +404,32 @@ function handleSaveGlobalAttendance(data) {
     const presentCount = kuliInTeam.filter(k => k.status === 'H').length;
     const absentNames = kuliInTeam.filter(k => k.status === 'A').map(k => k.nama).join(", ");
     const category = kuliInTeam[0].kategori;
-    
+
     logSheet.appendRow([ts, data.tanggal, tName, category, presentCount, absentNames || "-"]);
   });
-  
+
   return ContentService.createTextOutput(JSON.stringify({ success: true, message: "Absensi Global Berhasil Disimpan & Dicatat" }))
-                       .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function handleGetGlobalAttendance() {
   const props = PropertiesService.getScriptProperties();
   const rawState = props.getProperty("GLOBAL_ATTENDANCE_STATE");
-  
+
   if (!rawState) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Belum ada absensi global" }))
-                         .setMimeType(ContentService.MimeType.JSON);
+      .setMimeType(ContentService.MimeType.JSON);
   }
-  
+
   const state = JSON.parse(rawState);
   const now = new Date();
   const nowStr = Utilities.formatDate(now, Session.getScriptTimeZone(), "HH:mm");
-  
+
   const start = state.startTime;
   const end = state.endTime;
-  
+
   let isActive = false;
-  
+
   if (start < end) {
     // Skenario satu hari: 08:00 - 17:00
     if (nowStr >= start && nowStr <= end) isActive = true;
@@ -397,9 +437,9 @@ function handleGetGlobalAttendance() {
     // Skenario lewat tengah malam: 19:00 - 07:00
     if (nowStr >= start || nowStr <= end) isActive = true;
   }
-  
-  return ContentService.createTextOutput(JSON.stringify({ 
-    success: true, 
+
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
     isActive: isActive,
     data: state,
     currentTime: nowStr
@@ -447,7 +487,9 @@ function handleGetAnalyticsV2() {
           arrivalDate: findH(bH, ["ARRIVAL DATE"]),
           arrivalTime: findH(bH, ["ARRIVAL TIME"]),
           qcTime: findH(bH, ["QC SAMPLING 1 TIME", "QC TIME"]),
-          timbangTime: findH(bH, ["TIME TIMBANG MASUK", "TIMBANG IN"])
+          timbangTime: findH(bH, ["TIME TIMBANG MASUK", "TIMBANG IN"]),
+          tanggalPB: findH(bH, ["TANGGAL PB", "TANGGAL PROSES"]),
+          sampaiGudang: findH(bH, ["SAMPAI GUDANG"])
         };
 
         for (let i = 1; i < bData.length; i++) {
@@ -472,7 +514,7 @@ function handleGetAnalyticsV2() {
           const tim = String(bIdx.tim >= 0 ? row[bIdx.tim] : "").toUpperCase().trim();
           const material = String(bIdx.material >= 0 ? row[bIdx.material] : "");
           const gudang = String(bIdx.gudang >= 0 ? row[bIdx.gudang] : "");
-          
+
           // Template row (per-truck detail)
           templateRows.push({
             TANGGAL: tgl,
@@ -483,11 +525,11 @@ function handleGetAnalyticsV2() {
             NOPOL: String(bIdx.nopol >= 0 ? row[bIdx.nopol] : ""),
             REAL_BONGKAR_MT: netto,
             REAL_BONGKAR_KG: netto, // Alias for clarity v20.2.3
-            ARRIVAL_DATE: (function(v) { 
-              if (!v) return ""; 
-              if (v instanceof Date) { 
-                let dd = v.getDate(); let mm = v.getMonth()+1; let yy = v.getFullYear();
-                return (dd<10?"0"+dd:dd) + "." + (mm<10?"0"+mm:mm) + "." + yy;
+            ARRIVAL_DATE: (function (v) {
+              if (!v) return "";
+              if (v instanceof Date) {
+                let dd = v.getDate(); let mm = v.getMonth() + 1; let yy = v.getFullYear();
+                return (dd < 10 ? "0" + dd : dd) + "." + (mm < 10 ? "0" + mm : mm) + "." + yy;
               }
               return String(v).trim();
             })(bIdx.arrivalDate >= 0 ? row[bIdx.arrivalDate] : ""),
@@ -503,14 +545,25 @@ function handleGetAnalyticsV2() {
             FINISH_TIME: fmtTime(bIdx.finish >= 0 ? row[bIdx.finish] : ""),
             DURASI_BONGKAR: bIdx.startBongkar >= 0 && bIdx.finish >= 0 ? calcDurMin(row[bIdx.startBongkar], row[bIdx.finish]) : "-",
             PB_START: fmtTime(bIdx.startPanggil >= 0 ? row[bIdx.startPanggil] : ""),
-            TUNGGU_QC: fmtTime(bIdx.holdQC >= 0 ? row[bIdx.holdQC] : "")
+            TUNGGU_QC: fmtTime(bIdx.holdQC >= 0 ? row[bIdx.holdQC] : ""),
+            TANGGAL_PB: (function (v) {
+              if (!v) return "";
+              if (v instanceof Date) {
+                return Utilities.formatDate(v, Session.getScriptTimeZone(), "yyyy-MM-dd");
+              }
+              let s = String(v).trim();
+              let m2 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+              if (m2) return m2[3] + "-" + m2[2].padStart(2, "0") + "-" + m2[1].padStart(2, "0");
+              return s;
+            })(bIdx.tanggalPB >= 0 ? row[bIdx.tanggalPB] : ""),
+            SAMPAI_GUDANG: fmtTime(bIdx.sampaiGudang >= 0 ? row[bIdx.sampaiGudang] : "")
           });
 
           // Daily aggregation
-          if (!dailyMap[tgl]) dailyMap[tgl] = { 
-            tanggal: tgl, bongkar: 0, muat: 0, 
+          if (!dailyMap[tgl]) dailyMap[tgl] = {
+            tanggal: tgl, bongkar: 0, muat: 0,
             st_badrun: 0, st_kartono: 0, st_kulhar: 0,
-            prod_badrun: 0, prod_kartono: 0, prod_kulhar: 0, 
+            prod_badrun: 0, prod_kartono: 0, prod_kulhar: 0,
             _bCount: { BADRUN: 0, KARTONO: 0, KULHAR: 0 },
             _bNetto: { BADRUN: 0, KARTONO: 0, KULHAR: 0 }
           };
@@ -548,8 +601,8 @@ function handleGetAnalyticsV2() {
           }
 
           const netto = Number(mData[i][mNetto >= 0 ? mNetto : 6]) || 0;
-          if (!dailyMap[tgl]) dailyMap[tgl] = { 
-            tanggal: tgl, bongkar: 0, muat: 0, 
+          if (!dailyMap[tgl]) dailyMap[tgl] = {
+            tanggal: tgl, bongkar: 0, muat: 0,
             st_badrun: 0, st_kartono: 0, st_kulhar: 0,
             prod_badrun: 0, prod_kartono: 0, prod_kulhar: 0,
             _bCount: { BADRUN: 0, KARTONO: 0, KULHAR: 0 },
@@ -561,7 +614,7 @@ function handleGetAnalyticsV2() {
           templateRows.push({
             TANGGAL: tgl, JENIS_RM: String(mData[i][mMaterial] || ""), KEGIATAN: "MUAT",
             REAL_BONGKAR_MT: netto,
-            LOKASI: String(mData[i][mGudang >= 0 ? mGudang : 18] || "RM"), 
+            LOKASI: String(mData[i][mGudang >= 0 ? mGudang : 18] || "RM"),
             DURASI_BONGKAR: null, PB_START: null, TUNGGU_QC: null
           });
         }
@@ -664,11 +717,11 @@ function handleGetAnalyticsV2() {
           if (!tgl) continue;
           if (tgl instanceof Date) tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
           else tgl = String(tgl).trim();
-          
+
           const tim = String(aData[i][aTim] || "").toUpperCase().trim();
           const kat = String(aData[i][aKat] || "").toUpperCase().trim();
           const isHadir = (String(aData[i][aStatus] || "H").toUpperCase().trim() === "H");
-          
+
           if (isHadir && dailyMap[tgl]) {
             if (kat === "BORONG") {
               if (tim === "BADRUN") dailyMap[tgl].prod_badrun++;
@@ -678,7 +731,7 @@ function handleGetAnalyticsV2() {
             }
           }
         }
-        
+
         // Finalize prod: totalNetto / hadirCount
         Object.values(dailyMap).forEach(d => {
           d.prod_badrun = d.prod_badrun > 0 ? Math.round(d._bNetto.BADRUN / d.prod_badrun) : 0;
@@ -686,21 +739,21 @@ function handleGetAnalyticsV2() {
           d.prod_kulhar = d.prod_kulhar > 0 ? Math.round(d._bNetto.KULHAR / d.prod_kulhar) : 0;
         });
       }
-      
+
       // 5. Build Material Summary & Pending Coords
       const materials = {};
       const pendingCoords = new Set();
       templateRows.forEach(r => {
         if (!materials[r.JENIS_RM]) materials[r.JENIS_RM] = 0;
         materials[r.JENIS_RM] += (Number(r.REAL_BONGKAR_MT) || 0);
-        
+
         if (r.KEGIATAN === "BONGKAR" && (!r.LOKASI || r.LOKASI === "-" || r.LOKASI.trim() === "")) {
-           pendingCoords.add(r.TANGGAL);
+          pendingCoords.add(r.TANGGAL);
         }
       });
-      
-      const datesRes = Object.values(dailyMap).sort((a,b) => a.tanggal.localeCompare(b.tanggal));
-      
+
+      const datesRes = Object.values(dailyMap).sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         dailyActivity: datesRes,
@@ -710,7 +763,7 @@ function handleGetAnalyticsV2() {
         pendingCoords: Array.from(pendingCoords).sort(),
         materials: materials
       })).setMimeType(ContentService.MimeType.JSON);
-      
+
     } catch (e) {
       return ContentService.createTextOutput(JSON.stringify({ success: false, message: e.toString() })).setMimeType(ContentService.MimeType.JSON);
     }
@@ -723,14 +776,14 @@ function handleGetStafelData() {
   try {
     const STAFFEL_SHEET = "STAFFEL_LOG";
     const STAFFEL_CONFIG_SHEET = "STAFFEL_CONFIG";
-    
+
     // 1. Read stock awal from config (or use defaults)
     let stockAwal = {
       "BADRUN": 162, "KARTONO": 112,
       "WAWAN": 25, "SURYANA": 25, "SAHLAN": 25,
       "PALLET_KOSONG": 137
     };
-    
+
     let cfgSheet = ss.getSheetByName(STAFFEL_CONFIG_SHEET);
     if (cfgSheet && cfgSheet.getLastRow() > 0) {
       const cfgData = cfgSheet.getDataRange().getValues();
@@ -740,7 +793,7 @@ function handleGetStafelData() {
         if (key && stockAwal.hasOwnProperty(key)) stockAwal[key] = val;
       });
     }
-    
+
     // 2. Read all entries from STAFFEL_LOG
     let entries = [];
     let stSheet = ss.getSheetByName(STAFFEL_SHEET);
@@ -757,14 +810,14 @@ function handleGetStafelData() {
         kuli: stH.indexOf("NAMA KULI") >= 0 ? stH.indexOf("NAMA KULI") : 7,
         krani: stH.indexOf("KRANI") >= 0 ? stH.indexOf("KRANI") : 8
       };
-      
+
       for (let i = 1; i < stData.length; i++) {
         const row = stData[i];
         let rawTgl = row[sIdx.tanggal];
         let tglStr = "-";
         if (rawTgl) {
-            if (rawTgl instanceof Date) tglStr = Utilities.formatDate(rawTgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
-            else tglStr = String(rawTgl);
+          if (rawTgl instanceof Date) tglStr = Utilities.formatDate(rawTgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          else tglStr = String(rawTgl);
         }
         entries.push({
           row_id: i + 1,
@@ -779,12 +832,12 @@ function handleGetStafelData() {
         });
       }
     }
-    
+
     // 3. Calculate pallet summary
     const tims = ["BADRUN", "KARTONO", "WAWAN", "SURYANA", "SAHLAN"];
     const summary = {};
     let totalBongkaran = 0, totalStapel = 0;
-    
+
     tims.forEach(t => {
       let bongkaranPcs = 0, stapelPcs = 0;
       entries.forEach(e => {
@@ -802,10 +855,10 @@ function handleGetStafelData() {
         pr_remaining: (stockAwal[t] || 0) + bongkaranPcs - stapelPcs
       };
     });
-    
+
     // Total Pallet Kosong formula: Stock Awal PKosong - Total Bongkaran + Total Stapel
     summary.PALLET_KOSONG = (stockAwal.PALLET_KOSONG || 0) - totalBongkaran + totalStapel;
-    
+
     return ContentService.createTextOutput(JSON.stringify({ success: true, data: { summary: summary, stockAwal: stockAwal, logs: entries } })).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
@@ -821,7 +874,7 @@ function handleSaveStafelEntry(data) {
     sSheet = ss.insertSheet(STAFFEL_SHEET);
     sSheet.appendRow(["Timestamp", "Tanggal", "Shift", "Tim", "Jenis", "Jumlah Pcs", "Netto Kg", "Nama Kuli", "Krani"]);
   }
-  
+
   const ts = new Date();
   const pcs = Number(raw.pcs || raw.jumlah_pcs) || 0;
   const nettoKg = Number(raw.netto_kg) || (pcs * 50);
@@ -837,8 +890,8 @@ function handleSaveStafelEntry(data) {
     namaKuli,
     raw.krani || "-"
   ]);
-  
-  return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
+
+  return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
 }
 
 function handleUpdateStafelStock(data) {
@@ -846,14 +899,14 @@ function handleUpdateStafelStock(data) {
   var raw = data;
   const STAFFEL_CONFIG = "STAFFEL_CONFIG";
   let cSheet = ss.getSheetByName(STAFFEL_CONFIG);
-  
+
   if (!cSheet) { cSheet = ss.insertSheet(STAFFEL_CONFIG); }
   else { cSheet.clear(); }
-  
+
   cSheet.appendRow(["TIM KERJA", "SISA PALLET AWAL"]);
   Object.keys(raw.stocks).forEach(k => {
     cSheet.appendRow([k, raw.stocks[k]]);
   });
-  
-  return ContentService.createTextOutput(JSON.stringify({success:true, message:"Stock Awal Diperbarui"})).setMimeType(ContentService.MimeType.JSON);
+
+  return ContentService.createTextOutput(JSON.stringify({ success: true, message: "Stock Awal Diperbarui" })).setMimeType(ContentService.MimeType.JSON);
 }

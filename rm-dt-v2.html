@@ -15,31 +15,28 @@
 
     <style>
         :root {
-            /* Calm Light Theme Variables */
-            --bg-color: #f1f5f9; /* Slate 100 */
+            --bg-color: #f1f5f9;
             --card-bg: #ffffff;
             --sidebar-bg: #ffffff;
-            --text-primary: #1e293b; /* Slate 800 */
-            --text-secondary: #64748b; /* Slate 500 */
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
             --border-color: #e2e8f0;
-            --accent-primary: #0284c7; /* Sky 600 */
-            --accent-light: #e0f2fe; /* Sky 100 */
+            --accent-primary: #0284c7;
+            --accent-light: #e0f2fe;
             --success: #10b981;
             --danger: #ef4444;
+            --warning: #f59e0b;
+            --purple: #8b5cf6;
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
             --shadow-md: 0 4px 15px rgba(0,0,0,0.03);
             --shadow-lg: 0 10px 30px rgba(0,0,0,0.05);
             --radius-md: 12px;
             --radius-lg: 16px;
+            --glass-bg: rgba(255,255,255,0.75);
+            --glass-border: rgba(255,255,255,0.5);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-            scrollbar-width: thin;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; scrollbar-width: thin; }
 
         body {
             background-color: var(--bg-color);
@@ -52,610 +49,423 @@
             position: relative;
         }
 
-        /* --- LOGIN OVERLAY (LUXURIOUS) --- */
+        /* --- LOGIN OVERLAY --- */
         #login-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, rgba(241, 245, 249, 0.6) 0%, rgba(226, 232, 240, 0.8) 100%);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            z-index: 9999; display: flex; align-items: center; justify-content: center;
             transition: opacity 0.5s ease-out, visibility 0.5s;
         }
-
-        /* Abstract glowing particles behind the card */
         #login-overlay::before, #login-overlay::after {
-            content: '';
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            filter: blur(60px);
-            z-index: -1;
-            opacity: 0.5;
-            animation: floatGlow 8s ease-in-out infinite alternate;
+            content: ''; position: absolute; width: 300px; height: 300px; border-radius: 50%;
+            filter: blur(60px); z-index: -1; opacity: 0.5; animation: floatGlow 8s ease-in-out infinite alternate;
         }
-        #login-overlay::before {
-            background: rgba(2, 132, 199, 0.4);
-            top: 20%; left: 30%;
-        }
-        #login-overlay::after {
-            background: rgba(16, 185, 129, 0.3);
-            bottom: 20%; right: 30%;
-            animation-delay: -4s;
-        }
-        @keyframes floatGlow {
-            0% { transform: translateY(0) scale(1); opacity: 0.4; }
-            100% { transform: translateY(-30px) scale(1.1); opacity: 0.6; }
-        }
-        
+        #login-overlay::before { background: rgba(2, 132, 199, 0.4); top: 20%; left: 30%; }
+        #login-overlay::after { background: rgba(16, 185, 129, 0.3); bottom: 20%; right: 30%; animation-delay: -4s; }
+        @keyframes floatGlow { 0% { transform: translateY(0) scale(1); opacity: 0.4; } 100% { transform: translateY(-30px) scale(1.1); opacity: 0.6; } }
+
         .login-card {
-            background: rgba(255, 255, 255, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            border-radius: 20px;
-            padding: 45px 40px;
-            width: 90%;
-            max-width: 420px;
+            background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 20px; padding: 45px 40px; width: 90%; max-width: 420px;
             box-shadow: 0 25px 50px -12px rgba(2, 132, 199, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.9);
-            text-align: center;
-            backdrop-filter: blur(10px);
-            transform: scale(0.95);
-            animation: modalPop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            text-align: center; backdrop-filter: blur(10px);
+            transform: scale(0.95); animation: modalPop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-
-        @keyframes modalPop {
-            0% { transform: scale(0.9) translateY(20px); opacity: 0; }
-            100% { transform: scale(1) translateY(0); opacity: 1; }
-        }
-
-        .login-card h2 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--accent-primary);
-            margin-bottom: 5px;
-            font-size: 1.6rem;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 5px rgba(2, 132, 199, 0.15);
-        }
-
-        .login-card p {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            margin-bottom: 35px;
-            font-weight: 500;
-        }
-
-        .login-input-group {
-            text-align: left;
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .login-input-group label {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .login-input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid transparent;
-            border-radius: 12px;
-            font-size: 1rem;
-            background: rgba(241, 245, 249, 0.7);
-            color: var(--text-primary);
-            outline: none;
-            transition: all 0.3s ease;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
-        }
-
-        .login-input:focus {
-            background: #fff;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.1);
-        }
-
-        .login-input::placeholder {
-            color: #94a3b8;
-            font-weight: 400;
-        }
-
-        .login-btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--accent-primary) 0%, #0369a1 100%);
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.05rem;
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 20px -5px rgba(2, 132, 199, 0.4);
-            letter-spacing: 1px;
-        }
-
-        .login-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 25px -5px rgba(2, 132, 199, 0.5);
-            background: linear-gradient(135deg, #0ea5e9 0%, var(--accent-primary) 100%);
-        }
-        
-        #login-error {
-            color: var(--danger);
-            font-size: 0.8rem;
-            margin-top: 15px;
-            display: none;
-            font-weight: 600;
-            animation: shake 0.4s ease-in-out;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
+        @keyframes modalPop { 0% { transform: scale(0.9) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+        .login-card h2 { font-family: 'Orbitron', sans-serif; color: var(--accent-primary); margin-bottom: 5px; font-size: 1.6rem; letter-spacing: 1px; }
+        .login-card p { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 35px; font-weight: 500; }
+        .login-input-group { text-align: left; margin-bottom: 20px; position: relative; }
+        .login-input-group label { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .login-input { width: 100%; padding: 14px 16px; border: 2px solid transparent; border-radius: 12px; font-size: 1rem; background: rgba(241, 245, 249, 0.7); color: var(--text-primary); outline: none; transition: all 0.3s ease; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+        .login-input:focus { background: #fff; border-color: var(--accent-primary); box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.1); }
+        .login-input::placeholder { color: #94a3b8; font-weight: 400; }
+        .login-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--accent-primary) 0%, #0369a1 100%); color: #fff; border: none; border-radius: 12px; font-size: 1.05rem; font-weight: 700; cursor: pointer; margin-top: 15px; transition: all 0.3s ease; box-shadow: 0 10px 20px -5px rgba(2, 132, 199, 0.4); letter-spacing: 1px; }
+        .login-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 25px -5px rgba(2, 132, 199, 0.5); }
+        #login-error { color: var(--danger); font-size: 0.8rem; margin-top: 15px; display: none; font-weight: 600; animation: shake 0.4s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
         /* --- SIDEBAR --- */
-        .sidebar {
-            width: 260px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            z-index: 100;
-            box-shadow: var(--shadow-sm);
-            transition: transform 0.3s ease;
+        .sidebar { width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 100; box-shadow: var(--shadow-sm); transition: transform 0.3s ease; }
+        .brand { padding: 25px 20px 10px 20px; border-bottom: 1px solid var(--border-color); }
+        .brand h1 { font-family: 'Orbitron', sans-serif; font-size: 1.25rem; color: var(--text-primary); letter-spacing: 1px; line-height: 1.2; }
+        .brand span { font-size: 0.6rem; color: #fff; background: var(--accent-primary); padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
+
+        .mini-clock-wrapper { margin-top: 15px; transform: scale(0.65); transform-origin: left top; width: 153%; margin-bottom: -30px; }
+        .clock-container { display: flex; align-items: center; gap: 15px; padding: 8px 20px; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 40px; font-family: 'Orbitron', sans-serif; color: var(--text-primary); min-width: 320px; height: 60px; }
+        .clock-date-group { display: flex; flex-direction: column; align-items: flex-end; min-width: 120px; line-height: 1.1; }
+        .clock-day { font-size: 0.65rem; color: var(--accent-primary); letter-spacing: 2px; }
+        .clock-date { font-size: 1.2rem; font-weight: 800; white-space: nowrap; }
+        .clock-visual { position: relative; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .clock-circle { position: absolute; inset: 0; border: 2px solid var(--border-color); border-radius: 50%; }
+        .clock-progress { position: absolute; inset: 0; border: 2px solid transparent; border-top: 2px solid var(--accent-primary); border-radius: 50%; transition: transform 1s linear; }
+        .clock-time-group { display: flex; flex-direction: column; align-items: center; z-index: 5; }
+        .clock-ampm { font-size: 0.4rem; font-weight: 800; color: var(--accent-primary); }
+        .clock-time { font-size: 1.2rem; font-weight: 800; line-height: 1; }
+
+        .nav-menu { overflow-y: auto; flex-grow: 1; padding: 15px 10px; }
+        .nav-btn { width: 100%; text-align: left; padding: 12px 15px; background: transparent; border: none; color: var(--text-secondary); font-family: 'Inter', sans-serif; font-weight: 500; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; border-radius: 8px; text-decoration: none; margin-bottom: 5px; transition: 0.2s; }
+        .nav-btn:hover, .nav-btn.active { color: var(--accent-primary); background: var(--accent-light); }
+        .nav-btn i.icon { width: 25px; margin-right: 10px; font-size: 1.1rem; }
+
+        /* --- MAIN CONTENT --- */
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); }
+        .header-title-area { display: flex; align-items: center; gap: 15px; }
+        .mobile-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: var(--text-primary); cursor: pointer; }
+        .header-title h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--text-primary); letter-spacing: 1px; }
+        .header-title p { color: var(--text-secondary); font-size: 0.85rem; }
+        .user-control-panel { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+        .user-profile-badge { display: flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 8px 18px; border-radius: 30px; color: var(--accent-primary); box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15); border: 1px solid rgba(255, 255, 255, 0.5); }
+        .user-profile-badge span { font-family: 'Rajdhani', sans-serif; font-size: 1.15rem; font-weight: 700; letter-spacing: 1.5px; }
+        .user-profile-badge i { font-size: 1.4rem; }
+        .logout-btn { background: transparent; border: none; color: var(--danger); font-family: 'Inter', sans-serif; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; padding: 2px 10px; opacity: 0.8; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+        .logout-btn:hover { opacity: 1; transform: translateX(-3px); }
+        .main-content { flex-grow: 1; padding: 30px; overflow-y: auto; scroll-behavior: smooth; }
+
+        /* ============================== */
+        /* === NEW: MONTH FILTER BAR === */
+        /* ============================== */
+        .month-filter-bar {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 24px;
+            padding: 14px 20px; background: var(--glass-bg); backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md); flex-wrap: wrap;
+        }
+        .month-filter-bar .filter-label {
+            font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.95rem;
+            color: var(--text-primary); letter-spacing: 0.5px; margin-right: 6px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .month-pill {
+            padding: 7px 18px; border-radius: 20px; border: 1.5px solid var(--border-color);
+            background: #fff; color: var(--text-secondary); font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; transition: all 0.25s ease; white-space: nowrap;
+        }
+        .month-pill:hover { border-color: var(--accent-primary); color: var(--accent-primary); transform: translateY(-1px); }
+        .month-pill.active {
+            background: linear-gradient(135deg, var(--accent-primary), #0369a1);
+            color: #fff; border-color: transparent;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
         }
 
-        .brand {
-            padding: 25px 20px 10px 20px;
-            border-bottom: 1px solid var(--border-color);
+        /* ==================================== */
+        /* === NEW: INAP ANALYSIS SECTION === */
+        /* ==================================== */
+        .section-title-bar {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+        }
+        .section-title-bar h3 {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 700;
+            color: var(--text-primary); letter-spacing: 0.5px;
+        }
+        .section-title-bar .section-badge {
+            padding: 3px 12px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .badge-live { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #16a34a; }
+        .badge-analysis { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #d97706; }
+
+        .inap-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;
+        }
+        .inap-card {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 22px 20px;
+            box-shadow: var(--shadow-md); position: relative; overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .inap-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            border-radius: 16px 16px 0 0;
+        }
+        .inap-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+        .inap-card.card-total::before { background: linear-gradient(90deg, var(--accent-primary), #38bdf8); }
+        .inap-card.card-inap::before { background: linear-gradient(90deg, #ef4444, #f97316); }
+        .inap-card.card-tidak::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .inap-card .card-icon { font-size: 2rem; opacity: 0.12; position: absolute; right: 16px; top: 16px; }
+        .inap-card .card-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 8px; }
+        .inap-card .card-value { font-family: 'Rajdhani', sans-serif; font-size: 2.4rem; font-weight: 800; line-height: 1; }
+        .card-total .card-value { color: var(--accent-primary); }
+        .card-inap .card-value { color: #ef4444; }
+        .card-tidak .card-value { color: #10b981; }
+        .inap-card .card-sub { font-size: 0.78rem; color: var(--text-secondary); margin-top: 6px; font-weight: 500; }
+
+        .notif-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            margin-top: 10px; padding: 6px 14px; border-radius: 8px;
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            border: 1px solid #fecaca; color: #dc2626;
+            font-size: 0.72rem; font-weight: 700; cursor: pointer;
+            transition: all 0.3s ease; animation: pulseNotif 2s ease-in-out infinite;
+        }
+        .notif-badge:hover { background: linear-gradient(135deg, #fee2e2, #fecaca); transform: scale(1.03); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2); }
+        @keyframes pulseNotif { 0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.15); } 50% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); } }
+
+        .inap-chart-row {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;
+        }
+        .chart-card-new {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 24px;
+            box-shadow: var(--shadow-md); transition: all 0.3s ease;
+        }
+        .chart-card-new:hover { box-shadow: var(--shadow-lg); }
+        .chart-card-new .card-header-new {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
+        }
+        .chart-card-new .card-header-new h4 {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.05rem; font-weight: 700;
+            color: var(--text-primary); display: flex; align-items: center; gap: 8px;
         }
 
-        .brand h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.25rem;
-            color: var(--text-primary);
-            letter-spacing: 1px;
-            line-height: 1.2;
+        /* ================================== */
+        /* === NEW: LEADTIME TABLE === */
+        /* ================================== */
+        .leadtime-section {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 24px;
+            box-shadow: var(--shadow-md); margin-bottom: 30px;
         }
-
-        .brand span {
-            font-size: 0.6rem;
-            color: #fff;
-            background: var(--accent-primary);
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-left: 5px;
+        .leadtime-table {
+            width: 100%; border-collapse: separate; border-spacing: 0;
+            font-size: 0.82rem;
         }
-
-        /* Clock Widget inside Sidebar */
-        .mini-clock-wrapper {
-            margin-top: 15px;
-            transform: scale(0.65);
-            transform-origin: left top;
-            width: 153%;
-            margin-bottom: -30px;
+        .leadtime-table thead th {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            padding: 12px 14px; text-align: left; font-weight: 700;
+            color: var(--text-secondary); text-transform: uppercase;
+            letter-spacing: 0.5px; font-size: 0.72rem;
+            border-bottom: 2px solid var(--border-color);
+            position: sticky; top: 0; z-index: 2;
         }
+        .leadtime-table thead th:first-child { border-radius: 10px 0 0 0; }
+        .leadtime-table thead th:last-child { border-radius: 0 10px 0 0; }
+        .leadtime-table tbody tr {
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .leadtime-table tbody tr:hover {
+            background: var(--accent-light); transform: scale(1.005);
+        }
+        .leadtime-table tbody td {
+            padding: 11px 14px; border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .pct-bar-wrap {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .pct-bar {
+            flex-grow: 1; height: 8px; background: #f1f5f9;
+            border-radius: 4px; overflow: hidden; min-width: 60px;
+        }
+        .pct-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+        .pct-bar-fill.fill-danger { background: linear-gradient(90deg, #ef4444, #f97316); }
+        .pct-bar-fill.fill-success { background: linear-gradient(90deg, #10b981, #34d399); }
+        .pct-label { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.85rem; min-width: 40px; text-align: right; }
+        .click-hint {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.65rem; color: var(--accent-primary); font-weight: 600;
+            opacity: 0.7; transition: opacity 0.2s;
+        }
+        .leadtime-table tbody tr:hover .click-hint { opacity: 1; }
 
-        .clock-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 8px 20px;
-            background: var(--bg-color); /* Light gray behind clock */
+        /* ================================= */
+        /* === NEW: ANALYSIS OVERLAYS === */
+        /* ================================= */
+        .analysis-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+            z-index: 5000; display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .analysis-overlay.show { display: flex; opacity: 1; }
+        .overlay-panel {
+            background: var(--card-bg); border-radius: 20px;
+            width: 92%; max-width: 800px; max-height: 85vh;
+            overflow-y: auto; box-shadow: 0 30px 60px rgba(0,0,0,0.25);
+            animation: overlaySlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             border: 1px solid var(--border-color);
-            border-radius: 40px;
-            font-family: 'Orbitron', sans-serif;
-            color: var(--text-primary);
-            min-width: 320px;
-            height: 60px;
         }
-
-        .clock-date-group {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            min-width: 120px;
-            line-height: 1.1;
+        @keyframes overlaySlideIn { 0% { transform: translateY(30px) scale(0.95); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        .overlay-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 22px 28px; border-bottom: 1px solid var(--border-color);
+            background: linear-gradient(135deg, #f8fafc, #fff);
+            border-radius: 20px 20px 0 0; position: sticky; top: 0; z-index: 10;
         }
+        .overlay-header h3 {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.25rem; font-weight: 700;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .overlay-close {
+            width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border-color);
+            background: #fff; color: var(--text-secondary); font-size: 1.1rem;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .overlay-close:hover { background: #fef2f2; color: #ef4444; border-color: #fecaca; }
+        .overlay-body { padding: 24px 28px; }
 
-        .clock-day {
-            font-size: 0.65rem;
+        /* Overlay inner cards */
+        .ov-material-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 18px; margin-bottom: 8px;
+            background: #f8fafc; border: 1px solid var(--border-color);
+            border-radius: 12px; cursor: pointer; transition: all 0.25s ease;
+        }
+        .ov-material-item:hover {
+            background: var(--accent-light); border-color: #bae6fd;
+            transform: translateX(4px); box-shadow: 0 4px 12px rgba(2, 132, 199, 0.1);
+        }
+        .ov-material-item .mat-name { font-weight: 600; font-size: 0.88rem; display: flex; align-items: center; gap: 8px; }
+        .ov-material-item .mat-count { font-family: 'Rajdhani', sans-serif; font-weight: 800; font-size: 1.15rem; color: var(--accent-primary); }
+        .ov-material-item .mat-arrow { color: var(--accent-primary); opacity: 0.4; transition: opacity 0.2s; }
+        .ov-material-item:hover .mat-arrow { opacity: 1; }
+
+        /* Duration bars */
+        .dur-category {
+            margin-bottom: 16px; padding: 18px; background: #f8fafc;
+            border-radius: 14px; border: 1px solid var(--border-color);
+            cursor: pointer; transition: all 0.25s;
+        }
+        .dur-category:hover { background: var(--accent-light); border-color: #bae6fd; }
+        .dur-category-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+        }
+        .dur-category-header h4 {
+            font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1rem;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .dur-value-big {
+            font-family: 'Rajdhani', sans-serif; font-weight: 800; font-size: 1.4rem;
             color: var(--accent-primary);
-            letter-spacing: 2px;
         }
+        .dur-bar-track {
+            width: 100%; height: 10px; background: #e2e8f0;
+            border-radius: 5px; overflow: hidden;
+        }
+        .dur-bar-fill {
+            height: 100%; border-radius: 5px;
+            transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .dur-bar-fill.fill-antri { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .dur-bar-fill.fill-proses { background: linear-gradient(90deg, #0284c7, #38bdf8); }
 
-        .clock-date {
-            font-size: 1.2rem;
-            font-weight: 800;
+        .dur-sub-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; margin-top: 6px;
+            background: #fff; border-radius: 8px; border: 1px solid #f1f5f9;
+            font-size: 0.82rem;
+        }
+        .dur-sub-item .sub-label { color: var(--text-secondary); font-weight: 500; }
+        .dur-sub-item .sub-val { font-family: 'Rajdhani', sans-serif; font-weight: 700; color: var(--text-primary); }
+
+        .dur-total-bar {
+            display: flex; align-items: center; gap: 12px;
+            padding: 16px 20px; margin-top: 16px;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border-radius: 14px; color: #fff;
+        }
+        .dur-total-bar .dur-total-label { font-size: 0.8rem; font-weight: 600; opacity: 0.8; }
+        .dur-total-bar .dur-total-val { font-family: 'Rajdhani', sans-serif; font-size: 1.6rem; font-weight: 800; }
+
+        /* Detail table inside overlay */
+        .detail-table {
+            width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 16px;
+        }
+        .detail-table thead th {
+            background: #f1f5f9; padding: 10px 12px; text-align: left;
+            font-weight: 700; color: var(--text-secondary); font-size: 0.7rem;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .detail-table tbody td {
+            padding: 9px 12px; border-bottom: 1px solid #f8fafc;
+        }
+        .detail-table tbody tr:hover { background: #f8fafc; }
+
+        /* Percentage mini-cards */
+        .pct-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+        .pct-mini {
+            flex: 1; min-width: 100px; padding: 14px; text-align: center;
+            background: #f8fafc; border-radius: 12px; border: 1px solid var(--border-color);
+        }
+        .pct-mini .pct-mini-label { font-size: 0.68rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .pct-mini .pct-mini-val { font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--accent-primary); }
+
+        /* ============================== */
+        /* === SECTION DIVIDER === */
+        /* ============================== */
+        .section-divider {
+            display: flex; align-items: center; gap: 14px; margin: 30px 0;
+        }
+        .section-divider::before, .section-divider::after {
+            content: ''; flex-grow: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+        }
+        .section-divider span {
+            font-family: 'Rajdhani', sans-serif; font-size: 0.85rem; font-weight: 700;
+            color: var(--text-secondary); text-transform: uppercase; letter-spacing: 2px;
             white-space: nowrap;
         }
 
-        .clock-visual {
-            position: relative;
-            width: 45px;
-            height: 45px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .clock-circle {
-            position: absolute;
-            inset: 0;
-            border: 2px solid var(--border-color);
-            border-radius: 50%;
-        }
-
-        .clock-progress {
-            position: absolute;
-            inset: 0;
-            border: 2px solid transparent;
-            border-top: 2px solid var(--accent-primary);
-            border-radius: 50%;
-            transition: transform 1s linear;
-        }
-
-        .clock-time-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 5;
-        }
-
-        .clock-ampm {
-            font-size: 0.4rem;
-            font-weight: 800;
-            color: var(--accent-primary);
-        }
-
-        .clock-time {
-            font-size: 1.2rem;
-            font-weight: 800;
-            line-height: 1;
-        }
-        
-        /* Navigation */
-        .nav-menu {
-            overflow-y: auto;
-            flex-grow: 1;
-            padding: 15px 10px;
-        }
-
-        .nav-btn {
-            width: 100%;
-            text-align: left;
-            padding: 12px 15px;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-            font-size: 0.95rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            border-radius: 8px;
-            text-decoration: none;
-            margin-bottom: 5px;
-            transition: 0.2s;
-        }
-
-        .nav-btn:hover, .nav-btn.active {
-            color: var(--accent-primary);
-            background: var(--accent-light);
-        }
-
-        .nav-btn i.icon {
-            width: 25px;
-            margin-right: 10px;
-            font-size: 1.1rem;
-        }
-
-        /* --- MAIN CONTENT --- */
-        .main-wrapper {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* Header Bar */
-        .top-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 30px;
-            background: var(--card-bg);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .header-title-area {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .mobile-toggle {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--text-primary);
-            cursor: pointer;
-        }
-
-        .header-title h2 {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            letter-spacing: 1px;
-        }
-
-        .header-title p {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-
-        .user-control-panel {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 5px;
-        }
-
-        .user-profile-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-            padding: 8px 18px;
-            border-radius: 30px;
-            color: var(--accent-primary);
-            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-        }
-
-        .user-profile-badge span {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1.15rem;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-shadow: 0 1px 2px rgba(2, 132, 199, 0.1);
-        }
-
-        .user-profile-badge i {
-            font-size: 1.4rem;
-        }
-
-        .logout-btn {
-            background: transparent;
-            border: none;
-            color: var(--danger);
-            font-family: 'Inter', sans-serif;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 2px 10px;
-            opacity: 0.8;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .logout-btn:hover {
-            opacity: 1;
-            transform: translateX(-3px);
-            text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
-        }
-
-        /* Main Dashboard Area */
-        .main-content {
-            flex-grow: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-bottom: 25px;
-            transition: 0.3s;
-        }
-
-        .back-btn:hover {
-            color: var(--accent-primary);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            box-shadow: var(--shadow-md);
-            transition: 0.3s;
-        }
-
-        .stat-card:hover {
-            border-color: var(--accent-primary);
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-3px);
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .stat-value {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .stat-value.success-text {
-            color: var(--success);
-        }
-
-        .stat-trend {
-            font-size: 0.8rem;
-            margin-top: 8px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
+        /* ============================== */
+        /* === EXISTING DASHBOARD === */
+        /* ============================== */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-md); transition: 0.3s; }
+        .stat-card:hover { border-color: var(--accent-primary); box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+        .stat-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 600; }
+        .stat-value { font-family: 'Rajdhani', sans-serif; font-size: 2.2rem; font-weight: 700; color: var(--text-primary); }
+        .stat-value.success-text { color: var(--success); }
+        .stat-trend { font-size: 0.8rem; margin-top: 8px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
         .trend-up { color: var(--success); }
         .trend-down { color: var(--danger); }
+        .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .chart-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 25px; box-shadow: var(--shadow-md); min-height: 400px; display: flex; flex-direction: column; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 600; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+        .live-badge { background: var(--accent-light); color: var(--accent-primary); padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+        .scroll-list { flex-grow: 1; overflow-y: auto; padding-right: 5px; }
+        .list-item { background: var(--bg-color); border: 1px solid transparent; padding: 12px 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+        .list-item:hover { background: var(--accent-light); border-color: #bae6fd; }
+        .item-info h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 3px; }
+        .item-info span { font-size: 0.8rem; color: var(--text-secondary); }
+        .item-val { font-family: 'Rajdhani', sans-serif; color: var(--accent-primary); font-weight: 700; font-size: 1.1rem; }
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; font-weight: 500; margin-bottom: 25px; transition: 0.3s; }
+        .back-btn:hover { color: var(--accent-primary); }
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-        }
+        /* Shimmer loading */
+        .shimmer { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-        .chart-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 25px;
-            box-shadow: var(--shadow-md);
-            min-height: 400px;
-            display: flex;
-            flex-direction: column;
-        }
+        /* Fade in animation for items */
+        @keyframes fadeInUp { 0% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: translateY(0); } }
+        .fade-in-item { animation: fadeInUp 0.4s ease forwards; opacity: 0; }
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 12px;
-        }
-        
-        .live-badge {
-            background: var(--accent-light);
-            color: var(--accent-primary);
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .scroll-list {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding-right: 5px;
-        }
-
-        .list-item {
-            background: var(--bg-color);
-            border: 1px solid transparent;
-            padding: 12px 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: 0.2s;
-        }
-
-        .list-item:hover {
-            background: var(--accent-light);
-            border-color: #bae6fd;
-        }
-
-        .item-info h4 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            margin-bottom: 3px;
-        }
-
-        .item-info span {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .item-val {
-            font-family: 'Rajdhani', sans-serif;
-            color: var(--accent-primary);
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        /* --- MOBILE RESPONSIVENESS --- */
+        /* ============================== */
+        /* === MOBILE RESPONSIVE === */
+        /* ============================== */
         @media (max-width: 1024px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .inap-chart-row { grid-template-columns: 1fr; }
         }
-
         @media (max-width: 768px) {
-            .sidebar {
-                position: absolute;
-                left: -260px;
-                height: 100%;
-            }
-            .sidebar.active {
-                left: 0;
-            }
-            .mobile-toggle {
-                display: block;
-            }
-            .user-profile-badge {
-                font-size: 0.75rem;
-                padding: 5px 10px;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            .main-content {
-                padding: 20px;
-            }
-            .top-header {
-                padding: 15px 20px;
-            }
+            .sidebar { position: absolute; left: -260px; height: 100%; z-index: 200; }
+            .sidebar.active { left: 0; }
+            .mobile-toggle { display: block; }
+            .user-profile-badge { font-size: 0.75rem; padding: 5px 10px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .inap-grid { grid-template-columns: 1fr; }
+            .inap-chart-row { grid-template-columns: 1fr; }
+            .main-content { padding: 16px; }
+            .top-header { padding: 15px 20px; }
+            .month-filter-bar { padding: 10px 14px; }
+            .month-pill { padding: 5px 12px; font-size: 0.75rem; }
+            .overlay-panel { width: 96%; max-height: 92vh; border-radius: 16px; }
+            .overlay-body { padding: 16px; }
+            .overlay-header { padding: 16px; }
+            .leadtime-section { overflow-x: auto; }
+            .leadtime-table { min-width: 520px; }
         }
     </style>
 </head>
@@ -666,17 +476,14 @@
         <div class="login-card">
             <h2>SMART WAREHOUSE</h2>
             <p>Authentication Required for DT V2.0</p>
-            
             <div class="login-input-group">
                 <label><i class="fas fa-user" style="margin-right: 5px;"></i> Username</label>
                 <input type="text" id="username-input" class="login-input" placeholder="Type your username..." autocomplete="off">
             </div>
-
             <div class="login-input-group">
                 <label><i class="fas fa-lock" style="margin-right: 5px;"></i> PIN Code</label>
                 <input type="password" id="pin-input" class="login-input" placeholder="Enter PIN">
             </div>
-
             <button class="login-btn" onclick="checkLogin()">AUTHORIZE ACCESS</button>
             <div id="login-error">Invalid Username or PIN.</div>
         </div>
@@ -686,8 +493,6 @@
     <nav class="sidebar" id="sidebar">
         <div class="brand">
             <h1>SMART<br>WAREHOUSE <span>V2.0</span></h1>
-            
-            <!-- MINI PREMIUM CLOCK FOR SIDEBAR -->
             <div class="mini-clock-wrapper">
                 <div class="clock-container" id="clock-widget">
                     <div class="clock-date-group">
@@ -704,61 +509,122 @@
                     </div>
                 </div>
             </div>
-            
             <div style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 40px; font-weight: 600;">DOWNTIME ANALYS V2</div>
         </div>
-
         <div class="nav-menu">
-            <a href="rm-dt-v2.html" class="nav-btn active">
-                <span><i class="fas fa-microchip icon"></i> DOWNTIME-V2.0</span>
-            </a>
-            <a href="rm-dt-entry.html" class="nav-btn">
-                <span><i class="fas fa-stopwatch icon"></i> DATA ENTRY BONGKAR</span>
-            </a>
-            <a href="rm-muat-entry.html" class="nav-btn">
-                <span><i class="fas fa-shipping-fast icon"></i> DATA ENTRY MUAT</span>
-            </a>
-            <a href="rm-dt-staffel-entry.html" class="nav-btn">
-                <span><i class="fas fa-layer-group icon"></i> DATA ENTRY-STAFFEL</span>
-            </a>
-            <a href="rm-dt-lengkapi-netto.html" class="nav-btn">
-                <span><i class="fas fa-balance-scale icon"></i> LENGKAPI DATA NETTO</span>
-            </a>
+            <a href="rm-dt-v2.html" class="nav-btn active"><span><i class="fas fa-microchip icon"></i> DOWNTIME-V2.0</span></a>
+            <a href="rm-dt-entry.html" class="nav-btn"><span><i class="fas fa-stopwatch icon"></i> DATA ENTRY BONGKAR</span></a>
+            <a href="rm-muat-entry.html" class="nav-btn"><span><i class="fas fa-shipping-fast icon"></i> DATA ENTRY MUAT</span></a>
+            <a href="rm-dt-staffel-entry.html" class="nav-btn"><span><i class="fas fa-layer-group icon"></i> DATA ENTRY-STAFFEL</span></a>
+            <a href="rm-dt-lengkapi-netto.html" class="nav-btn"><span><i class="fas fa-balance-scale icon"></i> LENGKAPI DATA NETTO</span></a>
         </div>
     </nav>
 
     <!-- MAIN WRAPPER -->
     <div class="main-wrapper">
-        
-        <!-- HEADER ROW -->
         <header class="top-header">
             <div class="header-title-area">
-                <button class="mobile-toggle" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
                 <div class="header-title">
                     <h2>DOWNTIME-V2.0</h2>
                     <p>Advanced Operational Monitoring Center</p>
                 </div>
             </div>
-            
-            <!-- USER BADGE & CONTROLS -->
             <div class="user-control-panel">
                 <div class="user-profile-badge" id="top-user-badge">
                     <i class="fas fa-user-circle"></i>
                     <span id="display-username">GUEST</span>
                 </div>
-                <!-- Logout Button -->
-                <button class="logout-btn" onclick="handleLogout()">
-                    <i class="fas fa-sign-out-alt"></i> LOGOUT
-                </button>
+                <button class="logout-btn" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> LOGOUT</button>
             </div>
         </header>
 
         <!-- MAIN SCROLLABLE DASHBOARD -->
         <main class="main-content" id="main-dashboard">
-            
-            <!-- LIVE STATS -->
+
+            <!-- ★ 1. MONTH FILTER ★ -->
+            <div class="month-filter-bar" id="month-filter-bar">
+                <div class="filter-label"><i class="fas fa-calendar-alt"></i> FILTER BULAN</div>
+                <div id="month-pills" style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <div class="shimmer" style="width:200px; height:32px;"></div>
+                </div>
+            </div>
+
+            <!-- ★ 2. TRUCK INAP ANALYSIS ★ -->
+            <div class="section-title-bar">
+                <h3><i class="fas fa-truck" style="color:var(--accent-primary);"></i> TRUCK INAP ANALYSIS</h3>
+                <span class="section-badge badge-analysis">BONGKAR</span>
+            </div>
+
+            <div class="inap-grid" id="inap-stats">
+                <div class="inap-card card-total">
+                    <i class="fas fa-truck card-icon"></i>
+                    <div class="card-label">Total Truck</div>
+                    <div class="card-value" id="inap-total">-</div>
+                    <div class="card-sub" id="inap-total-sub">Memuat data...</div>
+                </div>
+                <div class="inap-card card-inap">
+                    <i class="fas fa-moon card-icon"></i>
+                    <div class="card-label">Truck Inap</div>
+                    <div class="card-value" id="inap-count">-</div>
+                    <div class="card-sub" id="inap-count-sub">Durasi > 24 jam</div>
+                    <div class="notif-badge" id="notif-inap" onclick="showInapBreakdown()" style="display:none;">
+                        <i class="fas fa-search-plus"></i> Bedah Inapan? Klik disini <i class="fas fa-chevron-right" style="font-size:0.6rem;"></i>
+                    </div>
+                </div>
+                <div class="inap-card card-tidak">
+                    <i class="fas fa-check-circle card-icon"></i>
+                    <div class="card-label">Tidak Inap</div>
+                    <div class="card-value" id="tidak-inap-count">-</div>
+                    <div class="card-sub" id="tidak-inap-sub">Durasi ≤ 24 jam</div>
+                </div>
+            </div>
+
+            <div class="inap-chart-row">
+                <div class="chart-card-new">
+                    <div class="card-header-new">
+                        <h4><i class="fas fa-chart-pie" style="color:var(--accent-primary);"></i> Proporsi Inap</h4>
+                    </div>
+                    <div style="position:relative; max-width:280px; margin:0 auto;"><canvas id="inapDoughnutChart"></canvas></div>
+                </div>
+                <div class="chart-card-new">
+                    <div class="card-header-new">
+                        <h4><i class="fas fa-chart-bar" style="color:var(--purple);"></i> Trend Harian</h4>
+                    </div>
+                    <div style="position:relative; height:220px;"><canvas id="inapTrendChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- ★ 3. LEADTIME TABLE ★ -->
+            <div class="leadtime-section">
+                <div class="card-header-new" style="margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--border-color);">
+                    <h4><i class="fas fa-clock" style="color:var(--warning);"></i> LEADTIME HARIAN</h4>
+                    <span class="section-badge badge-live">PER TANGGAL</span>
+                </div>
+                <div style="max-height:400px; overflow-y:auto;">
+                    <table class="leadtime-table" id="leadtime-table">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Total Truck</th>
+                                <th>Inap %</th>
+                                <th>Tidak Inap %</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="leadtime-tbody">
+                            <tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary);"><div class="shimmer" style="height:20px; width:50%; margin:0 auto;"></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION DIVIDER -->
+            <div class="section-divider">
+                <span><i class="fas fa-chart-line"></i> OPERATIONAL DASHBOARD</span>
+            </div>
+
+            <!-- EXISTING: LIVE STATS -->
             <div class="stats-grid" id="live-stats">
                 <div class="stat-card">
                     <div class="stat-label"><i class="fas fa-truck-loading" style="color:#0284c7;"></i> BONGKAR (Bulan Ini)</div>
@@ -782,20 +648,17 @@
                 </div>
             </div>
 
-            <!-- OPS DAILY CHART -->
+            <!-- EXISTING: OPS DAILY CHART -->
             <div class="chart-card" style="margin-bottom:20px; min-height:360px;">
                 <div class="card-header">
                     <span><i class="fas fa-chart-bar" style="color:#0284c7;"></i> OPERATIONAL VOLUME DAILY</span>
                     <span class="live-badge">BONGKAR + MUAT + STAPEL</span>
                 </div>
-                <div style="flex-grow:1; position:relative;">
-                    <canvas id="opsVolumeChart"></canvas>
-                </div>
+                <div style="flex-grow:1; position:relative;"><canvas id="opsVolumeChart"></canvas></div>
             </div>
 
-            <!-- CALENDAR + ANALYSIS -->
+            <!-- EXISTING: CALENDAR + ANALYSIS -->
             <div class="dashboard-grid">
-                <!-- RM DAILY CALENDAR -->
                 <div class="chart-card" style="min-height:auto;">
                     <div class="card-header">
                         <span><i class="fas fa-calendar-alt" style="color:#0284c7;"></i> RM DAILY CALENDAR</span>
@@ -812,8 +675,6 @@
                     </div>
                     <div id="calendar-grid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px;"></div>
                 </div>
-
-                <!-- DAILY ANALYSIS COMMAND -->
                 <div class="chart-card" style="min-height:auto;">
                     <div class="card-header">
                         <span><i class="fas fa-microchip" style="color:#0284c7;"></i> DAILY ANALYSIS COMMAND</span>
@@ -827,25 +688,63 @@
                     </div>
                 </div>
             </div>
-
         </main>
     </div>
 
+    <!-- =============================== -->
+    <!-- === ANALYSIS OVERLAYS === -->
+    <!-- =============================== -->
+
+    <!-- Overlay 1: Inap Material Breakdown -->
+    <div class="analysis-overlay" id="overlay-inap-material">
+        <div class="overlay-panel">
+            <div class="overlay-header">
+                <h3><i class="fas fa-box-open" style="color:#ef4444;"></i> Bedah Inapan — per Material</h3>
+                <button class="overlay-close" onclick="closeOverlay('overlay-inap-material')">&times;</button>
+            </div>
+            <div class="overlay-body" id="inap-material-body"></div>
+        </div>
+    </div>
+
+    <!-- Overlay 2: Material Detail Drill-down -->
+    <div class="analysis-overlay" id="overlay-material-detail">
+        <div class="overlay-panel">
+            <div class="overlay-header">
+                <h3 id="material-detail-title"><i class="fas fa-microscope" style="color:var(--accent-primary);"></i> Detail Material</h3>
+                <button class="overlay-close" onclick="closeOverlay('overlay-material-detail')">&times;</button>
+            </div>
+            <div class="overlay-body" id="material-detail-body"></div>
+        </div>
+    </div>
+
+    <!-- Overlay 3: Duration Analysis -->
+    <div class="analysis-overlay" id="overlay-duration">
+        <div class="overlay-panel">
+            <div class="overlay-header">
+                <h3 id="duration-title"><i class="fas fa-stopwatch" style="color:var(--warning);"></i> Analisis Durasi</h3>
+                <button class="overlay-close" onclick="closeOverlay('overlay-duration')">&times;</button>
+            </div>
+            <div class="overlay-body" id="duration-body"></div>
+        </div>
+    </div>
+
     <script>
-        // --- CONFIG ---
+        // === CONFIG ===
         const EXPECTED_PIN = "1891";
-        const VALID_USERS = [
-            "ANGGA", "IMRON", "DIKI", "BASIT", "INGGI", 
-            "EPUL", "ADIB", "KIKI", "ABI", "AGUS", 
-            "SOFYAN", "SAMSUL", "SIGIT", "ARIF"
-        ];
+        const VALID_USERS = ["ANGGA", "IMRON", "DIKI", "BASIT", "INGGI", "EPUL", "ADIB", "KIKI", "ABI", "AGUS", "SOFYAN", "SAMSUL", "SIGIT", "ARIF"];
         const API_V2 = CONFIG.ANALYTICS_V2_URL;
         const API_DT = CONFIG.ENTRY_BONGKAR_API_URL;
-        let hubData = null;  // analytics V2 data
-        let stafelInfo = null; // staffel pallet data
+        let hubData = null;
+        let stafelInfo = null;
         let opsChart = null;
-        
-        // --- 1. Login / Session ---
+        let inapDoughnutChart = null;
+        let inapTrendChart = null;
+        let selectedMonth = 'all';
+        let cachedInapData = null;
+
+        // =============================
+        // === 1. LOGIN / SESSION ===
+        // =============================
         function checkSession() {
             const savedUser = sessionStorage.getItem('dt_v2_user');
             if (savedUser) {
@@ -872,7 +771,7 @@
                 setTimeout(() => { overlay.style.display = 'none'; loadHubData(); }, 500);
             } else { err.innerText = 'PIN salah.'; err.style.display = 'block'; }
         }
-        
+
         document.getElementById('username-input').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('pin-input').focus(); });
         document.getElementById('pin-input').addEventListener('keypress', e => { if (e.key === 'Enter') checkLogin(); });
 
@@ -889,7 +788,9 @@
         }
         checkSession();
 
-        // --- 2. Clock Widget ---
+        // ========================
+        // === 2. CLOCK WIDGET ===
+        // ========================
         function startClock() {
             const update = () => {
                 const now = new Date();
@@ -911,10 +812,14 @@
         }
         startClock();
 
-        // --- 3. Sidebar Toggle ---
+        // =============================
+        // === 3. SIDEBAR TOGGLE ===
+        // =============================
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
 
-        // --- 4. Data Loading ---
+        // =============================
+        // === 4. DATA LOADING ===
+        // =============================
         async function loadHubData() {
             try {
                 const [v2Res, stRes] = await Promise.all([
@@ -923,6 +828,13 @@
                 ]);
                 hubData = v2Res;
                 stafelInfo = stRes;
+
+                // Render new sections first
+                renderMonthFilter();
+                processAndRenderInap();
+                renderLeadtimeTable();
+
+                // Then existing
                 renderStats();
                 renderOpsChart();
                 renderCalendar();
@@ -931,7 +843,543 @@
             }
         }
 
-        // --- 5. Stats Cards ---
+        // =======================================
+        // === 5. HELPER: DATE/TIME PARSING ===
+        // =======================================
+        function parseFlexDate(dateStr) {
+            if (!dateStr) return null;
+            let s = String(dateStr).trim();
+            if (!s || s === '-') return null;
+            // yyyy-MM-dd
+            let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+            if (m) return { y: +m[1], m: +m[2], d: +m[3] };
+            // dd.MM.yyyy or dd/MM/yyyy
+            m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+            if (m) return { y: +m[3], m: +m[2], d: +m[1] };
+            return null;
+        }
+
+        function parseFlexTime(timeStr) {
+            if (!timeStr) return null;
+            let s = String(timeStr).trim();
+            if (!s || s === '-' || s === '0:00') return null;
+            // Smart AM/PM parsing
+            let isPM = false, isAM = false;
+            if (/pm/i.test(s)) { isPM = true; s = s.replace(/\s*pm/i, ''); }
+            if (/am/i.test(s)) { isAM = true; s = s.replace(/\s*am/i, ''); }
+            let parts = s.split(':').map(Number);
+            if (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) return null;
+            let h = parts[0], min = parts[1];
+            if (isPM && h < 12) h += 12;
+            if (isAM && h === 12) h = 0;
+            return { h, min };
+        }
+
+        function buildDateTime(dateObj, timeObj) {
+            if (!dateObj || !timeObj) return null;
+            return new Date(dateObj.y, dateObj.m - 1, dateObj.d, timeObj.h, timeObj.min);
+        }
+
+        function calcMinutesBetween(dt1, dt2) {
+            if (!dt1 || !dt2 || isNaN(dt1.getTime()) || isNaN(dt2.getTime())) return null;
+            return (dt2.getTime() - dt1.getTime()) / (1000 * 60);
+        }
+
+        function formatMinutes(m) {
+            if (m === null || m === undefined || isNaN(m)) return '-';
+            if (m < 0) m = 0;
+            const hrs = Math.floor(m / 60);
+            const mins = Math.round(m % 60);
+            if (hrs > 0) return `${hrs}j ${mins}m`;
+            return `${mins} menit`;
+        }
+
+        // ===================================
+        // === 6. INAP CALCULATION ENGINE ===
+        // ===================================
+        function getBongkarRows() {
+            if (!hubData || !hubData.templateDump) return [];
+            return hubData.templateDump.filter(r => {
+                const k = String(r.KEGIATAN || '').toUpperCase();
+                return k.includes('BONGKAR');
+            });
+        }
+
+        function filterBySelectedMonth(rows) {
+            if (selectedMonth === 'all') return rows;
+            return rows.filter(r => {
+                const tgl = String(r.TANGGAL || '');
+                return tgl.startsWith(selectedMonth);
+            });
+        }
+
+        function computeInapForRow(row) {
+            const arrDate = parseFlexDate(row.TANGGAL);
+            const arrTime = parseFlexTime(row.ARRIVAL_TIME);
+            const pbDate = parseFlexDate(row.TANGGAL_PB || row.TANGGAL);
+            const finTime = parseFlexTime(row.FINISH_TIME);
+
+            const arrDT = buildDateTime(arrDate, arrTime);
+            const finDT = buildDateTime(pbDate, finTime);
+
+            if (!arrDT || !finDT) return { valid: false, duration: null, isInap: false };
+
+            const durationMin = calcMinutesBetween(arrDT, finDT);
+            const durationHours = durationMin !== null ? durationMin / 60 : null;
+            const isInap = durationHours !== null && durationHours >= 24;
+
+            return { valid: true, duration: durationMin, durationHours, isInap, arrDT, finDT };
+        }
+
+        function computeDurationsForRow(row) {
+            const arrDate = parseFlexDate(row.TANGGAL);
+            const pbDate = parseFlexDate(row.TANGGAL_PB || row.TANGGAL);
+
+            const tO = parseFlexTime(row.ARRIVAL_TIME);
+            const tP = parseFlexTime(row.QC_SAMPLING_1);
+            const tR = parseFlexTime(row.SAMPAI_GUDANG || row.START_PANGGIL);
+            const tS = parseFlexTime(row.START_BONGKAR);
+            const tT = parseFlexTime(row.HOLD_QC);
+            const tU = parseFlexTime(row.RESTART_QC);
+            const tV = parseFlexTime(row.FINISH_TIME);
+
+            // O and P use date from N (arrDate)
+            const dtO = buildDateTime(arrDate, tO);
+            const dtP = buildDateTime(arrDate, tP);
+            // R through V use date from Q (pbDate)
+            const dtR = buildDateTime(pbDate, tR);
+            const dtS = buildDateTime(pbDate, tS);
+            const dtT = buildDateTime(pbDate, tT);
+            const dtU = buildDateTime(pbDate, tU);
+            const dtV = buildDateTime(pbDate, tV);
+
+            // Antri Bongkar
+            const oVsP = calcMinutesBetween(dtO, dtP); // Arrival → QC
+            const pVsR = calcMinutesBetween(dtP, dtR); // QC → Sampai Gudang
+
+            // Proses Bongkar
+            const rVsS = calcMinutesBetween(dtR, dtS); // Sampai Gudang → Start
+            const sVsT = calcMinutesBetween(dtS, dtT); // Start → Hold QC
+            const tVsU = calcMinutesBetween(dtT, dtU); // Hold QC → Restart
+            const uVsV = calcMinutesBetween(dtU, dtV); // Restart → Finish
+
+            const antriTotal = safeSum([oVsP, pVsR]);
+            const prosesTotal = safeSum([rVsS, sVsT, tVsU, uVsV]);
+
+            return {
+                antri: { total: antriTotal, oVsP, pVsR },
+                proses: { total: prosesTotal, rVsS, sVsT, tVsU, uVsV },
+                grandTotal: safeSum([antriTotal, prosesTotal])
+            };
+        }
+
+        function safeSum(arr) {
+            let sum = 0, hasValid = false;
+            arr.forEach(v => { if (v !== null && !isNaN(v) && v >= 0) { sum += v; hasValid = true; } });
+            return hasValid ? sum : null;
+        }
+
+        function safeAvg(arr) {
+            const valid = arr.filter(v => v !== null && !isNaN(v) && v >= 0);
+            if (valid.length === 0) return null;
+            return valid.reduce((a, b) => a + b, 0) / valid.length;
+        }
+
+        // =====================================
+        // === 7. MONTH FILTER RENDERING ===
+        // =====================================
+        function renderMonthFilter() {
+            const rows = getBongkarRows();
+            const monthSet = new Set();
+            rows.forEach(r => {
+                const tgl = String(r.TANGGAL || '');
+                const m = tgl.match(/^(\d{4}-\d{2})/);
+                if (m) monthSet.add(m[1]);
+            });
+            const sortedMonths = Array.from(monthSet).sort();
+            const monthNames = { '01':'Januari','02':'Februari','03':'Maret','04':'April','05':'Mei','06':'Juni','07':'Juli','08':'Agustus','09':'September','10':'Oktober','11':'November','12':'Desember' };
+
+            let html = `<div class="month-pill ${selectedMonth === 'all' ? 'active' : ''}" onclick="setMonthFilter('all')">Semua</div>`;
+            sortedMonths.forEach(ym => {
+                const parts = ym.split('-');
+                const label = `${monthNames[parts[1]] || parts[1]} ${parts[0]}`;
+                html += `<div class="month-pill ${selectedMonth === ym ? 'active' : ''}" onclick="setMonthFilter('${ym}')">${label}</div>`;
+            });
+            document.getElementById('month-pills').innerHTML = html;
+        }
+
+        function setMonthFilter(month) {
+            selectedMonth = month;
+            renderMonthFilter();
+            processAndRenderInap();
+            renderLeadtimeTable();
+        }
+
+        // ====================================
+        // === 8. INAP STATS & CHART ===
+        // ====================================
+        function processAndRenderInap() {
+            const allRows = getBongkarRows();
+            const rows = filterBySelectedMonth(allRows);
+
+            let total = 0, inap = 0, tidakInap = 0;
+            const details = [];
+
+            rows.forEach(row => {
+                const result = computeInapForRow(row);
+                if (!result.valid) return;
+                total++;
+                if (result.isInap) {
+                    inap++;
+                    details.push(row);
+                } else {
+                    tidakInap++;
+                }
+            });
+
+            cachedInapData = { total, inap, tidakInap, details, allFiltered: rows };
+
+            // Render stats
+            animateCounter('inap-total', total);
+            animateCounter('inap-count', inap);
+            animateCounter('tidak-inap-count', tidakInap);
+            document.getElementById('inap-total-sub').textContent = `${rows.length} data bongkar diproses`;
+            document.getElementById('inap-count-sub').textContent = `${total > 0 ? ((inap/total)*100).toFixed(1) : 0}% dari total`;
+            document.getElementById('tidak-inap-sub').textContent = `${total > 0 ? ((tidakInap/total)*100).toFixed(1) : 0}% dari total`;
+
+            // Show notification badge
+            const notif = document.getElementById('notif-inap');
+            if (inap > 0) notif.style.display = 'inline-flex';
+            else notif.style.display = 'none';
+
+            // Render charts
+            renderInapDoughnut(inap, tidakInap);
+            renderInapTrend(rows);
+        }
+
+        function animateCounter(id, end) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            let start = 0; const dur = 1200; let t0 = null;
+            const step = (ts) => {
+                if (!t0) t0 = ts;
+                const p = Math.min((ts - t0) / dur, 1);
+                const eased = 1 - Math.pow(1 - p, 3);
+                el.textContent = Math.floor(eased * end);
+                if (p < 1) requestAnimationFrame(step);
+                else el.textContent = end;
+            };
+            requestAnimationFrame(step);
+        }
+
+        function renderInapDoughnut(inap, tidakInap) {
+            const ctx = document.getElementById('inapDoughnutChart').getContext('2d');
+            if (inapDoughnutChart) inapDoughnutChart.destroy();
+
+            const hasData = inap > 0 || tidakInap > 0;
+            inapDoughnutChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Inap (>24j)', 'Tidak Inap'],
+                    datasets: [{
+                        data: hasData ? [inap, tidakInap] : [1],
+                        backgroundColor: hasData ? ['#ef4444', '#10b981'] : ['#e2e8f0'],
+                        borderWidth: 0, borderRadius: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    cutout: '65%', responsive: true, maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true, font: { family: 'Inter', size: 12 } } },
+                        tooltip: { backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { family: 'Rajdhani', size: 14 }, bodyFont: { family: 'Inter', size: 12 }, padding: 12, cornerRadius: 8 }
+                    },
+                    animation: { animateRotate: true, animateScale: true }
+                }
+            });
+        }
+
+        function renderInapTrend(rows) {
+            // Group by date
+            const dayMap = {};
+            rows.forEach(row => {
+                const tgl = String(row.TANGGAL || '').substring(0, 10);
+                if (!tgl || tgl.length < 8) return;
+                if (!dayMap[tgl]) dayMap[tgl] = { inap: 0, tidak: 0 };
+                const r = computeInapForRow(row);
+                if (!r.valid) return;
+                if (r.isInap) dayMap[tgl].inap++;
+                else dayMap[tgl].tidak++;
+            });
+
+            const dates = Object.keys(dayMap).sort();
+            const labels = dates.map(d => { const p = d.split('-'); return `${p[2]}/${p[1]}`; });
+
+            const ctx = document.getElementById('inapTrendChart').getContext('2d');
+            if (inapTrendChart) inapTrendChart.destroy();
+
+            inapTrendChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Inap', data: dates.map(d => dayMap[d].inap), backgroundColor: 'rgba(239,68,68,0.75)', borderRadius: 4, borderSkipped: false },
+                        { label: 'Tidak Inap', data: dates.map(d => dayMap[d].tidak), backgroundColor: 'rgba(16,185,129,0.75)', borderRadius: 4, borderSkipped: false }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 12, font: { family: 'Inter', size: 11 } } } },
+                    scales: {
+                        x: { stacked: true, grid: { display: false }, ticks: { font: { family: 'Inter', size: 10 }, color: '#64748b' } },
+                        y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'Inter', size: 10 }, color: '#64748b', stepSize: 1 } }
+                    }
+                }
+            });
+        }
+
+        // ===========================================
+        // === 9. INAP MATERIAL BREAKDOWN (2.2) ===
+        // ===========================================
+        function showInapBreakdown() {
+            if (!cachedInapData || cachedInapData.inap === 0) return;
+
+            const matMap = {};
+            cachedInapData.details.forEach(row => {
+                const mat = String(row.JENIS_RM || '-').toUpperCase().trim();
+                if (!matMap[mat]) matMap[mat] = [];
+                matMap[mat].push(row);
+            });
+
+            const sorted = Object.entries(matMap).sort((a, b) => b[1].length - a[1].length);
+            let html = `<div style="margin-bottom:16px; font-size:0.85rem; color:var(--text-secondary);">Total <strong style="color:#ef4444;">${cachedInapData.inap} truck</strong> mengalami inapan (durasi >24 jam)</div>`;
+
+            sorted.forEach(([mat, rows], i) => {
+                html += `<div class="ov-material-item fade-in-item" style="animation-delay:${i * 0.06}s;" onclick="showMaterialDetail('${mat.replace(/'/g, "\\'")}')">
+                    <div class="mat-name"><i class="fas fa-box" style="color:var(--accent-primary); font-size:0.8rem;"></i> ${mat}</div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="mat-count">${rows.length} <span style="font-size:0.75rem; font-weight:500; color:var(--text-secondary);">truck</span></div>
+                        <div class="mat-arrow"><i class="fas fa-chevron-right"></i></div>
+                    </div>
+                </div>`;
+            });
+
+            document.getElementById('inap-material-body').innerHTML = html;
+            openOverlay('overlay-inap-material');
+        }
+
+        // ==========================================
+        // === 10. MATERIAL DETAIL DRILL-DOWN (2.3) ===
+        // ==========================================
+        function showMaterialDetail(materialName) {
+            if (!cachedInapData) return;
+            const rows = cachedInapData.details.filter(r => String(r.JENIS_RM || '-').toUpperCase().trim() === materialName);
+            if (rows.length === 0) return;
+
+            document.getElementById('material-detail-title').innerHTML = `<i class="fas fa-microscope" style="color:var(--accent-primary);"></i> ${materialName}`;
+
+            // 1. Persentase jenis truck
+            const truckMap = {};
+            rows.forEach(r => { const t = String(r.JENIS_TRUCK || '-').trim(); truckMap[t] = (truckMap[t] || 0) + 1; });
+            let html = `<div style="margin-bottom:20px;"><div style="font-family:'Rajdhani'; font-weight:700; font-size:1rem; margin-bottom:10px; color:var(--text-primary);"><i class="fas fa-truck" style="color:var(--purple);"></i> Persentase Jenis Truck</div>`;
+            html += `<div class="pct-grid">`;
+            Object.entries(truckMap).sort((a, b) => b[1] - a[1]).forEach(([truck, count]) => {
+                const pct = ((count / rows.length) * 100).toFixed(1);
+                html += `<div class="pct-mini"><div class="pct-mini-label">${truck}</div><div class="pct-mini-val">${pct}%</div><div style="font-size:0.7rem; color:var(--text-secondary);">${count} truck</div></div>`;
+            });
+            html += `</div></div>`;
+
+            // 2. Tabel detail lengkap
+            html += `<div style="margin-bottom:20px;"><div style="font-family:'Rajdhani'; font-weight:700; font-size:1rem; margin-bottom:10px; color:var(--text-primary);"><i class="fas fa-table" style="color:var(--accent-primary);"></i> Detail Truck Inap</div>`;
+            html += `<div style="overflow-x:auto;"><table class="detail-table"><thead><tr><th>Nopol</th><th>Jenis Truck</th><th>Arrival</th><th>Finish</th><th>Durasi</th><th>Gudang</th></tr></thead><tbody>`;
+            rows.forEach(r => {
+                const res = computeInapForRow(r);
+                const durStr = res.durationHours ? `${res.durationHours.toFixed(1)} jam` : '-';
+                html += `<tr>
+                    <td style="font-weight:600;">${r.NOPOL || '-'}</td>
+                    <td>${r.JENIS_TRUCK || '-'}</td>
+                    <td>${r.TANGGAL || '-'} ${r.ARRIVAL_TIME || ''}</td>
+                    <td>${r.TANGGAL_PB || r.TANGGAL || '-'} ${r.FINISH_TIME || ''}</td>
+                    <td style="font-family:'Rajdhani'; font-weight:700; color:#ef4444;">${durStr}</td>
+                    <td>${r.LOKASI || '-'}</td>
+                </tr>`;
+            });
+            html += `</tbody></table></div></div>`;
+
+            // 3. Persentase gudang
+            const gudangMap = {};
+            rows.forEach(r => { const g = String(r.LOKASI || '-').trim(); gudangMap[g] = (gudangMap[g] || 0) + 1; });
+            html += `<div><div style="font-family:'Rajdhani'; font-weight:700; font-size:1rem; margin-bottom:10px; color:var(--text-primary);"><i class="fas fa-warehouse" style="color:var(--success);"></i> Persentase Gudang</div>`;
+            html += `<div class="pct-grid">`;
+            Object.entries(gudangMap).sort((a, b) => b[1] - a[1]).forEach(([g, count]) => {
+                const pct = ((count / rows.length) * 100).toFixed(1);
+                html += `<div class="pct-mini"><div class="pct-mini-label">${g}</div><div class="pct-mini-val">${pct}%</div><div style="font-size:0.7rem; color:var(--text-secondary);">${count} truck</div></div>`;
+            });
+            html += `</div></div>`;
+
+            document.getElementById('material-detail-body').innerHTML = html;
+            openOverlay('overlay-material-detail');
+        }
+
+        // =======================================
+        // === 11. LEADTIME TABLE (3.1) ===
+        // =======================================
+        function renderLeadtimeTable() {
+            const allRows = getBongkarRows();
+            const rows = filterBySelectedMonth(allRows);
+
+            const dayMap = {};
+            rows.forEach(row => {
+                const tgl = String(row.TANGGAL || '').substring(0, 10);
+                if (!tgl || tgl.length < 8) return;
+                if (!dayMap[tgl]) dayMap[tgl] = { total: 0, inap: 0, tidak: 0 };
+                const r = computeInapForRow(row);
+                if (!r.valid) return;
+                dayMap[tgl].total++;
+                if (r.isInap) dayMap[tgl].inap++;
+                else dayMap[tgl].tidak++;
+            });
+
+            const dates = Object.keys(dayMap).sort();
+            if (dates.length === 0) {
+                document.getElementById('leadtime-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary);"><i class="fas fa-inbox" style="font-size:1.5rem; opacity:0.3;"></i><br>Tidak ada data</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            dates.forEach((d, i) => {
+                const data = dayMap[d];
+                const pctInap = data.total > 0 ? ((data.inap / data.total) * 100).toFixed(1) : 0;
+                const pctTidak = data.total > 0 ? ((data.tidak / data.total) * 100).toFixed(1) : 0;
+                const parts = d.split('-');
+                const dateLabel = `${parts[2]}/${parts[1]}/${parts[0]}`;
+
+                html += `<tr class="fade-in-item" style="animation-delay:${i * 0.04}s;" onclick="showDurationAnalysis('${d}')">
+                    <td style="font-weight:600;"><i class="fas fa-calendar-day" style="color:var(--accent-primary); font-size:0.75rem; margin-right:6px;"></i>${dateLabel}</td>
+                    <td><span style="font-family:'Rajdhani'; font-weight:700; font-size:1rem;">${data.total}</span> <span style="font-size:0.72rem; color:var(--text-secondary);">truck</span></td>
+                    <td>
+                        <div class="pct-bar-wrap">
+                            <div class="pct-bar"><div class="pct-bar-fill fill-danger" style="width:${pctInap}%;"></div></div>
+                            <span class="pct-label" style="color:#ef4444;">${pctInap}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="pct-bar-wrap">
+                            <div class="pct-bar"><div class="pct-bar-fill fill-success" style="width:${pctTidak}%;"></div></div>
+                            <span class="pct-label" style="color:#10b981;">${pctTidak}%</span>
+                        </div>
+                    </td>
+                    <td><span class="click-hint"><i class="fas fa-search"></i> Klik disini</span></td>
+                </tr>`;
+            });
+
+            document.getElementById('leadtime-tbody').innerHTML = html;
+        }
+
+        // =============================================
+        // === 12. DURATION ANALYSIS OVERLAY (3.2) ===
+        // =============================================
+        function showDurationAnalysis(dateStr) {
+            const allRows = getBongkarRows();
+            const rows = allRows.filter(r => String(r.TANGGAL || '').substring(0, 10) === dateStr);
+            if (rows.length === 0) return;
+
+            const parts = dateStr.split('-');
+            document.getElementById('duration-title').innerHTML = `<i class="fas fa-stopwatch" style="color:var(--warning);"></i> Analisis Durasi — ${parts[2]}/${parts[1]}/${parts[0]}`;
+
+            // Calculate average durations
+            const allDurations = rows.map(r => computeDurationsForRow(r));
+
+            const avgOvsP = safeAvg(allDurations.map(d => d.antri.oVsP));
+            const avgPvsR = safeAvg(allDurations.map(d => d.antri.pVsR));
+            const avgAntri = safeAvg(allDurations.map(d => d.antri.total));
+
+            const avgRvsS = safeAvg(allDurations.map(d => d.proses.rVsS));
+            const avgSvsT = safeAvg(allDurations.map(d => d.proses.sVsT));
+            const avgTvsU = safeAvg(allDurations.map(d => d.proses.tVsU));
+            const avgUvsV = safeAvg(allDurations.map(d => d.proses.uVsV));
+            const avgProses = safeAvg(allDurations.map(d => d.proses.total));
+
+            const avgGrand = safeAvg(allDurations.map(d => d.grandTotal));
+
+            const maxDur = Math.max(avgAntri || 0, avgProses || 0, 1);
+
+            let html = `<div style="margin-bottom:16px; font-size:0.85rem; color:var(--text-secondary);">Rata-rata durasi dari <strong>${rows.length} truck</strong> pada tanggal ini</div>`;
+
+            // Antri Bongkar card
+            html += `<div class="dur-category" id="dur-antri" onclick="toggleDurDetail('antri')">
+                <div class="dur-category-header">
+                    <h4><i class="fas fa-hourglass-half" style="color:var(--warning);"></i> Antri Bongkar</h4>
+                    <div class="dur-value-big" style="color:var(--warning);">${formatMinutes(avgAntri)}</div>
+                </div>
+                <div class="dur-bar-track"><div class="dur-bar-fill fill-antri" style="width:${avgAntri ? (avgAntri/maxDur*100) : 0}%;"></div></div>
+                <div class="click-hint" style="margin-top:8px;"><i class="fas fa-chevron-down"></i> Klik untuk breakdown detail</div>
+                <div id="dur-detail-antri" style="display:none; margin-top:12px;">
+                    <div class="dur-sub-item"><span class="sub-label"><i class="fas fa-arrow-right" style="font-size:0.6rem; color:var(--warning); margin-right:4px;"></i> Arrival → QC Sampling</span><span class="sub-val">${formatMinutes(avgOvsP)}</span></div>
+                    <div class="dur-sub-item"><span class="sub-label"><i class="fas fa-arrow-right" style="font-size:0.6rem; color:var(--warning); margin-right:4px;"></i> QC Sampling → Sampai Gudang</span><span class="sub-val">${formatMinutes(avgPvsR)}</span></div>
+                </div>
+            </div>`;
+
+            // Proses Bongkar card
+            html += `<div class="dur-category" id="dur-proses" onclick="toggleDurDetail('proses')">
+                <div class="dur-category-header">
+                    <h4><i class="fas fa-cogs" style="color:var(--accent-primary);"></i> Proses Bongkar</h4>
+                    <div class="dur-value-big">${formatMinutes(avgProses)}</div>
+                </div>
+                <div class="dur-bar-track"><div class="dur-bar-fill fill-proses" style="width:${avgProses ? (avgProses/maxDur*100) : 0}%;"></div></div>
+                <div class="click-hint" style="margin-top:8px;"><i class="fas fa-chevron-down"></i> Klik untuk breakdown detail</div>
+                <div id="dur-detail-proses" style="display:none; margin-top:12px;">
+                    <div class="dur-sub-item"><span class="sub-label"><i class="fas fa-arrow-right" style="font-size:0.6rem; color:var(--accent-primary); margin-right:4px;"></i> Sampai Gudang → Start Bongkar</span><span class="sub-val">${formatMinutes(avgRvsS)}</span></div>
+                    <div class="dur-sub-item"><span class="sub-label"><i class="fas fa-arrow-right" style="font-size:0.6rem; color:var(--accent-primary); margin-right:4px;"></i> Start Bongkar → Hold QC</span><span class="sub-val">${formatMinutes(avgSvsT)}</span></div>
+                    <div class="dur-sub-item"><span class="sub-label"><i class="fas fa-arrow-right" style="font-size:0.6rem; color:var(--accent-primary); margin-right:4px;"></i> Hold QC → Restart QC</span><span class="sub-val">${formatMinutes(avgTvsU)}</span></div>
+                    <div class="dur-sub-item"><span class="sub-label"><i class="fas fa-arrow-right" style="font-size:0.6rem; color:var(--accent-primary); margin-right:4px;"></i> Restart QC → Finish</span><span class="sub-val">${formatMinutes(avgUvsV)}</span></div>
+                </div>
+            </div>`;
+
+            // Total bar
+            html += `<div class="dur-total-bar">
+                <div style="flex-grow:1;">
+                    <div class="dur-total-label">TOTAL DURASI RATA-RATA</div>
+                    <div class="dur-total-val">${formatMinutes(avgGrand)}</div>
+                </div>
+                <i class="fas fa-clock" style="font-size:2rem; opacity:0.2;"></i>
+            </div>`;
+
+            document.getElementById('duration-body').innerHTML = html;
+            openOverlay('overlay-duration');
+        }
+
+        function toggleDurDetail(type) {
+            event.stopPropagation();
+            const el = document.getElementById(`dur-detail-${type}`);
+            if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // ====================================
+        // === 13. OVERLAY MANAGEMENT ===
+        // ====================================
+        function openOverlay(id) {
+            const el = document.getElementById(id);
+            el.style.display = 'flex';
+            requestAnimationFrame(() => { el.classList.add('show'); });
+        }
+
+        function closeOverlay(id) {
+            const el = document.getElementById(id);
+            el.classList.remove('show');
+            setTimeout(() => { el.style.display = 'none'; }, 300);
+        }
+
+        // Close overlay on background click
+        document.querySelectorAll('.analysis-overlay').forEach(ov => {
+            ov.addEventListener('click', (e) => {
+                if (e.target === ov) closeOverlay(ov.id);
+            });
+        });
+
+        // =============================
+        // === 14. EXISTING: STATS ===
+        // =============================
         function renderStats() {
             if (!hubData) return;
             const now = new Date();
@@ -957,7 +1405,7 @@
             document.getElementById('stat-muat-count').innerHTML = `<i class="fas fa-calendar-day"></i> ${mCount} hari aktif`;
 
             if (stafelInfo && stafelInfo.success) {
-                const pk = stafelInfo.palletKosong || 0;
+                const pk = stafelInfo.palletKosong || (stafelInfo.data && stafelInfo.data.summary && stafelInfo.data.summary.PALLET_KOSONG) || 0;
                 document.getElementById('stat-pallet').innerHTML = `${pk} <span style="font-size:1rem; color:var(--text-secondary);">PCS</span>`;
                 document.getElementById('stat-pallet-info').innerHTML = `<i class="fas fa-pallet"></i> Sisa pallet kosong`;
             }
@@ -977,7 +1425,9 @@
             requestAnimationFrame(step);
         }
 
-        // --- 6. Ops Volume Chart ---
+        // ===================================
+        // === 15. EXISTING: OPS CHART ===
+        // ===================================
         function renderOpsChart() {
             if (!hubData) return;
             const now = new Date();
@@ -1020,7 +1470,9 @@
             });
         }
 
-        // --- 7. Calendar ---
+        // ================================
+        // === 16. EXISTING: CALENDAR ===
+        // ================================
         function renderCalendar() {
             if (!hubData) return;
             const now = new Date();
@@ -1032,7 +1484,6 @@
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const cm = `${year}-${String(month+1).padStart(2,'0')}`;
 
-            // Build daily volume map
             const dayVols = {};
             (hubData.dailyActivity || []).forEach(d => {
                 if (d.tanggal && d.tanggal.startsWith(cm)) {
@@ -1044,8 +1495,6 @@
             const maxVol = Math.max(...Object.values(dayVols), 1);
             const grid = document.getElementById('calendar-grid');
             let html = '';
-
-            // Empty cells before first day
             for (let i = 0; i < firstDay; i++) html += '<div></div>';
 
             for (let d = 1; d <= daysInMonth; d++) {
@@ -1062,7 +1511,7 @@
                     background:${bg}; border:${border}; transition:all 0.2s;
                     font-size:0.8rem; font-weight:${isToday ? '800' : '500'};
                     color:${vol > maxVol*0.5 ? '#fff' : '#1e293b'};
-                " onmouseover="this.style.transform='scale(1.1)';this.style.boxShadow='0 4px 12px rgba(2,132,199,0.2)';" 
+                " onmouseover="this.style.transform='scale(1.1)';this.style.boxShadow='0 4px 12px rgba(2,132,199,0.2)';"
                    onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none';">
                     <div>${d}</div>
                     <div style="font-size:0.55rem; color:${vol > maxVol*0.5 ? 'rgba(255,255,255,0.8)' : '#64748b'}; margin-top:2px;">${volKg}</div>
@@ -1071,7 +1520,9 @@
             grid.innerHTML = html;
         }
 
-        // --- 8. Daily Analysis Command ---
+        // ==========================================
+        // === 17. EXISTING: DAILY ANALYSIS ===
+        // ==========================================
         function showDayAnalysis(dateStr) {
             if (!hubData) return;
             const label = document.getElementById('analysis-date-label');
@@ -1079,10 +1530,8 @@
             const parts = dateStr.split('-');
             label.textContent = `${parts[2]}/${parts[1]}/${parts[0]}`;
 
-            // Get daily aggregated data
             const da = (hubData.dailyActivity || []).find(d => d.tanggal === dateStr);
-            // Get template detail rows for this date
-            const tpl = (hubData.template || []).filter(r => {
+            const tpl = (hubData.templateDump || []).filter(r => {
                 if (!r.TANGGAL) return false;
                 let t = String(r.TANGGAL).substring(0, 10);
                 return t === dateStr;
@@ -1093,10 +1542,7 @@
                 return;
             }
 
-            // --- Build complex analysis ---
             let html = '';
-
-            // Summary Row
             const bongkar = Number(da?.bongkar || 0);
             const muat = Number(da?.muat || 0);
             const stapel = (Number(da?.st_badrun||0) + Number(da?.st_kartono||0) + Number(da?.st_kulhar||0));
@@ -1109,18 +1555,12 @@
             html += summaryMini('STAPEL', stapel, '#8b5cf6');
             html += `</div>`;
 
-            // --- Material Breakdown ---
             const bongkarRows = tpl.filter(r => String(r.KEGIATAN||'').toUpperCase().includes('BONGKAR'));
             const muatRows = tpl.filter(r => String(r.KEGIATAN||'').toUpperCase().includes('MUAT'));
 
-            if (bongkarRows.length > 0) {
-                html += buildMaterialTable('BONGKAR', bongkarRows, '#0284c7');
-            }
-            if (muatRows.length > 0) {
-                html += buildMaterialTable('MUAT', muatRows, '#f59e0b');
-            }
+            if (bongkarRows.length > 0) html += buildMaterialTable('BONGKAR', bongkarRows, '#0284c7');
+            if (muatRows.length > 0) html += buildMaterialTable('MUAT', muatRows, '#f59e0b');
 
-            // Stapel detail
             if (da && stapel > 0) {
                 html += `<div style="margin-top:12px; padding:12px; background:#f5f3ff; border-radius:10px; border:1px solid #ede9fe;">`;
                 html += `<div style="font-family:'Rajdhani'; font-weight:700; font-size:0.9rem; margin-bottom:8px; color:#7c3aed;"><i class="fas fa-layer-group"></i> STAPEL BREAKDOWN</div>`;
@@ -1150,7 +1590,6 @@
         }
 
         function buildMaterialTable(kegiatan, rows, accentColor) {
-            // Group by material → gudang
             const matMap = {};
             rows.forEach(r => {
                 const mat = String(r.JENIS_RM || r.MATERIAL || '-').toUpperCase();
@@ -1171,26 +1610,18 @@
                 html += `<span><i class="fas fa-box" style="color:${accentColor}; font-size:0.7rem; margin-right:4px;"></i> ${mat}</span>`;
                 html += `<span style="font-family:'Rajdhani'; font-weight:800; color:${accentColor};">${(info.total/1000).toFixed(2)} T</span>`;
                 html += `</div>`;
-
-                // Mini gudang table
                 html += `<div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:4px;">`;
                 for (const [g, v] of Object.entries(info.gudangs)) {
                     html += `<span style="font-size:0.65rem; padding:2px 8px; background:${accentColor}15; border-radius:4px; color:${accentColor}; font-weight:600;">${g}: ${(v/1000).toFixed(2)}T</span>`;
                 }
                 html += `</div>`;
-
-                // Detail rows (hidden by default)
                 html += `<div class="mat-detail" style="display:none; margin-top:4px;">`;
                 html += `<table style="width:100%; border-collapse:collapse; font-size:0.7rem;">`;
                 html += `<tr style="background:${accentColor}10;"><th style="padding:3px 6px; text-align:left; color:${accentColor};">Nopol</th><th style="padding:3px 6px; text-align:left;">Gudang</th><th style="padding:3px 6px; text-align:right;">Netto</th></tr>`;
                 info.rows.forEach(r => {
-                    const nopol = r.NOPOL || '-';
-                    const gd = r.LOKASI || r.GUDANG || '-';
-                    const nt = Number(r.REAL_BONGKAR_MT || r.REAL_BONGKAR_KG || 0);
-                    html += `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:3px 6px; font-weight:600;">${nopol}</td><td style="padding:3px 6px;">${gd}</td><td style="padding:3px 6px; text-align:right; font-family:'Rajdhani'; font-weight:700;">${nt.toLocaleString()} kg</td></tr>`;
+                    html += `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:3px 6px; font-weight:600;">${r.NOPOL || '-'}</td><td style="padding:3px 6px;">${r.LOKASI || r.GUDANG || '-'}</td><td style="padding:3px 6px; text-align:right; font-family:'Rajdhani'; font-weight:700;">${(Number(r.REAL_BONGKAR_MT || r.REAL_BONGKAR_KG || 0)).toLocaleString()} kg</td></tr>`;
                 });
-                html += `</table></div>`;
-                html += `</div>`;
+                html += `</table></div></div>`;
             }
             html += `</div>`;
             return html;
