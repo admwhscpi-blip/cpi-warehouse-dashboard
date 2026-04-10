@@ -471,7 +471,7 @@ function handleGetAnalyticsV2() {
           tanggal: findH(bH, ["TANGGAL", "DATE"]),
           material: findH(bH, ["MATERIAL", "JENIS RM", "KOMODITAS", "JENIS_RM", "NAMA BARANG"]),
           netto: findH(bH, ["NETTO (KG)", "REAL_BONGKAR_MT", "NETTO", "KG", "MT"]),
-          gudang: findH(bH, ["GUDANG/INTAKE", "GUDANG", "LOKASI"]),
+          gudang: findH(bH, ["SLOC", "GUDANG/INTAKE", "GUDANG", "LOKASI"]),
           tim: findH(bH, ["TIM KERJA", "TIM"]),
           jenisKuli: findH(bH, ["JENIS KULI", "KULI"]),
           startPanggil: findH(bH, ["START PANGGIL"]),

@@ -149,6 +149,16 @@
             box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
         }
 
+        .view-toggle-group {
+            display: flex; background: rgba(241,245,249,0.5); padding: 4px; border-radius: 20px; border: 1px solid var(--border-color);
+        }
+        .view-tab {
+            padding: 8px 18px; border: none; background: transparent; color: var(--text-secondary); font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.9rem; border-radius: 16px; cursor: pointer; transition: all 0.3s ease; letter-spacing: 0.5px;
+        }
+        .view-tab.active {
+            background: #fff; color: var(--accent-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
         /* ==================================== */
         /* === NEW: INAP ANALYSIS SECTION === */
         /* ==================================== */
@@ -384,6 +394,30 @@
         }
         .detail-table tbody tr:hover { background: #f8fafc; }
 
+        /* ================================== */
+        /* === SUPER DETAIL TABLE (NEW) === */
+        /* ================================== */
+        .super-table {
+            width: 100%; border-collapse: separate; border-spacing: 0; min-width: 900px;
+        }
+        .super-table thead th {
+            background: #0f172a; color: #f8fafc; padding: 14px 16px; text-align: left;
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;
+            position: sticky; top: 0; z-index: 5;
+        }
+        .super-table thead th:first-child { border-radius: 0; }
+        .super-table tbody tr {
+            transition: all 0.2s ease; background: #fff;
+        }
+        .super-table tbody tr:hover { background: #f1f5f9; box-shadow: inset 0 1px 0 var(--border-color), inset 0 -1px 0 var(--border-color); }
+        .super-table tbody td {
+            padding: 12px 16px; border-bottom: 1px solid var(--border-color);
+            vertical-align: middle; font-size: 0.85rem;
+        }
+        .time-block { display: flex; flex-direction: column; gap: 2px; }
+        .time-block span { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.1; }
+        .time-block strong { font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); letter-spacing: 0.5px; line-height: 1.1; }
+
         /* Percentage mini-cards */
         .pct-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
         .pct-mini {
@@ -542,14 +576,22 @@
         <!-- MAIN SCROLLABLE DASHBOARD -->
         <main class="main-content" id="main-dashboard">
 
-            <!-- ★ 1. MONTH FILTER ★ -->
-            <div class="month-filter-bar" id="month-filter-bar">
-                <div class="filter-label"><i class="fas fa-calendar-alt"></i> FILTER BULAN</div>
-                <div id="month-pills" style="display:flex; gap:6px; flex-wrap:wrap;">
-                    <div class="shimmer" style="width:200px; height:32px;"></div>
+            <!-- ★ 1. MONTH FILTER & VIEW TOGGLE ★ -->
+            <div class="month-filter-bar" id="month-filter-bar" style="justify-content: space-between;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="filter-label"><i class="fas fa-calendar-alt"></i> FILTER BULAN</div>
+                    <div id="month-pills" style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <div class="shimmer" style="width:200px; height:32px;"></div>
+                    </div>
+                </div>
+                <div class="view-toggle-group">
+                    <button class="view-tab active" onclick="switchView('leadtime')" id="tab-leadtime"><i class="fas fa-route"></i> Lead Time</button>
+                    <button class="view-tab" onclick="switchView('ops')" id="tab-ops"><i class="fas fa-chart-line"></i> Operasional</button>
                 </div>
             </div>
 
+            <!-- VIEW: LEADTIME -->
+            <div id="view-leadtime">
             <!-- ★ 2. TRUCK INAP ANALYSIS ★ -->
             <div class="section-title-bar">
                 <h3><i class="fas fa-truck" style="color:var(--accent-primary);"></i> TRUCK INAP ANALYSIS</h3>
@@ -557,22 +599,22 @@
             </div>
 
             <div class="inap-grid" id="inap-stats">
-                <div class="inap-card card-total">
+                <div class="inap-card card-total" onclick="showSlocBreakdown('total')" style="cursor:pointer;" title="Klik untuk rincian data">
                     <i class="fas fa-truck card-icon"></i>
                     <div class="card-label">Total Truck</div>
                     <div class="card-value" id="inap-total">-</div>
                     <div class="card-sub" id="inap-total-sub">Memuat data...</div>
                 </div>
-                <div class="inap-card card-inap">
+                <div class="inap-card card-inap" onclick="showSlocBreakdown('inap')" style="cursor:pointer;" title="Klik untuk rincian data">
                     <i class="fas fa-moon card-icon"></i>
                     <div class="card-label">Truck Inap</div>
                     <div class="card-value" id="inap-count">-</div>
                     <div class="card-sub" id="inap-count-sub">Durasi > 24 jam</div>
-                    <div class="notif-badge" id="notif-inap" onclick="showInapBreakdown()" style="display:none;">
-                        <i class="fas fa-search-plus"></i> Bedah Inapan? Klik disini <i class="fas fa-chevron-right" style="font-size:0.6rem;"></i>
+                    <div class="notif-badge" id="notif-inap" style="display:none; pointer-events:none;">
+                        <i class="fas fa-search-plus"></i> Klik untuk rincian SLOC & Tabel <i class="fas fa-chevron-right" style="font-size:0.6rem;"></i>
                     </div>
                 </div>
-                <div class="inap-card card-tidak">
+                <div class="inap-card card-tidak" onclick="showSlocBreakdown('tidak')" style="cursor:pointer;" title="Klik untuk rincian data">
                     <i class="fas fa-check-circle card-icon"></i>
                     <div class="card-label">Tidak Inap</div>
                     <div class="card-value" id="tidak-inap-count">-</div>
@@ -618,6 +660,10 @@
                     </table>
                 </div>
             </div>
+            </div> <!-- CLOSE view-leadtime -->
+
+            <!-- VIEW: OPERASIONAL -->
+            <div id="view-ops" style="display:none;">
 
             <!-- SECTION DIVIDER -->
             <div class="section-divider">
@@ -688,6 +734,7 @@
                     </div>
                 </div>
             </div>
+            </div> <!-- CLOSE view-ops -->
         </main>
     </div>
 
@@ -725,6 +772,39 @@
                 <button class="overlay-close" onclick="closeOverlay('overlay-duration')">&times;</button>
             </div>
             <div class="overlay-body" id="duration-body"></div>
+        </div>
+    </div>
+
+    <!-- Overlay 4: SLOC Breakdown -->
+    <div class="analysis-overlay" id="overlay-sloc-breakdown">
+        <div class="overlay-panel">
+            <div class="overlay-header">
+                <h3 id="sloc-breakdown-title"><i class="fas fa-warehouse" style="color:#0284c7;"></i> Distribusi Lokasi (SLOC)</h3>
+                <button class="overlay-close" onclick="closeOverlay('overlay-sloc-breakdown')">&times;</button>
+            </div>
+            <div class="overlay-body" id="sloc-breakdown-body"></div>
+        </div>
+    </div>
+
+    <!-- Overlay 5: Super Detail Table -->
+    <div class="analysis-overlay" id="overlay-super-detail">
+        <div class="overlay-panel" style="max-width: 1200px;">
+            <div class="overlay-header">
+                <h3 id="super-detail-title"><i class="fas fa-list-alt" style="color:var(--accent-primary);"></i> Data Operasional Terperinci</h3>
+                <button class="overlay-close" onclick="closeOverlay('overlay-super-detail')">&times;</button>
+            </div>
+            <div class="overlay-body" id="super-detail-body" style="padding: 0;"></div>
+        </div>
+    </div>
+
+    <!-- Overlay 6: Truck Timeline -->
+    <div class="analysis-overlay" id="overlay-truck-timeline" style="z-index: 2005;">
+        <div class="overlay-panel" style="max-width: 500px;">
+            <div class="overlay-header">
+                <h3 id="truck-timeline-title"><i class="fas fa-truck"></i> Timeline Truck</h3>
+                <button class="overlay-close" onclick="closeOverlay('overlay-truck-timeline')">&times;</button>
+            </div>
+            <div class="overlay-body" id="truck-timeline-body" style="padding: 20px;"></div>
         </div>
     </div>
 
@@ -787,6 +867,19 @@
             card.style.animation = 'modalPop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards';
         }
         checkSession();
+
+        function switchView(mode) {
+            document.getElementById('tab-leadtime').classList.toggle('active', mode === 'leadtime');
+            document.getElementById('tab-ops').classList.toggle('active', mode === 'ops');
+            
+            if (mode === 'leadtime') {
+                document.getElementById('view-leadtime').style.display = 'block';
+                document.getElementById('view-ops').style.display = 'none';
+            } else {
+                document.getElementById('view-leadtime').style.display = 'none';
+                document.getElementById('view-ops').style.display = 'block';
+            }
+        }
 
         // ========================
         // === 2. CLOCK WIDGET ===
@@ -1219,6 +1312,183 @@
 
             document.getElementById('material-detail-body').innerHTML = html;
             openOverlay('overlay-material-detail');
+        }
+
+        // ==========================================
+        // === 10.5. SLOC DRILL-DOWN (NEW) ===
+        // ==========================================
+        function showSlocBreakdown(type) {
+            if (!cachedInapData) return;
+            
+            let targetRows = [];
+            let titleHtml = "";
+            
+            if (type === 'total') {
+                targetRows = cachedInapData.allFiltered;
+                titleHtml = `<i class="fas fa-truck" style="color:var(--accent-primary);"></i> Distribusi LOKASI - Total Truck (${cachedInapData.total})`;
+            } else if (type === 'inap') {
+                targetRows = cachedInapData.details; 
+                titleHtml = `<i class="fas fa-moon" style="color:#ef4444;"></i> Distribusi LOKASI - Truck Inap (${cachedInapData.inap})`;
+            } else if (type === 'tidak') {
+                targetRows = cachedInapData.allFiltered.filter(r => {
+                    const res = computeInapForRow(r);
+                    return res.valid && !res.isInap;
+                });
+                titleHtml = `<i class="fas fa-check-circle" style="color:#10b981;"></i> Distribusi LOKASI - Tidak Inap (${cachedInapData.tidakInap})`;
+            }
+            
+            if (targetRows.length === 0) return;
+            
+            document.getElementById('sloc-breakdown-title').innerHTML = titleHtml;
+            
+            const slocMap = {};
+            targetRows.forEach(row => {
+                const sloc = String(row.LOKASI || 'LAIN-LAIN').trim().toUpperCase();
+                if (!slocMap[sloc]) slocMap[sloc] = [];
+                slocMap[sloc].push(row);
+            });
+            
+            const sortedSlocs = Object.entries(slocMap).sort((a,b) => b[1].length - a[1].length);
+            
+            let html = `<div style="margin-bottom:16px; font-size:0.85rem; color:var(--text-secondary);">Silakan pilih lokasi (SLOC) untuk melihat rincian tabel datanya:</div>`;
+            
+            sortedSlocs.forEach(([sloc, rows], i) => {
+                html += `<div class="ov-material-item fade-in-item" style="animation-delay:${i * 0.05}s;" onclick="showSuperDetail('${sloc.replace(/'/g, "\\'")}', '${type}')">
+                    <div class="mat-name"><i class="fas fa-warehouse" style="color:var(--success); font-size:0.8rem;"></i> ${sloc}</div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="mat-count">${rows.length} <span style="font-size:0.75rem; font-weight:500; color:var(--text-secondary);">truck</span></div>
+                        <div class="mat-arrow"><i class="fas fa-arrow-right"></i></div>
+                    </div>
+                </div>`;
+            });
+            
+            window.tempSlocRows = slocMap; 
+            
+            document.getElementById('sloc-breakdown-body').innerHTML = html;
+            openOverlay('overlay-sloc-breakdown');
+        }
+
+        function showSuperDetail(sloc, type) {
+            closeOverlay('overlay-sloc-breakdown'); 
+            
+            const rows = window.tempSlocRows[sloc];
+            if (!rows || rows.length === 0) return;
+            
+            let typeLabel = type === 'total' ? 'Semua Truck' : (type === 'inap' ? 'Truck Inap' : 'Tidak Inap');
+            document.getElementById('super-detail-title').innerHTML = `<i class="fas fa-list-alt" style="color:var(--accent-primary);"></i> Data ${typeLabel} - ${sloc}`;
+            
+            let html = `
+            <div style="overflow-x:auto;">
+                <table class="super-table">
+                    <thead>
+                        <tr>
+                            <th>NO</th>
+                            <th>TANGGAL</th>
+                            <th>NOPOL & MAT</th>
+                            <th>NETTO</th>
+                            <th style="min-width: 140px; text-align:right;">TOTAL DURASI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            rows.forEach((r, idx) => {
+                const rInap = computeInapForRow(r);
+                const isWarning = rInap.isInap;
+                const rowStyle = isWarning ? 'background-color: rgba(239, 68, 68, 0.05); border-left: 3px solid #ef4444;' : 'border-left: 3px solid transparent;';
+                
+                const nopol = r.NOPOL || '-';
+                const mat = r.JENIS_RM || '-';
+                const truck = r.JENIS_TRUCK || '-';
+                
+                let durText = '-';
+                if (rInap.valid) {
+                    const totalMins = rInap.durationMins || 0;
+                    const h = Math.floor(totalMins / 60);
+                    const m = Math.floor(totalMins % 60);
+                    durText = `${h}j ${m}m`;
+                }
+                
+                html += `
+                <tr style="${rowStyle}" class="fade-in-item" style="animation-delay:${idx*0.02}s;">
+                    <td style="font-weight:700; color:var(--text-secondary); width:40px; text-align:center;">${idx+1}</td>
+                    <td style="white-space:nowrap;"><i class="far fa-calendar-alt" style="opacity:0.5; margin-right:4px;"></i> ${r.TANGGAL||'-'}</td>
+                    <td>
+                        <div style="font-family:'Rajdhani', sans-serif; font-weight:700; font-size:1.05rem; color:var(--text-primary); letter-spacing:0.5px;">${nopol}</div>
+                        <div style="font-size:0.75rem; color:var(--text-secondary); font-weight:600;"><span style="color:var(--accent-primary);">${mat}</span> • ${truck}</div>
+                    </td>
+                    <td style="font-family:'Rajdhani', sans-serif; font-weight:700;">${Number(r.REAL_BONGKAR_KG||r.REAL_BONGKAR_MT||0).toLocaleString('id-ID')} <span style="font-size:0.7rem;color:var(--text-secondary);">KG</span></td>
+                    
+                    <td style="text-align:right;">
+                        <button onclick="showPopUpMnt('${sloc.replace(/'/g, "\\'")}', ${idx})" style="background: ${isWarning ? 'rgba(239, 68, 68, 0.1)' : 'rgba(2, 132, 199, 0.1)'}; color:${isWarning ? '#ef4444' : 'var(--accent-primary)'}; border:1px solid ${isWarning ? 'rgba(239, 68, 68, 0.3)' : 'rgba(2, 132, 199, 0.3)'}; padding:6px 12px; border-radius:12px; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.95rem; cursor:pointer; transition: all 0.2s ease;">
+                            <i class="far fa-clock"></i> ${durText}
+                        </button>
+                    </td>
+                </tr>
+                `;
+            });
+            
+            html += `</tbody></table></div>`;
+            
+            document.getElementById('super-detail-body').innerHTML = html;
+            setTimeout(() => { openOverlay('overlay-super-detail'); }, 150); 
+        }
+
+        function showPopUpMnt(sloc, idx) {
+            const r = window.tempSlocRows[sloc][idx];
+            if (!r) return;
+
+            document.getElementById('truck-timeline-title').innerHTML = `<i class="fas fa-truck" style="color:var(--purple);"></i> NOPOL: ${r.NOPOL || '-'}`;
+
+            let arrDate = r.ARRIVAL_DATE || '';
+            if (!arrDate && r.ARRIVAL_TIME) arrDate = r.TANGGAL || '';
+            let pbDate = r.TANGGAL_PB || r.TANGGAL || '-';
+
+            const events = [
+                { label: 'Arrival', time: r.ARRIVAL_TIME, date: arrDate, icon: 'fa-sign-in-alt', color: '#0284c7' },
+                { label: 'QC Sampling 1', time: r.QC_SAMPLING_1, icon: 'fa-vial', color: '#6366f1' },
+                { label: 'Timbang Masuk', time: r.TIME_TIMBANG_MASUK, icon: 'fa-balance-scale', color: '#8b5cf6' },
+                { label: 'Sampai Gudang', time: r.SAMPAI_GUDANG, icon: 'fa-warehouse', color: '#10b981' },
+                { label: 'Start Panggil', time: r.START_PANGGIL, icon: 'fa-bullhorn', color: '#f59e0b' },
+                { label: 'Truck Ready', time: r.TRUCK_READY, icon: 'fa-truck-loading', color: '#d97706' },
+                { label: 'Start Bongkar', time: r.START_BONGKAR, icon: 'fa-box-open', color: '#0ea5e9' },
+                { label: 'Hold QC', time: r.HOLD_QC, icon: 'fa-hand-paper', color: '#ef4444' },
+                { label: 'Restart QC', time: r.RESTART_QC, icon: 'fa-play-circle', color: '#14b8a6' },
+                { label: 'Manuver Akhir', time: r.MANUVER_AKHIR, icon: 'fa-truck-moving', color: '#64748b' },
+                { label: 'Finish PB', time: r.FINISH_TIME, date: pbDate, icon: 'fa-flag-checkered', color: '#ef4444' }
+            ];
+
+            let html = `<div class="timeline-container" style="padding:10px 0;">`;
+            
+            events.forEach((ev, i) => {
+                const isLast = i === events.length - 1;
+                const timeStr = ev.time || '-';
+                const dateStr = ev.date ? `<span style="font-size:0.75rem; font-weight:600; color:var(--text-secondary); display:block; margin-top:2px;">${ev.date}</span>` : '';
+                
+                html += `
+                <div style="display:flex; gap:16px; margin-bottom:${isLast ? '0' : '12px'}; position:relative;">
+                    ${!isLast ? '<div style="position:absolute; left:19px; top:40px; bottom:-12px; width:2px; background:var(--border-color); z-index:1;"></div>' : ''}
+                    
+                    <div style="width:40px; height:40px; border-radius:50%; background:${ev.color}; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; z-index:2; font-size:1rem; box-shadow:0 3px 6px rgba(0,0,0,0.15);">
+                        <i class="fas ${ev.icon}"></i>
+                    </div>
+                    
+                    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:10px 16px; flex-grow:1; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                        <div>
+                            <div style="font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">${ev.label}</div>
+                            ${dateStr}
+                        </div>
+                        <div style="font-family:'Rajdhani', sans-serif; font-weight:700; font-size:1.3rem; color:${timeStr === '-' ? 'var(--text-secondary)' : 'var(--text-primary)'};">
+                            ${timeStr}
+                        </div>
+                    </div>
+                </div>`;
+            });
+            
+            html += `</div>`;
+            
+            document.getElementById('truck-timeline-body').innerHTML = html;
+            openOverlay('overlay-truck-timeline');
         }
 
         // =======================================
