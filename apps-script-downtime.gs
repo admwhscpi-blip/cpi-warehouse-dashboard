@@ -76,6 +76,7 @@ function findH(headers, variants) {
 function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   forceMuatHeaders();
+  forceBongkarHeaders();
 
   // 0. Action: Master Data (v19.9 Deployment Intelligence)
   if (e && e.parameter.action === 'getData') {
@@ -739,6 +740,101 @@ function doGet(e) {
     }
   }
 
+  // ===== ACTION: getStafelData (v21.0.0 Staffel Pallet Tracking) =====
+  if (e && e.parameter.action === 'getStafelData') {
+    try {
+      const STAFFEL_SHEET = "STAFFEL_LOG";
+      const STAFFEL_CONFIG_SHEET = "STAFFEL_CONFIG";
+      
+      // 1. Read stock awal from config (or use defaults)
+      let stockAwal = {
+        "BADRUN": 162, "KARTONO": 112,
+        "WAWAN": 25, "SURYANA": 25, "SAHLAN": 25,
+        "PALLET_KOSONG": 137
+      };
+      
+      let cfgSheet = ss.getSheetByName(STAFFEL_CONFIG_SHEET);
+      if (cfgSheet && cfgSheet.getLastRow() > 0) {
+        const cfgData = cfgSheet.getDataRange().getValues();
+        cfgData.forEach(row => {
+          let key = String(row[0] || "").trim().toUpperCase();
+          let val = Number(row[1]) || 0;
+          if (key && stockAwal.hasOwnProperty(key)) stockAwal[key] = val;
+        });
+      }
+      
+      // 2. Read all entries from STAFFEL_LOG
+      let entries = [];
+      let stSheet = ss.getSheetByName(STAFFEL_SHEET);
+      if (stSheet && stSheet.getLastRow() > 1) {
+        const stData = stSheet.getDataRange().getValues();
+        const stH = stData[0].map(h => String(h).toUpperCase());
+        const sIdx = {
+          tanggal: stH.indexOf("TANGGAL") >= 0 ? stH.indexOf("TANGGAL") : 1,
+          shift: stH.indexOf("SHIFT") >= 0 ? stH.indexOf("SHIFT") : 2,
+          tim: stH.indexOf("TIM") >= 0 ? stH.indexOf("TIM") : 3,
+          jenis: stH.indexOf("JENIS") >= 0 ? stH.indexOf("JENIS") : 4,
+          pcs: stH.indexOf("JUMLAH PCS") >= 0 ? stH.indexOf("JUMLAH PCS") : 5,
+          netto: stH.indexOf("NETTO KG") >= 0 ? stH.indexOf("NETTO KG") : 6,
+          kuli: stH.indexOf("NAMA KULI") >= 0 ? stH.indexOf("NAMA KULI") : 7,
+          krani: stH.indexOf("KRANI") >= 0 ? stH.indexOf("KRANI") : 8
+        };
+        
+        for (let i = 1; i < stData.length; i++) {
+          const row = stData[i];
+          entries.push({
+            row_id: i + 1,
+            tanggal: formatDate(row[sIdx.tanggal]),
+            shift: String(row[sIdx.shift] || "-"),
+            tim: String(row[sIdx.tim] || "-").toUpperCase(),
+            jenis: String(row[sIdx.jenis] || "-").toUpperCase(),
+            pcs: Number(row[sIdx.pcs]) || 0,
+            netto_kg: Number(row[sIdx.netto]) || 0,
+            kuli: String(row[sIdx.kuli] || "-"),
+            krani: String(row[sIdx.krani] || "-")
+          });
+        }
+      }
+      
+      // 3. Calculate pallet summary
+      const tims = ["BADRUN", "KARTONO", "WAWAN", "SURYANA", "SAHLAN"];
+      const summary = {};
+      let totalBongkaran = 0, totalStapel = 0;
+      
+      tims.forEach(t => {
+        let bongkaranPcs = 0, stapelPcs = 0;
+        entries.forEach(e => {
+          if (e.tim === t) {
+            if (e.jenis === "BONGKARAN") bongkaranPcs += e.pcs;
+            else if (e.jenis === "STAPEL") stapelPcs += e.pcs;
+          }
+        });
+        totalBongkaran += bongkaranPcs;
+        totalStapel += stapelPcs;
+        summary[t] = {
+          stock_awal: stockAwal[t] || 0,
+          bongkaran: bongkaranPcs,
+          stapel: stapelPcs,
+          pr_remaining: (stockAwal[t] || 0) + bongkaranPcs - stapelPcs
+        };
+      });
+      
+      const palletKosong = (stockAwal["PALLET_KOSONG"] || 137) - totalBongkaran + totalStapel;
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        stockAwal: stockAwal,
+        summary: summary,
+        palletKosong: palletKosong,
+        entries: entries.reverse()
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false, error: err.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('WHSMART v2.0')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
@@ -761,6 +857,46 @@ function forceMuatHeaders() {
     mSheet.getRange("R1").setValue("v20.0.3 ABSOLUTE-SYNC").setFontColor("red").setFontWeight("bold");
     SpreadsheetApp.flush();
   } catch(e) {}
+}
+
+// v21.0.0: Force headers on DATA BONGKARAN sheet (auto-insert if missing)
+function forceBongkarHeaders() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) return; // Sheet doesn't exist yet, will be created with headers later
+    
+    if (sheet.getLastRow() === 0) {
+      // Empty sheet - just add headers
+      sheet.getRange(1, 1, 1, MASTER_HEADERS.length).setValues([MASTER_HEADERS]).setFontWeight("bold").setBackground("#cfe2f3").setHorizontalAlignment("center");
+      sheet.setFrozenRows(1);
+      SpreadsheetApp.flush();
+      return;
+    }
+    
+    // Check if row 1 is already a header (look for "Tanggal" or "TANGGAL")
+    const firstCell = String(sheet.getRange(1, 1).getValue() || "").trim().toUpperCase();
+    if (firstCell === "TANGGAL" || firstCell === "DATE") {
+      // Headers already exist, just format them
+      sheet.getRange(1, 1, 1, MASTER_HEADERS.length)
+           .setValues([MASTER_HEADERS])
+           .setFontWeight("bold")
+           .setBackground("#cfe2f3")
+           .setHorizontalAlignment("center");
+      sheet.setFrozenRows(1);
+      return;
+    }
+    
+    // Data starts at row 1 without headers - INSERT a new row 1
+    sheet.insertRowBefore(1);
+    sheet.getRange(1, 1, 1, MASTER_HEADERS.length)
+         .setValues([MASTER_HEADERS])
+         .setFontWeight("bold")
+         .setBackground("#cfe2f3")
+         .setHorizontalAlignment("center");
+    sheet.setFrozenRows(1);
+    SpreadsheetApp.flush();
+  } catch(e) { /* silent fail */ }
 }
 
 // v19.4 Helper
@@ -977,6 +1113,63 @@ function doPost(e) {
         Number(raw.netto) || 0,  // F: Netto Stapel (Kg)
         raw.krani_pencatat || '-' // G: Krani Pencatat
       ]);
+      
+      return ContentService.createTextOutput(JSON.stringify({success: true}));
+    }
+
+    // ACTION: SAVE STAFFEL ENTRY (v21.0.0 Pallet Tracking)
+    if (raw.action === "saveStafelEntry") {
+      const STAFFEL_SHEET = "STAFFEL_LOG";
+      const STAFFEL_HEADERS = ["Timestamp", "Tanggal", "Shift", "Tim", "Jenis", "Jumlah PCS", "Netto KG", "Nama Kuli", "Krani"];
+      
+      let stSheet = ss.getSheetByName(STAFFEL_SHEET);
+      if (!stSheet) {
+        stSheet = ss.insertSheet(STAFFEL_SHEET);
+        stSheet.getRange(1, 1, 1, STAFFEL_HEADERS.length)
+          .setValues([STAFFEL_HEADERS])
+          .setFontWeight("bold")
+          .setBackground("#d9d2e9")
+          .setHorizontalAlignment("center");
+        stSheet.setFrozenRows(1);
+      }
+      
+      const pcs = Number(raw.pcs) || 0;
+      stSheet.appendRow([
+        new Date(),               // A: Timestamp
+        raw.tanggal || '-',       // B: Tanggal
+        raw.shift || '-',         // C: Shift
+        raw.tim || '-',           // D: Tim
+        raw.jenis || '-',         // E: Jenis (BONGKARAN / STAPEL)
+        pcs,                      // F: Jumlah PCS
+        pcs * 50,                 // G: Netto KG (auto-convert 1 PCS = 50 KG)
+        raw.kuli || '-',          // H: Nama Kuli
+        raw.krani || '-'          // I: Krani Pencatat
+      ]);
+      
+      return ContentService.createTextOutput(JSON.stringify({success: true}));
+    }
+
+    // ACTION: UPDATE STAFFEL STOCK AWAL (v21.0.0 - ARIF ONLY)
+    if (raw.action === "updateStafelStock") {
+      const STAFFEL_CONFIG_SHEET = "STAFFEL_CONFIG";
+      
+      let cfgSheet = ss.getSheetByName(STAFFEL_CONFIG_SHEET);
+      if (!cfgSheet) {
+        cfgSheet = ss.insertSheet(STAFFEL_CONFIG_SHEET);
+        cfgSheet.getRange(1, 1, 1, 2).setValues([["Tim", "Stock Awal PCS"]]).setFontWeight("bold");
+      }
+      
+      // Clear and rewrite all stock values
+      if (cfgSheet.getLastRow() > 1) {
+        cfgSheet.getRange(2, 1, cfgSheet.getLastRow() - 1, 2).clearContent();
+      }
+      
+      const stocks = raw.stocks || {};
+      const keys = Object.keys(stocks);
+      if (keys.length > 0) {
+        const rows = keys.map(k => [k, Number(stocks[k]) || 0]);
+        cfgSheet.getRange(2, 1, rows.length, 2).setValues(rows);
+      }
       
       return ContentService.createTextOutput(JSON.stringify({success: true}));
     }

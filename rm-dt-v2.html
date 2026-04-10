@@ -10,6 +10,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/app-config.js"></script>
 
     <style>
         :root {
@@ -708,13 +710,16 @@
 
         <div class="nav-menu">
             <a href="rm-dt-v2.html" class="nav-btn active">
-                <span><i class="fas fa-microchip icon"></i> DT V2.0 - ANALYS</span>
+                <span><i class="fas fa-microchip icon"></i> DOWNTIME-V2.0</span>
             </a>
             <a href="rm-dt-entry.html" class="nav-btn">
                 <span><i class="fas fa-stopwatch icon"></i> DATA ENTRY BONGKAR</span>
             </a>
             <a href="rm-muat-entry.html" class="nav-btn">
                 <span><i class="fas fa-shipping-fast icon"></i> DATA ENTRY MUAT</span>
+            </a>
+            <a href="rm-dt-staffel-entry.html" class="nav-btn">
+                <span><i class="fas fa-layer-group icon"></i> DATA ENTRY-STAFFEL</span>
             </a>
             <a href="rm-dt-lengkapi-netto.html" class="nav-btn">
                 <span><i class="fas fa-balance-scale icon"></i> LENGKAPI DATA NETTO</span>
@@ -732,7 +737,7 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <div class="header-title">
-                    <h2>DT V2.0 HUB</h2>
+                    <h2>DOWNTIME-V2.0</h2>
                     <p>Advanced Operational Monitoring Center</p>
                 </div>
             </div>
@@ -751,83 +756,73 @@
         </header>
 
         <!-- MAIN SCROLLABLE DASHBOARD -->
-        <main class="main-content">
+        <main class="main-content" id="main-dashboard">
             
-            <!-- STATS -->
-            <div class="stats-grid">
+            <!-- LIVE STATS -->
+            <div class="stats-grid" id="live-stats">
                 <div class="stat-card">
-                    <div class="stat-label">System Status</div>
-                    <div class="stat-value success-text">OPERATIONAL</div>
-                    <div class="stat-trend trend-up"><i class="fas fa-check-circle"></i> 99.9% Uptime Logging</div>
+                    <div class="stat-label"><i class="fas fa-truck-loading" style="color:#0284c7;"></i> BONGKAR (Bulan Ini)</div>
+                    <div class="stat-value" id="stat-bongkar">- <span style="font-size: 1rem; color: var(--text-secondary);">KG</span></div>
+                    <div class="stat-trend trend-up" id="stat-bongkar-count"><i class="fas fa-box"></i> Memuat...</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Total Downtime (Today)</div>
-                    <div class="stat-value">124 <span style="font-size: 1rem; color: var(--text-secondary);">MINS</span></div>
-                    <div class="stat-trend trend-down"><i class="fas fa-arrow-up"></i> +12% from average</div>
+                    <div class="stat-label"><i class="fas fa-shipping-fast" style="color:#f59e0b;"></i> MUAT (Bulan Ini)</div>
+                    <div class="stat-value" id="stat-muat">- <span style="font-size: 1rem; color: var(--text-secondary);">KG</span></div>
+                    <div class="stat-trend trend-up" id="stat-muat-count"><i class="fas fa-box"></i> Memuat...</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Efficiency Rate</div>
-                    <div class="stat-value">88.5 <span style="font-size: 1rem; color: var(--text-secondary);">%</span></div>
-                    <div class="stat-trend trend-up"><i class="fas fa-arrow-up"></i> +2.4% vs previous shift</div>
+                    <div class="stat-label"><i class="fas fa-layer-group" style="color:#8b5cf6;"></i> STAPEL (Bulan Ini)</div>
+                    <div class="stat-value" id="stat-stapel">- <span style="font-size: 1rem; color: var(--text-secondary);">KG</span></div>
+                    <div class="stat-trend" id="stat-stapel-info" style="color:var(--text-secondary);"><i class="fas fa-info-circle"></i> 1 PCS = 50 KG</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Unloading Avg Time</div>
-                    <div class="stat-value">0.72 <span style="font-size: 1rem; color: var(--text-secondary);">HR/T</span></div>
-                    <div class="stat-trend trend-up"><i class="fas fa-bolt"></i> Optimal Range Target Hit</div>
+                    <div class="stat-label"><i class="fas fa-pallet" style="color:#10b981;"></i> PALLET STATUS</div>
+                    <div class="stat-value success-text" id="stat-pallet">- <span style="font-size: 1rem; color: var(--text-secondary);">PCS</span></div>
+                    <div class="stat-trend trend-up" id="stat-pallet-info"><i class="fas fa-check-circle"></i> Memuat...</div>
                 </div>
             </div>
 
-            <!-- CHARTS & LISTS -->
+            <!-- OPS DAILY CHART -->
+            <div class="chart-card" style="margin-bottom:20px; min-height:360px;">
+                <div class="card-header">
+                    <span><i class="fas fa-chart-bar" style="color:#0284c7;"></i> OPERATIONAL VOLUME DAILY</span>
+                    <span class="live-badge">BONGKAR + MUAT + STAPEL</span>
+                </div>
+                <div style="flex-grow:1; position:relative;">
+                    <canvas id="opsVolumeChart"></canvas>
+                </div>
+            </div>
+
+            <!-- CALENDAR + ANALYSIS -->
             <div class="dashboard-grid">
-                <div class="chart-card">
+                <!-- RM DAILY CALENDAR -->
+                <div class="chart-card" style="min-height:auto;">
                     <div class="card-header">
-                        <span><i class="fas fa-wave-square"></i> Efficiency Flowchart</span>
-                        <span class="live-badge">LIVE TRACKING</span>
+                        <span><i class="fas fa-calendar-alt" style="color:#0284c7;"></i> RM DAILY CALENDAR</span>
+                        <span id="cal-month-label" style="font-size:0.8rem; color:var(--text-secondary);">-</span>
                     </div>
-                    <div style="flex-grow: 1; position: relative;">
-                        <canvas id="performanceChart"></canvas>
+                    <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:8px;">
+                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">MIN</div>
+                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">SEN</div>
+                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">SEL</div>
+                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">RAB</div>
+                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">KAM</div>
+                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">JUM</div>
+                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">SAB</div>
                     </div>
+                    <div id="calendar-grid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px;"></div>
                 </div>
 
-                <div class="chart-card">
+                <!-- DAILY ANALYSIS COMMAND -->
+                <div class="chart-card" style="min-height:auto;">
                     <div class="card-header">
-                        <span><i class="fas fa-list-alt"></i> Recent Logs</span>
+                        <span><i class="fas fa-microchip" style="color:#0284c7;"></i> DAILY ANALYSIS COMMAND</span>
+                        <span id="analysis-date-label" style="font-size:0.8rem; color:var(--accent-primary);">PILIH TANGGAL</span>
                     </div>
-                    <div class="scroll-list">
-                        <div class="list-item">
-                            <div class="item-info">
-                                <h4>Forklift Maintenance</h4>
-                                <span>WH-02 | 14:20 PM</span>
-                            </div>
-                            <div class="item-val">45M</div>
-                        </div>
-                        <div class="list-item">
-                            <div class="item-info">
-                                <h4>Rain Delay Area A</h4>
-                                <span>ALL ZONES | 12:00 PM</span>
-                            </div>
-                            <div class="item-val">60M</div>
-                        </div>
-                        <div class="list-item">
-                            <div class="item-info">
-                                <h4>Shift Transition Handover</h4>
-                                <span>WH-01 | 08:00 AM</span>
-                            </div>
-                            <div class="item-val">15M</div>
-                        </div>
-                        <div class="list-item">
-                            <div class="item-info">
-                                <h4>Daily Briefing & Meal</h4>
-                                <span>ALL ZONES | 12:30 PM</span>
-                            </div>
-                            <div class="item-val">30M</div>
-                        </div>
-                        <div class="list-item">
-                            <div class="item-info">
-                                <h4>System Auto Clean</h4>
-                                <span>SERVER | 03:00 AM</span>
-                            </div>
-                            <div class="item-val">5M</div>
+                    <div id="analysis-content" class="scroll-list" style="max-height:380px; overflow-y:auto;">
+                        <div style="text-align:center; padding:60px 20px; color:var(--text-secondary);">
+                            <i class="fas fa-mouse-pointer" style="font-size:2.5rem; opacity:0.2; margin-bottom:15px;"></i>
+                            <p style="font-size:0.85rem;">Klik tanggal pada kalender untuk melihat rincian operasional</p>
                         </div>
                     </div>
                 </div>
@@ -837,19 +832,26 @@
     </div>
 
     <script>
-        // --- 1. Login Logic ---
+        // --- CONFIG ---
         const EXPECTED_PIN = "1891";
         const VALID_USERS = [
             "ANGGA", "IMRON", "DIKI", "BASIT", "INGGI", 
             "EPUL", "ADIB", "KIKI", "ABI", "AGUS", 
             "SOFYAN", "SAMSUL", "SIGIT", "ARIF"
         ];
+        const API_V2 = CONFIG.ANALYTICS_V2_URL;
+        const API_DT = CONFIG.ENTRY_BONGKAR_API_URL;
+        let hubData = null;  // analytics V2 data
+        let stafelInfo = null; // staffel pallet data
+        let opsChart = null;
         
+        // --- 1. Login / Session ---
         function checkSession() {
             const savedUser = sessionStorage.getItem('dt_v2_user');
             if (savedUser) {
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('display-username').innerText = savedUser;
+                loadHubData();
             } else {
                 document.getElementById('login-overlay').style.display = 'flex';
             }
@@ -859,144 +861,345 @@
             let user = document.getElementById('username-input').value.trim().toUpperCase();
             const pin = document.getElementById('pin-input').value;
             const err = document.getElementById('login-error');
-
-            // Reset animation
-            err.style.animation = 'none';
-            err.offsetHeight; /* trigger reflow */
-            err.style.animation = null;
-
-            if (!user) {
-                err.innerText = "Please enter your username.";
-                err.style.display = "block";
-                return;
-            }
-
-            if (!VALID_USERS.includes(user)) {
-                err.innerText = "User not found or access denied.";
-                err.style.display = "block";
-                return;
-            }
-
+            err.style.animation = 'none'; err.offsetHeight; err.style.animation = null;
+            if (!user) { err.innerText = 'Masukkan username.'; err.style.display = 'block'; return; }
+            if (!VALID_USERS.includes(user)) { err.innerText = 'User tidak ditemukan.'; err.style.display = 'block'; return; }
             if (pin === EXPECTED_PIN) {
                 sessionStorage.setItem('dt_v2_user', user);
                 document.getElementById('display-username').innerText = user;
-                
-                // Fade out modal smoothly
                 const overlay = document.getElementById('login-overlay');
                 overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; }, 500);
-            } else {
-                err.innerText = "Invalid PIN code.";
-                err.style.display = "block";
-            }
+                setTimeout(() => { overlay.style.display = 'none'; loadHubData(); }, 500);
+            } else { err.innerText = 'PIN salah.'; err.style.display = 'block'; }
         }
         
-        // Enter key for inputs
-        document.getElementById('username-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') document.getElementById('pin-input').focus();
-        });
-        document.getElementById('pin-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') checkLogin();
-        });
+        document.getElementById('username-input').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('pin-input').focus(); });
+        document.getElementById('pin-input').addEventListener('keypress', e => { if (e.key === 'Enter') checkLogin(); });
 
         function handleLogout() {
             sessionStorage.removeItem('dt_v2_user');
             document.getElementById('username-input').value = '';
             document.getElementById('pin-input').value = '';
-            
             const overlay = document.getElementById('login-overlay');
             overlay.style.display = 'flex';
             setTimeout(() => { overlay.style.opacity = '1'; }, 10);
-            
             const card = overlay.querySelector('.login-card');
-            card.style.animation = 'none';
-            card.offsetHeight;
+            card.style.animation = 'none'; card.offsetHeight;
             card.style.animation = 'modalPop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards';
         }
+        checkSession();
 
-        checkSession(); // Run on load
-
-        // --- 2. Clock Widget (Identical to Homepage) ---
+        // --- 2. Clock Widget ---
         function startClock() {
             const update = () => {
                 const now = new Date();
-                const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-                const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
-
+                const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+                const months = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
                 const dayEl = document.getElementById('widget-day');
                 const dateEl = document.getElementById('widget-date');
                 if (dayEl) dayEl.innerText = days[now.getDay()];
                 if (dateEl) dateEl.innerText = `${months[now.getMonth()]} ${now.getDate()}`;
-
-                let h = now.getHours();
-                const m = String(now.getMinutes()).padStart(2, '0');
-                const ampm = h >= 12 ? 'PM' : 'AM';
-                h = h % 12;
-                h = h ? h : 12;
-
-                const timeEl = document.getElementById('widget-time');
-                const ampmEl = document.getElementById('widget-ampm');
-                if (timeEl) timeEl.innerText = `${h}:${m}`;
-                if (ampmEl) ampmEl.innerText = ampm;
-
+                let h = now.getHours(); const m = String(now.getMinutes()).padStart(2,'0');
+                const ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12; h = h ? h : 12;
+                if (document.getElementById('widget-time')) document.getElementById('widget-time').innerText = `${h}:${m}`;
+                if (document.getElementById('widget-ampm')) document.getElementById('widget-ampm').innerText = ampm;
                 const sec = now.getSeconds();
                 const progressEl = document.getElementById('widget-sec-progress');
-                if (progressEl) {
-                    const deg = (sec / 60) * 360;
-                    progressEl.style.transform = `rotate(${deg - 45}deg)`;
-                }
+                if (progressEl) progressEl.style.transform = `rotate(${(sec/60)*360 - 45}deg)`;
             };
-            update();
-            setInterval(update, 1000);
+            update(); setInterval(update, 1000);
         }
         startClock();
 
-        // --- 3. Mobile Sidebar Toggle ---
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('active');
+        // --- 3. Sidebar Toggle ---
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
+
+        // --- 4. Data Loading ---
+        async function loadHubData() {
+            try {
+                const [v2Res, stRes] = await Promise.all([
+                    fetch(API_V2).then(r => r.json()).catch(() => null),
+                    fetch(`${API_DT}?action=getStafelData`).then(r => r.json()).catch(() => null)
+                ]);
+                hubData = v2Res;
+                stafelInfo = stRes;
+                renderStats();
+                renderOpsChart();
+                renderCalendar();
+            } catch(err) {
+                console.error('Hub data error:', err);
+            }
         }
 
-        // --- 4. Chart.js Initialization ---
-        const ctx = document.getElementById('performanceChart').getContext('2d');
-        const performanceChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
-                datasets: [{
-                    label: 'Efficiency',
-                    data: [82, 85, 75, 88, 92, 90],
-                    borderColor: '#0284c7', // accent-primary
-                    backgroundColor: 'rgba(2, 132, 199, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#0284c7',
-                    pointBorderColor: '#fff',
-                    pointHoverRadius: 7
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
+        // --- 5. Stats Cards ---
+        function renderStats() {
+            if (!hubData) return;
+            const now = new Date();
+            const cm = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            const da = hubData.dailyActivity || [];
+            let bTotal = 0, mTotal = 0, sTotal = 0, bCount = 0, mCount = 0;
+
+            da.forEach(d => {
+                if (d.tanggal && d.tanggal.startsWith(cm)) {
+                    const b = (Number(d.bongkar)||0);
+                    const m = (Number(d.muat)||0);
+                    const s = (Number(d.st_badrun)||0) + (Number(d.st_kartono)||0) + (Number(d.st_kulhar)||0);
+                    bTotal += b; mTotal += m; sTotal += s;
+                    if (b > 0) bCount++;
+                    if (m > 0) mCount++;
+                }
+            });
+
+            animateVal('stat-bongkar', bTotal, ' KG');
+            animateVal('stat-muat', mTotal, ' KG');
+            animateVal('stat-stapel', sTotal, ' KG');
+            document.getElementById('stat-bongkar-count').innerHTML = `<i class="fas fa-calendar-day"></i> ${bCount} hari aktif`;
+            document.getElementById('stat-muat-count').innerHTML = `<i class="fas fa-calendar-day"></i> ${mCount} hari aktif`;
+
+            if (stafelInfo && stafelInfo.success) {
+                const pk = stafelInfo.palletKosong || 0;
+                document.getElementById('stat-pallet').innerHTML = `${pk} <span style="font-size:1rem; color:var(--text-secondary);">PCS</span>`;
+                document.getElementById('stat-pallet-info').innerHTML = `<i class="fas fa-pallet"></i> Sisa pallet kosong`;
+            }
+        }
+
+        function animateVal(id, end, suffix) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            let start = 0; const dur = 1500; let t0 = null;
+            const step = (ts) => {
+                if (!t0) t0 = ts;
+                const p = Math.min((ts - t0) / dur, 1);
+                const v = Math.floor(p * end);
+                el.innerHTML = `${v.toLocaleString()} <span style="font-size:1rem; color:var(--text-secondary);">${suffix}</span>`;
+                if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+
+        // --- 6. Ops Volume Chart ---
+        function renderOpsChart() {
+            if (!hubData) return;
+            const now = new Date();
+            const cm = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            const da = (hubData.dailyActivity || []).filter(d => d.tanggal && d.tanggal.startsWith(cm)).sort((a,b) => a.tanggal.localeCompare(b.tanggal));
+
+            const labels = da.map(d => { const p = d.tanggal.split('-'); return `${p[2]}/${p[1]}`; });
+            const bData = da.map(d => Math.round((Number(d.bongkar)||0) / 1000));
+            const mData = da.map(d => Math.round((Number(d.muat)||0) / 1000));
+            const sData = da.map(d => Math.round(((Number(d.st_badrun)||0) + (Number(d.st_kartono)||0) + (Number(d.st_kulhar)||0)) / 1000));
+
+            const ctx = document.getElementById('opsVolumeChart').getContext('2d');
+            if (opsChart) opsChart.destroy();
+            opsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Bongkar (TON)', data: bData, backgroundColor: 'rgba(2,132,199,0.7)', borderRadius: 6, borderSkipped: false },
+                        { label: 'Muat (TON)', data: mData, backgroundColor: 'rgba(245,158,11,0.7)', borderRadius: 6, borderSkipped: false },
+                        { label: 'Stapel (TON)', data: sData, backgroundColor: 'rgba(139,92,246,0.7)', borderRadius: 6, borderSkipped: false }
+                    ]
                 },
-                scales: {
-                    x: {
-                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                        ticks: { color: '#64748b', font: { family: 'Inter', size: 11, weight: '500' } }
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: { family: 'Inter', size: 11 } } },
+                        tooltip: {
+                            backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { family: 'Rajdhani', size: 14 },
+                            bodyFont: { family: 'Inter', size: 12 }, padding: 12, cornerRadius: 8,
+                            callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} TON` }
+                        }
                     },
-                    y: {
-                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                        ticks: { color: '#64748b', font: { family: 'Inter', size: 11, weight: '500' } },
-                        min: 60,
-                        max: 100
+                    scales: {
+                        x: { stacked: true, grid: { display: false }, ticks: { color: '#64748b', font: { family: 'Inter', size: 10 } } },
+                        y: { stacked: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#64748b', font: { family: 'Inter', size: 10 }, callback: v => v + ' T' } }
                     }
                 }
+            });
+        }
+
+        // --- 7. Calendar ---
+        function renderCalendar() {
+            if (!hubData) return;
+            const now = new Date();
+            const year = now.getFullYear(), month = now.getMonth();
+            const monthNames = ['JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI','JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER'];
+            document.getElementById('cal-month-label').textContent = `${monthNames[month]} ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const cm = `${year}-${String(month+1).padStart(2,'0')}`;
+
+            // Build daily volume map
+            const dayVols = {};
+            (hubData.dailyActivity || []).forEach(d => {
+                if (d.tanggal && d.tanggal.startsWith(cm)) {
+                    const day = parseInt(d.tanggal.split('-')[2]);
+                    dayVols[day] = (Number(d.bongkar)||0) + (Number(d.muat)||0) + (Number(d.st_badrun)||0) + (Number(d.st_kartono)||0) + (Number(d.st_kulhar)||0);
+                }
+            });
+
+            const maxVol = Math.max(...Object.values(dayVols), 1);
+            const grid = document.getElementById('calendar-grid');
+            let html = '';
+
+            // Empty cells before first day
+            for (let i = 0; i < firstDay; i++) html += '<div></div>';
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const vol = dayVols[d] || 0;
+                const intensity = vol > 0 ? Math.max(0.15, vol / maxVol) : 0;
+                const isToday = d === now.getDate();
+                const volKg = vol > 0 ? `${Math.round(vol/1000)}T` : '';
+                const bg = vol > 0 ? `rgba(2,132,199,${intensity})` : (isToday ? '#e0f2fe' : '#f8fafc');
+                const border = isToday ? '2px solid #0284c7' : '1px solid #e2e8f0';
+                const dateStr = `${cm}-${String(d).padStart(2,'0')}`;
+
+                html += `<div onclick="showDayAnalysis('${dateStr}')" style="
+                    text-align:center; padding:6px 2px; border-radius:8px; cursor:pointer;
+                    background:${bg}; border:${border}; transition:all 0.2s;
+                    font-size:0.8rem; font-weight:${isToday ? '800' : '500'};
+                    color:${vol > maxVol*0.5 ? '#fff' : '#1e293b'};
+                " onmouseover="this.style.transform='scale(1.1)';this.style.boxShadow='0 4px 12px rgba(2,132,199,0.2)';" 
+                   onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none';">
+                    <div>${d}</div>
+                    <div style="font-size:0.55rem; color:${vol > maxVol*0.5 ? 'rgba(255,255,255,0.8)' : '#64748b'}; margin-top:2px;">${volKg}</div>
+                </div>`;
             }
-        });
+            grid.innerHTML = html;
+        }
+
+        // --- 8. Daily Analysis Command ---
+        function showDayAnalysis(dateStr) {
+            if (!hubData) return;
+            const label = document.getElementById('analysis-date-label');
+            const content = document.getElementById('analysis-content');
+            const parts = dateStr.split('-');
+            label.textContent = `${parts[2]}/${parts[1]}/${parts[0]}`;
+
+            // Get daily aggregated data
+            const da = (hubData.dailyActivity || []).find(d => d.tanggal === dateStr);
+            // Get template detail rows for this date
+            const tpl = (hubData.template || []).filter(r => {
+                if (!r.TANGGAL) return false;
+                let t = String(r.TANGGAL).substring(0, 10);
+                return t === dateStr;
+            });
+
+            if (!da && tpl.length === 0) {
+                content.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-secondary);"><i class="fas fa-calendar-times" style="font-size:2rem; opacity:0.3; margin-bottom:10px;"></i><p>Tidak ada data untuk tanggal ini.</p></div>`;
+                return;
+            }
+
+            // --- Build complex analysis ---
+            let html = '';
+
+            // Summary Row
+            const bongkar = Number(da?.bongkar || 0);
+            const muat = Number(da?.muat || 0);
+            const stapel = (Number(da?.st_badrun||0) + Number(da?.st_kartono||0) + Number(da?.st_kulhar||0));
+            const total = bongkar + muat + stapel;
+
+            html += `<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:16px;">`;
+            html += summaryMini('TOTAL', total, '#1e293b');
+            html += summaryMini('BONGKAR', bongkar, '#0284c7');
+            html += summaryMini('MUAT', muat, '#f59e0b');
+            html += summaryMini('STAPEL', stapel, '#8b5cf6');
+            html += `</div>`;
+
+            // --- Material Breakdown ---
+            const bongkarRows = tpl.filter(r => String(r.KEGIATAN||'').toUpperCase().includes('BONGKAR'));
+            const muatRows = tpl.filter(r => String(r.KEGIATAN||'').toUpperCase().includes('MUAT'));
+
+            if (bongkarRows.length > 0) {
+                html += buildMaterialTable('BONGKAR', bongkarRows, '#0284c7');
+            }
+            if (muatRows.length > 0) {
+                html += buildMaterialTable('MUAT', muatRows, '#f59e0b');
+            }
+
+            // Stapel detail
+            if (da && stapel > 0) {
+                html += `<div style="margin-top:12px; padding:12px; background:#f5f3ff; border-radius:10px; border:1px solid #ede9fe;">`;
+                html += `<div style="font-family:'Rajdhani'; font-weight:700; font-size:0.9rem; margin-bottom:8px; color:#7c3aed;"><i class="fas fa-layer-group"></i> STAPEL BREAKDOWN</div>`;
+                html += `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; font-size:0.78rem;">`;
+                html += stapelMini('BADRUN', Number(da.st_badrun||0));
+                html += stapelMini('KARTONO', Number(da.st_kartono||0));
+                html += stapelMini('KULHAR', Number(da.st_kulhar||0));
+                html += `</div></div>`;
+            }
+
+            content.innerHTML = html;
+        }
+
+        function summaryMini(label, val, color) {
+            const kg = val > 0 ? (val/1000).toFixed(1) : '0';
+            return `<div style="text-align:center; padding:10px 6px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
+                <div style="font-size:0.6rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">${label}</div>
+                <div style="font-family:'Rajdhani'; font-size:1.2rem; font-weight:800; color:${color};">${kg}<span style="font-size:0.6rem; color:#94a3b8;"> T</span></div>
+            </div>`;
+        }
+
+        function stapelMini(tim, val) {
+            return `<div style="text-align:center; padding:6px; background:rgba(139,92,246,0.08); border-radius:6px;">
+                <div style="font-size:0.6rem; color:#7c3aed; font-weight:700;">${tim}</div>
+                <div style="font-family:'Rajdhani'; font-weight:700; font-size:0.9rem;">${(val/1000).toFixed(1)} T</div>
+            </div>`;
+        }
+
+        function buildMaterialTable(kegiatan, rows, accentColor) {
+            // Group by material → gudang
+            const matMap = {};
+            rows.forEach(r => {
+                const mat = String(r.JENIS_RM || r.MATERIAL || '-').toUpperCase();
+                const gudang = String(r.LOKASI || r.GUDANG || 'RM').toUpperCase();
+                const vol = Number(r.REAL_BONGKAR_MT || r.REAL_BONGKAR_KG || 0);
+                if (!matMap[mat]) matMap[mat] = { total: 0, gudangs: {}, rows: [] };
+                matMap[mat].total += vol;
+                matMap[mat].gudangs[gudang] = (matMap[mat].gudangs[gudang] || 0) + vol;
+                matMap[mat].rows.push(r);
+            });
+
+            let html = `<div style="margin-top:12px; padding:12px; background:${accentColor}08; border-radius:10px; border:1px solid ${accentColor}20;">`;
+            html += `<div style="font-family:'Rajdhani'; font-weight:700; font-size:0.9rem; margin-bottom:10px; color:${accentColor};"><i class="fas ${kegiatan === 'BONGKAR' ? 'fa-truck-loading' : 'fa-shipping-fast'}"></i> ${kegiatan} — ${rows.length} unit</div>`;
+
+            for (const [mat, info] of Object.entries(matMap)) {
+                html += `<div style="margin-bottom:8px;">`;
+                html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; font-weight:600; margin-bottom:4px; cursor:pointer;" onclick="toggleMatDetail(this)">`;
+                html += `<span><i class="fas fa-box" style="color:${accentColor}; font-size:0.7rem; margin-right:4px;"></i> ${mat}</span>`;
+                html += `<span style="font-family:'Rajdhani'; font-weight:800; color:${accentColor};">${(info.total/1000).toFixed(2)} T</span>`;
+                html += `</div>`;
+
+                // Mini gudang table
+                html += `<div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:4px;">`;
+                for (const [g, v] of Object.entries(info.gudangs)) {
+                    html += `<span style="font-size:0.65rem; padding:2px 8px; background:${accentColor}15; border-radius:4px; color:${accentColor}; font-weight:600;">${g}: ${(v/1000).toFixed(2)}T</span>`;
+                }
+                html += `</div>`;
+
+                // Detail rows (hidden by default)
+                html += `<div class="mat-detail" style="display:none; margin-top:4px;">`;
+                html += `<table style="width:100%; border-collapse:collapse; font-size:0.7rem;">`;
+                html += `<tr style="background:${accentColor}10;"><th style="padding:3px 6px; text-align:left; color:${accentColor};">Nopol</th><th style="padding:3px 6px; text-align:left;">Gudang</th><th style="padding:3px 6px; text-align:right;">Netto</th></tr>`;
+                info.rows.forEach(r => {
+                    const nopol = r.NOPOL || '-';
+                    const gd = r.LOKASI || r.GUDANG || '-';
+                    const nt = Number(r.REAL_BONGKAR_MT || r.REAL_BONGKAR_KG || 0);
+                    html += `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:3px 6px; font-weight:600;">${nopol}</td><td style="padding:3px 6px;">${gd}</td><td style="padding:3px 6px; text-align:right; font-family:'Rajdhani'; font-weight:700;">${nt.toLocaleString()} kg</td></tr>`;
+                });
+                html += `</table></div>`;
+                html += `</div>`;
+            }
+            html += `</div>`;
+            return html;
+        }
+
+        function toggleMatDetail(el) {
+            const detail = el.parentElement.querySelector('.mat-detail');
+            if (detail) detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+        }
     </script>
 </body>
 

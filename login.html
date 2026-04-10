@@ -438,9 +438,16 @@
     </div>
 
     <script>
+        const VALID_DTV2_USERS = [
+            "ANGGA", "IMRON", "DIKI", "BASIT", "INGGI", 
+            "EPUL", "ADIB", "KIKI", "ABI", "AGUS", 
+            "SOFYAN", "SAMSUL", "SIGIT", "ARIF"
+        ];
+
         function handleLogin(event) {
             event.preventDefault();
-            const user = document.getElementById('username').value.trim();
+            const rawUser = document.getElementById('username').value.trim();
+            const user = rawUser.toUpperCase();
             const pass = document.getElementById('password').value.trim();
 
             // CREDENTIALS LOGIC
@@ -448,13 +455,18 @@
             if (user === 'WH' && pass === '1891') {
                 sessionStorage.setItem('userRole', 'HR_ACCESS');
                 sessionStorage.setItem('isLoggedIn', 'true');
-                loginSuccess();
+                loginSuccess('homepage-v1.html');
             }
             // FULL ACCESS (HR + HUB)
             else if (user === 'WAREHOUSE' && pass === '1891') {
                 sessionStorage.setItem('userRole', 'FULL_ACCESS');
                 sessionStorage.setItem('isLoggedIn', 'true');
-                loginSuccess();
+                loginSuccess('homepage-v1.html');
+            }
+            // DT V2.0 SMART WAREHOUSE
+            else if (VALID_DTV2_USERS.includes(user) && pass === '1891') {
+                sessionStorage.setItem('dt_v2_user', user);
+                loginSuccess('rm-dt-v2.html');
             }
             // INVALID
             else {
@@ -462,18 +474,19 @@
             }
         }
 
-        function loginSuccess() {
+        function loginSuccess(defaultRedirect) {
             const btn = document.querySelector('.btn-login');
             btn.innerHTML = 'ACCESS GRANTED...';
-            btn.style.background = '#10b981'; // Success Green
-            btn.style.boxShadow = '0 0 30px #10b981';
+            btn.style.background = '#00f3ff'; // Bright Cyan for V2
+            btn.style.boxShadow = '0 0 30px #00f3ff';
+            btn.style.color = '#000';
 
             // Check for redirect param
             const urlParams = new URLSearchParams(window.location.search);
             const redirect = urlParams.get('redirect');
 
             setTimeout(() => {
-                window.location.href = redirect ? decodeURIComponent(redirect) : 'homepage-v1.html';
+                window.location.href = redirect ? decodeURIComponent(redirect) : defaultRedirect;
             }, 1000);
         }
 

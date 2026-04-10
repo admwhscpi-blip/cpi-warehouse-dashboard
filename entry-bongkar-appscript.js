@@ -27,6 +27,10 @@ function doPost(e) {
       return handleSaveBongkaran(data);
     } else if (action === "saveMuat") {
       return handleSaveMuat(data);
+    } else if (action === "saveStafelEntry") {
+      return handleSaveStafelEntry(data);
+    } else if (action === "updateStafelStock") {
+      return handleUpdateStafelStock(data);
     }
     
     return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Unknown action" }))
@@ -39,20 +43,30 @@ function doPost(e) {
 
 function doGet(e) {
   try {
-    if (e.parameter.action === "getSetup") {
+    const action = (e.parameter.action || "").toLowerCase();
+    
+    if (action === "getsetup") {
       return handleGetSetup();
-    } else if (e.parameter.action === "getGlobalAttendance") {
+    } else if (action === "getglobalattendance") {
       return handleGetGlobalAttendance();
-    } else if (e.parameter.action === "getPendingLangsiran") {
+    } else if (action === "getpendinglangsiran") {
       return handleGetPendingLangsiran();
+    } else if (action === "getanalyticsv2") {
+      return handleGetAnalyticsV2();
+    } else if (action === "getstafeldata") {
+      return handleGetStafelData();
     }
-    return ContentService.createTextOutput(JSON.stringify({ success: false, message: "API Running" }))
-                         .setMimeType(ContentService.MimeType.JSON);
+    
+    return ContentService.createTextOutput(JSON.stringify({ 
+      success: false, 
+      message: "API Active - Unknown Action: '" + (e.parameter.action || "none") + "'. Silakan perbarui Deployment (New Deployment) di Editor Apps Script untuk memastikan kode terbaru aktif." 
+    })).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, message: error.toString() }))
                          .setMimeType(ContentService.MimeType.JSON);
   }
 }
+
 
 function handleSaveSetup(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -100,8 +114,28 @@ function handleSaveSetup(data) {
 
 function handleSaveBongkaran(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_BONGKARAN);
-  if (!sheet) throw new Error("Sheet DATA_BONGKARAN belum dibuat");
+  let sheet = ss.getSheetByName(SHEET_BONGKARAN);
+  
+  // Auto-create sheet with headers if missing
+  const BONGKAR_HEADERS = [
+    "Timestamp", "Tipe Bongkaran", "Nama Krani", "Shift", "SLOC",
+    "Jenis Truck", "Jenis RM", "Jumlah Bag", "Nopol", "Netto (KG)",
+    "Gudang/Intake", "Kuli Penggarap", "Jumlah Kuli",
+    "TANGGAL", "Arrival Time", "QC Sampling 1 Time",
+    "Tanggal PB", "Sampai Gudang", "Start Bongkar",
+    "Hold QC", "Restart QC", "Finish",
+    "Delay Space", "Delay Operasional"
+  ];
+  
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_BONGKARAN);
+    sheet.appendRow(BONGKAR_HEADERS);
+    sheet.getRange(1, 1, 1, BONGKAR_HEADERS.length).setFontWeight("bold");
+  } else if (sheet.getLastRow() === 0) {
+    // Sheet ada tapi kosong → tambahkan header
+    sheet.appendRow(BONGKAR_HEADERS);
+    sheet.getRange(1, 1, 1, BONGKAR_HEADERS.length).setFontWeight("bold");
+  }
   
   const entryDate = new Date();
   
@@ -370,4 +404,456 @@ function handleGetGlobalAttendance() {
     data: state,
     currentTime: nowStr
   })).setMimeType(ContentService.MimeType.JSON);
+}
+
+
+// ================== ANALYTICS & STAFFEL V2.0 MIGRATION ==================
+function handleGetAnalyticsV2() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var e = { parameter: { action: 'getAnalyticsV2' } };
+  var SHEET_NAME = 'DATA_BONGKARAN';
+  var MUAT_SHEET_NAME = 'DATA_MUATAN';
+  if (e && e.parameter.action === 'getAnalyticsV2') {
+    try {
+      const bSheet = ss.getSheetByName(SHEET_NAME);        // DATA BONGKARAN
+      const mSheet2 = ss.getSheetByName(MUAT_SHEET_NAME);  // DATA MUAT
+      const absSheet = ss.getSheetByName("ABSENSI KULI");
+      const stSheet = ss.getSheetByName("DATA STAPEL");
+
+      // ----- 1. MINE DATA BONGKARAN → dailyActivity + template -----
+      const dailyMap = {};  // tanggal → {muat, bongkar, st_*, prod_*}
+      const templateRows = [];
+
+      if (bSheet && bSheet.getLastRow() > 1) {
+        const bData = bSheet.getDataRange().getValues();
+        const bH = bData[0];
+        const bIdx = {
+          tanggal: findH(bH, ["TANGGAL", "DATE"]),
+          material: findH(bH, ["MATERIAL", "JENIS RM", "KOMODITAS", "JENIS_RM", "NAMA BARANG"]),
+          netto: findH(bH, ["NETTO (KG)", "REAL_BONGKAR_MT", "NETTO", "KG", "MT"]),
+          gudang: findH(bH, ["GUDANG/INTAKE", "GUDANG", "LOKASI"]),
+          tim: findH(bH, ["TIM KERJA", "TIM"]),
+          jenisKuli: findH(bH, ["JENIS KULI", "KULI"]),
+          startPanggil: findH(bH, ["START PANGGIL"]),
+          truckReady: findH(bH, ["TRUCK READY"]),
+          startBongkar: findH(bH, ["START BONGKAR"]),
+          holdQC: findH(bH, ["HOLD QC"]),
+          restartQC: findH(bH, ["RE-START", "RESTART QC"]),
+          manuverAkhir: findH(bH, ["MANUVER", "MANUVER AKHIR"]),
+          finish: findH(bH, ["FINISH", "TIME FINISH"]),
+          nopol: findH(bH, ["NOPOL", "PLAT"]),
+          lokasiSimpan: findH(bH, ["LOKASI SIMPAN", "SLOC"]),
+          truck: findH(bH, ["JENIS TRUCK", "TRUCK"]),
+          arrivalDate: findH(bH, ["ARRIVAL DATE"]),
+          arrivalTime: findH(bH, ["ARRIVAL TIME"]),
+          qcTime: findH(bH, ["QC SAMPLING 1 TIME", "QC TIME"]),
+          timbangTime: findH(bH, ["TIME TIMBANG MASUK", "TIMBANG IN"])
+        };
+
+        for (let i = 1; i < bData.length; i++) {
+          const row = bData[i];
+          let rawTgl = row[bIdx.tanggal];
+          if (!rawTgl) continue;
+
+          // v20.2.4 Robust Date Normalization (Backend)
+          let tgl = "";
+          if (rawTgl instanceof Date) {
+            tgl = Utilities.formatDate(rawTgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          } else {
+            // Handle common string formats like dd/MM/yyyy
+            let s = String(rawTgl).trim();
+            let m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+            if (m) tgl = m[3] + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0");
+            else tgl = s; // fallback to raw string
+          }
+
+          const nettoIndex = bIdx.netto >= 0 ? bIdx.netto : bH.findIndex(h => h === "NETTO (KG)" || h === "REAL_BONGKAR_MT" || h.includes("NETTO"));
+          const netto = Number(row[nettoIndex]) || 0;
+          const tim = String(bIdx.tim >= 0 ? row[bIdx.tim] : "").toUpperCase().trim();
+          const material = String(bIdx.material >= 0 ? row[bIdx.material] : "");
+          const gudang = String(bIdx.gudang >= 0 ? row[bIdx.gudang] : "");
+          
+          // Template row (per-truck detail)
+          templateRows.push({
+            TANGGAL: tgl,
+            JENIS_RM: material,
+            JENIS_TRUCK: String(bIdx.truck >= 0 ? row[bIdx.truck] : ""),
+            KEGIATAN: "BONGKAR",
+            LOKASI: gudang,
+            NOPOL: String(bIdx.nopol >= 0 ? row[bIdx.nopol] : ""),
+            REAL_BONGKAR_MT: netto,
+            REAL_BONGKAR_KG: netto, // Alias for clarity v20.2.3
+            ARRIVAL_DATE: (function(v) { 
+              if (!v) return ""; 
+              if (v instanceof Date) { 
+                let dd = v.getDate(); let mm = v.getMonth()+1; let yy = v.getFullYear();
+                return (dd<10?"0"+dd:dd) + "." + (mm<10?"0"+mm:mm) + "." + yy;
+              }
+              return String(v).trim();
+            })(bIdx.arrivalDate >= 0 ? row[bIdx.arrivalDate] : ""),
+            ARRIVAL_TIME: fmtTime(bIdx.arrivalTime >= 0 ? row[bIdx.arrivalTime] : ""),
+            QC_SAMPLING_1: fmtTime(bIdx.qcTime >= 0 ? row[bIdx.qcTime] : ""),
+            TIME_TIMBANG_MASUK: fmtTime(bIdx.timbangTime >= 0 ? row[bIdx.timbangTime] : ""),
+            START_PANGGIL: fmtTime(bIdx.startPanggil >= 0 ? row[bIdx.startPanggil] : ""),
+            TRUCK_READY: fmtTime(bIdx.truckReady >= 0 ? row[bIdx.truckReady] : ""),
+            START_BONGKAR: fmtTime(bIdx.startBongkar >= 0 ? row[bIdx.startBongkar] : ""),
+            HOLD_QC: fmtTime(bIdx.holdQC >= 0 ? row[bIdx.holdQC] : ""),
+            RESTART_QC: fmtTime(bIdx.restartQC >= 0 ? row[bIdx.restartQC] : ""),
+            MANUVER_AKHIR: fmtTime(bIdx.manuverAkhir >= 0 ? row[bIdx.manuverAkhir] : ""),
+            FINISH_TIME: fmtTime(bIdx.finish >= 0 ? row[bIdx.finish] : ""),
+            DURASI_BONGKAR: bIdx.startBongkar >= 0 && bIdx.finish >= 0 ? calcDurMin(row[bIdx.startBongkar], row[bIdx.finish]) : "-",
+            PB_START: fmtTime(bIdx.startPanggil >= 0 ? row[bIdx.startPanggil] : ""),
+            TUNGGU_QC: fmtTime(bIdx.holdQC >= 0 ? row[bIdx.holdQC] : "")
+          });
+
+          // Daily aggregation
+          if (!dailyMap[tgl]) dailyMap[tgl] = { 
+            tanggal: tgl, bongkar: 0, muat: 0, 
+            st_badrun: 0, st_kartono: 0, st_kulhar: 0,
+            prod_badrun: 0, prod_kartono: 0, prod_kulhar: 0, 
+            _bCount: { BADRUN: 0, KARTONO: 0, KULHAR: 0 },
+            _bNetto: { BADRUN: 0, KARTONO: 0, KULHAR: 0 }
+          };
+          dailyMap[tgl].bongkar += netto;
+
+          // Productivity per-tim aggregation
+          if (tim === "BADRUN") { dailyMap[tgl]._bNetto.BADRUN += netto; dailyMap[tgl]._bCount.BADRUN++; }
+          else if (tim === "KARTONO") { dailyMap[tgl]._bNetto.KARTONO += netto; dailyMap[tgl]._bCount.KARTONO++; }
+          else { dailyMap[tgl]._bNetto.KULHAR += netto; dailyMap[tgl]._bCount.KULHAR++; }
+        }
+      }
+
+      // ----- 2. MINE DATA MUAT → add muat to dailyMap -----
+      if (mSheet2 && mSheet2.getLastRow() > 1) {
+        const mData = mSheet2.getDataRange().getValues();
+        const mH = mData[0].map(h => String(h).toUpperCase());
+        const mTanggal = mH.indexOf("TANGGAL") >= 0 ? mH.indexOf("TANGGAL") : 1;
+        const mNetto = mH.findIndex(h => h.includes("NETTO"));
+        const mKat = mH.indexOf("KATEGORI") >= 0 ? mH.indexOf("KATEGORI") : 3;
+        const mMaterial = mH.indexOf("MATERIAL") >= 0 ? mH.indexOf("MATERIAL") : 5;
+        const mGudang = mH.indexOf("GUDANG MUAT") >= 0 ? mH.indexOf("GUDANG MUAT") : 18; // S=18
+
+        for (let i = 1; i < mData.length; i++) {
+          let rawTgl = mData[i][mTanggal];
+          if (!rawTgl) continue;
+
+          let tgl = "";
+          if (rawTgl instanceof Date) {
+            tgl = Utilities.formatDate(rawTgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          } else {
+            let s = String(rawTgl).trim();
+            let m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+            if (m) tgl = m[3] + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0");
+            else tgl = s;
+          }
+
+          const netto = Number(mData[i][mNetto >= 0 ? mNetto : 6]) || 0;
+          if (!dailyMap[tgl]) dailyMap[tgl] = { 
+            tanggal: tgl, bongkar: 0, muat: 0, 
+            st_badrun: 0, st_kartono: 0, st_kulhar: 0,
+            prod_badrun: 0, prod_kartono: 0, prod_kulhar: 0,
+            _bCount: { BADRUN: 0, KARTONO: 0, KULHAR: 0 },
+            _bNetto: { BADRUN: 0, KARTONO: 0, KULHAR: 0 }
+          };
+          dailyMap[tgl].muat += netto;
+
+          // MUAT template entries
+          templateRows.push({
+            TANGGAL: tgl, JENIS_RM: String(mData[i][mMaterial] || ""), KEGIATAN: "MUAT",
+            REAL_BONGKAR_MT: netto,
+            LOKASI: String(mData[i][mGudang >= 0 ? mGudang : 18] || "RM"), 
+            DURASI_BONGKAR: null, PB_START: null, TUNGGU_QC: null
+          });
+        }
+      }
+
+      // ----- 3. MINE DATA STAPEL → add to dailyMap -----
+      if (stSheet && stSheet.getLastRow() > 1) {
+        const sData = stSheet.getDataRange().getValues();
+        const sH = sData[0].map(h => String(h).toUpperCase());
+        const sTgl = sH.indexOf("TANGGAL") >= 0 ? sH.indexOf("TANGGAL") : 1;
+        const sTim = sH.indexOf("TIM") >= 0 ? sH.indexOf("TIM") : 3;
+        const sKat = sH.indexOf("KATEGORI") >= 0 ? sH.indexOf("KATEGORI") : 4;
+        const sNetto = sH.findIndex(h => h.includes("NETTO"));
+
+        for (let i = 1; i < sData.length; i++) {
+          let tgl = sData[i][sTgl];
+          if (!tgl) continue;
+          if (tgl instanceof Date) tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          else tgl = String(tgl).trim();
+
+          const tim = String(sData[i][sTim] || "").toUpperCase().trim();
+          const netto = Number(sData[i][sNetto >= 0 ? sNetto : 5]) || 0;
+
+          if (!dailyMap[tgl]) dailyMap[tgl] = {
+            tanggal: tgl, bongkar: 0, muat: 0,
+            st_badrun: 0, st_kartono: 0, st_kulhar: 0,
+            prod_badrun: 0, prod_kartono: 0, prod_kulhar: 0,
+            _bCount: { BADRUN: 0, KARTONO: 0, KULHAR: 0 },
+            _bNetto: { BADRUN: 0, KARTONO: 0, KULHAR: 0 }
+          };
+
+          if (tim === "BADRUN") dailyMap[tgl].st_badrun += netto;
+          else if (tim === "KARTONO") dailyMap[tgl].st_kartono += netto;
+          else dailyMap[tgl].st_kulhar += netto;
+        }
+      }
+
+      // ----- 4. MINE ABSENSI KULI → kuliBorong & kuliHarian -----
+      let kuliBorong = { dateHeaders: [], rows: [] };
+      let kuliHarian = { dateHeaders: [], rows: [] };
+
+      if (absSheet && absSheet.getLastRow() > 1) {
+        const aData = absSheet.getDataRange().getValues();
+        const aH = aData[0].map(h => String(h).toUpperCase());
+        const aTgl = aH.indexOf("TANGGAL") >= 0 ? aH.indexOf("TANGGAL") : 1;
+        const aTim = aH.indexOf("TIM") >= 0 ? aH.indexOf("TIM") : 3;
+        const aKat = aH.indexOf("KATEGORI") >= 0 ? aH.indexOf("KATEGORI") : 4;
+        const aNama = aH.indexOf("NAMA") >= 0 ? aH.indexOf("NAMA") : 5;
+        const aStatus = aH.indexOf("STATUS") >= 0 ? aH.indexOf("STATUS") : 6;
+
+        // Group by kategori → {dates, people}
+        const borongMap = {}; // nama → { tim, dates: { tgl: status } }
+        const harianMap = {};
+        const allBorongDates = new Set();
+        const allHarianDates = new Set();
+
+        for (let i = 1; i < aData.length; i++) {
+          const row = aData[i];
+          let tgl = row[aTgl];
+          if (!tgl) continue;
+          if (tgl instanceof Date) tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          else tgl = String(tgl).trim();
+
+          const nama = String(row[aNama] || "").trim();
+          const tim = String(row[aTim] || "").trim();
+          const kat = String(row[aKat] || "").toUpperCase().trim();
+          const status = String(row[aStatus] || "H").toUpperCase().trim();
+          const isHadir = (status === "H");
+
+          if (kat === "BORONG") {
+            allBorongDates.add(tgl);
+            if (!borongMap[nama]) borongMap[nama] = { tim: tim, dates: {} };
+            borongMap[nama].dates[tgl] = isHadir ? "v" : "";
+          } else {
+            allHarianDates.add(tgl);
+            if (!harianMap[nama]) harianMap[nama] = { tim: tim, dates: {} };
+            harianMap[nama].dates[tgl] = isHadir ? "v" : "";
+          }
+        }
+
+        // Convert to old format: dateHeaders + rows[{tim, absensi[]}]
+        const borongDates = Array.from(allBorongDates).sort();
+        const harianDates = Array.from(allHarianDates).sort();
+
+        kuliBorong.dateHeaders = borongDates;
+        Object.entries(borongMap).forEach(([nama, d]) => {
+          kuliBorong.rows.push({ tim: d.tim, nama: nama, absensi: borongDates.map(dt => d.dates[dt] || "") });
+        });
+
+
+        kuliHarian.dateHeaders = harianDates;
+        Object.entries(harianMap).forEach(([nama, d]) => {
+          kuliHarian.rows.push({ tim: d.tim, nama: nama, absensi: harianDates.map(dt => d.dates[dt] || "") });
+        });
+
+        // ----- Inject manpower into productivity (prod_xxx = netto / hadir count) -----
+        // Count hadir per day per tim category
+        for (let i = 1; i < aData.length; i++) {
+          let tgl = aData[i][aTgl];
+          if (!tgl) continue;
+          if (tgl instanceof Date) tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          else tgl = String(tgl).trim();
+          
+          const tim = String(aData[i][aTim] || "").toUpperCase().trim();
+          const kat = String(aData[i][aKat] || "").toUpperCase().trim();
+          const isHadir = (String(aData[i][aStatus] || "H").toUpperCase().trim() === "H");
+          
+          if (isHadir && dailyMap[tgl]) {
+            if (kat === "BORONG") {
+              if (tim === "BADRUN") dailyMap[tgl].prod_badrun++;
+              else if (tim === "KARTONO") dailyMap[tgl].prod_kartono++;
+            } else {
+              dailyMap[tgl].prod_kulhar++;
+            }
+          }
+        }
+        
+        // Finalize prod: totalNetto / hadirCount
+        Object.values(dailyMap).forEach(d => {
+          d.prod_badrun = d.prod_badrun > 0 ? Math.round(d._bNetto.BADRUN / d.prod_badrun) : 0;
+          d.prod_kartono = d.prod_kartono > 0 ? Math.round(d._bNetto.KARTONO / d.prod_kartono) : 0;
+          d.prod_kulhar = d.prod_kulhar > 0 ? Math.round(d._bNetto.KULHAR / d.prod_kulhar) : 0;
+        });
+      }
+      
+      // 5. Build Material Summary & Pending Coords
+      const materials = {};
+      const pendingCoords = new Set();
+      templateRows.forEach(r => {
+        if (!materials[r.JENIS_RM]) materials[r.JENIS_RM] = 0;
+        materials[r.JENIS_RM] += (Number(r.REAL_BONGKAR_MT) || 0);
+        
+        if (r.KEGIATAN === "BONGKAR" && (!r.LOKASI || r.LOKASI === "-" || r.LOKASI.trim() === "")) {
+           pendingCoords.add(r.TANGGAL);
+        }
+      });
+      
+      const datesRes = Object.values(dailyMap).sort((a,b) => a.tanggal.localeCompare(b.tanggal));
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        dailyActivity: datesRes,
+        templateDump: templateRows.reverse(),
+        kuliBorong: kuliBorong,
+        kuliHarian: kuliHarian,
+        pendingCoords: Array.from(pendingCoords).sort(),
+        materials: materials
+      })).setMimeType(ContentService.MimeType.JSON);
+      
+    } catch (e) {
+      return ContentService.createTextOutput(JSON.stringify({ success: false, message: e.toString() })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+}
+
+function handleGetStafelData() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var e = { parameter: { action: "getStafelData" } };
+  try {
+    const STAFFEL_SHEET = "STAFFEL_LOG";
+    const STAFFEL_CONFIG_SHEET = "STAFFEL_CONFIG";
+    
+    // 1. Read stock awal from config (or use defaults)
+    let stockAwal = {
+      "BADRUN": 162, "KARTONO": 112,
+      "WAWAN": 25, "SURYANA": 25, "SAHLAN": 25,
+      "PALLET_KOSONG": 137
+    };
+    
+    let cfgSheet = ss.getSheetByName(STAFFEL_CONFIG_SHEET);
+    if (cfgSheet && cfgSheet.getLastRow() > 0) {
+      const cfgData = cfgSheet.getDataRange().getValues();
+      cfgData.forEach(row => {
+        let key = String(row[0] || "").trim().toUpperCase();
+        let val = Number(row[1]) || 0;
+        if (key && stockAwal.hasOwnProperty(key)) stockAwal[key] = val;
+      });
+    }
+    
+    // 2. Read all entries from STAFFEL_LOG
+    let entries = [];
+    let stSheet = ss.getSheetByName(STAFFEL_SHEET);
+    if (stSheet && stSheet.getLastRow() > 1) {
+      const stData = stSheet.getDataRange().getValues();
+      const stH = stData[0].map(h => String(h).toUpperCase());
+      const sIdx = {
+        tanggal: stH.indexOf("TANGGAL") >= 0 ? stH.indexOf("TANGGAL") : 1,
+        shift: stH.indexOf("SHIFT") >= 0 ? stH.indexOf("SHIFT") : 2,
+        tim: stH.indexOf("TIM") >= 0 ? stH.indexOf("TIM") : 3,
+        jenis: stH.indexOf("JENIS") >= 0 ? stH.indexOf("JENIS") : 4,
+        pcs: stH.indexOf("JUMLAH PCS") >= 0 ? stH.indexOf("JUMLAH PCS") : 5,
+        netto: stH.indexOf("NETTO KG") >= 0 ? stH.indexOf("NETTO KG") : 6,
+        kuli: stH.indexOf("NAMA KULI") >= 0 ? stH.indexOf("NAMA KULI") : 7,
+        krani: stH.indexOf("KRANI") >= 0 ? stH.indexOf("KRANI") : 8
+      };
+      
+      for (let i = 1; i < stData.length; i++) {
+        const row = stData[i];
+        let rawTgl = row[sIdx.tanggal];
+        let tglStr = "-";
+        if (rawTgl) {
+            if (rawTgl instanceof Date) tglStr = Utilities.formatDate(rawTgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+            else tglStr = String(rawTgl);
+        }
+        entries.push({
+          row_id: i + 1,
+          tanggal: tglStr,
+          shift: String(row[sIdx.shift] || "-"),
+          tim: String(row[sIdx.tim] || "-").toUpperCase(),
+          jenis: String(row[sIdx.jenis] || "-").toUpperCase(),
+          pcs: Number(row[sIdx.pcs]) || 0,
+          netto_kg: Number(row[sIdx.netto]) || 0,
+          kuli: String(row[sIdx.kuli] || "-"),
+          krani: String(row[sIdx.krani] || "-")
+        });
+      }
+    }
+    
+    // 3. Calculate pallet summary
+    const tims = ["BADRUN", "KARTONO", "WAWAN", "SURYANA", "SAHLAN"];
+    const summary = {};
+    let totalBongkaran = 0, totalStapel = 0;
+    
+    tims.forEach(t => {
+      let bongkaranPcs = 0, stapelPcs = 0;
+      entries.forEach(e => {
+        if (e.tim === t) {
+          if (e.jenis === "BONGKARAN") bongkaranPcs += e.pcs;
+          else if (e.jenis === "STAPEL") stapelPcs += e.pcs;
+        }
+      });
+      totalBongkaran += bongkaranPcs;
+      totalStapel += stapelPcs;
+      summary[t] = {
+        stock_awal: stockAwal[t] || 0,
+        bongkaran: bongkaranPcs,
+        stapel: stapelPcs,
+        pr_remaining: (stockAwal[t] || 0) + bongkaranPcs - stapelPcs
+      };
+    });
+    
+    // Total Pallet Kosong formula: Stock Awal PKosong - Total Bongkaran + Total Stapel
+    summary.PALLET_KOSONG = (stockAwal.PALLET_KOSONG || 0) - totalBongkaran + totalStapel;
+    
+    return ContentService.createTextOutput(JSON.stringify({ success: true, data: { summary: summary, stockAwal: stockAwal, logs: entries } })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function handleSaveStafelEntry(data) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var raw = data;
+  const STAFFEL_SHEET = "STAFFEL_LOG";
+  let sSheet = ss.getSheetByName(STAFFEL_SHEET);
+  if (!sSheet) {
+    sSheet = ss.insertSheet(STAFFEL_SHEET);
+    sSheet.appendRow(["Timestamp", "Tanggal", "Shift", "Tim", "Jenis", "Jumlah Pcs", "Netto Kg", "Nama Kuli", "Krani"]);
+  }
+  
+  const ts = new Date();
+  const pcs = Number(raw.pcs || raw.jumlah_pcs) || 0;
+  const nettoKg = Number(raw.netto_kg) || (pcs * 50);
+  const namaKuli = raw.kuli || raw.nama_kuli || "-";
+  sSheet.appendRow([
+    ts,
+    raw.tanggal || "-",
+    raw.shift || "-",
+    raw.tim || "-",
+    raw.jenis || "-",
+    pcs,
+    nettoKg,
+    namaKuli,
+    raw.krani || "-"
+  ]);
+  
+  return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleUpdateStafelStock(data) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var raw = data;
+  const STAFFEL_CONFIG = "STAFFEL_CONFIG";
+  let cSheet = ss.getSheetByName(STAFFEL_CONFIG);
+  
+  if (!cSheet) { cSheet = ss.insertSheet(STAFFEL_CONFIG); }
+  else { cSheet.clear(); }
+  
+  cSheet.appendRow(["TIM KERJA", "SISA PALLET AWAL"]);
+  Object.keys(raw.stocks).forEach(k => {
+    cSheet.appendRow([k, raw.stocks[k]]);
+  });
+  
+  return ContentService.createTextOutput(JSON.stringify({success:true, message:"Stock Awal Diperbarui"})).setMimeType(ContentService.MimeType.JSON);
 }
