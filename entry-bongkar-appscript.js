@@ -58,19 +58,19 @@ function findH(headers, variants) {
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
-    const action = data.action;
+    const action = (data.action || "").toLowerCase();
 
-    if (action === "saveSetup") {
+    if (action === "savesetup") {
       return handleSaveSetup(data);
-    } else if (action === "saveGlobalAttendance") {
+    } else if (action === "saveglobalattendance") {
       return handleSaveGlobalAttendance(data);
-    } else if (action === "saveBongkaran") {
+    } else if (action === "savebongkaran") {
       return handleSaveBongkaran(data);
-    } else if (action === "saveMuat") {
+    } else if (action === "savemuat") {
       return handleSaveMuat(data);
-    } else if (action === "saveStafelEntry") {
+    } else if (action === "savestafelentry") {
       return handleSaveStafelEntry(data);
-    } else if (action === "updateStafelStock") {
+    } else if (action === "updatestafelstock") {
       return handleUpdateStafelStock(data);
     } else if (action === "updatenetto") {
       return handleUpdateNetto(data);
@@ -1007,11 +1007,20 @@ function handleUpdateNetto(data) {
   
   const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0].map(h => String(h).toUpperCase());
   const nettoIdx = headers.indexOf("NETTO (KG)") + 1;
+  const ketIdx = headers.indexOf("KETERANGAN") + 1;
   
-  if (nettoIdx === 0) throw new Error("Kolom Netto (KG) tidak ditemukan");
+  if (nettoIdx === 0) throw new Error("Kolom Netto (KG) tidak ditemukan di sheet " + data.sheet_name);
   
+  // Update Netto
   sheet.getRange(data.row_id, nettoIdx).setValue(data.netto);
   
-  return ContentService.createTextOutput(JSON.stringify({ success: true, message: "Tonase berhasil diperbarui" }))
-    .setMimeType(ContentService.MimeType.JSON);
+  // Update Keterangan jika ada kolomnya dan ada datanya
+  if (ketIdx > 0 && data.keterangan !== undefined) {
+    sheet.getRange(data.row_id, ketIdx).setValue(data.keterangan);
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({ 
+    success: true, 
+    message: "Data berhasil diperbarui" + (ketIdx === 0 && data.keterangan ? " (Peringatan: Kolom KETERANGAN tidak ditemukan)" : "")
+  })).setMimeType(ContentService.MimeType.JSON);
 }

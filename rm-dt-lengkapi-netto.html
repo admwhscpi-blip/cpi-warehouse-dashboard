@@ -550,37 +550,48 @@
         async function openInputNetto(encodedTask) {
             const task = JSON.parse(decodeURIComponent(encodedTask));
 
-            const { value: nettoVal } = await Swal.fire({
-                title: 'Input Netto (Kg)',
+            const { value: formValues } = await Swal.fire({
+                title: 'Input Netto & Keterangan',
                 html: `
-                    <div style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:15px;">
-                        <b>[${task.nopol}]</b> - ${task.material}<br>
-                        Tanggal: ${task.tanggal}
+                    <div style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:15px; text-align:left;">
+                        <p style="margin-bottom:10px;"><b>[${task.nopol}]</b> - ${task.material}<br>
+                        Tanggal: ${task.tanggal}</p>
+                        
+                        <label for="swal-input-netto" style="display:block; margin-bottom:5px; font-weight:600;">Netto (Kg)</label>
+                        <input id="swal-input-netto" class="swal2-input" type="number" placeholder="Masukkan angka Netto..." style="width:100%; margin: 0 0 15px 0;">
+                        
+                        <label for="swal-input-ket" style="display:block; margin-bottom:5px; font-weight:600;">Keterangan (Opsional)</label>
+                        <textarea id="swal-input-ket" class="swal2-textarea" placeholder="Tambahkan catatan jika ada..." style="width:100%; margin:0; height:80px;"></textarea>
                     </div>
                 `,
-                input: 'number',
-                inputPlaceholder: 'Masukkan angka Netto...',
+                focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonColor: '#0284c7',
                 cancelButtonColor: '#64748b',
                 confirmButtonText: '<i class="fas fa-save"></i> Simpan',
                 cancelButtonText: 'Batal',
-                inputValidator: (value) => {
-                    if (!value) {
-                        return 'Netto tidak boleh kosong!';
+                preConfirm: () => {
+                    const netto = document.getElementById('swal-input-netto').value;
+                    const ket = document.getElementById('swal-input-ket').value;
+                    
+                    if (!netto) {
+                        Swal.showValidationMessage('Netto tidak boleh kosong!');
+                        return false;
                     }
-                    if (Number(value) <= 0) {
-                        return 'Netto harus lebih dari 0!';
+                    if (Number(netto) <= 0) {
+                        Swal.showValidationMessage('Netto harus lebih dari 0!');
+                        return false;
                     }
+                    return { netto: netto, keterangan: ket };
                 }
             });
 
-            if (nettoVal) {
-                saveNettoToServer(task, nettoVal);
+            if (formValues) {
+                saveNettoToServer(task, formValues.netto, formValues.keterangan);
             }
         }
 
-        async function saveNettoToServer(task, netto) {
+        async function saveNettoToServer(task, netto, keterangan) {
             Swal.fire({
                 title: 'Menyimpan Data...',
                 html: 'Tunggu sebentar, sedang mengupdate server',
@@ -592,7 +603,8 @@
                 action: "updateNetto",
                 sheet_name: task.sheet_name,
                 row_id: task.row_id,
-                netto: netto
+                netto: netto,
+                keterangan: keterangan
             };
 
             try {
