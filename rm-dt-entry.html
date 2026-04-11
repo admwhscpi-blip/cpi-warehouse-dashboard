@@ -899,6 +899,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Material RM</label>
+                                    <input type="text" class="input-glass trk-mat-search" placeholder="Cari material..." style="margin-bottom:5px; font-size: 0.8rem; padding: 8px 12px;" onkeyup="filterMaterial(this)">
                                     <select class="input-glass trk-mat" onchange="checkRiceBranAlert(this); handleOtherMaterial(this)">
                                         <option value="">-- Dimuat dari API --</option>
                                     </select>
@@ -958,10 +959,45 @@
 
     <!-- ===== JAVASCRIPT LOGIC ===== -->
     <script>
-        // --- 1. CORE AUTH & STATE ---
         let currentUser = "";
         let activeKuliData = [];
         let fetchedMaterials = [];
+        const staticMaterials = [
+            "Copper Sulphate (81004)", "Allplex B (81030)", "Vitamin - C/EC (Coated) (82010)", "Coxictac 12% (83010)",
+            "Elancoban / Rumensin / Poulcox(83013)", "Nicarbazine (83025)", "SACOX (83028)", "Monteban 45 (83043)",
+            "Maxus 200 (83044)", "Bacitracin Methylen Disalicylate 110 ppm (83049)", "Sodium Bicarbonate (I) (505100)",
+            "MDCP/MCP 21 % (I) (506100)", "DL-Meth./Rhodimet/Met Amino Powder (I) (601100)",
+            "Alimet / MHA / Rhodimet AT88 (I) (603100)", "L-LYSINE SULPHATE  ( I ) (605101)",
+            "L-Lysine Sulphate (L) (605201)", "L-Lysine (L/I) HCL (605300)", "L-Lysine Sulphate (L/I) (605301)",
+            "TRYPTOPHAN 98 % ( I ) (606101)", "Choline Chloride Liquid (I) (608100)",
+            "Mold Inhibitor Powder/Feed Curb Dry(L/I) (609300)", "PH 7 (612301)",
+            "Santoquin / Ethoxiquin Liquid (I) (613100)", "Larvadex / Larvacide 10% (L/I) (621300)",
+            "L-Threonine (I) (628100)", "Fungex-MaxiMils/Preserve (L/I) (630300)", "Tartrazine (635300)",
+            "XAMACOL (638301)", "Hostazyme X15000 EPU (643301)", "CIBENZA DP100 PROTEASE NOVUS (644107)",
+            "HYPHOS GT 20.000 (L/I) (647304)", "Pro Grow Powder (654201)", "Herbs R & D (654205)", "Termin 8 (658300)",
+            "Betaine (661100)", "Nu-Bond Plus (665201)", "VALINE  (I) (672100)", "Quixalud (676300)",
+            "Nuvem (R&D) (677201)", "Cozante (Herb-Kemin) L/I (677302)", "Butipearl (Kemin) Ca Butyarate (683301)",
+            "Hemicell-HT (685300)", "ISOLEUCINE 98.5% (689100)", "ISOLEUCINE 98.5% (L/I) (689300)",
+            "Lecithin oil (I) (706100)", "Premix Y1ABM (900200)", "Y2DM (905200)", "Premix Y3D (907200)",
+            "VB/SL (921200)", "VBBR (922200)", "Premix Sel Mix (933200)", "Molases (414200)", "COCCIGUARD (677310)",
+            "GUTPROTECT (654209)", "LIGNOBON (616300)", "CYGRO 1% / YUMAMYCIN % (83011)",
+            "HYPORIUS 10 (L/I) (647308)", "L-Threonine (L/I) (628300)", "AVATEC (83004)", "AVIAX (83005)",
+            "ROBENIDINE (83053)", "CLINACOX 0.5% / COXIRIL (83007)", "PHYLINK (646306)", "L-LYSINE HCL I (605100)",
+            "MAXIBAN (83051)", "SODIUM BICARBONATE L/I (505300)", "PRO GROW 2 ( NUGEN ) (654203)",
+            "DL-Meth./Rhodimet Powder (L/I) (601300)", "MCP 22.7% ( I ) (507100)", "VITAMIN E 5% (82012)",
+            "AVIAX PLUS (83056)", "MCP 22.7% ( L/I) (507300)", "ARGININE ( L/I ) (679301)", "ARGININE (679101)",
+            "COPPER SULPHATE 25%MNC (85004)", "Y3DMC (909200)", "CGM U.S.A ( I ) (210100)", "CGM CHINA (210101)",
+            "CGM LOKAL (210200)", "CGM U.S.A ( L/I ) (210300)", "DDGS (I) (228100)", "DDGS (L/I) (228300)",
+            "FULLFAT (241300)", "MBM ( I ) (301100)", "MBM ( L/I ) (301300)", "CFM LOKAL (304200)",
+            "BROKEN CORN (101224)", "RICE BRAN (401200)", "BROKEN RICE (403200)", "WHEAT BRAN (405200)",
+            "WHEAT FLOUR ( L ) (406200)", "CASSAVA (410200)", "PALM KARNEL MEAL (412200)",
+            "PALM KARNEL MEAL FATTY (412204)", "BREAD CRUMBS/PANIR (417202)", "CORN COB MEAL / TUMPI (418200)",
+            "BROWN MEAL (424200)", "GREEN LEAF POWDER (425200)", "CORN GERM (435201)",
+            "LIME STONE CHIP MEDIUM (502201)", "LIME STONE COARSER ( L ) (503201)", "SALT (504200)",
+            "BINDER (512200)", "NOODLE MEAL (430200)", "WHEAT FLOUR INDUSTRY ( L ) (407200)",
+            "COOKIE MEAL (417201)", "CORN GLUTEN FEED (232200)", "LIME STONE FINE (503200)",
+            "CANOLA MEAL ( L/I ) (206300)"
+        ];
 
         // Data Kuli Hardcode dari referensi
         const TIM_KULI = {
@@ -1438,6 +1474,7 @@
             clone.querySelectorAll('input').forEach(inp => {
                 inp.value = '';
                 if(inp.classList.contains('trk-mat-other')) inp.style.display = 'none';
+                if(inp.classList.contains('trk-mat-search')) inp.value = ''; // Reset search
             });
             clone.querySelector('.trk-jml-kuli').value = '1';
             clone.querySelector('h4').innerText = 'UNIT TRUCK ' + count;
@@ -1461,44 +1498,37 @@
             }
         }
 
-        function fetchMaterialsFromAPI() {
-            const staticMaterials = [
-                "Copper Sulphate (81004)", "Allplex B (81030)", "Vitamin - C/EC (Coated) (82010)", "Coxictac 12% (83010)",
-                "Elancoban / Rumensin / Poulcox(83013)", "Nicarbazine (83025)", "SACOX (83028)", "Monteban 45 (83043)",
-                "Maxus 200 (83044)", "Bacitracin Methylen Disalicylate 110 ppm (83049)", "Sodium Bicarbonate (I) (505100)",
-                "MDCP/MCP 21 % (I) (506100)", "DL-Meth./Rhodimet/Met Amino Powder (I) (601100)",
-                "Alimet / MHA / Rhodimet AT88 (I) (603100)", "L-LYSINE SULPHATE  ( I ) (605101)",
-                "L-Lysine Sulphate (L) (605201)", "L-Lysine (L/I) HCL (605300)", "L-Lysine Sulphate (L/I) (605301)",
-                "TRYPTOPHAN 98 % ( I ) (606101)", "Choline Chloride Liquid (I) (608100)",
-                "Mold Inhibitor Powder/Feed Curb Dry(L/I) (609300)", "PH 7 (612301)",
-                "Santoquin / Ethoxiquin Liquid (I) (613100)", "Larvadex / Larvacide 10% (L/I) (621300)",
-                "L-Threonine (I) (628100)", "Fungex-MaxiMils/Preserve (L/I) (630300)", "Tartrazine (635300)",
-                "XAMACOL (638301)", "Hostazyme X15000 EPU (643301)", "CIBENZA DP100 PROTEASE NOVUS (644107)",
-                "HYPHOS GT 20.000 (L/I) (647304)", "Pro Grow Powder (654201)", "Herbs R & D (654205)", "Termin 8 (658300)",
-                "Betaine (661100)", "Nu-Bond Plus (665201)", "VALINE  (I) (672100)", "Quixalud (676300)",
-                "Nuvem (R&D) (677201)", "Cozante (Herb-Kemin) L/I (677302)", "Butipearl (Kemin) Ca Butyarate (683301)",
-                "Hemicell-HT (685300)", "ISOLEUCINE 98.5% (689100)", "ISOLEUCINE 98.5% (L/I) (689300)",
-                "Lecithin oil (I) (706100)", "Premix Y1ABM (900200)", "Y2DM (905200)", "Premix Y3D (907200)",
-                "VB/SL (921200)", "VBBR (922200)", "Premix Sel Mix (933200)", "Molases (414200)", "COCCIGUARD (677310)",
-                "GUTPROTECT (654209)", "LIGNOBON (616300)", "CYGRO 1% / YUMAMYCIN % (83011)",
-                "HYPORIUS 10 (L/I) (647308)", "L-Threonine (L/I) (628300)", "AVATEC (83004)", "AVIAX (83005)",
-                "ROBENIDINE (83053)", "CLINACOX 0.5% / COXIRIL (83007)", "PHYLINK (646306)", "L-LYSINE HCL I (605100)",
-                "MAXIBAN (83051)", "SODIUM BICARBONATE L/I (505300)", "PRO GROW 2 ( NUGEN ) (654203)",
-                "DL-Meth./Rhodimet Powder (L/I) (601300)", "MCP 22.7% ( I ) (507100)", "VITAMIN E 5% (82012)",
-                "AVIAX PLUS (83056)", "MCP 22.7% ( L/I) (507300)", "ARGININE ( L/I ) (679301)", "ARGININE (679101)",
-                "COPPER SULPHATE 25%MNC (85004)", "Y3DMC (909200)", "CGM U.S.A ( I ) (210100)", "CGM CHINA (210101)",
-                "CGM LOKAL (210200)", "CGM U.S.A ( L/I ) (210300)", "DDGS (I) (228100)", "DDGS (L/I) (228300)",
-                "FULLFAT (241300)", "MBM ( I ) (301100)", "MBM ( L/I ) (301300)", "CFM LOKAL (304200)",
-                "BROKEN CORN (101224)", "RICE BRAN (401200)", "BROKEN RICE (403200)", "WHEAT BRAN (405200)",
-                "WHEAT FLOUR ( L ) (406200)", "CASSAVA (410200)", "PALM KARNEL MEAL (412200)",
-                "PALM KARNEL MEAL FATTY (412204)", "BREAD CRUMBS/PANIR (417202)", "CORN COB MEAL / TUMPI (418200)",
-                "BROWN MEAL (424200)", "GREEN LEAF POWDER (425200)", "CORN GERM (435201)",
-                "LIME STONE CHIP MEDIUM (502201)", "LIME STONE COARSER ( L ) (503201)", "SALT (504200)",
-                "BINDER (512200)", "NOODLE MEAL (430200)", "WHEAT FLOUR INDUSTRY ( L ) (407200)",
-                "COOKIE MEAL (417201)", "CORN GLUTEN FEED (232200)", "LIME STONE FINE (503200)",
-                "CANOLA MEAL ( L/I ) (206300)"
-            ];
+        function filterMaterial(inputEl) {
+            const filter = inputEl.value.toUpperCase();
+            const selectEl = inputEl.parentNode.querySelector('.trk-mat');
+            const options = selectEl.options;
+            
+            // Re-populate everything from staticMaterials based on filter
+            const filtered = staticMaterials.filter(m => m.toUpperCase().includes(filter));
+            
+            const currentVal = selectEl.value;
+            selectEl.innerHTML = '<option value="">-- Pilih Material (Terfilter) --</option>';
+            
+            filtered.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.text = m;
+                selectEl.appendChild(opt);
+            });
+            
+            if (filter === "") {
+                selectEl.innerHTML += '<option disabled>----------------------</option>';
+                selectEl.innerHTML += '<option value="OTHER">--- OTHER (Input Manual) ---</option>';
+            } else if (filtered.length === 0) {
+                selectEl.innerHTML = '<option value="">-- Tidak ada hasil --</option>';
+                selectEl.innerHTML += '<option value="OTHER">--- Gunakan Input Manual? ---</option>';
+            }
+            
+            // Try to keep selection if it's still in the list
+            selectEl.value = currentVal;
+        }
 
+        function fetchMaterialsFromAPI() {
             const sel = document.querySelectorAll('.trk-mat');
             sel.forEach(s => {
                 const currentVal = s.value;
