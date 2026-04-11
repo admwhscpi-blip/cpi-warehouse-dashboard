@@ -139,6 +139,19 @@
 
         @keyframes rotating { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+        /* --- MAIN CONTENT --- */
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); }
+        .header-title-area { display: flex; align-items: center; gap: 15px; }
+        .mobile-toggle { display: none; background: #f1f5f9; border: 1px solid var(--border-color); border-radius: 10px; font-size: 1.2rem; color: var(--accent-primary); cursor: pointer; }
+        .header-title h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--text-primary); letter-spacing: 1px; }
+        .header-title p { color: var(--text-secondary); font-size: 0.85rem; }
+        .user-control-panel { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+        .user-profile-badge { display: flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 8px 18px; border-radius: 30px; color: var(--accent-primary); box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15); border: 1px solid rgba(255, 255, 255, 0.5); }
+        .user-profile-badge span { font-family: 'Rajdhani', sans-serif; font-size: 1.15rem; font-weight: 700; letter-spacing: 1.5px; }
+        .user-profile-badge i { font-size: 1.4rem; }
+        .logout-btn { background: transparent; border: none; color: var(--danger); font-family: 'Inter', sans-serif; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; padding: 2px 10px; opacity: 0.8; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+        .logout-btn:hover { opacity: 1; transform: translateX(-3px); }
         .main-content { flex-grow: 1; padding: 30px; overflow-y: auto; scroll-behavior: smooth; }
 
         /* ============================== */
@@ -750,21 +763,15 @@
         }
         .sidebar-overlay.active { display: block; opacity: 1; }
 
-        @media (max-width: 992px) {
+        @media (max-width: 1024px) {
             .sidebar {
                 position: fixed; left: 0; top: 0; height: 100vh;
                 transform: translateX(-100%); z-index: 2000;
                 box-shadow: 20px 0 50px rgba(0,0,0,0.2);
             }
             .sidebar.active { transform: translateX(0); }
-            .mobile-toggle { display: block !important; margin-right: 15px; }
-            .top-header { padding: 15px 15px; }
-            .header-title h2 { font-size: 1.1rem; }
-            .header-title p { font-size: 0.7rem; }
-            .main-content { padding: 15px; }
-            .mini-clock-wrapper { transform: scale(0.65); width: 150%; }
-            .user-profile-badge span { display: none; }
-            .month-filter-bar { padding: 10px; gap: 8px; }
+            .mobile-toggle { display: flex !important; align-items: center; justify-content: center; width: 40px; height: 40px; }
+            .mini-clock-wrapper { width: 100%; transform: scale(0.75); }
         }
     </style>
 </head>
