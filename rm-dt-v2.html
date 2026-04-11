@@ -773,6 +773,31 @@
             .mobile-toggle { display: flex !important; align-items: center; justify-content: center; width: 40px; height: 40px; }
             .mini-clock-wrapper { width: 100%; transform: scale(0.75); }
         }
+
+        @media (max-width: 768px) {
+            .top-header { padding: 15px 20px; }
+            .header-title h2 { font-size: 1.2rem; }
+            .header-title p { font-size: 0.75rem; }
+            .main-content { padding: 16px; }
+            
+            /* Stacking Grids */
+            .stats-grid, .dashboard-grid, .inap-grid, .inap-chart-row { 
+                grid-template-columns: 1fr !important; gap: 16px; 
+            }
+            
+            .month-filter-bar { padding: 10px 14px; gap: 8px; }
+            .month-pill { padding: 5px 12px; font-size: 0.75rem; }
+            
+            /* Table responsiveness */
+            .leadtime-section { padding: 16px; overflow-x: auto; }
+            .leadtime-table { min-width: 650px; }
+            
+            /* Login & Overlay */
+            .login-card { padding: 30px 20px; width: 95%; }
+            .overlay-panel { width: 96%; max-height: 92vh; border-radius: 16px; }
+            .overlay-header { padding: 16px; }
+            .overlay-body { padding: 16px; }
+        }
     </style>
 </head>
 
