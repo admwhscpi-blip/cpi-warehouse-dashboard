@@ -364,10 +364,12 @@
     </div>
 
     <script>
-        // Use Downtime API URL - this is where getTaskQueue, getData, and updateNetto handlers live
-        const API_URL = CONFIG.DOWNTIME_API_URL;
+        // Use Entry Bongkar API URL - handle getTaskQueue, getData, and updateNetto
+        console.warn("DIAGNOSTIC - ACTIVE CONFIG URL:", CONFIG.ENTRY_BONGKAR_API_URL);
+        const API_URL = CONFIG.ENTRY_BONGKAR_API_URL;
         let currentUser = "";
-        let isArif = false;
+        let isManager = false;
+        const MANAGERS = ['ARIF', 'CECEP', 'ADE', 'SAFII', 'HADI'];
 
         document.addEventListener('DOMContentLoaded', () => {
             const userStr = sessionStorage.getItem('dt_v2_user');
@@ -377,7 +379,7 @@
             }
 
             currentUser = userStr;
-            isArif = (currentUser.toUpperCase() === 'ARIF');
+            isManager = MANAGERS.includes(currentUser.toUpperCase());
             
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('app-wrapper').style.opacity = '1';
@@ -388,8 +390,8 @@
 
         async function loadPendingData() {
             try {
-                if (isArif) {
-                    await loadDataForArif();
+                if (isManager) {
+                    await loadDataManagerView();
                 } else {
                     await loadDataForUser(currentUser);
                 }
@@ -402,11 +404,31 @@
 
         // === FLOW UNTUK USER BIASA (KRANI) ===
         async function loadDataForUser(username) {
-            const res = await fetch(`${API_URL}?action=getTaskQueue&role=krani&name=${encodeURIComponent(username)}`);
+            const cb = Date.now();
+            const url = `${API_URL}?action=getTaskQueue&role=krani&name=${encodeURIComponent(username)}&_cb=${cb}`;
+            console.log("Fetching Tasks from:", url);
+
+            const res = await fetch(url);
             const rawData = await res.json();
             
+            // Safety: Ensure rawData is an array
+            if (!Array.isArray(rawData)) {
+                console.warn("Unexpected API response (not an array):", rawData);
+                
+                // DIAGNOSTIK BARU: Cek jika ini data dashboard
+                if (rawData.status === 'success' && rawData.template) {
+                    throw new Error("Server mengirimkan data Dashboard/Analitik alih-alih daftar tugas. Pastikan URL API sudah benar.");
+                }
+                
+                if (rawData.message && rawData.message.includes("Unknown Action")) {
+                    throw new Error("Server tidak mengenali perintah 'getTaskQueue'. Silakan lakukan 'New Deployment' di Apps Script Editor.");
+                }
+
+                throw new Error("Data yang diterima bukan format daftar tugas.");
+            }
+
             // Filter out empty rows or header rows just in case
-            const data = (rawData || []).filter(t => t.nopol && t.nopol !== "NOPOL" && t.nopol.trim() !== "");
+            const data = rawData.filter(t => t.nopol && t.nopol !== "NOPOL" && t.nopol.trim() !== "");
 
             document.getElementById('loading-view').style.display = 'none';
             const container = document.getElementById('tasks-master-container');
@@ -421,13 +443,21 @@
             container.innerHTML = groupHtml;
         }
 
-        // === FLOW KHUSUS UNTUK ARIF ===
-        async function loadDataForArif() {
+        // === FLOW KHUSUS UNTUK MANAGER (ARIF, CECEP, DLL) ===
+        async function loadDataManagerView() {
+            const cb = Date.now();
             // 1. Ambil list semua pendingKranis
-            const res = await fetch(`${API_URL}?action=getData`);
+            const res = await fetch(`${API_URL}?action=getData&_cb=${cb}`);
             const rawData = await res.json();
             
-            if (!rawData.success || !rawData.pendingKranis || rawData.pendingKranis.length === 0) {
+            if (rawData.version) console.log("Backend SCRIPT_VERSION (Manager):", rawData.version);
+
+            if (!rawData.success || !rawData.pendingKranis) {
+                console.warn("API Error (Manager View):", rawData);
+                throw new Error("Gagal mendapatkan status data pending.");
+            }
+
+            if (rawData.pendingKranis.length === 0) {
                 document.getElementById('loading-view').style.display = 'none';
                 document.getElementById('tasks-master-container').style.display = 'block';
                 showEmptyState(false);
@@ -437,14 +467,17 @@
             let finalHtml = '';
             // 2. Loop setiap krani & fetch tasknya
             for (let krani of rawData.pendingKranis) {
-                const kRes = await fetch(`${API_URL}?action=getTaskQueue&role=krani&name=${encodeURIComponent(krani)}`);
+                const url = `${API_URL}?action=gettaskqueue&role=krani&name=${encodeURIComponent(krani)}&_cb=${cb}`;
+                const kRes = await fetch(url);
                 const kRawData = await kRes.json();
                 
                 // Filter valid tasks
-                const kData = (kRawData || []).filter(t => t.nopol && t.nopol !== "NOPOL" && t.nopol.trim() !== "");
-                
-                if (kData && kData.length > 0) {
-                    finalHtml += buildUserGroupHtml(krani, kData);
+                if (Array.isArray(kRawData)) {
+                    const kData = kRawData.filter(t => t.nopol && t.nopol !== "NOPOL" && t.nopol.trim() !== "");
+                    
+                    if (kData && kData.length > 0) {
+                        finalHtml += buildUserGroupHtml(krani, kData);
+                    }
                 }
             }
 
@@ -462,7 +495,7 @@
         // === RENDER UI HELPER ===
         function buildUserGroupHtml(username, tasks) {
             let headerHtml = '';
-            if (isArif) {
+            if (isManager) {
                 headerHtml = `
                     <div class="user-group-header">
                         <h3><i class="fas fa-user-circle"></i> USER: ${username}</h3>
@@ -543,11 +576,11 @@
             });
 
             if (nettoVal) {
-                saveNettoToServer(task.row_id, nettoVal);
+                saveNettoToServer(task, nettoVal);
             }
         }
 
-        async function saveNettoToServer(rowId, netto) {
+        async function saveNettoToServer(task, netto) {
             Swal.fire({
                 title: 'Menyimpan Data...',
                 html: 'Tunggu sebentar, sedang mengupdate server',
@@ -557,8 +590,8 @@
 
             const payload = {
                 action: "updateNetto",
-                role: "krani",
-                row_id: rowId,
+                sheet_name: task.sheet_name,
+                row_id: task.row_id,
                 netto: netto
             };
 

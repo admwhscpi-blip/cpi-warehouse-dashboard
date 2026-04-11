@@ -13,6 +13,7 @@ const SHEET_ABSENSI = "ABSENSI";
 const SHEET_BONGKARAN = "DATA_BONGKARAN";
 const SHEET_MUATAN = "DATA_MUATAN";
 const SHEET_LOG_ABSENSI = "MASTER_ABSENSI_LOG";
+const SCRIPT_VERSION = "2026.04.11-V3";
 
 // === HELPERS ===
 function fmtTime(val) {
@@ -71,6 +72,8 @@ function doPost(e) {
       return handleSaveStafelEntry(data);
     } else if (action === "updateStafelStock") {
       return handleUpdateStafelStock(data);
+    } else if (action === "updatenetto") {
+      return handleUpdateNetto(data);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ success: false, message: "Unknown action" }))
@@ -85,7 +88,11 @@ function doGet(e) {
   try {
     const action = (e.parameter.action || "").toLowerCase();
 
-    if (action === "getsetup") {
+    if (action === "getdata") {
+      return handleGetData();
+    } else if (action === "gettaskqueue") {
+      return handleGetTaskQueue(e);
+    } else if (action === "getsetup") {
       return handleGetSetup();
     } else if (action === "getglobalattendance") {
       return handleGetGlobalAttendance();
@@ -99,6 +106,7 @@ function doGet(e) {
 
     return ContentService.createTextOutput(JSON.stringify({
       success: false,
+      version: SCRIPT_VERSION,
       message: "API Active - Unknown Action: '" + (e.parameter.action || "none") + "'. Silakan perbarui Deployment (New Deployment) di Editor Apps Script untuk memastikan kode terbaru aktif."
     })).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
@@ -909,4 +917,101 @@ function handleUpdateStafelStock(data) {
   });
 
   return ContentService.createTextOutput(JSON.stringify({ success: true, message: "Stock Awal Diperbarui" })).setMimeType(ContentService.MimeType.JSON);
+}
+
+// === HANDLERS FOR LENGKAPI DATA NETTO ===
+
+function handleGetData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const bSheet = ss.getSheetByName(SHEET_BONGKARAN);
+  const mSheet = ss.getSheetByName(SHEET_MUATAN);
+  const pendingKranis = new Set();
+  
+  const processSheet = (sheet) => {
+    if (!sheet) return;
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return;
+    const headers = data[0].map(h => String(h).toUpperCase());
+    const idx = {
+      netto: headers.indexOf("NETTO (KG)"),
+      krani: headers.indexOf("NAMA KRANI") >= 0 ? headers.indexOf("NAMA KRANI") : headers.indexOf("KRANI BONGKAR")
+    };
+    
+    if (idx.netto === -1 || idx.krani === -1) return;
+    
+    for (let i = 1; i < data.length; i++) {
+      const netto = String(data[i][idx.netto] || "").trim();
+      const krani = String(data[i][idx.krani] || "").trim();
+      if (krani && (!netto || netto === "0" || netto === "-" || netto === "")) {
+        pendingKranis.add(krani.toUpperCase());
+      }
+    }
+  };
+
+  processSheet(bSheet);
+  processSheet(mSheet);
+
+  return ContentService.createTextOutput(JSON.stringify({ 
+    success: true, 
+    pendingKranis: Array.from(pendingKranis).sort() 
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleGetTaskQueue(e) {
+  const name = (e.parameter.name || "").toUpperCase();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const bSheet = ss.getSheetByName(SHEET_BONGKARAN);
+  const mSheet = ss.getSheetByName(SHEET_MUATAN);
+  const tasks = [];
+
+  const processSheet = (sheet, type) => {
+    if (!sheet) return;
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return;
+    const headers = data[0].map(h => String(h).toUpperCase());
+    const idx = {
+      nopol: findH(headers, ["NOPOL", "PLAT"]),
+      netto: headers.indexOf("NETTO (KG)"),
+      krani: headers.indexOf("NAMA KRANI") >= 0 ? headers.indexOf("NAMA KRANI") : headers.indexOf("KRANI BONGKAR"),
+      material: findH(headers, ["JENIS RM", "MATERIAL"]),
+      tanggal: headers.indexOf("TANGGAL") >= 0 ? headers.indexOf("TANGGAL") : 0
+    };
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const krani = String(row[idx.krani] || "").toUpperCase().trim();
+      const netto = String(row[idx.netto] || "").trim();
+      
+      if (krani === name && (!netto || netto === "0" || netto === "-" || netto === "")) {
+        tasks.push({
+          row_id: i + 1,
+          sheet_name: sheet.getName(),
+          nopol: String(row[idx.nopol] || "-"),
+          material: String(row[idx.material] || "-"),
+          tanggal: row[idx.tanggal] instanceof Date ? Utilities.formatDate(row[idx.tanggal], Session.getScriptTimeZone(), "dd/MM/yyyy") : String(row[idx.tanggal] || "-")
+        });
+      }
+    }
+  };
+
+  processSheet(bSheet, "BONGKAR");
+  processSheet(mSheet, "MUAT");
+
+  return ContentService.createTextOutput(JSON.stringify(tasks)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleUpdateNetto(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(data.sheet_name);
+  if (!sheet) throw new Error("Sheet tidak ditemukan: " + data.sheet_name);
+  
+  const headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0].map(h => String(h).toUpperCase());
+  const nettoIdx = headers.indexOf("NETTO (KG)") + 1;
+  
+  if (nettoIdx === 0) throw new Error("Kolom Netto (KG) tidak ditemukan");
+  
+  sheet.getRange(data.row_id, nettoIdx).setValue(data.netto);
+  
+  return ContentService.createTextOutput(JSON.stringify({ success: true, message: "Tonase berhasil diperbarui" }))
+    .setMimeType(ContentService.MimeType.JSON);
 }

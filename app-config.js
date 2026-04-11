@@ -1,7 +1,7 @@
 const CONFIG = {
     API_URL: "https://script.google.com/macros/s/AKfycbwnStVw3UhKxgQDuTfufSlNMaTrf4ZpXC0FPAp6AK96t-YIJQNcJ1h0rtkbM2XlxPCr/exec",
     BIN_SWEEPING_API_URL: "https://script.google.com/macros/s/AKfycbynVL7SFG8TBeTbu2PjO2eGIgM1JkQcV8nT3zsoi6zWc4cArJ23VQfTgjtLyyTZCQFM/exec",
-    DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbxDerZpvftORq993r2EfGnG7gpALFWsXxA21mWe-xMzHCE-5wmJpDJXKNl29hgW-GQz/exec",
+    DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbz5T3VLH7k-lwJ8JsnM8aNtJsN7p6YiHWkp1kldDSZHzjbDvNMLdCFu7BUCjk0RI5oF/exec",
 
     // Konfigurasi konversi satuan
     UNIT_DIVIDER: 1000,
