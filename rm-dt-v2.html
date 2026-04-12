@@ -2009,7 +2009,19 @@
             const r = window.tempSlocRows[sloc][idx];
             if (!r) return;
 
-            document.getElementById('truck-timeline-title').innerHTML = `<i class="fas fa-truck" style="color:var(--purple);"></i> NOPOL: ${r.NOPOL || '-'}`;
+            const nopol = r.NOPOL || '-';
+            const krani = (r.NAMA_KRANI || 'System').toUpperCase();
+            
+            document.getElementById('truck-timeline-title').innerHTML = `
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <i class="fas fa-truck" style="color:var(--purple); font-size:1.2rem;"></i>
+                    <span style="font-family:'Orbitron', sans-serif; letter-spacing:1px;">${nopol}</span>
+                    <span style="height:14px; width:2px; background:var(--border-color); display:inline-block;"></span>
+                    <div style="background:rgba(2,132,199,0.1); color:var(--accent-primary); padding:4px 12px; border-radius:30px; font-size:0.75rem; font-weight:700; display:flex; align-items:center; gap:6px;">
+                        <i class="fas fa-user-edit" style="font-size:0.7rem;"></i> ${krani}
+                    </div>
+                </div>
+            `;
 
             let arrDate = r.ARRIVAL_DATE || '';
             if (!arrDate && r.ARRIVAL_TIME) arrDate = r.TANGGAL || '';
@@ -2018,14 +2030,10 @@
             const events = [
                 { label: 'Arrival', time: r.ARRIVAL_TIME, date: arrDate, icon: 'fa-sign-in-alt', color: '#0284c7' },
                 { label: 'QC Sampling 1', time: r.QC_SAMPLING_1, icon: 'fa-vial', color: '#6366f1' },
-                { label: 'Timbang Masuk', time: r.TIME_TIMBANG_MASUK, icon: 'fa-balance-scale', color: '#8b5cf6' },
                 { label: 'Sampai Gudang', time: r.SAMPAI_GUDANG, icon: 'fa-warehouse', color: '#10b981' },
-                { label: 'Start Panggil', time: r.START_PANGGIL, icon: 'fa-bullhorn', color: '#f59e0b' },
-                { label: 'Truck Ready', time: r.TRUCK_READY, icon: 'fa-truck-loading', color: '#d97706' },
                 { label: 'Start Bongkar', time: r.START_BONGKAR, icon: 'fa-box-open', color: '#0ea5e9' },
                 { label: 'Hold QC', time: r.HOLD_QC, icon: 'fa-hand-paper', color: '#ef4444' },
                 { label: 'Restart QC', time: r.RESTART_QC, icon: 'fa-play-circle', color: '#14b8a6' },
-                { label: 'Manuver Akhir', time: r.MANUVER_AKHIR, icon: 'fa-truck-moving', color: '#64748b' },
                 { label: 'Finish PB', time: r.FINISH_TIME, date: pbDate, icon: 'fa-flag-checkered', color: '#ef4444' }
             ];
 
@@ -2584,6 +2592,10 @@
             const trucks = new Set();
 
             rows.forEach(r => {
+                // FOCUS: Only detect filters from Bongkaran entries
+                const keg = String(r.KEGIATAN || r.ACTIVITY || '').toUpperCase();
+                if (!keg.includes('BONGKAR')) return;
+
                 const mat = String(r.JENIS_RM || '').trim().toUpperCase();
                 const sloc = String(r.LOKASI || '').trim().toUpperCase();
                 const trk = String(r.JENIS_TRUCK || '').trim().toUpperCase();
@@ -2657,6 +2669,10 @@
             const filtered = hubData.templateDump.filter(r => {
                 const tgl = String(r.TANGGAL || '').substring(0, 10);
                 if (!tgl || tgl < startDate || tgl > endDate) return false;
+
+                // FOCUS: Only include Bongkaran in Pivot results
+                const keg = String(r.KEGIATAN || r.ACTIVITY || '').toUpperCase();
+                if (!keg.includes('BONGKAR')) return false;
 
                 // Category filters (Multi-select)
                 const mat = String(r.JENIS_RM || '').trim().toUpperCase();

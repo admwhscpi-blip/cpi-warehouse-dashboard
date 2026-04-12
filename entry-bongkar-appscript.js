@@ -495,9 +495,10 @@ function handleGetAnalyticsV2() {
           arrivalDate: findH(bH, ["ARRIVAL DATE"]),
           arrivalTime: findH(bH, ["ARRIVAL TIME"]),
           qcTime: findH(bH, ["QC SAMPLING 1 TIME", "QC TIME"]),
-          timbangTime: findH(bH, ["TIME TIMBANG MASUK", "TIMBANG IN"]),
+          timbangTime: findH(bH, ["TIME TIMBANG MASUK", "TIMBANG IN", "TIMBANG MASUK"]),
           tanggalPB: findH(bH, ["TANGGAL PB", "TANGGAL PROSES"]),
-          sampaiGudang: findH(bH, ["SAMPAI GUDANG"])
+          sampaiGudang: findH(bH, ["SAMPAI GUDANG", "SM GUDANG"]),
+          krani: findH(bH, ["NAMA KRANI", "KRANI", "OPERATOR", "USER"])
         };
 
         for (let i = 1; i < bData.length; i++) {
@@ -531,6 +532,7 @@ function handleGetAnalyticsV2() {
             KEGIATAN: "BONGKAR",
             LOKASI: gudang,
             NOPOL: String(bIdx.nopol >= 0 ? row[bIdx.nopol] : ""),
+            NAMA_KRANI: String(bIdx.krani >= 0 ? row[bIdx.krani] : ""),
             REAL_BONGKAR_MT: netto,
             REAL_BONGKAR_KG: netto, // Alias for clarity v20.2.3
             ARRIVAL_DATE: (function (v) {
