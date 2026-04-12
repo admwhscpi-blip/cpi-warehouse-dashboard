@@ -419,7 +419,8 @@
                 'SAMPING-E': { std: '3,957', eff: '0.98', effCap: '3,878' },
                 'SAMPING-F': { std: '2,890', eff: '1', effCap: '2,890' },
                 'GUDANG HINO': { std: '1,085', eff: '1', effCap: '1,085' },
-                'GD.HINO': { std: '1,085', eff: '1', effCap: '1,085' }
+                'GD.HINO': { std: '1,085', eff: '1', effCap: '1,085' },
+                'KOPO 6': { std: '1,600', eff: '1', effCap: '1,600' }
             };
 
             const maxCap = Math.max(...data.capacities) || 10000;
@@ -457,7 +458,7 @@
                 const extra = extraDataMap[nameKey] || { std: '-', eff: '-', effCap: '-' };
 
                 // --- CANOPY STATUS (Permanent / Hardcoded) ---
-                const KANOPI_GUDANG = ['RM', 'GEBANG-A', 'SAMPING-C', 'GUDANG HINO', 'GD.HINO', 'HINO'];
+                const KANOPI_GUDANG = ['RM', 'GEBANG-A', 'SAMPING-C', 'GUDANG HINO', 'GD.HINO', 'HINO', 'KOPO 6'];
                 const hasCanopy = KANOPI_GUDANG.includes(nameKey);
                 const capKg = data.capacities[index] || 0;
                 let totalStockKg = 0;

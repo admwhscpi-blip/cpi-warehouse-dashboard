@@ -1,5 +1,5 @@
 const CONFIG = {
-    API_URL: "https://script.google.com/macros/s/AKfycbw6TYlw7-7IT2UBjqLaZFBMqmKKYC0vee5p9ajdjVoM3DUPAOPog1Z3QZBbxk95paqE/exec",
+    API_URL: "https://script.google.com/macros/s/AKfycbx1Yzv7msS9UD55QTUxbVgzPwXN4p2JXTv6KfJNxY8-NzEedx2ncWuvognZc6SkSBs/exec",
     BIN_SWEEPING_API_URL: "https://script.google.com/macros/s/AKfycbynVL7SFG8TBeTbu2PjO2eGIgM1JkQcV8nT3zsoi6zWc4cArJ23VQfTgjtLyyTZCQFM/exec",
     DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbw89miuaaa3UY7IxQbqLqHy2yzk0yQ63AEiZn018qO0g0MEsGwm_2Z2wfZM4nqlUY85/exec",
     CPO_DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbxIvYIvhLNvjIcyz1RbCYbGw22UbkOznHOujfq6u7vzt6NzQVk5FmNGIZVz2689Lj0X/exec",
@@ -26,7 +26,8 @@ const CONFIG = {
         "SAMPING-D": 2500,
         "SAMPING-E": 4000,
         "SAMPING-F": 3000,
-        "GUDANG HINO": 1000
+        "GUDANG HINO": 1000,
+        "KOPO 6": 1500
     },
 
     // Material Code Mapping
