@@ -1195,6 +1195,9 @@
                 document.getElementById('cfg_global_date').value = new Date().toISOString().split('T')[0];
             }
 
+            // Sync Tipe Bongkaran UI on load
+            toggleTipeBongkaran();
+
             const cachedSetup = localStorage.getItem('RM01_SETUP_ACTIVE');
             let isSetupValid = false;
 
@@ -1408,18 +1411,37 @@
             const tipe = document.getElementById('inp_tipe_bongkaran').value;
             const sharedSection = document.getElementById('shared-ab-section');
             const truckSections = document.querySelectorAll('.ab-truck-section');
+            const container = document.getElementById('truck-forms-container');
+            const lSection = document.getElementById('langsiran-section');
 
-            if(tipe === "Bareng") {
-                sharedSection.style.display = 'none';
-                truckSections.forEach(s => s.style.display = 'block');
-                // Optional: Clear shared inputs if moving to bareng to avoid confusion
-                // document.getElementById('t_ab_tanggal').value = '';
-                // document.getElementById('t_ab_arrival').value = '';
-                // document.getElementById('t_ab_qc').value = '';
+            if (!sharedSection) return;
+
+            // --- 1. HANDLING VISIBILITY UTAMA ---
+            if (tipe === "Langsiran") {
+                if(container) container.style.setProperty('display', 'none', 'important');
+                lSection.style.setProperty('display', 'block', 'important');
+                sharedSection.style.setProperty('display', 'none', 'important');
+                fetchLangsiranQueue();
             } else {
-                sharedSection.style.display = 'block';
-                truckSections.forEach(s => s.style.display = 'none');
+                if(container) container.style.setProperty('display', 'block', 'important');
+                if(lSection) lSection.style.setProperty('display', 'none', 'important');
+                
+                if (tipe === "Bareng") {
+                    sharedSection.style.setProperty('display', 'none', 'important');
+                    // Tampilkan input arrival di masing-masing truck
+                    truckSections.forEach(s => s.style.setProperty('display', 'block', 'important'));
+                    
+                    // KOSONGKAN input parameter arrival di kartu utama untuk menghindari duplikasi data
+                    document.getElementById('t_ab_tanggal').value = '';
+                    document.getElementById('t_ab_arrival').value = '';
+                    document.getElementById('t_ab_qc').value = '';
+                } else {
+                    sharedSection.style.setProperty('display', 'block', 'important');
+                    // Sembunyikan input arrival di masing-masing truck
+                    truckSections.forEach(s => s.style.setProperty('display', 'none', 'important'));
+                }
             }
+            
             checkDurasiLengkap();
         }
 
@@ -1680,31 +1702,6 @@
         }
 
         // --- NEW: BONGKARAN LANGSIRAN LOGIC ---
-        function toggleTipeBongkaran() {
-            const tipe = document.getElementById('inp_tipe_bongkaran').value;
-            const container = document.getElementById('truck-forms-container');
-            const lSection = document.getElementById('langsiran-section');
-            const opArea = document.getElementById('sect-durasi');
-
-            if (tipe === "Langsiran") {
-                if(container) container.style.display = 'none';
-                lSection.style.display = 'block';
-                fetchLangsiranQueue();
-            } else {
-                container.style.display = 'block';
-                lSection.style.display = 'none';
-                
-                // Reset form kuli/truck
-                if(trucks.length === 0) {
-                    addTruck();
-                } else if(tipe === "1 Jenis" && trucks.length > 1) {
-                    trucks = trucks.slice(0, 1);
-                    renderTrucks();
-                } else if(tipe === "Bareng") {
-                    renderTrucks();
-                }
-            }
-        }
 
         async function fetchLangsiranQueue() {
             const list = document.getElementById('langsiran-list');
