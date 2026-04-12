@@ -213,6 +213,61 @@
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); font-weight: 800;
         }
 
+        /* --- PREMIUM OPERATIONAL CLASSES --- */
+        .premium-panel {
+            background: #fff; border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+            padding: 25px; box-shadow: var(--shadow-md); transition: all 0.3s ease;
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
+        }
+        .premium-panel:hover { box-shadow: var(--shadow-lg); }
+        .premium-panel .panel-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;
+        }
+        .premium-panel .panel-header h3 {
+            font-family: 'Orbitron', sans-serif; font-size: 1.1rem; color: var(--text-primary);
+            letter-spacing: 1px; display: flex; align-items: center; gap: 10px;
+        }
+
+        .stat-card-premium {
+            position: relative; background: #fff; border-radius: var(--radius-md);
+            padding: 24px 20px; box-shadow: var(--shadow-md); transition: all 0.3s ease;
+            cursor: pointer; border: 1.5px solid var(--border-color); overflow: hidden;
+            z-index: 1;
+        }
+        .stat-card-premium::before {
+            content: ''; position: absolute; inset: -2px;
+            background: conic-gradient(from 0deg, transparent 20%, var(--accent-primary), transparent 40%, var(--purple), transparent 60%, var(--accent-primary));
+            border-radius: var(--radius-md); z-index: -1; opacity: 0;
+            transition: opacity 0.3s; animation: rotating 4s linear infinite;
+        }
+        .stat-card-premium::after {
+            content: ''; position: absolute; inset: 2px;
+            background: #fff; border-radius: calc(var(--radius-md) - 2px); z-index: -1;
+        }
+        .stat-card-premium:hover { transform: translateY(-5px); border-color: transparent; }
+        .stat-card-premium:hover::before { opacity: 0.8; }
+        
+        .fire-glow { animation: firePulse 2s infinite alternate; border-color: var(--danger) !important; }
+        @keyframes firePulse {
+            0% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.2), inset 0 0 5px rgba(239, 68, 68, 0.1); }
+            100% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.4), inset 0 0 15px rgba(239, 68, 68, 0.2); }
+        }
+
+        .tilt-card { transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .tilt-card:hover { transform: perspective(1000px) rotateX(4deg) rotateY(2deg) translateY(-8px); }
+
+        .stat-trend-p {
+            font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.82rem;
+            color: var(--text-secondary); margin-top: 8px; display: flex; align-items: center; gap: 5px;
+        }
+        
+        .cal-grid-p { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        .cal-header-p { text-align: center; font-size: 0.65rem; font-weight: 800; color: var(--text-secondary); opacity: 0.6; padding: 6px; }
+
+        .ops-grid-proportion { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 20px; }
+        @media (max-width: 1024px) { .ops-grid-proportion { grid-template-columns: 1fr; } }
+
         /* Pivot specific styles */
         /* Pivot Premium UI Overhaul */
         .pivot-filter-panel {
@@ -974,66 +1029,66 @@
                 <span><i class="fas fa-chart-line"></i> OPERATIONAL DASHBOARD</span>
             </div>
 
-            <!-- EXISTING: LIVE STATS -->
+            <!-- PREMIUM: LIVE STATS -->
             <div class="stats-grid" id="live-stats">
-                <div class="stat-card">
-                    <div class="stat-label"><i class="fas fa-truck-loading" style="color:#0284c7;"></i> BONGKAR (Bulan Ini)</div>
-                    <div class="stat-value" id="stat-bongkar">- <span style="font-size: 1rem; color: var(--text-secondary);">KG</span></div>
-                    <div class="stat-trend trend-up" id="stat-bongkar-count"><i class="fas fa-box"></i> Memuat...</div>
+                <div class="stat-card-premium tilt-card">
+                    <div class="stat-label" style="font-family:'Rajdhani'; letter-spacing:1px;"><i class="fas fa-truck-loading" style="color:var(--accent-primary);"></i> BONGKAR (Bulan Ini)</div>
+                    <div class="stat-value" id="stat-bongkar" style="font-family:'Rajdhani'; font-weight:800;">- <span style="font-size: 1.2rem; color: var(--text-secondary);">KG</span></div>
+                    <div class="stat-trend-p" id="stat-bongkar-count"><i class="fas fa-calendar-check" style="color:var(--accent-primary);"></i> Memuat...</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label"><i class="fas fa-shipping-fast" style="color:#f59e0b;"></i> MUAT (Bulan Ini)</div>
-                    <div class="stat-value" id="stat-muat">- <span style="font-size: 1rem; color: var(--text-secondary);">KG</span></div>
-                    <div class="stat-trend trend-up" id="stat-muat-count"><i class="fas fa-box"></i> Memuat...</div>
+                <div class="stat-card-premium tilt-card">
+                    <div class="stat-label" style="font-family:'Rajdhani'; letter-spacing:1px;"><i class="fas fa-shipping-fast" style="color:var(--warning);"></i> MUAT (Bulan Ini)</div>
+                    <div class="stat-value" id="stat-muat" style="font-family:'Rajdhani'; font-weight:800;">- <span style="font-size: 1.2rem; color: var(--text-secondary);">KG</span></div>
+                    <div class="stat-trend-p" id="stat-muat-count"><i class="fas fa-calendar-check" style="color:var(--warning);"></i> Memuat...</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label"><i class="fas fa-layer-group" style="color:#8b5cf6;"></i> STAPEL (Bulan Ini)</div>
-                    <div class="stat-value" id="stat-stapel">- <span style="font-size: 1rem; color: var(--text-secondary);">KG</span></div>
-                    <div class="stat-trend" id="stat-stapel-info" style="color:var(--text-secondary);"><i class="fas fa-info-circle"></i> 1 PCS = 50 KG</div>
+                <div class="stat-card-premium tilt-card">
+                    <div class="stat-label" style="font-family:'Rajdhani'; letter-spacing:1px;"><i class="fas fa-layer-group" style="color:var(--purple);"></i> STAPEL (Bulan Ini)</div>
+                    <div class="stat-value" id="stat-stapel" style="font-family:'Rajdhani'; font-weight:800;">- <span style="font-size: 1.2rem; color: var(--text-secondary);">KG</span></div>
+                    <div class="stat-trend-p" id="stat-stapel-info"><i class="fas fa-info-circle"></i> Live Sync</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label"><i class="fas fa-pallet" style="color:#10b981;"></i> PALLET STATUS</div>
-                    <div class="stat-value success-text" id="stat-pallet">- <span style="font-size: 1rem; color: var(--text-secondary);">PCS</span></div>
-                    <div class="stat-trend trend-up" id="stat-pallet-info"><i class="fas fa-check-circle"></i> Memuat...</div>
+                <div class="stat-card-premium tilt-card">
+                    <div class="stat-label" style="font-family:'Rajdhani'; letter-spacing:1px;"><i class="fas fa-pallet" style="color:var(--success);"></i> PALLET STATUS</div>
+                    <div class="stat-value success-text" id="stat-pallet" style="font-family:'Rajdhani'; font-weight:800;">- <span style="font-size: 1.2rem; color: var(--text-secondary);">PCS</span></div>
+                    <div class="stat-trend-p" id="stat-pallet-info"><i class="fas fa-check-circle" style="color:var(--success);"></i> System Ready</div>
                 </div>
             </div>
 
-            <!-- EXISTING: OPS DAILY CHART -->
-            <div class="chart-card" style="margin-bottom:20px; min-height:360px;">
-                <div class="card-header">
-                    <span><i class="fas fa-chart-bar" style="color:#0284c7;"></i> OPERATIONAL VOLUME DAILY</span>
-                    <span class="live-badge">BONGKAR + MUAT + STAPEL</span>
+            <!-- PREMIUM: OPS DAILY CHART -->
+            <div class="premium-panel" style="margin-bottom:25px; min-height:380px;">
+                <div class="panel-header">
+                    <h3><i class="fas fa-chart-bar" style="color:var(--accent-primary);"></i> OPERATIONAL VOLUME DAILY</h3>
+                    <div class="stat-trend-p"><i class="fas fa-satellite-dish" style="color:var(--accent-primary);"></i> Real-time Feed</div>
                 </div>
                 <div style="flex-grow:1; position:relative;"><canvas id="opsVolumeChart"></canvas></div>
             </div>
 
-            <!-- EXISTING: CALENDAR + ANALYSIS -->
-            <div class="dashboard-grid">
-                <div class="chart-card" style="min-height:auto;">
-                    <div class="card-header">
-                        <span><i class="fas fa-calendar-alt" style="color:#0284c7;"></i> RM DAILY CALENDAR</span>
-                        <span id="cal-month-label" style="font-size:0.8rem; color:var(--text-secondary);">-</span>
+            <!-- PREMIUM: CALENDAR + ANALYSIS (RE-PROPORTIONED) -->
+            <div class="ops-grid-proportion">
+                <div class="premium-panel" style="min-height:auto;">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-calendar-alt" style="color:var(--accent-primary);"></i> RM CALENDAR</h3>
+                        <span id="cal-month-label" class="stat-trend-p">-</span>
                     </div>
-                    <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:8px;">
-                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">MIN</div>
-                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">SEN</div>
-                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">SEL</div>
-                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">RAB</div>
-                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">KAM</div>
-                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">JUM</div>
-                        <div style="text-align:center; font-size:0.65rem; font-weight:700; color:var(--text-secondary); padding:4px;">SAB</div>
+                    <div class="cal-grid-p">
+                        <div class="cal-header-p">SUN</div>
+                        <div class="cal-header-p">MON</div>
+                        <div class="cal-header-p">TUE</div>
+                        <div class="cal-header-p">WED</div>
+                        <div class="cal-header-p">THU</div>
+                        <div class="cal-header-p">FRI</div>
+                        <div class="cal-header-p">SAT</div>
                     </div>
-                    <div id="calendar-grid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px;"></div>
+                    <div id="calendar-grid" class="cal-grid-p" style="margin-top:10px;"></div>
                 </div>
-                <div class="chart-card" style="min-height:auto;">
-                    <div class="card-header">
-                        <span><i class="fas fa-microchip" style="color:#0284c7;"></i> DAILY ANALYSIS COMMAND</span>
-                        <span id="analysis-date-label" style="font-size:0.8rem; color:var(--accent-primary);">PILIH TANGGAL</span>
+                <div class="premium-panel" style="min-height:auto;">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-microchip" style="color:var(--accent-primary);"></i> DAILY ANALYSIS COMMAND</h3>
+                        <span id="analysis-date-label" class="stat-trend-p" style="color:var(--accent-primary);">PILIH TANGGAL</span>
                     </div>
-                    <div id="analysis-content" class="scroll-list" style="max-height:380px; overflow-y:auto;">
+                    <div id="analysis-content" class="scroll-list" style="max-height:420px; overflow-y:auto;">
                         <div style="text-align:center; padding:60px 20px; color:var(--text-secondary);">
-                            <i class="fas fa-mouse-pointer" style="font-size:2.5rem; opacity:0.2; margin-bottom:15px;"></i>
-                            <p style="font-size:0.85rem;">Klik tanggal pada kalender untuk melihat rincian operasional</p>
+                            <i class="fas fa-mouse-pointer" style="font-size:3rem; opacity:0.1; margin-bottom:20px;"></i>
+                            <p style="font-size:0.85rem; font-weight:600; letter-spacing:1px;">Click a date on the calendar to start HD analysis</p>
                         </div>
                     </div>
                 </div>
@@ -2177,6 +2232,7 @@
                 if (d.tanggal && d.tanggal.startsWith(cm)) {
                     const b = (Number(d.bongkar)||0);
                     const m = (Number(d.muat)||0);
+                    // Standard sum from analytics Activity
                     const s = (Number(d.st_badrun)||0) + (Number(d.st_kartono)||0) + (Number(d.st_kulhar)||0);
                     bTotal += b; mTotal += m; sTotal += s;
                     if (b > 0) bCount++;
@@ -2184,16 +2240,21 @@
                 }
             });
 
+            // Extra check for Stapel from Live data if activity is empty
+            if (sTotal === 0 && stafelInfo?.data?.summary) {
+                sTotal = (Number(stafelInfo.data.summary.REAL_KG || 0));
+            }
+
             animateVal('stat-bongkar', bTotal, ' KG');
             animateVal('stat-muat', mTotal, ' KG');
             animateVal('stat-stapel', sTotal, ' KG');
-            document.getElementById('stat-bongkar-count').innerHTML = `<i class="fas fa-calendar-day"></i> ${bCount} hari aktif`;
-            document.getElementById('stat-muat-count').innerHTML = `<i class="fas fa-calendar-day"></i> ${mCount} hari aktif`;
+            document.getElementById('stat-bongkar-count').innerHTML = `<i class="fas fa-check-circle" style="color:var(--accent-primary);"></i> ${bCount} Hari Tercatat`;
+            document.getElementById('stat-muat-count').innerHTML = `<i class="fas fa-check-circle" style="color:var(--warning);"></i> ${mCount} Hari Tercatat`;
 
             if (stafelInfo && stafelInfo.success) {
                 const pk = stafelInfo.palletKosong || (stafelInfo.data && stafelInfo.data.summary && stafelInfo.data.summary.PALLET_KOSONG) || 0;
-                document.getElementById('stat-pallet').innerHTML = `${pk} <span style="font-size:1rem; color:var(--text-secondary);">PCS</span>`;
-                document.getElementById('stat-pallet-info').innerHTML = `<i class="fas fa-pallet"></i> Sisa pallet kosong`;
+                document.getElementById('stat-pallet').innerHTML = `${pk.toLocaleString()} <span style="font-size:1.2rem; color:var(--text-secondary);">PCS</span>`;
+                document.getElementById('stat-pallet-info').innerHTML = `<i class="fas fa-pallet" style="color:var(--success);"></i> Live Pallet Monitor`;
             }
         }
 
@@ -2226,31 +2287,54 @@
             const sData = da.map(d => Math.round(((Number(d.st_badrun)||0) + (Number(d.st_kartono)||0) + (Number(d.st_kulhar)||0)) / 1000));
 
             const ctx = document.getElementById('opsVolumeChart').getContext('2d');
+            
+            // Create Neon Gradients
+            const gradB = ctx.createLinearGradient(0, 0, 0, 400);
+            gradB.addColorStop(0, 'rgba(2, 132, 199, 1)');
+            gradB.addColorStop(1, 'rgba(2, 132, 199, 0.2)');
+            
+            const gradM = ctx.createLinearGradient(0, 0, 0, 400);
+            gradM.addColorStop(0, 'rgba(245, 158, 11, 1)');
+            gradM.addColorStop(1, 'rgba(245, 158, 11, 0.2)');
+            
+            const gradS = ctx.createLinearGradient(0, 0, 0, 400);
+            gradS.addColorStop(0, 'rgba(139, 92, 246, 1)');
+            gradS.addColorStop(1, 'rgba(139, 92, 246, 0.2)');
+
             if (opsChart) opsChart.destroy();
             opsChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels,
                     datasets: [
-                        { label: 'Bongkar (TON)', data: bData, backgroundColor: 'rgba(2,132,199,0.7)', borderRadius: 6, borderSkipped: false },
-                        { label: 'Muat (TON)', data: mData, backgroundColor: 'rgba(245,158,11,0.7)', borderRadius: 6, borderSkipped: false },
-                        { label: 'Stapel (TON)', data: sData, backgroundColor: 'rgba(139,92,246,0.7)', borderRadius: 6, borderSkipped: false }
+                        { label: 'Bongkar (TON)', data: bData, backgroundColor: gradB, borderRadius: 10, hoverBackgroundColor: '#0284c7' },
+                        { label: 'Muat (TON)', data: mData, backgroundColor: gradM, borderRadius: 10, hoverBackgroundColor: '#f59e0b' },
+                        { label: 'Stapel (TON)', data: sData, backgroundColor: gradS, borderRadius: 10, hoverBackgroundColor: '#8b5cf6' }
                     ]
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     interaction: { intersect: false, mode: 'index' },
                     plugins: {
-                        legend: { position: 'top', labels: { usePointStyle: true, padding: 15, font: { family: 'Inter', size: 11 } } },
+                        legend: { position: 'top', align: 'center', labels: { usePointStyle: true, padding: 25, font: { family: 'Rajdhani', size: 12, weight: '700' }, color: '#1e293b' } },
                         tooltip: {
-                            backgroundColor: 'rgba(15,23,42,0.9)', titleFont: { family: 'Rajdhani', size: 14 },
-                            bodyFont: { family: 'Inter', size: 12 }, padding: 12, cornerRadius: 8,
-                            callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} TON` }
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#0f172a', titleFont: { family: 'Orbitron', size: 14, weight: '700' },
+                            bodyColor: '#334155', bodyFont: { family: 'Rajdhani', size: 13, weight: '600' },
+                            padding: 15, cornerRadius: 16, borderColor: 'rgba(0,0,0,0.05)', borderWidth: 1,
+                            boxPadding: 8, usePointStyle: true,
+                            callbacks: { label: ctx => `  ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} TON` }
                         }
                     },
                     scales: {
-                        x: { stacked: true, grid: { display: false }, ticks: { color: '#64748b', font: { family: 'Inter', size: 10 } } },
-                        y: { stacked: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#64748b', font: { family: 'Inter', size: 10 }, callback: v => v + ' T' } }
+                        x: { stacked: true, grid: { display: false }, ticks: { color: '#64748b', font: { family: 'Rajdhani', size: 11, weight: '700' } } },
+                        y: { 
+                            stacked: true, grid: { color: 'rgba(0,0,0,0.03)', borderDash: [5, 5] }, 
+                            ticks: { 
+                                color: '#64748b', font: { family: 'Rajdhani', size: 11, weight: '700' },
+                                callback: v => v + ' T'
+                            } 
+                        }
                     }
                 }
             });

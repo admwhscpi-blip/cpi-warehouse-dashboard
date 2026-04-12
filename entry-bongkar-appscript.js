@@ -466,7 +466,7 @@ function handleGetAnalyticsV2() {
       const bSheet = ss.getSheetByName(SHEET_NAME);        // DATA BONGKARAN
       const mSheet2 = ss.getSheetByName(MUAT_SHEET_NAME);  // DATA MUAT
       const absSheet = ss.getSheetByName("ABSENSI KULI");
-      const stSheet = ss.getSheetByName("DATA STAPEL");
+      const stSheet = ss.getSheetByName("STAFFEL_LOG");
 
       // ----- 1. MINE DATA BONGKARAN → dailyActivity + template -----
       const dailyMap = {};  // tanggal → {muat, bongkar, st_*, prod_*}
@@ -629,22 +629,37 @@ function handleGetAnalyticsV2() {
       }
 
       // ----- 3. MINE DATA STAPEL → add to dailyMap -----
+      // FOKUS: Hanya entri berjenis "STAPEL" dari STAFFEL_LOG yang dimasukkan ke dashboard
       if (stSheet && stSheet.getLastRow() > 1) {
         const sData = stSheet.getDataRange().getValues();
         const sH = sData[0].map(h => String(h).toUpperCase());
         const sTgl = sH.indexOf("TANGGAL") >= 0 ? sH.indexOf("TANGGAL") : 1;
         const sTim = sH.indexOf("TIM") >= 0 ? sH.indexOf("TIM") : 3;
-        const sKat = sH.indexOf("KATEGORI") >= 0 ? sH.indexOf("KATEGORI") : 4;
+        const sJenis = sH.indexOf("JENIS") >= 0 ? sH.indexOf("JENIS") : 4;
         const sNetto = sH.findIndex(h => h.includes("NETTO"));
+        
+        const toNum = (v) => {
+          if (v === null || v === undefined || v === "") return 0;
+          if (typeof v === "number") return v;
+          let s = String(v).replace(/[^0-9,.-]/g, "").replace(",", ".");
+          return parseFloat(s) || 0;
+        };
 
         for (let i = 1; i < sData.length; i++) {
-          let tgl = sData[i][sTgl];
-          if (!tgl) continue;
-          if (tgl instanceof Date) tgl = Utilities.formatDate(tgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
-          else tgl = String(tgl).trim();
+          const row = sData[i];
+          let rawTgl = row[sTgl];
+          if (!rawTgl) continue;
 
-          const tim = String(sData[i][sTim] || "").toUpperCase().trim();
-          const netto = Number(sData[i][sNetto >= 0 ? sNetto : 5]) || 0;
+          // Filter JENIS: Hanya yang STAPEL saja (BONGKARAN dilewati)
+          const jenis = String(row[sJenis] || "").toUpperCase().trim();
+          if (jenis !== "STAPEL") continue;
+
+          let tgl = "";
+          if (rawTgl instanceof Date) tgl = Utilities.formatDate(rawTgl, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          else tgl = String(rawTgl).trim();
+
+          const tim = String(row[sTim] || "").toUpperCase().trim();
+          const netto = toNum(row[sNetto >= 0 ? sNetto : 6]);
 
           if (!dailyMap[tgl]) dailyMap[tgl] = {
             tanggal: tgl, bongkar: 0, muat: 0,
@@ -657,6 +672,18 @@ function handleGetAnalyticsV2() {
           if (tim === "BADRUN") dailyMap[tgl].st_badrun += netto;
           else if (tim === "KARTONO") dailyMap[tgl].st_kartono += netto;
           else dailyMap[tgl].st_kulhar += netto;
+
+          // Masukkan ke templateRows agar muncul di Trend Chart & Analisis Harian Dashboard
+          templateRows.push({
+            TANGGAL: tgl,
+            JENIS_RM: "STAPEL PALLET",
+            JENIS_TRUCK: tim,
+            KEGIATAN: "STAPEL",
+            LOKASI: "AREA STAFFEL",
+            REAL_BONGKAR_MT: netto,
+            REAL_BONGKAR_KG: netto,
+            DURASI_BONGKAR: null, PB_START: null, TUNGGU_QC: null
+          });
         }
       }
 
