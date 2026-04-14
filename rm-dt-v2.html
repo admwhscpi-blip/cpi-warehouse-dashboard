@@ -144,8 +144,53 @@
         .top-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); }
         .header-title-area { display: flex; align-items: center; gap: 15px; }
         .mobile-toggle { display: none; background: #f1f5f9; border: 1px solid var(--border-color); border-radius: 10px; font-size: 1.2rem; color: var(--accent-primary); cursor: pointer; }
-        .header-title h2 { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--text-primary); letter-spacing: 1px; }
-        .header-title p { color: var(--text-secondary); font-size: 0.85rem; }
+        .header-title h2 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 950;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin: 0;
+            color: #fff;
+            /* Sub-layer for fire distortion: Indigo to Magenta to White */
+            background: linear-gradient(to top, #4f46e5 0%, #d946ef 50%, #ffffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: url(#fire-distort);
+            position: relative;
+            display: inline-block;
+            text-shadow: 
+                0px -1px 1px #fff,
+                0px -2px 3px #d946ef,
+                0px -5px 6px #8b5cf6,
+                0px -10px 15px #6366f1;
+            animation: fire-shadow-move 1.5s infinite alternate ease-in-out;
+            z-index: 1;
+        }
+
+        .header-title p {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            margin: 2px 0 0 0;
+            color: #d946ef;
+            filter: url(#fire-distort);
+            animation: fire-flicker-real 2s infinite alternate ease-in-out;
+            text-shadow: 0 -1px 2px rgba(255, 255, 255, 0.4);
+        }
+
+        @keyframes fire-shadow-move {
+            0% { text-shadow: 0px -1px 1px #fff, 0px -2px 3px #d946ef, 0px -5px 6px #a855f7, 0px -10px 15px #6366f1; transform: translateY(0) scale(1.0); }
+            50% { text-shadow: 0px -1px 2px #fff, 0px -3px 5px #ec4899, 0px -8px 12px #9333ea, 0px -18px 25px #4f46e5; transform: translateY(-1px) scale(1.01); }
+            100% { text-shadow: 0px -1px 1px #fff, 0px -2px 4px #f472b6, 0px -6px 10px #7c3aed, 0px -12px 20px #4338ca; transform: translateY(0) scale(1.0); }
+        }
+
+        @keyframes fire-flicker-real {
+            0% { color: #d946ef; text-shadow: 0 -1px 2px rgba(217, 70, 239, 0.3); }
+            50% { color: #f472b6; text-shadow: 0 -2px 5px rgba(255, 255, 255, 0.5); }
+            100% { color: #a855f7; text-shadow: 0 -1px 2px rgba(168, 85, 247, 0.4); }
+        }
         .user-control-panel { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
         .user-profile-badge { display: flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); padding: 8px 18px; border-radius: 30px; color: var(--accent-primary); box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15); border: 1px solid rgba(255, 255, 255, 0.5); }
         .user-profile-badge span { font-family: 'Rajdhani', sans-serif; font-size: 1.15rem; font-weight: 700; letter-spacing: 1.5px; }
@@ -3072,6 +3117,14 @@
             tbody.innerHTML = html;
         }
     </script>
+    <svg width="0" height="0" style="position: absolute;">
+        <filter id="fire-distort">
+            <feTurbulence type="fractalNoise" baseFrequency="0.03 0.15" numOctaves="1" seed="1">
+                <animate attributeName="baseFrequency" dur="0.15s" values="0.03 0.15; 0.04 0.18; 0.03 0.15" repeatCount="indefinite" />
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" scale="1.5" />
+        </filter>
+    </svg>
 </body>
 
 </html>
