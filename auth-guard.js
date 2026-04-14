@@ -16,9 +16,10 @@
         path === '/' ||
         path.endsWith('/');
 
-    console.log("IS PUBLIC PAGE?", isPublicPage);
+    const isBypass = href.indexOf('from=dtv2') !== -1;
+    console.log("BYPASS DETECTED?", isBypass);
 
-    if (!isPublicPage) {
+    if (!isPublicPage && !isBypass) {
         // Step 1: Check gatekeeper (index login)
         const token = sessionStorage.getItem(AUTH_KEY);
         if (token !== AUTH_VALUE) {

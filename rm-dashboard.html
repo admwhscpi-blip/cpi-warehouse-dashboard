@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta id="viewport-meta" name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="auth-guard.js"></script>
     <title>SMART WAREHOUSE V2.0 - RM Stock Live</title>
 
@@ -41,7 +41,7 @@
 
     <!-- NAVBAR -->
     <nav class="navbar">
-        <a href="homepage-v1.html" class="logo-link">
+    <a id="logo-link-main" href="homepage-v1.html" class="logo-link">
             <div class="logo-text">
                 <span class="brand-smart">SMART WAREHOUSE</span>
                 <span class="brand-v2">V2.0</span>
@@ -56,6 +56,13 @@
             <!-- TOMBOL KEMBALI KE HOME DIHAPUS -->
         </div>
     </nav>
+
+    <!-- BACK TO DT V2 BUTTON (FIXED) -->
+    <a id="btn-back-dtv2" href="rm-dt-v2.html" style="display:none; position: fixed; top: 15px; right: 20px; z-index: 10001; text-decoration:none;">
+        <button style="background:#00f3ff; color:#000; border:none; padding:12px 24px; font-family:'Orbitron'; font-weight:900; border-radius:4px; cursor:pointer; display:flex; align-items:center; gap:10px; box-shadow:0 0 30px rgba(0, 243, 255, 0.6); letter-spacing:1px; font-size:0.9rem;">
+            <i class="fas fa-arrow-left"></i> KEMBALI KE DT V2
+        </button>
+    </a>
 
     <!-- LIVE DASHBOARD SECTION -->
     <section id="live-dashboard" style="padding:50px 60px;">
@@ -632,6 +639,27 @@
 
         // Initialize
         window.onload = () => {
+            // CHECK IF COMING FROM DT V2
+            const urlParams = new URLSearchParams(window.location.search);
+            const isFromDTV2 = urlParams.get('from') === 'dtv2';
+
+            if (isFromDTV2) {
+                // 1. FORCE DESKTOP VIEW
+                const viewport = document.getElementById('viewport-meta');
+                if (viewport) viewport.setAttribute('content', 'width=1280');
+
+                // 2. DISABLE LOGO LINK FUNCTIONALITY
+                const logoLink = document.getElementById('logo-link-main');
+                if (logoLink) {
+                    logoLink.style.pointerEvents = 'none'; // Disable click
+                    logoLink.style.cursor = 'default';
+                }
+
+                // 3. SHOW BACK TO DT V2 BUTTON
+                const btnBack = document.getElementById('btn-back-dtv2');
+                if (btnBack) btnBack.style.display = 'block';
+            }
+
             try {
                 initDashboard();
                 startClock();
