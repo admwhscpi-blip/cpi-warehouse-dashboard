@@ -2268,7 +2268,7 @@
                 else dayMap[tgl].tidak++;
             });
 
-            const dates = Object.keys(dayMap).sort();
+            const dates = Object.keys(dayMap).sort().reverse();
             if (dates.length === 0) {
                 document.getElementById('leadtime-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-secondary);"><i class="fas fa-inbox" style="font-size:1.5rem; opacity:0.3;"></i><br>Tidak ada data</td></tr>`;
                 return;
