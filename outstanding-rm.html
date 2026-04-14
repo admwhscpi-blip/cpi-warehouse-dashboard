@@ -104,19 +104,10 @@
             }
         }
 
-        /* FULLSCREEN OPTIMIZATIONS */
-        :fullscreen .navbar {
-            display: none !important;
-        }
-
-        :fullscreen .live-tag {
-            position: absolute;
-            top: 20px;
-            left: 30px;
-            margin-bottom: 0;
-            z-index: 1200;
-            font-size: 1rem;
-        }
+        /* FULLSCREEN BASICS */
+        :fullscreen .navbar { display: none !important; }
+        :fullscreen .live-tag { position: absolute; top: 20px; left: 30px; margin-bottom: 0; z-index: 1200; font-size: 1rem; }
+        :fullscreen .fullscreen-btn-abs { display: block; }
 
         .btn-fullscreen {
             background: var(--neon-blue);
@@ -215,91 +206,47 @@
             font-size: 0.7rem;
         }
 
-        :fullscreen .fullscreen-btn-abs {
-            display: block;
-        }
+        /* FULLSCREEN LAYOUT SCALING (ONLY FOR DESKTOP/LARGE SCREENS) */
+        @media screen and (min-height: 600px) {
+            :fullscreen .outstanding-container {
+                padding: 80px 40px 20px 40px;
+                max-width: 100%;
+                height: 100vh;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+                box-sizing: border-box;
+            }
 
-        :fullscreen .outstanding-container {
-            padding: 60px 30px 20px 30px;
-            max-width: 100%;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            box-sizing: border-box;
-        }
+            :fullscreen .section-container {
+                margin-bottom: 0;
+                padding: 10px 20px;
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+                background: rgba(10, 10, 10, 0.95);
+            }
 
-        :fullscreen .section-container {
-            margin-bottom: 0;
-            padding: 10px 15px;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-            background: rgba(10, 10, 10, 0.95);
-            /* More solid to prevent overlap visibility */
-        }
+            :fullscreen .section-container:nth-of-type(1) { flex: 3; }
+            :fullscreen .section-container:nth-of-type(2),
+            :fullscreen .section-container:nth-of-type(3) { flex: 1.2; }
 
-        /* TIER WEIGHTS IN FULLSCREEN */
-        :fullscreen .section-container:nth-of-type(1) {
-            flex: 3;
-            /* Give table more space */
-        }
+            :fullscreen .table-aligned-container {
+                flex: 1;
+                overflow-y: auto !important;
+                border: 1px solid var(--glass-border);
+            }
 
-        :fullscreen .section-container:nth-of-type(2),
-        :fullscreen .section-container:nth-of-type(3) {
-            flex: 1.2;
-            /* Summary and Scope stay compact */
-        }
-
-        :fullscreen .table-aligned-container {
-            flex: 1;
-            overflow-y: auto !important;
-            border: 1px solid var(--glass-border);
-        }
-
-        :fullscreen .data-table-aligned thead th {
-            position: sticky;
-            top: 0;
-            background: #0a0a0a;
-            z-index: 10;
-        }
-
-        :fullscreen .data-table-aligned td,
-        :fullscreen .data-table-aligned th {
-            padding: 2px 10px;
-            /* Even more compact */
-            font-size: 0.7rem;
-        }
-
-        :fullscreen .page-title {
-            margin-bottom: 8px;
-            font-size: 0.8rem;
-        }
-
-        :fullscreen .summary-grid-v2 {
-            gap: 8px;
-        }
-
-        :fullscreen .val-big {
-            font-size: 1.6rem;
-        }
-
-        :fullscreen .sum-card {
-            min-height: 80px;
-            padding: 8px;
-        }
-
-        :fullscreen .scope-grid {
-            margin-top: 10px;
-            gap: 10px;
-            flex: 1;
-        }
-
-        :fullscreen .scope-block {
-            aspect-ratio: auto;
-            min-height: 0;
-            flex: 1;
+            :fullscreen .data-table-aligned thead th { position: sticky; top: 0; background: #0a0a0a; z-index: 10; }
+            :fullscreen .data-table-aligned td,
+            :fullscreen .data-table-aligned th { padding: 4px 12px; font-size: 0.75rem; }
+            :fullscreen .page-title { margin-bottom: 8px; font-size: 0.85rem; }
+            :fullscreen .summary-grid-v2 { gap: 10px; }
+            :fullscreen .val-big { font-size: 1.8rem; }
+            :fullscreen .sum-card { min-height: 90px; padding: 10px; }
+            :fullscreen .scope-grid { margin-top: 10px; gap: 12px; flex: 1; }
+            :fullscreen .scope-block { aspect-ratio: auto; min-height: 0; flex: 1; }
         }
 
         /* NAVBAR */
@@ -412,63 +359,7 @@
             gap: 15px;
         }
 
-        /* FULLSCREEN OPTIMIZATIONS */
-        :fullscreen .navbar {
-            display: none;
-        }
 
-        :fullscreen .outstanding-container {
-            padding: 100px 40px 20px 40px;
-            /* INCREASED PADDING TO PREVENT OVERLAP */
-            max-width: 100%;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        :fullscreen .section-container {
-            margin-bottom: 0;
-            padding: 10px 15px;
-            flex-shrink: 0;
-        }
-
-        :fullscreen .table-aligned-container {
-            max-height: none;
-            /* ALLOW ANY HEIGHT */
-            overflow: visible;
-        }
-
-        :fullscreen .data-table-aligned td,
-        :fullscreen .data-table-aligned th {
-            padding: 4px 10px;
-            /* COMPACT PADDING */
-            font-size: 0.75rem;
-        }
-
-        /* REMOVED ROW LIMITING AS REQUESTED */
-
-        :fullscreen .val-big {
-            font-size: 1.8rem;
-        }
-
-        :fullscreen .sum-card {
-            min-height: 90px;
-            padding: 10px;
-        }
-
-        :fullscreen .scope-block {
-            aspect-ratio: auto;
-            flex: 1;
-            min-height: 100px;
-        }
-
-        :fullscreen .scope-grid {
-            margin-top: 10px;
-            gap: 10px;
-            flex: 1;
-        }
 
         .sum-card {
             background: rgba(255, 255, 255, 0.03);
