@@ -203,7 +203,7 @@
         /* === NEW: MONTH FILTER BAR === */
         /* ============================== */
         .month-filter-bar {
-            display: flex; align-items: center; gap: 10px; margin-bottom: 24px;
+            display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 24px;
             padding: 14px 20px; background: var(--glass-bg); backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
             box-shadow: var(--shadow-md); flex-wrap: wrap;
@@ -946,9 +946,13 @@
                 grid-template-columns: 1fr !important; gap: 16px; 
             }
             
-            .month-filter-bar { padding: 10px 14px; gap: 8px; }
+            .month-filter-bar { padding: 12px; gap: 10px; justify-content: center; }
             .month-pill { padding: 5px 12px; font-size: 0.75rem; }
             
+            /* Toggle Group Mobile Optimization */
+            .view-toggle-group { width: 100%; justify-content: center; margin-top: 5px; }
+            .view-tab { flex: 1; padding: 10px 4px; font-size: 0.72rem; text-align: center; white-space: nowrap; }
+
             /* Table responsiveness */
             .leadtime-section { padding: 16px; overflow-x: auto; }
             .leadtime-table { min-width: 650px; }
@@ -1058,7 +1062,7 @@
         <main class="main-content" id="main-dashboard">
 
             <!-- ★ 1. MONTH FILTER & VIEW TOGGLE ★ -->
-            <div class="month-filter-bar" id="month-filter-bar" style="justify-content: space-between;">
+            <div class="month-filter-bar" id="month-filter-bar">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div class="filter-label"><i class="fas fa-calendar-alt"></i> FILTER BULAN</div>
                     <div id="month-pills" style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
