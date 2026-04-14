@@ -750,6 +750,13 @@
             </div>
         </a>
 
+        <!-- BACK BUTTON SPECIFIC FOR DT V2 -->
+        <a href="rm-dt-v2.html" id="btn-back-dtv2" style="display:none; text-decoration:none; margin-left:20px;">
+            <button style="background:rgba(255,255,255,0.1); border:1px solid var(--neon-blue); color:var(--neon-blue); padding:8px 15px; border-radius:4px; font-family:'Orbitron'; font-size:0.75rem; cursor:pointer; font-weight:700; transition:all 0.3s; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-arrow-left"></i> KEMBALI KE DT V2
+            </button>
+        </a>
+
         <div class="nav-links">
             <!-- MENU DIKOSONGKAN -->
         </div>
@@ -1270,6 +1277,13 @@
         function closeModal() { document.getElementById('detail-modal').style.display = 'none'; }
 
         window.onload = () => {
+            // Check if coming from DT V2
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('from') === 'dtv2') {
+                const btnBack = document.getElementById('btn-back-dtv2');
+                if (btnBack) btnBack.style.display = 'inline-block';
+            }
+
             try {
                 init();
             } catch (err) {
