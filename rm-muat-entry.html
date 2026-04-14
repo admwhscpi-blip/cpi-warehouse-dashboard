@@ -47,9 +47,9 @@
         /* --- SCI-FI HUD LOADER --- */
         #app-loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            z-index: 10000; display: flex; align-items: center; justify-content: center;
-            transition: opacity 0.6s ease, visibility 0.6s;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            z-index: 950; display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.3s ease, visibility 0.3s;
             visibility: hidden; opacity: 0;
             color: white;
         }
@@ -683,9 +683,8 @@
         function hideLoader() {
             updateHUD(100);
             if (loaderInterval) clearInterval(loaderInterval);
-            setTimeout(() => {
-                document.getElementById('app-loader').classList.remove('active');
-            }, 600);
+            // Langsung hilangkan tanpa jeda agar tidak menutupi popup error/sukses
+            document.getElementById('app-loader').classList.remove('active');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -931,6 +930,7 @@
 
             // Basic Validation
             if(!fields.gudang || !fields.nopol || !fields.material || !fields.jumlah_bag || !fields.bongkar_stapel || !fields.otw_pabrik) {
+                hideLoader();
                 Swal.fire('Data Belum Lengkap', 'Pastikan semua parameter muatan dan durasi telah terisi.', 'warning');
                 return;
             }
@@ -944,15 +944,16 @@
                     confirmButtonText: 'Ya, Simpan',
                     cancelButtonText: 'Lengkapi'
                 });
-                if(!confirm.isConfirmed) return;
+                if(!confirm.isConfirmed) {
+                    hideLoader();
+                    return;
+                }
             }
 
-            Swal.fire({
-                title: 'Menyimpan Data Muat...',
-                html: '<i class="fas fa-satellite fa-spin" style="font-size:3rem; color:var(--accent-primary); margin:20px 0;"></i>',
-                allowOutsideClick: false,
-                showConfirmButton: false
-            });
+            // Perbaikan: Hapus Swal spinner yang redundant agar tidak menumpuk di bawah loader HUD
+            // Serta gunakan AbortController untuk timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 detik timeout
 
             const scriptURL = 'https://script.google.com/macros/s/AKfycbzJZyOdP5PwNlZzJxlaUtcq8mwFAblDOxbi06F3t-6BjHLjDKTYo5gvV06EcnIpG4sG/exec';
             const payload = {
@@ -961,10 +962,17 @@
             };
 
             try {
+                // Perbaikan: Gunakan 'text/plain' untuk menghindari preflight OPTIONS yang sering diblokir CORS pada file lokal
                 const response = await fetch(scriptURL, { 
                     method: 'POST', 
-                    body: JSON.stringify(payload) 
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 const res = await response.json();
                 
                 if(res.success) {
@@ -972,10 +980,18 @@
                         window.location.reload();
                     });
                 } else {
+                    hideLoader();
                     Swal.fire('Gagal!', res.message || 'Terjadi kesalahan sistem.', 'error');
                 }
             } catch (e) {
-                Swal.fire('Koneksi Gagal', 'Data gagal dikirim ke server.', 'error');
+                clearTimeout(timeoutId);
+                hideLoader();
+                console.error("Submission Error:", e);
+                if (e.name === 'AbortError') {
+                    Swal.fire('Waktu Habis', 'Koneksi ke server terlalu lama. Silakan coba lagi.', 'error');
+                } else {
+                    Swal.fire('Koneksi Gagal', 'Data gagal dikirim ke server. Pastikan internet aktif atau coba jalankan dari server/GitHub.', 'error');
+                }
             }
         }
     </script>
