@@ -628,7 +628,7 @@
         <div class="loading-text-sub">SEDANG AMBIL DATA DARI SHEETS<br>(PASTIKAN JARINGAN LANCAR)</div>
     </div>
 
-    <button class="fullscreen-btn-nav-fixed" onclick="toggleFullscreen()"
+    <button id="btn-fullscreen-main" class="fullscreen-btn-nav-fixed" onclick="toggleFullscreen()"
         style="position: fixed; top: 15px; right: 20px; z-index: 10000; background: var(--neon-blue); color: #000; border: none; padding: 12px 24px; font-family: 'Orbitron'; font-weight: 900; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 10px; box-shadow: 0 0 30px rgba(0, 243, 255, 0.6); letter-spacing: 1px; font-size: 0.9rem;">
         <i class="fas fa-expand"></i> KLIK FULLSCREEN
     </button>
@@ -1171,9 +1171,32 @@
         window.onload = () => {
             // Check if coming from DT V2
             const urlParams = new URLSearchParams(window.location.search);
+            const btnFs = document.getElementById('btn-fullscreen-main');
+            const btnBack = document.getElementById('btn-back-dtv2');
+
             if (urlParams.get('from') === 'dtv2') {
-                const btnBack = document.getElementById('btn-back-dtv2');
-                if (btnBack) btnBack.style.display = 'inline-block';
+                // Hide Fullscreen button
+                if (btnFs) btnFs.style.display = 'none';
+                
+                // Show & Reposition Back button to the Top Right (Fixed)
+                if (btnBack) {
+                    btnBack.style.display = 'block';
+                    btnBack.style.position = 'fixed';
+                    btnBack.style.top = '15px';
+                    btnBack.style.right = '20px';
+                    btnBack.style.zIndex = '10000';
+                    btnBack.style.marginLeft = '0';
+                    
+                    // Make the internal button look more premium like the fullscreen one
+                    const innerBtn = btnBack.querySelector('button');
+                    if (innerBtn) {
+                        innerBtn.style.background = 'var(--neon-blue)';
+                        innerBtn.style.color = '#000';
+                        innerBtn.style.padding = '12px 24px';
+                        innerBtn.style.fontSize = '0.9rem';
+                        innerBtn.style.boxShadow = '0 0 30px rgba(0, 243, 255, 0.6)';
+                    }
+                }
             }
 
             try {
