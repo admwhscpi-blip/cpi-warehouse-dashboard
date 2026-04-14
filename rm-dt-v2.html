@@ -1129,10 +1129,11 @@
                     <div class="stat-value" id="stat-stapel" style="font-family:'Rajdhani'; font-weight:800;">- <span style="font-size: 1.2rem; color: var(--text-secondary);">KG</span></div>
                     <div class="stat-trend-p" id="stat-stapel-info"><i class="fas fa-info-circle"></i> Live Sync</div>
                 </div>
-                <div class="stat-card-premium tilt-card">
+                <div class="stat-card-premium tilt-card" onclick="showPalletAnalytics()" style="cursor:pointer;" title="Klik untuk rincian pergerakan pallet">
                     <div class="stat-label" style="font-family:'Rajdhani'; letter-spacing:1px;"><i class="fas fa-pallet" style="color:var(--success);"></i> PALLET STATUS</div>
                     <div class="stat-value success-text" id="stat-pallet" style="font-family:'Rajdhani'; font-weight:800;">- <span style="font-size: 1.2rem; color: var(--text-secondary);">PCS</span></div>
                     <div class="stat-trend-p" id="stat-pallet-info"><i class="fas fa-check-circle" style="color:var(--success);"></i> System Ready</div>
+                    <div class="card-hint" style="position:absolute; bottom:0; left:0; right:0; background:rgba(16, 185, 129, 0.05); padding:6px; text-align:center; font-size:0.7rem; font-weight:700; color:var(--success); border-top:1px dashed rgba(16, 185, 129, 0.2);"><i class="far fa-hand-pointer"></i> Klik Rincian Pergerakan</div>
                 </div>
             </div>
 
@@ -1357,14 +1358,14 @@
         </div>
     </div>
 
-    <!-- Overlay 6: Truck Timeline -->
-    <div class="analysis-overlay" id="overlay-truck-timeline" style="z-index: 5010;">
-        <div class="overlay-panel" style="max-width: 500px;">
+    <!-- Overlay 7: Pallet Movement Analytics -->
+    <div class="analysis-overlay" id="overlay-pallet-analytics">
+        <div class="overlay-panel" style="max-width: 900px;">
             <div class="overlay-header">
-                <h3 id="truck-timeline-title"><i class="fas fa-truck"></i> Timeline Truck</h3>
-                <button class="overlay-close" onclick="closeOverlay('overlay-truck-timeline')">&times;</button>
+                <h3><i class="fas fa-pallet" style="color:var(--success);"></i> Pergerakan Pallet Kosong (History)</h3>
+                <button class="overlay-close" onclick="closeOverlay('overlay-pallet-analytics')">&times;</button>
             </div>
-            <div class="overlay-body" id="truck-timeline-body" style="padding: 20px;"></div>
+            <div class="overlay-body" id="pallet-analytics-body"></div>
         </div>
     </div>
 
@@ -2391,6 +2392,161 @@
                 document.getElementById('stat-pallet').innerHTML = `${pk.toLocaleString()} <span style="font-size:1.2rem; color:var(--text-secondary);">PCS</span>`;
                 document.getElementById('stat-pallet-info').innerHTML = `<i class="fas fa-pallet" style="color:var(--success);"></i> Live Pallet Monitor`;
             }
+        }
+
+        // ===========================================
+        // === 14.5. PALLET MOVEMENT ANALYTICS ===
+        // ===========================================
+        function showPalletAnalytics() {
+            if (!stafelInfo || !stafelInfo.success || !stafelInfo.data) {
+                Swal.fire({ icon: 'error', title: 'Data Missing', text: 'Data staffel tidak tersedia atau gagal dimuat.', confirmButtonColor: '#ef4444' });
+                return;
+            }
+
+            const logs = stafelInfo.data.logs || [];
+            const stockAwal = stafelInfo.data.stockAwal || {};
+            let currentEnding = Number(stockAwal.PALLET_KOSONG) || 0;
+
+            // Group by date with robustness (Trim & UpperCase)
+            const dailyMove = {};
+            const logsByDate = {};
+
+            logs.forEach(log => {
+                const date = String(log.tanggal || '').trim();
+                if (!date || date === '-') return;
+
+                if (!dailyMove[date]) {
+                    dailyMove[date] = { badrun: 0, kartono: 0, kulhar: 0, total: 0 };
+                    logsByDate[date] = [];
+                }
+                
+                const pcs = Number(log.pcs) || 0;
+                const jenis = String(log.jenis || "").toUpperCase().trim();
+                // BONGKARAN = Pallet Keluar (-), STAPEL = Pallet Masuk (+)
+                const value = jenis === "BONGKARAN" ? -pcs : pcs;
+                
+                const tim = String(log.tim || "").toUpperCase().trim();
+                if (tim === "BADRUN") dailyMove[date].badrun += value;
+                else if (tim === "KARTONO") dailyMove[date].kartono += value;
+                else dailyMove[date].kulhar += value;
+                
+                dailyMove[date].total += value;
+                logsByDate[date].push(log);
+            });
+
+            // Sort dates ascending to calculate running total correctly from the base
+            const sortedDates = Object.keys(dailyMove).sort();
+            const tableRows = [];
+            
+            sortedDates.forEach(date => {
+                const start = currentEnding;
+                const move = dailyMove[date];
+                const ending = start + move.total;
+                
+                tableRows.push({
+                    tanggal: date,
+                    start: start,
+                    badrun: move.badrun,
+                    kartono: move.kartono,
+                    kulhar: move.kulhar,
+                    total: move.total,
+                    ending: ending,
+                    logs: logsByDate[date]
+                });
+                
+                currentEnding = ending; 
+            });
+
+            // Reverse to show newest on top in UI
+            tableRows.reverse();
+
+            let html = `
+                <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <div style="font-family:'Rajdhani'; font-weight:800; font-size:1.2rem; color:var(--text-primary); margin-bottom:4px;">REKAPITULASI MUTASI PALLET</div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary);"><i class="fas fa-info-circle"></i> Klik pada baris tanggal untuk melihat rincian transaksi</div>
+                    </div>
+                    <div style="background:var(--accent-light); border:1px solid var(--accent-primary); padding:8px 16px; border-radius:12px; text-align:right;">
+                        <div style="font-size:0.65rem; font-weight:700; color:var(--accent-primary); text-transform:uppercase;">Saldo Awal Sistem</div>
+                        <div style="font-family:'Orbitron'; font-weight:900; font-size:1.3rem; color:var(--accent-primary);">${Number(stockAwal.PALLET_KOSONG || 0).toLocaleString()}</div>
+                    </div>
+                </div>
+                <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border-color);">
+                    <table class="super-table" style="min-width:750px;">
+                        <thead>
+                            <tr style="background:#f8fafc;">
+                                <th style="text-align:center; width:130px;">TANGGAL</th>
+                                <th style="text-align:right;">STOCK AWAL</th>
+                                <th style="text-align:center; width:90px;">BADRUN</th>
+                                <th style="text-align:center; width:90px;">KARTONO</th>
+                                <th style="text-align:center; width:90px;">KULHAR</th>
+                                <th style="text-align:right; width:110px; background:rgba(16, 185, 129, 0.05);">ENDING</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            if (tableRows.length === 0) {
+                html += `<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-secondary); font-style:italic;">Belum ada data log pergerakan pallet.</td></tr>`;
+            }
+
+            tableRows.forEach((row, idx) => {
+                const fmt = (v) => {
+                    if (v === 0) return `<span style="color:#cbd5e1; font-weight:500;">0</span>`;
+                    const isPos = v > 0;
+                    return `<span style="color:${isPos ? '#10b981' : '#ef4444'}; font-weight:800; font-family:'Rajdhani'; font-size:1rem;">${isPos ? '+' : ''}${v.toLocaleString()}</span>`;
+                };
+
+                html += `
+                    <tr class="fade-in-item" style="animation-delay:${idx * 0.03}s; cursor:pointer;" onclick="togglePalletDetail('${row.tanggal}')">
+                        <td style="text-align:center;">
+                            <div style="font-family:'Rajdhani'; font-weight:700; color:var(--text-primary);">${row.tanggal}</div>
+                            <div style="font-size:0.6rem; color:var(--accent-primary); font-weight:700;"><i class="fas fa-chevron-down"></i> DETAIL</div>
+                        </td>
+                        <td style="text-align:right; font-family:'Rajdhani'; font-weight:600; font-size:1rem; color:var(--text-secondary);">${row.start.toLocaleString()}</td>
+                        <td style="text-align:center;">${fmt(row.badrun)}</td>
+                        <td style="text-align:center;">${fmt(row.kartono)}</td>
+                        <td style="text-align:center;">${fmt(row.kulhar)}</td>
+                        <td style="text-align:right; font-family:'Rajdhani'; font-weight:800; font-size:1.1rem; color:var(--success); background:rgba(16, 185, 129, 0.02);">${row.ending.toLocaleString()}</td>
+                    </tr>
+                    <tr id="p-detail-${row.tanggal}" style="display:none; background:#fdfdfd;">
+                        <td colspan="6" style="padding:15px 25px;">
+                            <div style="background:#fff; border:1px solid var(--border-color); border-radius:10px; overflow:hidden;">
+                                <table style="width:100%; font-size:0.75rem; border-collapse:collapse;">
+                                    <thead>
+                                        <tr style="background:#f1f5f9; color:var(--text-secondary); text-align:left;">
+                                            <th style="padding:6px 12px;">TIM</th>
+                                            <th style="padding:6px 12px;">JENIS</th>
+                                            <th style="padding:6px 12px; text-align:right;">PCS</th>
+                                            <th style="padding:6px 12px;">KRANI</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${row.logs.map(lg => `
+                                            <tr style="border-bottom:1px solid #f1f5f9;">
+                                                <td style="padding:6px 12px; font-weight:700; color:var(--text-primary);">${String(lg.tim || '').toUpperCase()}</td>
+                                                <td style="padding:6px 12px;"><span style="color:${String(lg.jenis).toUpperCase()==='BONGKARAN'?'#ef4444':'#10b981'}; font-weight:700;">${lg.jenis}</span></td>
+                                                <td style="padding:6px 12px; text-align:right; font-family:'Rajdhani'; font-weight:700;">${lg.pcs}</td>
+                                                <td style="padding:6px 12px; color:var(--text-secondary); font-size:0.7rem;">${lg.krani || '-'}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table></div>`;
+            
+            document.getElementById('pallet-analytics-body').innerHTML = html;
+            openOverlay('overlay-pallet-analytics');
+        }
+
+        function togglePalletDetail(date) {
+            const el = document.getElementById(`p-detail-${date}`);
+            if (el) el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
         }
 
         function animateVal(id, end, suffix) {
