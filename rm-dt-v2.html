@@ -962,9 +962,13 @@
             .overlay-panel { width: 96%; max-height: 92vh; border-radius: 16px; }
             .overlay-header { padding: 16px; }
             .overlay-body { padding: 16px; }
-            .heatmap-panel { overflow-x: auto; }
-            .heatmap-grid { min-width: 700px; }
-            .hm-filter-bar { flex-wrap: wrap; }
+            .heatmap-panel { padding: 16px; overflow-x: hidden; }
+            #heatmap-container { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 12px; margin-left: -5px; margin-right: -5px; }
+            .heatmap-grid { min-width: 800px; padding-right: 15px; }
+            .hm-filter-bar { flex-direction: column; width: 100%; align-items: stretch; gap: 8px; }
+            .hm-filter-select { width: 100%; }
+            .hm-summary-row { flex-direction: column; gap: 8px; }
+            .hm-legend { margin-top: 15px; }
         }
 
         /* ============================================ */
