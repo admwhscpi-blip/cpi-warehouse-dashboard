@@ -1533,14 +1533,9 @@
                 
                 if(ms) {
                     if(lastValidTime && ms < lastValidTime) {
-                        let nextDayMs = ms + (24 * 60 * 60 * 1000);
-                        if (nextDayMs >= lastValidTime && (nextDayMs - lastValidTime) <= (16 * 60 * 60 * 1000)) {
-                            ms = nextDayMs;
-                        } else {
-                            Swal.fire('Urutan Waktu Salah', `Waktu ${item.name} secara logika tidak wajar / terdeteksi mundur dari waktu ${lastValidName}.`, 'error');
-                            el.value = ""; 
-                            return; 
-                        }
+                        Swal.fire('Urutan Waktu Salah', `Waktu ${item.name} secara logika tidak wajar / terdeteksi mundur dari waktu ${lastValidName}. Pastikan urutan Tanggal dan Jam sudah benar.`, 'error');
+                        el.value = ""; 
+                        return; 
                     }
                     lastValidTime = ms;
                     lastValidName = item.name;
