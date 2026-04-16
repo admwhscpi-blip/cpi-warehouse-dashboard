@@ -962,6 +962,146 @@
             .overlay-panel { width: 96%; max-height: 92vh; border-radius: 16px; }
             .overlay-header { padding: 16px; }
             .overlay-body { padding: 16px; }
+            .heatmap-panel { overflow-x: auto; }
+            .heatmap-grid { min-width: 700px; }
+            .hm-filter-bar { flex-wrap: wrap; }
+        }
+
+        /* ============================================ */
+        /* === HEATMAP: ACTIVITY DENSITY CHART === */
+        /* ============================================ */
+        .heatmap-panel {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 24px;
+            box-shadow: var(--shadow-md); margin-bottom: 30px;
+            transition: all 0.3s ease; position: relative; overflow: hidden;
+        }
+        .heatmap-panel::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7, #d946ef);
+            border-radius: 16px 16px 0 0;
+        }
+        .heatmap-panel:hover { box-shadow: var(--shadow-lg); }
+        .hm-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px; padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 10px;
+        }
+        .hm-header h4 {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 700;
+            color: var(--text-primary); display: flex; align-items: center; gap: 10px;
+            letter-spacing: 0.5px;
+        }
+        .hm-header h4 i {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-size: 1.2rem;
+        }
+        .hm-filter-bar {
+            display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+        }
+        .hm-filter-select {
+            padding: 7px 14px; border-radius: 10px; border: 1.5px solid var(--border-color);
+            font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 600;
+            color: var(--text-primary); background: #fff; cursor: pointer;
+            outline: none; transition: all 0.25s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 8px center; background-size: 14px;
+            padding-right: 28px; min-width: 150px;
+        }
+        .hm-filter-select:hover { border-color: #8b5cf6; }
+        .hm-filter-select:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15); }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: 90px repeat(24, 1fr);
+            gap: 2px;
+            font-size: 0.65rem;
+        }
+        .hm-corner {
+            background: #0f172a; color: #94a3b8; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px 0 0 0; padding: 8px 4px;
+            font-family: 'Rajdhani', sans-serif; font-size: 0.7rem;
+            letter-spacing: 0.5px;
+        }
+        .hm-hour-header {
+            background: #0f172a; color: #cbd5e1; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            padding: 8px 2px; font-family: 'Rajdhani', sans-serif;
+            font-size: 0.72rem; letter-spacing: 0.3px;
+            transition: background 0.2s;
+        }
+        .hm-hour-header:last-child { border-radius: 0 8px 0 0; }
+        .hm-row-label {
+            background: #f8fafc; color: var(--text-primary); font-weight: 700;
+            display: flex; align-items: center; padding: 6px 10px;
+            font-family: 'Rajdhani', sans-serif; font-size: 0.78rem;
+            letter-spacing: 0.5px; border-right: 2px solid #e2e8f0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .hm-row-label:last-of-type { border-radius: 0 0 0 8px; }
+        .hm-cell {
+            display: flex; align-items: center; justify-content: center;
+            padding: 6px 2px; font-family: 'Rajdhani', sans-serif;
+            font-weight: 700; font-size: 0.72rem; color: rgba(0,0,0,0.5);
+            border-radius: 3px; transition: all 0.3s ease;
+            cursor: default; position: relative;
+            min-height: 32px;
+        }
+        .hm-cell:hover {
+            transform: scale(1.4); z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border-radius: 6px;
+        }
+        .hm-cell[data-val="0"] { background: #f1f5f9; color: transparent; }
+        .hm-cell.hm-l1 { background: #dbeafe; color: #1e40af; }
+        .hm-cell.hm-l2 { background: #93c5fd; color: #1e3a8a; }
+        .hm-cell.hm-l3 { background: #3b82f6; color: #fff; }
+        .hm-cell.hm-l4 { background: #1d4ed8; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .hm-cell.hm-l5 { background: linear-gradient(135deg, #7c3aed, #4f46e5); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.3); box-shadow: inset 0 0 8px rgba(255,255,255,0.15); }
+        .hm-cell.hm-l6 { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.3); box-shadow: inset 0 0 10px rgba(255,255,255,0.1); animation: hmGlow 2s infinite alternate; }
+
+        /* Sepi mode inverts: high = green (sepi), low = red (sibuk) */
+        .hm-cell.hm-sepi-0 { background: linear-gradient(135deg, #dc2626, #ef4444); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); animation: hmGlow 2s infinite alternate; }
+        .hm-cell.hm-sepi-1 { background: #fca5a5; color: #7f1d1d; }
+        .hm-cell.hm-sepi-2 { background: #fde68a; color: #78350f; }
+        .hm-cell.hm-sepi-3 { background: #bbf7d0; color: #14532d; }
+        .hm-cell.hm-sepi-4 { background: #86efac; color: #052e16; }
+        .hm-cell.hm-sepi-5 { background: linear-gradient(135deg, #10b981, #059669); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+
+        @keyframes hmGlow {
+            0% { box-shadow: inset 0 0 10px rgba(255,255,255,0.1), 0 0 5px rgba(220, 38, 38, 0.3); }
+            100% { box-shadow: inset 0 0 15px rgba(255,255,255,0.15), 0 0 12px rgba(220, 38, 38, 0.5); }
+        }
+
+        .hm-legend {
+            display: flex; align-items: center; gap: 6px; margin-top: 16px;
+            justify-content: flex-end; flex-wrap: wrap;
+        }
+        .hm-legend-label {
+            font-size: 0.68rem; color: var(--text-secondary); font-weight: 600;
+            margin-right: 4px;
+        }
+        .hm-legend-box {
+            width: 22px; height: 14px; border-radius: 3px;
+        }
+        .hm-legend-text {
+            font-size: 0.62rem; color: var(--text-secondary); font-weight: 600;
+        }
+        .hm-summary-row {
+            display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap;
+        }
+        .hm-summary-chip {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 10px;
+            background: #f8fafc; border: 1px solid var(--border-color);
+            font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
+        }
+        .hm-summary-chip strong {
+            font-family: 'Rajdhani', sans-serif; font-weight: 800;
+            font-size: 0.95rem; color: var(--text-primary);
         }
     </style>
 </head>
@@ -1127,6 +1267,28 @@
                         <h4><i class="fas fa-chart-bar" style="color:var(--purple);"></i> Trend Harian</h4>
                     </div>
                     <div style="position:relative; height:220px;"><canvas id="inapTrendChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- ★ HEATMAP: ACTIVITY DENSITY ★ -->
+            <div class="heatmap-panel" id="heatmap-panel">
+                <div class="hm-header">
+                    <h4><i class="fas fa-fire"></i> ACTIVITY DENSITY HEATMAP</h4>
+                    <div class="hm-filter-bar">
+                        <select class="hm-filter-select" id="hm-mode" onchange="renderHeatmap()">
+                            <option value="proses">🔧 Proses Bongkar</option>
+                            <option value="arrival">🚛 Truck Arrival</option>
+                            <option value="sepi">🌙 Jam Sepi Bongkar</option>
+                        </select>
+                        <select class="hm-filter-select" id="hm-material" onchange="renderHeatmap()">
+                            <option value="all">📦 Semua Material</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="heatmap-container">
+                    <div style="text-align:center; padding:40px; color:var(--text-secondary);">
+                        <div class="shimmer" style="height:20px; width:60%; margin:0 auto;"></div>
+                    </div>
                 </div>
             </div>
 
@@ -1305,9 +1467,10 @@
 
                 <!-- 2. Summary Analysis -->
                 <div id="pivot-summary-container" style="display:none; margin-bottom:24px;">
-                    <div class="pivot-summary-grid">
+                    <div class="pivot-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
                         <div class="pivot-summary-card" id="summary-sloc-body"></div>
                         <div class="pivot-summary-card" id="summary-gudang-body"></div>
+                        <div class="pivot-summary-card" id="summary-inap-body"></div>
                     </div>
                 </div>
 
@@ -1605,6 +1768,7 @@
                 renderMonthFilter();
                 processAndRenderInap();
                 renderLeadtimeTable();
+                renderHeatmap();
                 renderStats();
                 renderOpsChart();
                 renderCalendar();
@@ -1763,6 +1927,202 @@
             return valid.reduce((a, b) => a + b, 0) / valid.length;
         }
 
+        // ==============================================
+        // === HEATMAP: ACTIVITY DENSITY ENGINE ===
+        // ==============================================
+        function renderHeatmap() {
+            const container = document.getElementById('heatmap-container');
+            if (!container) return;
+            if (!hubData || !hubData.templateDump) {
+                container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-secondary);"><i class="fas fa-database"></i> Belum ada data</div>';
+                return;
+            }
+
+            const mode = document.getElementById('hm-mode').value;
+            const matFilter = document.getElementById('hm-material').value;
+
+            // Get bongkar rows filtered by month
+            let rows = getBongkarRows();
+            rows = filterBySelectedMonth(rows);
+
+            // Populate material filter dropdown (only once or on data change)
+            const matSelect = document.getElementById('hm-material');
+            const materials = [...new Set(rows.map(r => String(r.JENIS_RM || '').trim()).filter(Boolean))].sort();
+            const currentMatVal = matSelect.value;
+            // Only rebuild if options changed
+            if (matSelect.options.length !== materials.length + 1) {
+                let matHtml = '<option value="all">📦 Semua Material</option>';
+                materials.forEach(m => {
+                    matHtml += `<option value="${m}" ${currentMatVal === m ? 'selected' : ''}>${m}</option>`;
+                });
+                matSelect.innerHTML = matHtml;
+                if (currentMatVal && materials.includes(currentMatVal)) matSelect.value = currentMatVal;
+            }
+
+            // Apply material filter
+            if (matFilter !== 'all') {
+                rows = rows.filter(r => String(r.JENIS_RM || '').trim() === matFilter);
+            }
+
+            // Get unique gudang/SLOC values
+            const gudangSet = new Set();
+            rows.forEach(r => {
+                const g = String(r.LOKASI || '').trim().toUpperCase();
+                if (g && g !== '-' && g !== '') gudangSet.add(g);
+            });
+            const gudangList = [...gudangSet].sort();
+
+            if (gudangList.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-secondary);"><i class="fas fa-info-circle"></i> Tidak ada data gudang untuk filter ini</div>';
+                return;
+            }
+
+            // Build hour matrix: gudang → [0..23] = count
+            const matrix = {};
+            gudangList.forEach(g => { matrix[g] = new Array(24).fill(0); });
+
+            let totalEvents = 0;
+            let peakHour = 0, peakVal = 0;
+
+            rows.forEach(row => {
+                const gudang = String(row.LOKASI || '').trim().toUpperCase();
+                if (!gudang || gudang === '-' || !matrix[gudang]) return;
+
+                if (mode === 'arrival') {
+                    // Mode: Truck Arrival — count arrival hour
+                    const t = parseFlexTime(row.ARRIVAL_TIME);
+                    if (t) {
+                        matrix[gudang][t.h]++;
+                        totalEvents++;
+                    }
+                } else {
+                    // Mode: Proses Bongkar or Jam Sepi — count hours where bongkar is happening
+                    const pbDate = parseFlexDate(row.TANGGAL_PB || row.TANGGAL);
+                    const tStart = parseFlexTime(row.START_BONGKAR);
+                    const tFinish = parseFlexTime(row.FINISH_TIME);
+
+                    if (tStart && tFinish) {
+                        let hStart = tStart.h;
+                        let hFinish = tFinish.h;
+
+                        // If finish is before start, it wrapped past midnight
+                        if (hFinish < hStart) {
+                            // Mark from start to 23, then 0 to finish
+                            for (let h = hStart; h <= 23; h++) { matrix[gudang][h]++; totalEvents++; }
+                            for (let h = 0; h <= hFinish; h++) { matrix[gudang][h]++; totalEvents++; }
+                        } else {
+                            for (let h = hStart; h <= hFinish; h++) { matrix[gudang][h]++; totalEvents++; }
+                        }
+                    }
+                }
+            });
+
+            // Find global max for color scaling
+            let globalMax = 0;
+            const hourTotals = new Array(24).fill(0);
+            gudangList.forEach(g => {
+                for (let h = 0; h < 24; h++) {
+                    const v = matrix[g][h];
+                    if (v > globalMax) globalMax = v;
+                    hourTotals[h] += v;
+                }
+            });
+
+            // Find peak hour
+            hourTotals.forEach((v, h) => { if (v > peakVal) { peakVal = v; peakHour = h; } });
+
+            // Find quietest hour
+            let quietHour = 0, quietVal = Infinity;
+            hourTotals.forEach((v, h) => { if (v < quietVal) { quietVal = v; quietHour = h; } });
+
+            // Helper: get heat class
+            function getHeatClass(val, max, isSepi) {
+                if (max === 0) return isSepi ? 'hm-sepi-5' : '';
+                const pct = val / max;
+                if (isSepi) {
+                    // Invert: 0 activity = green (sepi/good), high activity = red
+                    if (val === 0) return 'hm-sepi-5';
+                    if (pct <= 0.15) return 'hm-sepi-4';
+                    if (pct <= 0.35) return 'hm-sepi-3';
+                    if (pct <= 0.55) return 'hm-sepi-2';
+                    if (pct <= 0.75) return 'hm-sepi-1';
+                    return 'hm-sepi-0';
+                } else {
+                    if (val === 0) return '';
+                    if (pct <= 0.15) return 'hm-l1';
+                    if (pct <= 0.30) return 'hm-l2';
+                    if (pct <= 0.50) return 'hm-l3';
+                    if (pct <= 0.70) return 'hm-l4';
+                    if (pct <= 0.85) return 'hm-l5';
+                    return 'hm-l6';
+                }
+            }
+
+            const isSepi = (mode === 'sepi');
+
+            // Build grid HTML
+            let html = '<div class="heatmap-grid">';
+
+            // Header row
+            html += '<div class="hm-corner">GUDANG</div>';
+            for (let h = 0; h < 24; h++) {
+                const label = String(h).padStart(2, '0');
+                const isHighlight = (!isSepi && h === peakHour) || (isSepi && h === quietHour);
+                html += `<div class="hm-hour-header" style="${isHighlight ? 'background:#4f46e5; color:#fff;' : ''}">${label}</div>`;
+            }
+
+            // Data rows
+            gudangList.forEach((g, idx) => {
+                html += `<div class="hm-row-label" style="${idx % 2 === 0 ? '' : 'background:#f1f5f9;'}">${g}</div>`;
+                for (let h = 0; h < 24; h++) {
+                    const val = matrix[g][h];
+                    const cls = getHeatClass(val, globalMax, isSepi);
+                    const displayVal = val > 0 ? val : '';
+                    const tooltipText = `${g} | Jam ${String(h).padStart(2,'0')}:00 → ${val} truck`;
+                    html += `<div class="hm-cell ${cls}" data-val="${val}" title="${tooltipText}">${displayVal}</div>`;
+                }
+            });
+
+            html += '</div>';
+
+            // Legend
+            if (isSepi) {
+                html += `<div class="hm-legend">
+                    <span class="hm-legend-label">PADAT</span>
+                    <div class="hm-legend-box" style="background:linear-gradient(135deg,#dc2626,#ef4444);"></div>
+                    <div class="hm-legend-box" style="background:#fca5a5;"></div>
+                    <div class="hm-legend-box" style="background:#fde68a;"></div>
+                    <div class="hm-legend-box" style="background:#bbf7d0;"></div>
+                    <div class="hm-legend-box" style="background:#86efac;"></div>
+                    <div class="hm-legend-box" style="background:linear-gradient(135deg,#10b981,#059669);"></div>
+                    <span class="hm-legend-label">SEPI</span>
+                </div>`;
+            } else {
+                html += `<div class="hm-legend">
+                    <span class="hm-legend-label">RENDAH</span>
+                    <div class="hm-legend-box" style="background:#f1f5f9;"></div>
+                    <div class="hm-legend-box" style="background:#dbeafe;"></div>
+                    <div class="hm-legend-box" style="background:#93c5fd;"></div>
+                    <div class="hm-legend-box" style="background:#3b82f6;"></div>
+                    <div class="hm-legend-box" style="background:#1d4ed8;"></div>
+                    <div class="hm-legend-box" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);"></div>
+                    <div class="hm-legend-box" style="background:linear-gradient(135deg,#dc2626,#b91c1c);"></div>
+                    <span class="hm-legend-label">TINGGI</span>
+                </div>`;
+            }
+
+            // Summary chips
+            const modeLabel = mode === 'arrival' ? 'Arrival' : mode === 'sepi' ? 'Aktivitas Bongkar' : 'Proses Bongkar';
+            html += `<div class="hm-summary-row">
+                <div class="hm-summary-chip"><i class="fas fa-warehouse" style="color:var(--accent-primary);"></i> Gudang: <strong>${gudangList.length}</strong></div>
+                <div class="hm-summary-chip"><i class="fas fa-truck" style="color:var(--warning);"></i> Total Event: <strong>${totalEvents}</strong></div>
+                <div class="hm-summary-chip"><i class="fas fa-fire" style="color:#ef4444;"></i> Jam Paling Padat: <strong>${String(peakHour).padStart(2,'0')}:00</strong> (${peakVal} ${modeLabel})</div>
+                <div class="hm-summary-chip"><i class="fas fa-moon" style="color:#8b5cf6;"></i> Jam Paling Sepi: <strong>${String(quietHour).padStart(2,'0')}:00</strong> (${quietVal} ${modeLabel})</div>
+            </div>`;
+
+            container.innerHTML = html;
+        }
+
         // =====================================
         // === 7. MONTH FILTER RENDERING ===
         // =====================================
@@ -1796,6 +2156,7 @@
             selectedMonth = val;
             processAndRenderInap();
             renderLeadtimeTable();
+            renderHeatmap();
             // Also update traditional components
             renderOpsChart();
             renderCalendar();
@@ -3063,6 +3424,8 @@
         function renderPivotSummary(rows) {
             const slocMap = {}, gudangMap = {};
             let grandTotal = 0;
+            let inapCount = 0;
+            let tidakInapCount = 0;
 
             rows.forEach(r => {
                 const s = String(r.LOKASI || 'LAIN-LAIN').trim().toUpperCase();
@@ -3072,6 +3435,13 @@
                 slocMap[s] = (slocMap[s] || 0) + v;
                 gudangMap[g] = (gudangMap[g] || 0) + v;
                 grandTotal += v;
+
+                const inapData = computeInapForRow(r);
+                if (inapData.isInap) {
+                    inapCount++;
+                } else {
+                    tidakInapCount++;
+                }
             });
 
             const buildContent = (title, icon, map, color) => {
@@ -3085,6 +3455,19 @@
 
             document.getElementById('summary-sloc-body').innerHTML = buildContent('RINGKASAN PER LOKASI', 'fas fa-warehouse', slocMap, '#0284c7');
             document.getElementById('summary-gudang-body').innerHTML = buildContent('RINGKASAN PER GUDANG', 'fas fa-box', gudangMap, '#f59e0b');
+
+            // --- Custom Inap Summary ---
+            const totalTrucks = inapCount + tidakInapCount;
+            const inapPct = totalTrucks > 0 ? ((inapCount / totalTrucks) * 100).toFixed(1) : 0;
+            const tidakInapPct = totalTrucks > 0 ? ((tidakInapCount / totalTrucks) * 100).toFixed(1) : 0;
+
+            let inaph = `<h4><i class="fas fa-moon" style="color:#ef4444;"></i> STATUS INAP</h4>`;
+            
+            inaph += `<div class="pivot-summary-item" style="border-left: 4px solid #10b981; padding-left:10px;"><span class="pivot-summary-label">TIDAK INAP (< 24 JAM)</span><span class="pivot-summary-val" style="color:#10b981;">${tidakInapCount} <span style="font-size:0.7rem; color:var(--text-secondary);">(${tidakInapPct}%)</span></span></div>`;
+            inaph += `<div class="pivot-summary-item" style="border-left: 4px solid #ef4444; padding-left:10px;"><span class="pivot-summary-label">TRUCK INAP (> 24 JAM)</span><span class="pivot-summary-val" style="color:#ef4444;">${inapCount} <span style="font-size:0.7rem; color:var(--text-secondary);">(${inapPct}%)</span></span></div>`;
+            inaph += `<div class="pivot-summary-ftr"><span>TOTAL TRUCK</span><span>${totalTrucks.toLocaleString('id-ID')}</span></div>`;
+
+            document.getElementById('summary-inap-body').innerHTML = inaph;
         }
 
         function renderPivotTable(rows) {
