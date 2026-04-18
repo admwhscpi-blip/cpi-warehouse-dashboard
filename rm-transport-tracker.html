@@ -487,22 +487,37 @@
             
             initEmptyMap(); // Initialize map canvas first
 
+            let validSavedFound = false;
             if (saved) {
-                config = JSON.parse(saved);
-                
-                // Verify if config actually has valid inputs
-                if (config && config.warehouses && config.warehouses.length > 0 && config.truck1.nopol) {
-                    // Valid config found, start APP
-                    document.getElementById('emptyStateOverlay').style.display = 'none';
-                    
-                    renderMapFromConfig();
-                    fetchData();
-                    return;
+                let parsed = JSON.parse(saved);
+                if (parsed && parsed.warehouses && parsed.warehouses.length > 0 && (parsed.truck1.nopol || parsed.truck2.nopol)) {
+                    config = parsed;
+                    validSavedFound = true;
                 }
             }
 
-            // If invalid or empty, show Empty State Overlay
-            document.getElementById('emptyStateOverlay').style.display = 'flex';
+            // JIKA TIDAK ADA PENYIMPANAN (Misal buka pertama kali di Github) -> PAKAI DEFAULT INI
+            if (!validSavedFound) {
+                config = {
+                    truck1: { 
+                        nopol: "E 9884 F", 
+                        link: "https://hk.tracksolidpro.com//api/share?ver=2&method=trackDevice_abr&deviceinfo=7ae7c62385f2067f2e4e97f9539451d85d38a1abe7b9c4ba1dc8f2183ca08dbb97fa76ba5c81e8196c70f9907cfdcc3adfdb84e92c1c7dfad08e0460c5edd13ae3e69384bc675234&deviceName=E"
+                    },
+                    truck2: { 
+                        nopol: "E 9950 AB", 
+                        link: ""
+                    },
+                    warehouses: [
+                        { name: "Samping", lat: -6.757041, lng: 108.551845, radius: 0.015 },
+                        { name: "Gebang", lat: -6.790666, lng: 108.635639, radius: 0.015 }
+                    ]
+                };
+            }
+
+            // Langsung masuk ke Dashboard Utama, bypass Empty State
+            document.getElementById('emptyStateOverlay').style.display = 'none';
+            renderMapFromConfig();
+            fetchData();
         }
 
         function renderMapFromConfig() {
