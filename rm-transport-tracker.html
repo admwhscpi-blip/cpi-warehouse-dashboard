@@ -3,614 +3,893 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMART WAREHOUSE V2.0 - LIVE FLEET TRACKING</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SMART FLEET TRACKER</title>
 
     <!-- FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- LEAFLET MAPS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
-        /* INJECTED HOMEPAGE HEADER STYLES */
-        .navbar-brand-area {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        :root {
+            --primary: #2563eb;    /* Soft Blue */
+            --accent: #10b981;     /* Emerald Green */
+            --danger: #ef4444;     /* Red */
+            --warning: #f59e0b;    /* Orange */
+            --bg-color: #f8fafc;   /* Slate 50 */
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-light: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
         }
 
-        .logo-link {
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden; /* App like */
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        /* MAP CONTAINER */
+        #realMap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Base layer */
+            background: #e5e5e5; /* Fallback before tile loads */
+        }
+
+        /* FLOATING HEADER */
+        .glass-header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.8);
+            border-radius: 100px; /* Pill shape */
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: var(--shadow-md);
+        }
+
+        .logo-wrap {
+            display: flex;
+            flex-direction: column;
             text-decoration: none;
-            transition: transform 0.3s ease;
-            display: flex;
-            align-items: center;
+        }
+        
+        .logo-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            letter-spacing: -0.3px;
         }
 
-        .logo-link:hover {
+        .logo-subtitle {
+            font-size: 0.65rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            background: #f1f5f9;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: 0.2s;
+            font-size: 16px;
+            color: var(--text-main);
+        }
+        
+        .icon-btn:hover {
+            background: var(--border-light);
             transform: scale(1.05);
         }
 
-        .logo-text {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 1.2rem;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            animation: cyber-glow 4s infinite alternate;
-        }
-
-        .brand-smart {
-            background: linear-gradient(90deg, #00f3ff, #3b82f6, #00f3ff, #8b5cf6);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: fire-move 2s linear infinite, blue-glow 1.5s ease-in-out infinite alternate;
-            font-weight: 950;
-            filter: drop-shadow(0 0 10px rgba(0, 243, 255, 0.3));
-        }
-
-        .brand-v2 {
-            background: #ffffff;
-            color: #000;
-            font-size: 0.65rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 900;
-            letter-spacing: 1px;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-        }
-
-        @keyframes blue-glow {
-
-            0%,
-            100% {
-                text-shadow: 0 0 15px rgba(0, 243, 255, 0.6), 0 0 25px rgba(59, 130, 246, 0.4);
-            }
-
-            50% {
-                text-shadow: 0 0 25px rgba(0, 243, 255, 0.9), 0 0 45px rgba(59, 130, 246, 0.7);
-            }
-        }
-
-        @keyframes fire-move {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
-        }
-
-        @keyframes cyber-glow {
-            0% {
-                text-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
-                filter: brightness(1);
-            }
-
-            50% {
-                text-shadow: 0 0 15px rgba(34, 211, 238, 0.6);
-                filter: brightness(1.2);
-            }
-
-            100% {
-                text-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
-                filter: brightness(1);
-            }
-        }
-
-        /* REST OF TRACKER STYLES */
-        :root {
-            --primary: #ffd700;
-            --accent: #3b82f6;
-            --danger: #ef4444;
-            --success: #00ff9d;
-            --dark-bg: #02040a;
-            --glass-bg: rgba(15, 23, 42, 0.9);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --panel-bg: rgba(5, 10, 20, 0.95);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background-color: var(--dark-bg);
-            color: #fff;
-            font-family: 'Rajdhani', sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* HEADER IDENTICAL TO HOMEPAGE */
-        .tracker-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 30px;
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            height: 70px;
-            z-index: 100;
-        }
-
-        .live-badge {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
-            border: 1px solid var(--danger);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.6rem;
-            animation: pulse 1.5s infinite;
-        }
-
-        /* MAIN LAYOUT */
-        .main-container {
-            display: flex;
-            flex-direction: column;
-            height: calc(100vh - 70px);
-        }
-
-        /* TOP: MAPS (60%) */
-        .map-section {
-            height: 60%;
-            display: flex;
-            border-bottom: 2px solid var(--primary);
-            position: relative;
-        }
-
-        .map-wrapper {
-            flex: 1;
-            position: relative;
-            background: #111;
-            border-right: 1px solid #333;
-        }
-
-        .map-wrapper:last-child {
-            border-right: none;
-        }
-
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            opacity: 0.9;
-            /* Slightly darker */
-        }
-
-        .map-label {
+        /* EMPTY STATE OVERLAY */
+        #emptyStateOverlay {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            padding: 5px 15px;
-            font-family: 'Orbitron';
-            font-size: 0.8rem;
-            border-radius: 4px;
-            z-index: 10;
-        }
-
-        /* BOTTOM: TELEMETRY (40%) */
-        .telemetry-section {
-            height: 40%;
-            background: var(--panel-bg);
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            /* Split for 2 trucks */
-            gap: 20px;
-            padding: 20px;
-            position: relative;
-        }
-
-        /* BACKGROUND GRID EFFECT FOR PANEL */
-        .telemetry-section::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(0, 255, 157, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 255, 157, 0.03) 1px, transparent 1px);
-            background-size: 30px 30px;
-            opacity: 0.5;
-            pointer-events: none;
-        }
-
-        .truck-panel {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            padding: 15px;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(248, 250, 252, 0.92);
+            backdrop-filter: blur(5px);
+            z-index: 200;
             display: flex;
             flex-direction: column;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .truck-panel.active-panel {
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
-        }
-
-        .tp-header {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-
-        .tp-title {
-            font-family: 'Orbitron';
-            font-size: 1.2rem;
-            color: #fff;
-        }
-
-        .tp-status {
-            font-family: 'Orbitron';
-            font-size: 0.9rem;
-            color: var(--success);
-            padding: 2px 8px;
-            border: 1px solid var(--success);
-            border-radius: 4px;
-        }
-
-        .tp-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 15px;
-            flex-grow: 1;
-        }
-
-        .stat-box {
-            background: rgba(0, 0, 0, 0.3);
-            border-left: 2px solid #555;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
+            align-items: center;
             justify-content: center;
+            padding: 20px;
+            text-align: center;
         }
 
-        .stat-label {
-            color: #94a3b8;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
+        .welcome-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
         }
 
-        .stat-value {
-            font-family: 'Orbitron';
-            font-size: 1.1rem;
-            color: #fff;
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
 
-        .stat-value.highlight {
-            color: var(--primary);
-            font-size: 1.3rem;
+        .welcome-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--text-main);
         }
 
-        /* LOG SCROLLER */
-        .log-box {
-            font-family: 'Courier New', monospace;
-            font-size: 0.7rem;
-            color: #ccc;
-            height: 40px;
-            overflow: hidden;
-            margin-top: 10px;
-            border-top: 1px dashed #333;
-            padding-top: 5px;
-            opacity: 0.7;
+        .welcome-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            max-width: 320px;
         }
 
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.3;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
-
-        /* REFRESH BUTTON */
-        .refresh-btn {
-            position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
+        .btn-primary {
             background: var(--primary);
-            color: #000;
+            color: #fff;
             border: none;
-            padding: 8px 30px;
-            border-radius: 20px;
+            padding: 14px 40px;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 1rem;
             cursor: pointer;
-            font-weight: bold;
-            font-family: 'Orbitron';
-            box-shadow: 0 0 15px var(--primary);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2);
             transition: 0.3s;
-            z-index: 50;
         }
 
-        .refresh-btn:hover {
-            box-shadow: 0 0 25px var(--primary);
-            transform: translateX(-50%) scale(1.1);
+        .btn-primary:active {
+            transform: scale(0.95);
         }
+        
+        .btn-primary:hover {
+            box-shadow: 0 12px 25px rgba(37, 99, 235, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* MODAL SETTINGS */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 450px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-btn {
+            background: var(--bg-color);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .close-btn:hover { background: var(--border-light); }
+
+        /* TABS */
+        .tabs-wrapper {
+            display: flex;
+            background: var(--bg-color);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+
+        .tab-btn.active {
+            background: #fff;
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .config-tab { display: none; }
+        .config-tab.active-tab { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* FORM */
+        .form-group { margin-bottom: 16px; }
+
+        .form-label {
+            display: block;
+            color: var(--text-main);
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .form-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .form-input {
+            width: 100%;
+            background: #fff;
+            border: 1px solid var(--border-light);
+            color: var(--text-main);
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: border 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 1px dashed var(--primary);
+            padding: 10px 15px;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .btn-outline:hover {
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .row-action {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        /* CUSTOM LEAFLET TOOLTIP */
+        .tooltip-light {
+            background: #fff;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            color: var(--text-main);
+            padding: 6px 10px;
+        }
+        .leaflet-tooltip-left.tooltip-light::before { border-left-color: #fff; }
+        .leaflet-tooltip-right.tooltip-light::before { border-right-color: #fff; }
+        .leaflet-tooltip-top.tooltip-light::before { border-top-color: #fff; }
+        .leaflet-tooltip-bottom.tooltip-light::before { border-bottom-color: #fff; }
+
     </style>
 </head>
 
 <body>
 
-    <header class="tracker-header">
-        <!-- EXACT HOMEPAGE HEADER START -->
-        <a href="homepage-v1.html" class="logo-link">
-            <div class="logo-text">
-                <span class="brand-smart">SMART WAREHOUSE</span>
-                <span class="brand-v2">V2.0</span>
-            </div>
+    <!-- MAP CONTAINER -->
+    <div id="realMap"></div>
+
+    <!-- TOP BAR -->
+    <header class="glass-header">
+        <a href="homepage-v1.html" class="logo-wrap">
+            <span class="logo-title">Fleet Tracker</span>
+            <span class="logo-subtitle">LIVE MONITORING</span>
         </a>
-        <!-- EXACT HOMEPAGE HEADER END -->
-
-        <!-- PAGE TITLE (Visual Only) -->
-        <div style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center;">
-            <div
-                style="font-family:'Orbitron'; font-size:1rem; color:#fff; letter-spacing:3px; display: flex; align-items: center; gap: 10px;">
-                <span class="live-badge">LIVE</span> SATELLITE COMMAND
-            </div>
-        </div>
-
-        <!-- RIGHT END -->
-        <div style="display:flex; gap:15px; align-items:center;">
-            <div id="sys-status" style="font-size:0.7rem; color:var(--success); font-family:monospace;">SYSTEM ONLINE
-            </div>
+        <div class="action-btns">
+            <button class="icon-btn" onclick="manualRefresh()" title="Refresh Data">🔄</button>
+            <button class="icon-btn" onclick="openConfigModal()" title="Settings">⚙️</button>
         </div>
     </header>
 
-    <div class="main-container">
+    <!-- EMPTY STATE OVERLAY -->
+    <div id="emptyStateOverlay">
+        <div class="welcome-icon">🗺️</div>
+        <div class="welcome-title">Welcome to Fleet Tracker</div>
+        <p class="welcome-text">Map area and telemetry fields are empty. Start configuring your warehouse locations and truck IDs to begin live operational monitoring.</p>
+        <button class="btn-primary" onclick="openConfigModal()">START SETUP</button>
+    </div>
 
-        <!-- MAPS -->
-        <div class="map-section">
-            <div class="map-wrapper">
-                <div class="map-label">E 9844 F</div>
-                <iframe id="frame1"
-                    src="https://hk.tracksolidpro.com//api/share?ver=2&method=trackDevice_abr&deviceinfo=7ae7c62385f2067f2e4e97f9539451d85d38a1abe7b9c4ba1dc8f2183ca08dbb97fa76ba5c81e81945de9e8051908cc64e472e8bf1340e93d08e0460c5edd13ae3e69384bc675234&deviceName=E%209844%20F&deviceIMEI=353701098813864"></iframe>
-            </div>
-            <div class="map-wrapper">
-                <div class="map-label" style="border-color: var(--accent); color: var(--accent);">E 9950 AB</div>
-                <iframe id="frame2"
-                    src="https://hk.tracksolidpro.com//api/share?ver=2&method=trackDevice_abr&deviceinfo=7ae7c62385f2067ff4dcc02fafabd8c54e13833378f363ed1dc8f2183ca08dbb97fa76ba5c81e819aae1a17eaa4ef6c6026b338d95b62d7dd08e0460c5edd13ae3e69384bc675234&deviceName=E%209950%20AB&deviceIMEI=356153593415752"></iframe>
-            </div>
-
-            <button class="refresh-btn" onclick="manualRefresh()">REFRESH DATA</button>
-        </div>
-
-        <!-- TELEMETRY -->
-        <div class="telemetry-section">
-
-            <!-- TRUCK 1 -->
-            <div class="truck-panel active-panel" id="panel-9844">
-                <div class="tp-header">
-                    <div class="tp-title">E 9844 F</div>
-                    <div class="tp-status" id="status-txt-9844">SCANNING</div>
-                </div>
-                <div class="tp-grid">
-                    <div class="stat-box" style="border-left-color: var(--primary);">
-                        <div class="stat-label">CURRENT ZONE</div>
-                        <div class="stat-value" id="zone-9844" style="font-size:0.9rem;">DETECTING...</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">SPEED</div>
-                        <div class="stat-value highlight" id="speed-9844">0 <span style="font-size:0.8rem;">KM/H</span>
-                        </div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">IDLE DURATION</div>
-                        <div class="stat-value" id="idle-9844">0 <span style="font-size:0.8rem;">MIN</span></div>
-                    </div>
-                </div>
-                <div class="log-box" id="log-9844">
-                    > Initialize connection...<br>
-                    > Waiting for satellite handshake...
-                </div>
+    <!-- CONFIG MODAL -->
+    <div class="modal-overlay" id="configModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="font-weight: 700; font-size: 1.2rem;">Tracking Setup</h3>
+                <button class="close-btn" onclick="closeConfigModal()">&times;</button>
             </div>
 
-            <!-- TRUCK 2 -->
-            <div class="truck-panel active-panel" style="border-color: var(--accent);" id="panel-9950">
-                <div class="tp-header">
-                    <div class="tp-title">E 9950 AB</div>
-                    <div class="tp-status" style="border-color: var(--accent); color: var(--accent);"
-                        id="status-txt-9950">SCANNING</div>
+            <div class="tabs-wrapper">
+                <button class="tab-btn active" id="btn-tab-gudang" onclick="switchTab('tab-gudang')">Map Bounds</button>
+                <button class="tab-btn" id="btn-tab-armada" onclick="switchTab('tab-armada')">Fleet Entry</button>
+            </div>
+            
+            <!-- TAB 1 -->
+            <div id="tab-gudang" class="config-tab active-tab">
+                <div class="form-desc">Define your warehouse bounds. The map camera will automatically fit these locations from edge to edge.</div>
+                
+                <div id="warehouseInputs">
+                    <!-- Dynamic -->
                 </div>
-                <div class="tp-grid">
-                    <div class="stat-box" style="border-left-color: var(--accent);">
-                        <div class="stat-label">CURRENT ZONE</div>
-                        <div class="stat-value" id="zone-9950" style="font-size:0.9rem;">DETECTING...</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">SPEED</div>
-                        <div class="stat-value highlight" style="color:var(--accent);" id="speed-9950">0 <span
-                                style="font-size:0.8rem;">KM/H</span></div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-label">IDLE DURATION</div>
-                        <div class="stat-value" id="idle-9950">0 <span style="font-size:0.8rem;">MIN</span></div>
+                <button type="button" class="btn-outline" style="margin-top:5px; margin-bottom:20px;" onclick="addWarehouseRow('', '')">+ Add Entry</button>
+            </div>
+
+            <!-- TAB 2 -->
+            <div id="tab-armada" class="config-tab">
+                <div class="form-desc">Enter the vehicle license plates to track their movements between the bounded warehouses.</div>
+                
+                <div style="background: #f8fafc; padding:15px; border-radius:12px; margin-bottom:15px; border: 1px solid var(--border-light);">
+                    <div style="font-weight:600; font-size:0.8rem; margin-bottom:10px;">SLOT 1</div>
+                    <div class="form-group">
+                        <label class="form-label">Nomor Polisi (Nopol)</label>
+                        <input type="text" class="form-input" id="nopol1" placeholder="Ex: E 9844 F">
+                        <label class="form-label" style="margin-top:10px;">Link GPS / API (Tracksolid dll)</label>
+                        <input type="text" class="form-input" id="link1" placeholder="https://...">
                     </div>
                 </div>
-                <div class="log-box" id="log-9950">
-                    > Initialize connection...<br>
-                    > Waiting for satellite handshake...
+
+                <div style="background: #f8fafc; padding:15px; border-radius:12px; margin-bottom:15px; border: 1px solid var(--border-light);">
+                    <div style="font-weight:600; font-size:0.8rem; margin-bottom:10px;">SLOT 2</div>
+                    <div class="form-group">
+                        <label class="form-label">Nomor Polisi (Nopol)</label>
+                        <input type="text" class="form-input" id="nopol2" placeholder="Ex: E 9950 AB">
+                        <label class="form-label" style="margin-top:10px;">Link GPS / API (Tracksolid dll)</label>
+                        <input type="text" class="form-input" id="link2" placeholder="https://...">
+                    </div>
                 </div>
             </div>
 
+            <button class="btn-primary" style="width: 100%;" onclick="saveConfig()">Save Settings & Init Map</button>
         </div>
     </div>
 
+    <!-- SCRIPTS -->
     <script>
-        // API URL (Your Fixed GAS Deployment)
         const API_URL = 'https://script.google.com/macros/s/AKfycbyxleUnKP0EqTSXDOTvR9FtfIQwj3EGOvLxNkwBvH9ELcIwmLQNmHkSRwftvgAYS7hl/exec';
 
-        // GEOFENCE ZONES (Approximate Cirebon Plant Areas for Demo)
-        const ZONES = [
-            { name: "GUDANG GEBANG", lat: -6.8120, lng: 108.6250, radius: 0.01 }, // Example
-            { name: "GUDANG SAMPING", lat: -6.8200, lng: 108.6300, radius: 0.01 },
-            { name: "PORT CIREBON", lat: -6.7115, lng: 108.5750, radius: 0.02 },
-            { name: "PABRIK INDOCEMENT", lat: -6.7200, lng: 108.5200, radius: 0.02 }
-        ];
+        // Set to null originally for Empty State trigger
+        let config = null;
+
+        let myMap = null;
+        let warehouseMarkers = [];
+        let truckMarkers = {};
 
         // STATE MANAGEMENT
         const STATE = {
-            'E9844F': { lastMove: Date.now(), isMoving: false },
-            'E9950AB': { lastMove: Date.now(), isMoving: false }
+            'truck1': { lastMove: Date.now(), isMoving: false },
+            'truck2': { lastMove: Date.now(), isMoving: false }
         };
 
-        function manualRefresh() {
-            document.getElementById('frame1').src = document.getElementById('frame1').src;
-            document.getElementById('frame2').src = document.getElementById('frame2').src;
-            fetchData();
+        function switchTab(tabId) {
+            document.querySelectorAll('.config-tab').forEach(t => t.classList.remove('active-tab'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active-tab');
+            document.getElementById('btn-' + tabId).classList.add('active');
         }
 
-        async function fetchData() {
-            try {
-                // Try Fetch GPS Data
-                const response = await fetch(API_URL + '?action=getGPS');
-                const data = await response.json();
+        function addWarehouseRow(nameStr, coordStr) {
+            const container = document.getElementById('warehouseInputs');
+            const row = document.createElement('div');
+            row.className = 'row-action';
+            row.innerHTML = `
+                <input type="text" class="form-input wh-name" placeholder="Name" value="${nameStr}" style="flex:1;">
+                <input type="text" class="form-input wh-coord" placeholder="Lat, Lng" value="${coordStr}" style="flex:1.5;">
+                <button type="button" class="close-btn" style="color:var(--danger); background:none;" onclick="this.parentElement.remove()">&times;</button>
+            `;
+            container.appendChild(row);
+        }
 
-                if (data.error) throw new Error(data.error);
-
-                processTruckData('E9844F', data['E9844F'], '9844', '#ffd700');
-                processTruckData('E9950AB', data['E9950AB'], '9950', '#3b82f6');
-
-                document.getElementById('sys-status').innerHTML = "SYSTEM ONLINE • SYNCED";
-                document.getElementById('sys-status').style.color = "#00ff9d";
-
-            } catch (err) {
-                console.warn("Telemetry Fetch Failed (Using Visual Mode):", err);
-
-                // FALLBACK: VISUAL MODE (Iframe is Real, Data is Estimated)
-                document.getElementById('sys-status').innerHTML = "VISUAL MODE (DATA ESTIMATED)";
-                document.getElementById('sys-status').style.color = "#facc15"; // Yellow
-
-                // Simulate Data for UI to look "Alive"
-                simulateTelemetry('E9844F', '9844', '#ffd700');
-                simulateTelemetry('E9950AB', '9950', '#3b82f6');
+        function initEmptyMap() {
+            if (!myMap) {
+                myMap = L.map('realMap', { zoomControl: false, attributionControl: false }).setView([-0.789, 113.921], 5); // Center Indonesia
+                
+                // VOYAGER LIGHT TILE
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19
+                }).addTo(myMap);
             }
         }
 
-        function simulateTelemetry(id, domId, color) {
-            // Create "Alive" look with random fluctuations
+        function loadConfig() {
+            const saved = localStorage.getItem('trackerConfigV2');
+            
+            initEmptyMap(); // Initialize map canvas first
+
+            if (saved) {
+                config = JSON.parse(saved);
+                
+                // Verify if config actually has valid inputs
+                if (config && config.warehouses && config.warehouses.length > 0 && config.truck1.nopol) {
+                    // Valid config found, start APP
+                    document.getElementById('emptyStateOverlay').style.display = 'none';
+                    
+                    renderMapFromConfig();
+                    fetchData();
+                    return;
+                }
+            }
+
+            // If invalid or empty, show Empty State Overlay
+            document.getElementById('emptyStateOverlay').style.display = 'flex';
+        }
+
+        function renderMapFromConfig() {
+            if (!myMap) initEmptyMap();
+            
+            // Clear old warehouse dots
+            warehouseMarkers.forEach(m => myMap.removeLayer(m));
+            warehouseMarkers = [];
+
+            let bounds = [];
+
+            if (config && config.warehouses) {
+                config.warehouses.forEach(wh => {
+                    if (wh.lat && wh.lng) {
+                        const iconWH = L.divIcon({
+                            html: '<div style="font-size: 28px; filter: drop-shadow(0px 3px 3px rgba(0,0,0,0.4));">🏭</div>',
+                            className: '',
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 30]
+                        });
+                        const marker = L.marker([wh.lat, wh.lng], {
+                            icon: iconWH
+                        }).addTo(myMap);
+                        
+                        marker.bindTooltip(`<b>${wh.name}</b>`, {permanent: true, direction: 'top', className: 'tooltip-light', offset: [0, -30]});
+                        warehouseMarkers.push(marker);
+                        bounds.push([wh.lat, wh.lng]);
+                    }
+                });
+            }
+
+            if (bounds.length > 0) {
+                myMap.fitBounds(bounds, { padding: [80, 80] });
+            }
+        }
+
+        function openConfigModal() {
+            if (!config) {
+                // Supply empty default placeholders purely for visual cue, but don't save.
+                addWarehouseRow('', '');
+            } else {
+                document.getElementById('nopol1').value = config.truck1.nopol || '';
+                document.getElementById('link1').value = config.truck1.link || '';
+                document.getElementById('nopol2').value = config.truck2.nopol || '';
+                document.getElementById('link2').value = config.truck2.link || '';
+                
+                document.getElementById('warehouseInputs').innerHTML = '';
+                config.warehouses.forEach(w => {
+                    const coord = `${w.lat}, ${w.lng}`;
+                    addWarehouseRow(w.name, coord);
+                });
+            }
+            
+            switchTab('tab-gudang');
+            document.getElementById('configModal').classList.add('active');
+        }
+
+        function closeConfigModal() {
+            document.getElementById('configModal').classList.remove('active');
+        }
+
+        function saveConfig() {
+            const rawConfig = {
+                truck1: { 
+                    nopol: document.getElementById('nopol1').value.trim(),
+                    link: document.getElementById('link1').value.trim()
+                },
+                truck2: { 
+                    nopol: document.getElementById('nopol2').value.trim(),
+                    link: document.getElementById('link2').value.trim()
+                },
+                warehouses: []
+            };
+
+            let hasError = false;
+            let errorMsg = "";
+
+            if (rawConfig.truck1.nopol && rawConfig.truck1.link === "") {
+                hasError = true;
+                errorMsg += "⚠️ Slot 1: Nopol diisi namun Link GPS/API masih kosong!\n";
+            } else if (rawConfig.truck1.link && !rawConfig.truck1.link.includes('http')) {
+                hasError = true;
+                errorMsg += "⚠️ Slot 1: Format Link GPS tidak valid (Harus diawali http/https).\n";
+            }
+
+            if (rawConfig.truck2.nopol && rawConfig.truck2.link === "") {
+                hasError = true;
+                errorMsg += "⚠️ Slot 2: Nopol diisi namun Link GPS/API masih kosong!\n";
+            } else if (rawConfig.truck2.link && !rawConfig.truck2.link.includes('http')) {
+                hasError = true;
+                errorMsg += "⚠️ Slot 2: Format Link GPS tidak valid (Harus diawali http/https).\n";
+            }
+            
+            const whRows = document.querySelectorAll('#warehouseInputs > div');
+            whRows.forEach(row => {
+                const n = row.querySelector('.wh-name').value.trim();
+                const c = row.querySelector('.wh-coord').value.trim();
+                if (n || c) {
+                    if (!n || !c) {
+                        hasError = true;
+                        errorMsg += `⚠️ Gudang: Nama dan Koordinat harus diisi lengkap berpasangan.\n`;
+                    } else {
+                        const parts = c.split(',');
+                        if (parts.length < 2) {
+                            hasError = true;
+                            errorMsg += `⚠️ Gudang '${n}': Format Koordinat salah. Gunakan Koma (Lat, Lng)!\n`;
+                        } else {
+                            const lat = parseFloat(parts[0].trim());
+                            const lng = parseFloat(parts[1].trim());
+                            if (isNaN(lat) || isNaN(lng)) {
+                                hasError = true;
+                                errorMsg += `⚠️ Gudang '${n}': Nilai Latitude/Longitude bukan angka valid!\n`;
+                            } else {
+                                rawConfig.warehouses.push({ name: n, lat: lat, lng: lng, radius: 0.015 });
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (hasError) {
+                alert("GAGAL MENYIMPAN DATA:\n\n" + errorMsg);
+                return;
+            }
+
+            // Prevent save if entirely empty
+            if (rawConfig.warehouses.length === 0 && !rawConfig.truck1.nopol && !rawConfig.truck2.nopol) {
+                alert("Harap masukkan setidaknya 1 Data Gudang atau Link Armada Nopol.");
+                return;
+            }
+
+            // Commit Config
+            config = rawConfig;
+            localStorage.setItem('trackerConfigV2', JSON.stringify(config));
+            
+            // UI Transition
+            document.getElementById('emptyStateOverlay').style.display = 'none';
+
+            renderMapFromConfig();
+            closeConfigModal();
+            
+            // Re-sync states
+            STATE.truck1.lastMove = Date.now();
+            STATE.truck2.lastMove = Date.now();
+            fetchData();
+        }
+
+        function manualRefresh() {
+            if(config) fetchData();
+        }
+
+        // ==========================
+        // DATA PROCESSING LOGIC
+        // ==========================
+
+        let apiErrorNotified = false;
+
+        async function fetchTruckLocation(id) {
+            const truckConf = config[id];
+            if (!truckConf || !truckConf.nopol) return null;
+
+            if (truckConf.link && truckConf.link.includes('http')) {
+                try {
+                    const res = await fetch(truckConf.link, { headers: { 'Accept': 'application/json' } });
+                    const data = await res.json();
+                    
+                    let lat = data?.data?.lat || data?.lat || data?.latitude;
+                    let lng = data?.data?.lng || data?.lng || data?.longitude;
+                    let speed = data?.data?.speed || data?.speed || 0;
+                    
+                    if (lat && lng) return { lat: parseFloat(lat), lng: parseFloat(lng), speed: parseFloat(speed) };
+                } catch (e) {
+                    console.warn(`[${id}] Direct API Link fetch failed`, e);
+                }
+            }
+            return null;
+        }
+
+        async function fetchData() {
+            if(!config) return;
+            try {
+                let gps1 = await fetchTruckLocation('truck1');
+                let gps2 = await fetchTruckLocation('truck2');
+
+                // Fallback to Global Apps Script API if direct links failed/not provided
+                if (!gps1 || !gps2) {
+                    try {
+                        const response = await fetch(API_URL + '?action=getGPS');
+                        const gasData = await response.json();
+                        if (!gasData.error) {
+                            if (!gps1 && config.truck1.nopol) gps1 = gasData[config.truck1.nopol.replace(/\s+/g,'')];
+                            if (!gps2 && config.truck2.nopol) gps2 = gasData[config.truck2.nopol.replace(/\s+/g,'')];
+                        }
+                    } catch(e) { }
+                }
+
+                // Inject Data
+                if (config.truck1.nopol) {
+                    if (gps1 && gps1.lat && gps1.lng) processTruckData('truck1', gps1, '1');
+                    else simulateTelemetry('truck1', '1', '#2563eb');
+                }
+                
+                if (config.truck2.nopol) {
+                    if (gps2 && gps2.lat && gps2.lng) processTruckData('truck2', gps2, '2');
+                    else simulateTelemetry('truck2', '2', '#f59e0b');
+                }
+                
+                apiErrorNotified = false; // reset flag on success
+            } catch (err) {
+                console.warn("Telemetry Fetch Fallback (Simulating Data):", err);
+                
+                if (!apiErrorNotified) {
+                    alert("⚠️ KONEKSI ERROR:\nGagal membaca API Data Telemetri GPS. Pastikan Link aktif. Sistem beralih ke Mode Simulasi.");
+                    apiErrorNotified = true;
+                }
+
+                if (config.truck1.nopol) simulateTelemetry('truck1', '1', '#2563eb'); 
+                if (config.truck2.nopol) simulateTelemetry('truck2', '2', '#f59e0b'); 
+            }
+        }
+
+        function getTruckTooltip(id, speedLabel, statusStr) {
+            return `
+                <div style="text-align:center; padding: 2px;">
+                    <div style="font-size:12px; font-weight:800; border-bottom:1px solid #e2e8f0; padding-bottom:4px; margin-bottom:4px; color:var(--text-main);">${config[id].nopol}</div>
+                    <div style="font-size:14px; color:${id === 'truck1' ? 'var(--primary)' : 'var(--warning)'}; font-weight:800;">${speedLabel} km/h</div>
+                    <div style="font-size:10px; color:#64748b; margin-top:2px; font-weight:600;">${statusStr}</div>
+                </div>
+            `;
+        }
+
+        const iconTruck = L.divIcon({
+            html: '<div style="font-size: 26px; filter: drop-shadow(0px 3px 4px rgba(0,0,0,0.4));">🚚</div>',
+            className: '',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        });
+
+        // Utility: Haversine distance
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2-lat1) * (Math.PI/180); 
+            const dLon = (lon2-lon1) * (Math.PI/180); 
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1*(Math.PI/180)) * Math.cos(lat2*(Math.PI/180)) * 
+                      Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            return R * c; 
+        }
+
+        // Popup Event Binder
+        function bindTruckClickEvent(marker, id) {
+            marker.on('click', async function(e) {
+                const data = this.truckData;
+                if (!data) return;
+
+                let popupHtml = `<div style="padding:10px; text-align:center; min-width:200px;">
+                    <h4 style="margin:0 0 5px 0;">🚚 ${config[id].nopol}</h4>
+                    <div style="font-size: 12px; color: #666;">Mengambil data satelit... 📡</div>
+                </div>`;
+
+                if (!this.getPopup()) {
+                    this.bindPopup(popupHtml, {className: 'custom-popup', minWidth: 240}).openPopup();
+                } else {
+                    this.setPopupContent(popupHtml);
+                    this.openPopup();
+                }
+
+                let nearestDist = Infinity;
+                let nearestWH = "Gudang";
+                if (config.warehouses && config.warehouses.length > 0) {
+                    config.warehouses.forEach(wh => {
+                        const d = getDistanceFromLatLonInKm(data.lat, data.lng, wh.lat, wh.lng);
+                        if (d < nearestDist) {
+                            nearestDist = d;
+                            nearestWH = wh.name;
+                        }
+                    });
+                }
+                let distStr = nearestDist !== Infinity ? `${nearestDist.toFixed(2)} km dari <b>${nearestWH}</b>` : "-";
+
+                let address = "Alamat tidak ditemukan / Error Nominatim API";
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${data.lat}&lon=${data.lng}&zoom=18&addressdetails=1`);
+                    const geo = await res.json();
+                    if (geo && geo.display_name) address = geo.display_name;
+                } catch (err) {}
+
+                const finalHtml = `
+                    <div style="padding:5px; font-family:'Inter', sans-serif;">
+                        <h3 style="margin: 0 0 10px 0; border-bottom: 2px solid ${data.colorHex}; padding-bottom:5px; color:#0f172a; font-size:15px;">
+                            ${config[id].nopol}
+                        </h3>
+                        <table style="width:100%; font-size:12px; color:#334155; margin-bottom:8px; border-collapse:collapse;">
+                            <tr><td style="padding:3px 0; width:40%;"><b>Status</b></td><td style="padding:3px 0; color:${data.colorHex}; font-weight:700;">${data.status}</td></tr>
+                            <tr><td style="padding:3px 0;"><b>Kecepatan</b></td><td style="padding:3px 0;">${data.speed} km/h</td></tr>
+                            <tr><td style="padding:3px 0;"><b>Jarak</b></td><td style="padding:3px 0;">${distStr}</td></tr>
+                        </table>
+                        <div style="margin-top: 10px; font-size: 11px; color: #475569; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; line-height:1.4;">
+                            <div style="margin-bottom:4px; font-size:12px;">📍 <b>Lokasi Real-time:</b></div>
+                            ${address}
+                        </div>
+                    </div>
+                `;
+                this.setPopupContent(finalHtml);
+            });
+        }
+
+        function simulateTelemetry(id, domId, colorHex) {
+            if (!config[id].nopol) return;
+
             const isMoving = Math.random() > 0.5;
             const speed = isMoving ? Math.floor(Math.random() * 40) + 10 : 0;
             const truckState = STATE[id];
 
-            let status = "STOPPED";
-            let statusColor = "#facc15";
+            let status = speed > 0 ? "MOVING" : "STOPPED";
+            if (speed > 0) truckState.lastMove = Date.now();
 
-            if (speed > 0) {
-                status = "MOVING";
-                statusColor = color;
-                truckState.lastMove = Date.now();
+            let centerLat = -6.75, centerLng = 108.55;
+            if (config.warehouses.length > 0) {
+                const wh = config.warehouses[Math.floor(Math.random() * config.warehouses.length)];
+                centerLat = wh.lat;
+                centerLng = wh.lng;
             }
 
-            const idleMs = Date.now() - truckState.lastMove;
-            const idleMin = Math.floor(idleMs / 60000);
+            if (!truckState.currentLat) {
+                truckState.currentLat = centerLat + (Math.random() - 0.5) * 0.05;
+                truckState.currentLng = centerLng + (Math.random() - 0.5) * 0.05;
+            } else {
+                truckState.currentLat += (Math.random() - 0.5) * 0.005;
+                truckState.currentLng += (Math.random() - 0.5) * 0.005;
+            }
 
-            // Random Zone
-            const zones = ["GUDANG GEBANG", "GUDANG SAMPING", "ON ROAD", "LOADING POINT"];
-            const zone = zones[Math.floor(Math.random() * zones.length)];
+            const lat = truckState.currentLat;
+            const lng = truckState.currentLng;
 
-            // Update UI
-            document.getElementById(`status-txt-${domId}`).innerText = status;
-            document.getElementById(`status-txt-${domId}`).style.borderColor = statusColor;
-            document.getElementById(`status-txt-${domId}`).style.color = statusColor;
-
-            document.getElementById(`speed-${domId}`).innerHTML = `${speed} <span style="font-size:0.8rem;">KM/H</span>`;
-            document.getElementById(`idle-${domId}`).innerHTML = `${idleMin} <span style="font-size:0.8rem;">MIN</span>`;
-            document.getElementById(`zone-${domId}`).innerText = zone + " (EST)";
+            if (myMap) {
+                const cHex = id === 'truck1' ? 'var(--primary)' : 'var(--warning)';
+                const ttHtml = getTruckTooltip(id, speed, status);
+                if (!truckMarkers[id]) {
+                    truckMarkers[id] = L.marker([lat, lng], {icon: iconTruck}).addTo(myMap);
+                    truckMarkers[id].bindTooltip(ttHtml, {permanent: true, direction: 'right', className: 'tooltip-light', offset: [15, 0]});
+                    bindTruckClickEvent(truckMarkers[id], id);
+                } else {
+                    truckMarkers[id].setLatLng([lat, lng]);
+                    truckMarkers[id].setTooltipContent(ttHtml);
+                }
+                truckMarkers[id].truckData = { lat, lng, speed, status, colorHex: cHex };
+            }
         }
 
         function processTruckData(id, gps, domId, color) {
-            if (!gps) return;
-
+            if (!config[id].nopol || !gps || !gps.lat || !gps.lng) return;
+            
             const speed = gps.speed || 0;
             const truckState = STATE[id];
 
-            // 1. STATUS & IDLE LOGIC
-            let status = "STOPPED";
-            let statusColor = "#facc15"; // Yellow
-
+            let status = speed > 3 ? "MOVING" : "STOPPED";
             if (speed > 3) {
-                status = "MOVING";
-                statusColor = color;
                 truckState.lastMove = Date.now();
                 truckState.isMoving = true;
             } else {
                 truckState.isMoving = false;
             }
 
-            // Calculate Idle
-            const idleMs = Date.now() - truckState.lastMove;
-            const idleMin = Math.floor(idleMs / 60000);
-            const idleStr = speed < 3 ? idleMin : 0;
-
-            // 2. ZONE LOGIC
-            let zone = "ON ROAD / UNKNOWN";
-            let minDist = 9999;
-
-            /* Simple Geofence Check */
-            if (gps.lat && gps.lng) {
-                ZONES.forEach(z => {
-                    const d = Math.sqrt(Math.pow(gps.lat - z.lat, 2) + Math.pow(gps.lng - z.lng, 2));
-                    if (d < z.radius) {
-                        zone = z.name;
-                    }
-                });
-            }
-
-            // UPDATE UI
-            document.getElementById(`status-txt-${domId}`).innerText = status;
-            document.getElementById(`status-txt-${domId}`).style.borderColor = statusColor;
-            document.getElementById(`status-txt-${domId}`).style.color = statusColor;
-
-            document.getElementById(`speed-${domId}`).innerHTML = `${speed} <span style="font-size:0.8rem;">KM/H</span>`;
-            document.getElementById(`idle-${domId}`).innerHTML = `${idleStr} <span style="font-size:0.8rem;">MIN</span>`;
-            document.getElementById(`zone-${domId}`).innerText = zone;
-
-            // Log updates
-            if (Math.random() > 0.7) {
-                const time = new Date().toLocaleTimeString();
-                logMsg(domId, `> [${time}] Loc: ${gps.lat.toFixed(4)}, ${gps.lng.toFixed(4)}`);
+            if (myMap) {
+                const cHex = id === 'truck1' ? 'var(--primary)' : 'var(--warning)';
+                const ttHtml = getTruckTooltip(id, speed, status);
+                if (!truckMarkers[id]) {
+                    truckMarkers[id] = L.marker([gps.lat, gps.lng], {icon: iconTruck}).addTo(myMap);
+                    truckMarkers[id].bindTooltip(ttHtml, {permanent: true, direction: 'right', className: 'tooltip-light', offset: [15, 0]});
+                    bindTruckClickEvent(truckMarkers[id], id);
+                } else {
+                    truckMarkers[id].setLatLng([gps.lat, gps.lng]);
+                    truckMarkers[id].setTooltipContent(ttHtml);
+                }
+                truckMarkers[id].truckData = { lat: gps.lat, lng: gps.lng, speed, status, colorHex: cHex };
             }
         }
 
-        function logMsg(domId, msg) {
-            const box = document.getElementById(`log-${domId}`);
-            box.innerHTML = msg + "<br>" + box.innerHTML;
-        }
+        // Loop Triggers
+        setInterval(() => {
+            if(config) fetchData();
+        }, 10000);
 
-        // Loop
-        setInterval(fetchData, 10000);
-        setInterval(manualRefresh, 300000); // Maps every 5m
-        fetchData(); // Init
+        // Bootstrap App
+        loadConfig(); 
 
     </script>
 </body>
