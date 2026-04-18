@@ -824,12 +824,6 @@
                             </div>
                         </div>
 
-                        <!-- Tombol Simpan Spesifik Langsiran (Selalu Terlihat jika Truck Dipilih) -->
-                        <div id="langsiran-save-area" style="display:none; margin-top:20px; border-top:1px dashed #c4b5fd; padding-top:20px;">
-                            <button class="btn-primary" onclick="submitDataToServer()" style="background:var(--accent-primary); width:100%; border-radius:12px; padding:15px; font-weight:bold; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);">
-                                SIMPAN BONGKARAN LANGSIRAN <i class="fas fa-save" style="margin-left:8px;"></i>
-                            </button>
-                        </div>
                     </div>
 
                     <!-- Timeline Grid for Arrival / QC -->
@@ -1414,6 +1408,13 @@
             const container = document.getElementById('truck-forms-container');
             const lSection = document.getElementById('langsiran-section');
 
+            // Manage phase 2 inputs visibility
+            const pbTanggalInput = document.getElementById('t_pb_tanggal') ? document.getElementById('t_pb_tanggal').closest('.form-group') : null;
+            const pbSampaiInput = document.getElementById('t_pb_sampai') ? document.getElementById('t_pb_sampai').closest('.form-group') : null;
+            const pbHoldInput = document.getElementById('t_pb_hold') ? document.getElementById('t_pb_hold').closest('.form-group') : null;
+            const pbRestartInput = document.getElementById('t_pb_restart') ? document.getElementById('t_pb_restart').closest('.form-group') : null;
+            const btnFinal = document.getElementById('btn-final-submit');
+
             if (!sharedSection) return;
 
             // --- 1. HANDLING VISIBILITY UTAMA ---
@@ -1421,10 +1422,32 @@
                 if(container) container.style.setProperty('display', 'none', 'important');
                 lSection.style.setProperty('display', 'block', 'important');
                 sharedSection.style.setProperty('display', 'none', 'important');
+                
+                if(pbTanggalInput) pbTanggalInput.style.display = ''; // Show tanggal
+                if(pbSampaiInput) pbSampaiInput.style.display = 'none';
+                if(pbHoldInput) pbHoldInput.style.display = 'none';
+                if(pbRestartInput) pbRestartInput.style.display = 'none';
+                
+                if(btnFinal) {
+                    btnFinal.style.opacity = '1';
+                    btnFinal.style.pointerEvents = 'auto';
+                    btnFinal.innerHTML = 'SIMPAN BONGKARAN LANGSIRAN <i class="fas fa-save" style="margin-left:8px;"></i>';
+                }
+                
                 fetchLangsiranQueue();
             } else {
                 if(container) container.style.setProperty('display', 'block', 'important');
                 if(lSection) lSection.style.setProperty('display', 'none', 'important');
+                
+                if(pbTanggalInput) pbTanggalInput.style.display = '';
+                if(pbSampaiInput) pbSampaiInput.style.display = '';
+                if(pbHoldInput) pbHoldInput.style.display = '';
+                if(pbRestartInput) pbRestartInput.style.display = '';
+                
+                if(btnFinal) {
+                    btnFinal.innerHTML = 'SINKRONISASI DATA KE GOOGLE SHEETS <i class="fas fa-cloud-upload-alt"></i>';
+                    checkFinalSubmitUnlock();
+                }
                 
                 if (tipe === "Bareng") {
                     sharedSection.style.setProperty('display', 'none', 'important');
@@ -1568,15 +1591,19 @@
 
         function checkDurasiLengkap() {
             const tipe = document.getElementById('inp_tipe_bongkaran').value;
-            const pbFields = ['t_pb_tanggal','t_pb_sampai','t_pb_start','t_pb_hold','t_pb_restart','t_pb_finish'];
-            const abFields = ['t_ab_tanggal','t_ab_arrival','t_ab_qc'];
+            let pbFields = ['t_pb_tanggal','t_pb_sampai','t_pb_start','t_pb_hold','t_pb_restart','t_pb_finish'];
+            let abFields = ['t_ab_tanggal','t_ab_arrival','t_ab_qc'];
+            
+            if (tipe === "Langsiran") {
+                pbFields = ['t_pb_tanggal', 't_pb_start', 't_pb_finish'];
+            }
             
             let allFilled = true;
             pbFields.forEach(id => {
                 if(!document.getElementById(id).value) allFilled = false;
             });
 
-            if(tipe !== "Bareng") {
+            if(tipe !== "Bareng" && tipe !== "Langsiran") {
                 abFields.forEach(id => {
                     if(!document.getElementById(id).value) allFilled = false;
                 });
@@ -1755,7 +1782,6 @@
 
             selectedLangsiran = item;
             document.getElementById('langsiran-options').style.display = 'block';
-            document.getElementById('langsiran-save-area').style.display = 'block';
             document.getElementById('rev_bag').value = item.jumlah_bag;
             document.getElementById('rev_netto').value = item.netto;
 
@@ -1773,18 +1799,10 @@
             
             // Phase elements to lock
             const phase1 = document.getElementById('shared-ab-section');
-            const pbTanggalInput = document.getElementById('t_pb_tanggal').closest('.form-group');
-            const pbSampaiInput = document.getElementById('t_pb_sampai').closest('.form-group');
-            const pbHoldInput = document.getElementById('t_pb_hold').closest('.form-group');
-            const pbRestartInput = document.getElementById('t_pb_restart').closest('.form-group');
 
             // --- STANDARD UNTUK SEMUA LANGSIRAN ---
             if (tipe === "Langsiran") {
                 if(phase1) phase1.style.display = 'none';
-                if(pbTanggalInput) pbTanggalInput.style.display = 'none';
-                if(pbSampaiInput) pbSampaiInput.style.display = 'none';
-                if(pbHoldInput) pbHoldInput.style.display = 'none';
-                if(pbRestartInput) pbRestartInput.style.display = 'none';
             }
 
             if (isSame) {
@@ -1841,9 +1859,9 @@
 
             // PRE-SUBMIT VALIDATION: Semua wajib diisi (kecuali Netto)
             if (tipe === "Langsiran") {
-                // HANYA START DAN FINISH WAJIB UNTUK SEMUA MODE LANGSIRAN
-                if (!document.getElementById('t_pb_start').value || !document.getElementById('t_pb_finish').value) {
-                    Swal.fire('Data Waktu Belum Lengkap', 'PB-Start Bongkar dan PB-Finish wajib diisi.', 'warning');
+                // HANYA TANGGAL, START DAN FINISH WAJIB UNTUK SEMUA MODE LANGSIRAN
+                if (!document.getElementById('t_pb_tanggal').value || !document.getElementById('t_pb_start').value || !document.getElementById('t_pb_finish').value) {
+                    Swal.fire('Data Waktu Belum Lengkap', 'PB-Tanggal, PB-Start Bongkar dan PB-Finish wajib diisi.', 'warning');
                     return;
                 }
             } else {
@@ -1874,61 +1892,72 @@
 
             const trucks = [];
             let isTruckValid = true;
-            document.querySelectorAll('.truck-box').forEach((box, i) => {
-                const jns = box.querySelector('.trk-jenis').value;
-                let mat = box.querySelector('.trk-mat').value;
-                const matOther = box.querySelector('.trk-mat-other').value;
-                const bag = box.querySelector('.trk-bag').value;
-                const nopol = box.querySelector('.trk-nopol').value;
-                const lokasi = box.querySelector('.trk-lokasi').value;
-                
-                // AB Info context aware
-                let abTgl, abArr, abQc;
-                if(tipe === "Bareng") {
-                    abTgl = box.querySelector('.trk-ab-tanggal').value;
-                    abArr = box.querySelector('.trk-ab-arrival').value;
-                    abQc = box.querySelector('.trk-ab-qc').value;
-                    if(!abTgl || !abArr || !abQc) {
-                        Swal.fire('Data Arrival Truck ' + (i+1) + ' Belum Lengkap', 'Setiap truck harus memiliki data Arrival & Scaling jika tipe Bongkaran Bareng.', 'warning');
-                        isTruckValid = false;
-                        return;
+            
+            if (tipe !== "Langsiran") {
+                document.querySelectorAll('.truck-box').forEach((box, i) => {
+                    const jns = box.querySelector('.trk-jenis').value;
+                    let mat = box.querySelector('.trk-mat').value;
+                    const matOther = box.querySelector('.trk-mat-other').value;
+                    const bag = box.querySelector('.trk-bag').value;
+                    const nopol = box.querySelector('.trk-nopol').value;
+                    const lokasi = box.querySelector('.trk-lokasi').value;
+                    
+                    // AB Info context aware
+                    let abTgl, abArr, abQc;
+                    if(tipe === "Bareng") {
+                        abTgl = box.querySelector('.trk-ab-tanggal').value;
+                        abArr = box.querySelector('.trk-ab-arrival').value;
+                        abQc = box.querySelector('.trk-ab-qc').value;
+                        if(!abTgl || !abArr || !abQc) {
+                            Swal.fire('Data Arrival Truck ' + (i+1) + ' Belum Lengkap', 'Setiap truck harus memiliki data Arrival & Scaling jika tipe Bongkaran Bareng.', 'warning');
+                            isTruckValid = false;
+                            return;
+                        }
+                    } else {
+                        abTgl = document.getElementById('t_ab_tanggal').value;
+                        abArr = document.getElementById('t_ab_arrival').value;
+                        abQc = document.getElementById('t_ab_qc').value;
                     }
-                } else {
-                    abTgl = document.getElementById('t_ab_tanggal').value;
-                    abArr = document.getElementById('t_ab_arrival').value;
-                    abQc = document.getElementById('t_ab_qc').value;
-                }
 
-                if(!jns || !mat || !bag || !nopol || !lokasi) {
-                    isTruckValid = false;
-                }
-                if(mat === "OTHER") {
-                    if(!matOther) isTruckValid = false;
-                    mat = matOther; 
-                }
+                    if(!jns || !mat || !bag || !nopol || !lokasi) {
+                        isTruckValid = false;
+                    }
+                    if(mat === "OTHER") {
+                        if(!matOther) isTruckValid = false;
+                        mat = matOther; 
+                    }
 
-                trucks.push({
-                    jenisTruck: jns,
-                    materialRM: mat,
-                    jumlahBag: bag,
-                    nopol: nopol.toUpperCase(),
-                    netto: box.querySelector('.trk-netto').value, // Boleh Kosong
-                    lokasiSimpan: lokasi,
-                    kuliPenggarap: box.querySelector('.trk-kuli-type').value,
-                    jumlahKuli: box.querySelector('.trk-jml-kuli').value,
-                    abTanggal: abTgl,
-                    abArrival: abArr,
-                    abQc: abQc
+                    trucks.push({
+                        jenisTruck: jns,
+                        materialRM: mat,
+                        jumlahBag: bag,
+                        nopol: nopol.toUpperCase(),
+                        netto: box.querySelector('.trk-netto').value, // Boleh Kosong
+                        lokasiSimpan: lokasi,
+                        kuliPenggarap: box.querySelector('.trk-kuli-type').value,
+                        jumlahKuli: box.querySelector('.trk-jml-kuli').value,
+                        abTanggal: abTgl,
+                        abArrival: abArr,
+                        abQc: abQc
+                    });
                 });
-            });
 
-            if(!isTruckValid) {
-                if(tipe !== "Bareng") Swal.fire('Data Truck Belum Lengkap', 'Harap isi semua kolom wajib untuk setiap truck.', 'warning');
-                return;
+                if(!isTruckValid) {
+                    if(tipe !== "Bareng") Swal.fire('Data Truck Belum Lengkap', 'Harap isi semua kolom wajib untuk setiap truck.', 'warning');
+                    return;
+                }
             }
 
             // PENGINGAT NETTO KOSONG (SMART CHECK)
-            let isNettoKosong = trucks.some(t => !t.netto || t.netto.trim() === "");
+            let isNettoKosong = false;
+            if(tipe !== "Langsiran") {
+                isNettoKosong = trucks.some(t => !t.netto || t.netto.trim() === "");
+            } else {
+                const isSame = document.getElementById('chk_langsiran_sama').checked;
+                const net = isSame ? selectedLangsiran.netto : document.getElementById('rev_netto').value;
+                isNettoKosong = !net || String(net).trim() === "";
+            }
+            
             if(isNettoKosong) {
                 Swal.fire({
                     title: 'Bongkaran Tanpa Netto ?',
