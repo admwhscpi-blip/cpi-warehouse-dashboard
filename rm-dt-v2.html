@@ -1107,6 +1107,98 @@
             font-family: 'Rajdhani', sans-serif; font-weight: 800;
             font-size: 0.95rem; color: var(--text-primary);
         }
+
+        /* ============================================== */
+        /* === QTY BONGKAR vs TARGET & INAPAN SECTION === */
+        /* ============================================== */
+        .qty-target-panel {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg); padding: 24px;
+            box-shadow: var(--shadow-md); margin-bottom: 30px;
+            transition: all 0.3s ease; position: relative; overflow: hidden;
+        }
+        .qty-target-panel::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, #16A34A, #2563EB, #DC2626);
+            border-radius: 16px 16px 0 0;
+        }
+        .qty-target-panel:hover { box-shadow: var(--shadow-lg); }
+        .qty-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px; padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 10px;
+        }
+        .qty-header h4 {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 700;
+            color: var(--text-primary); display: flex; align-items: center; gap: 10px;
+            letter-spacing: 0.5px;
+        }
+        .qty-legend {
+            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+        }
+        .qty-legend-item {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
+        }
+        .qty-legend-line {
+            width: 24px; height: 2px; border-top: 2px dashed #2563EB;
+        }
+        .qty-legend-box {
+            width: 14px; height: 14px; border-radius: 3px;
+        }
+        .qty-stat-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;
+        }
+        .qty-stat-card {
+            background: #f8fafc; border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md); padding: 18px 16px;
+            text-align: center; transition: all 0.3s ease; position: relative; overflow: hidden;
+        }
+        .qty-stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .qty-stat-card .qs-label {
+            font-size: 0.7rem; font-weight: 700; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+        }
+        .qty-stat-card .qs-value {
+            font-family: 'Rajdhani', sans-serif; font-size: 2rem; font-weight: 800; line-height: 1;
+        }
+        .qty-stat-card .qs-unit {
+            font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-top: 4px;
+        }
+        .qty-stat-card.qs-avg { border-top: 3px solid #2563EB; }
+        .qty-stat-card.qs-avg .qs-value { color: #2563EB; }
+        .qty-stat-card.qs-inap { border-top: 3px solid #DC2626; }
+        .qty-stat-card.qs-inap .qs-value { color: #DC2626; }
+        .qty-stat-card.qs-below { border-top: 3px solid #f59e0b; }
+        .qty-stat-card.qs-below .qs-value { color: #f59e0b; }
+        .qty-chart-wrap {
+            position: relative; width: 100%; height: 340px;
+        }
+        .qty-chart-wrap canvas {
+            width: 100% !important; height: 100% !important;
+        }
+        #qtyChartTooltip {
+            position: absolute; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color); border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 12px 16px;
+            pointer-events: none; z-index: 100; opacity: 0;
+            transition: opacity 0.15s ease; min-width: 180px; font-size: 0.8rem;
+        }
+        #qtyChartTooltip .tt-date {
+            font-family: 'Rajdhani', sans-serif; font-weight: 800; font-size: 0.95rem;
+            color: #0f172a; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;
+        }
+        #qtyChartTooltip .tt-row {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-weight: 600;
+        }
+        #qtyChartTooltip .tt-dot {
+            width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0;
+        }
+        @media (max-width: 480px) {
+            .qty-stat-grid { grid-template-columns: 1fr; gap: 10px; }
+            .qty-chart-wrap { height: 260px; }
+            .qty-legend { gap: 10px; }
+        }
     </style>
 </head>
 
@@ -1271,6 +1363,49 @@
                         <h4><i class="fas fa-chart-bar" style="color:var(--purple);"></i> Trend Harian</h4>
                     </div>
                     <div style="position:relative; height:220px;"><canvas id="inapTrendChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- ★ QTY BONGKAR vs TARGET & INAPAN ★ -->
+            <div class="qty-target-panel" id="qty-target-panel">
+                <div class="qty-header">
+                    <div>
+                        <h4 style="margin:0; line-height:1.1;">
+                            <span style="font-family:'Orbitron',sans-serif; font-size:1.3rem; font-weight:800; letter-spacing:1.5px; color:var(--text-primary); display:block;">QUANTITY BONGKAR</span>
+                            <span style="display:flex; flex-direction:column; font-family:'Rajdhani',sans-serif; font-size:0.85rem; font-weight:700; color:var(--accent-primary); letter-spacing:1px; margin-top:2px; line-height:1.15;">
+                                <span>VS TARGET</span>
+                                <span>DAN INAPAN</span>
+                            </span>
+                        </h4>
+                        <p style="font-size:0.72rem; color:var(--text-secondary); font-weight:500; margin-top:6px; font-style:italic;">Analisis Korelasi Volume Bongkar terhadap Target dan Durasi Inapan</p>
+                    </div>
+                    <div class="qty-legend">
+                        <div class="qty-legend-item"><div class="qty-legend-line"></div> Target (Avg)</div>
+                        <div class="qty-legend-item"><div class="qty-legend-box" style="background:#16A34A;"></div> Aktual Bongkar</div>
+                        <div class="qty-legend-item"><div class="qty-legend-box" style="background:#DC2626;"></div> Qty Inapan</div>
+                    </div>
+                </div>
+                <div class="qty-stat-grid" id="qty-stat-grid">
+                    <div class="qty-stat-card qs-avg">
+                        <div class="qs-label"><i class="fas fa-bullseye" style="margin-right:4px;"></i> Avg Bongkar / Hari</div>
+                        <div class="qs-value" id="qs-avg-val">-</div>
+                        <div class="qs-unit">TON (= Target)</div>
+                        <div style="margin-top:6px; font-size:0.65rem; font-weight:600; color:#2563EB; background:rgba(37,99,235,0.08); padding:3px 8px; border-radius:6px; display:inline-block;">Target dinamis → Moving Average Daily</div>
+                    </div>
+                    <div class="qty-stat-card qs-inap">
+                        <div class="qs-label"><i class="fas fa-moon" style="margin-right:4px;"></i> Total Inapan</div>
+                        <div class="qs-value" id="qs-inap-val">-</div>
+                        <div class="qs-unit">TON</div>
+                    </div>
+                    <div class="qty-stat-card qs-below">
+                        <div class="qs-label"><i class="fas fa-arrow-down" style="margin-right:4px;"></i> Hari di Bawah Target</div>
+                        <div class="qs-value" id="qs-below-val">-</div>
+                        <div class="qs-unit">HARI</div>
+                    </div>
+                </div>
+                <div class="qty-chart-wrap" id="qty-chart-wrap">
+                    <canvas id="qtyBongkarCanvas"></canvas>
+                    <div id="qtyChartTooltip"></div>
                 </div>
             </div>
 
@@ -1773,6 +1908,7 @@
                 processAndRenderInap();
                 renderLeadtimeTable();
                 renderHeatmap();
+                renderQtyBongkarChart();
                 renderStats();
                 renderOpsChart();
                 renderCalendar();
@@ -2161,6 +2297,7 @@
             processAndRenderInap();
             renderLeadtimeTable();
             renderHeatmap();
+            renderQtyBongkarChart();
             // Also update traditional components
             renderOpsChart();
             renderCalendar();
@@ -3520,6 +3657,387 @@
 
             tbody.innerHTML = html;
         }
+
+        // ====================================================
+        // === QTY BONGKAR vs TARGET & INAPAN (Canvas API) ===
+        // ====================================================
+        let _qtyChartAnimFrame = null;
+
+        function renderQtyBongkarChart() {
+            const canvas = document.getElementById('qtyBongkarCanvas');
+            if (!canvas) return;
+            const wrap = document.getElementById('qty-chart-wrap');
+            const tooltip = document.getElementById('qtyChartTooltip');
+
+            const allRows = getBongkarRows();
+            const rows = filterBySelectedMonth(allRows);
+
+            // Group per tanggal: qty bongkar & qty inapan (dalam KG)
+            const dayMap = {};
+            rows.forEach(row => {
+                const tgl = String(row.TANGGAL || '').substring(0, 10);
+                if (!tgl || tgl.length < 8) return;
+                if (!dayMap[tgl]) dayMap[tgl] = { bongkar: 0, inapan: 0 };
+                const netto = Number(row.REAL_BONGKAR_MT || row.REAL_BONGKAR_KG || 0);
+                dayMap[tgl].bongkar += netto;
+                const inapResult = computeInapForRow(row);
+                if (inapResult.valid && inapResult.isInap) {
+                    dayMap[tgl].inapan += netto;
+                }
+            });
+
+            const dates = Object.keys(dayMap).sort();
+            if (dates.length === 0) {
+                // Empty state
+                document.getElementById('qs-avg-val').textContent = '-';
+                document.getElementById('qs-inap-val').textContent = '-';
+                document.getElementById('qs-below-val').textContent = '-';
+                const ctx = canvas.getContext('2d');
+                canvas.width = wrap.clientWidth;
+                canvas.height = wrap.clientHeight;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '600 14px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Belum ada data bongkaran', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+
+            const bongkarArr = dates.map(d => dayMap[d].bongkar / 1000); // TON
+            const inapArr = dates.map(d => dayMap[d].inapan / 1000); // TON
+            const avgTarget = bongkarArr.reduce((a, b) => a + b, 0) / bongkarArr.length;
+            const totalInapan = inapArr.reduce((a, b) => a + b, 0);
+            const belowCount = bongkarArr.filter(v => v < avgTarget).length;
+
+            // Update stat cards
+            document.getElementById('qs-avg-val').textContent = avgTarget.toFixed(1);
+            document.getElementById('qs-inap-val').textContent = totalInapan.toFixed(1);
+            document.getElementById('qs-below-val').textContent = belowCount;
+
+            // Canvas setup
+            const dpr = window.devicePixelRatio || 1;
+            const cw = wrap.clientWidth;
+            const ch = wrap.clientHeight;
+            canvas.width = cw * dpr;
+            canvas.height = ch * dpr;
+            canvas.style.width = cw + 'px';
+            canvas.style.height = ch + 'px';
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+
+            const isMobile = cw < 400;
+            const padL = isMobile ? 40 : 55;
+            const padR = isMobile ? 12 : 20;
+            const padT = isMobile ? 30 : 36;
+            const padB = isMobile ? 44 : 52;
+            const plotW = cw - padL - padR;
+            const plotH = ch - padT - padB;
+
+            const allVals = [...bongkarArr, ...inapArr, avgTarget];
+            const maxVal = Math.max(...allVals, 1) * 1.18;
+
+            const xStep = dates.length > 1 ? plotW / (dates.length - 1) : plotW;
+            const getX = i => padL + i * xStep;
+            const getY = v => padT + plotH - (v / maxVal) * plotH;
+
+            ctx.clearRect(0, 0, cw, ch);
+
+            // Grid lines
+            const gridSteps = 5;
+            ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([]);
+            for (let i = 0; i <= gridSteps; i++) {
+                const yy = padT + (plotH / gridSteps) * i;
+                ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(cw - padR, yy); ctx.stroke();
+                const gVal = (maxVal - (maxVal / gridSteps) * i);
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = `${isMobile ? '600 9px' : '600 11px'} Rajdhani, sans-serif`;
+                ctx.textAlign = 'right';
+                ctx.fillText(gVal.toFixed(0), padL - 6, yy + 4);
+            }
+
+            // X-axis labels
+            ctx.fillStyle = '#64748b';
+            ctx.font = `${isMobile ? '600 8px' : '700 10px'} Rajdhani, sans-serif`;
+            ctx.textAlign = 'center';
+            dates.forEach((d, i) => {
+                const parts = d.split('-');
+                const label = `${parts[2]}/${parts[1]}`;
+                // Skip some labels if too many
+                if (dates.length > 15 && i % 2 !== 0 && i !== dates.length - 1) return;
+                ctx.fillText(label, getX(i), ch - padB + 16 + (isMobile ? 0 : 4));
+            });
+
+            // --- Draw Inapan area (red, behind) ---
+            ctx.beginPath();
+            ctx.moveTo(getX(0), getY(0));
+            for (let i = 0; i < dates.length; i++) ctx.lineTo(getX(i), getY(inapArr[i]));
+            ctx.lineTo(getX(dates.length - 1), getY(0));
+            ctx.closePath();
+            const gradR = ctx.createLinearGradient(0, padT, 0, padT + plotH);
+            gradR.addColorStop(0, 'rgba(220, 38, 38, 0.25)');
+            gradR.addColorStop(1, 'rgba(220, 38, 38, 0.02)');
+            ctx.fillStyle = gradR;
+            ctx.fill();
+            // Inapan line
+            ctx.beginPath();
+            for (let i = 0; i < dates.length; i++) {
+                if (i === 0) ctx.moveTo(getX(i), getY(inapArr[i]));
+                else ctx.lineTo(getX(i), getY(inapArr[i]));
+            }
+            ctx.strokeStyle = '#DC2626';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            ctx.stroke();
+
+            // --- Draw Bongkar area (green, front) ---
+            ctx.beginPath();
+            ctx.moveTo(getX(0), getY(0));
+            for (let i = 0; i < dates.length; i++) ctx.lineTo(getX(i), getY(bongkarArr[i]));
+            ctx.lineTo(getX(dates.length - 1), getY(0));
+            ctx.closePath();
+            const gradG = ctx.createLinearGradient(0, padT, 0, padT + plotH);
+            gradG.addColorStop(0, 'rgba(22, 163, 74, 0.3)');
+            gradG.addColorStop(1, 'rgba(22, 163, 74, 0.02)');
+            ctx.fillStyle = gradG;
+            ctx.fill();
+            // Bongkar line
+            ctx.beginPath();
+            for (let i = 0; i < dates.length; i++) {
+                if (i === 0) ctx.moveTo(getX(i), getY(bongkarArr[i]));
+                else ctx.lineTo(getX(i), getY(bongkarArr[i]));
+            }
+            ctx.strokeStyle = '#16A34A';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([]);
+            ctx.stroke();
+
+            // --- Target line (dashed blue) ---
+            ctx.beginPath();
+            ctx.moveTo(padL, getY(avgTarget));
+            ctx.lineTo(cw - padR, getY(avgTarget));
+            ctx.strokeStyle = '#2563EB';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            // Label target
+            ctx.fillStyle = '#2563EB';
+            ctx.font = `700 ${isMobile ? '9px' : '11px'} Rajdhani, sans-serif`;
+            ctx.textAlign = 'left';
+            ctx.fillText(`Target: ${avgTarget.toFixed(1)}T`, cw - padR - (isMobile ? 68 : 90), getY(avgTarget) - 6);
+
+            // --- Data points + labels ---
+            const labelFont = isMobile ? '600 7px Rajdhani, sans-serif' : '700 9px Rajdhani, sans-serif';
+            for (let i = 0; i < dates.length; i++) {
+                // Bongkar dot: green above target, red below
+                const bColor = bongkarArr[i] >= avgTarget ? '#16A34A' : '#DC2626';
+                ctx.beginPath();
+                ctx.arc(getX(i), getY(bongkarArr[i]), isMobile ? 3 : 4, 0, Math.PI * 2);
+                ctx.fillStyle = bColor;
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                // Label bongkar
+                ctx.fillStyle = bColor;
+                ctx.font = labelFont;
+                ctx.textAlign = 'center';
+                const bLabel = bongkarArr[i].toFixed(isMobile ? 0 : 1);
+                ctx.fillText(bLabel, getX(i), getY(bongkarArr[i]) - (isMobile ? 6 : 8));
+
+                // Inapan dot + label (only if > 0)
+                if (inapArr[i] > 0) {
+                    ctx.beginPath();
+                    ctx.arc(getX(i), getY(inapArr[i]), isMobile ? 2.5 : 3.5, 0, Math.PI * 2);
+                    ctx.fillStyle = '#DC2626';
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.fillStyle = '#DC2626';
+                    ctx.font = labelFont;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(inapArr[i].toFixed(isMobile ? 0 : 1), getX(i), getY(inapArr[i]) + (isMobile ? 12 : 16));
+                }
+            }
+
+            // --- Interactive hover ---
+            const handleHover = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+
+                // Find nearest point
+                let nearest = -1;
+                let minDist = Infinity;
+                for (let i = 0; i < dates.length; i++) {
+                    const dist = Math.abs(mx - getX(i));
+                    if (dist < minDist) { minDist = dist; nearest = i; }
+                }
+
+                if (nearest < 0 || minDist > (xStep / 2 + 15)) {
+                    tooltip.style.opacity = '0';
+                    canvas.style.cursor = 'default';
+                    return;
+                }
+
+                canvas.style.cursor = 'crosshair';
+
+                // Redraw + vertical hover line
+                // We avoid full redraw for perf; instead overlay a thin div approach via canvas trick
+                // Instead, just draw a simple overlay on top by requesting full redraw
+                // For smooth experience, use requestAnimationFrame
+                if (_qtyChartAnimFrame) cancelAnimationFrame(_qtyChartAnimFrame);
+                _qtyChartAnimFrame = requestAnimationFrame(() => {
+                    renderQtyBongkarChart.__drawStatic();
+                    // Vertical line
+                    ctx.beginPath();
+                    ctx.moveTo(getX(nearest), padT);
+                    ctx.lineTo(getX(nearest), padT + plotH);
+                    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([4, 3]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    // Highlight dot
+                    ctx.beginPath();
+                    ctx.arc(getX(nearest), getY(bongkarArr[nearest]), 6, 0, Math.PI * 2);
+                    ctx.fillStyle = bongkarArr[nearest] >= avgTarget ? 'rgba(22,163,74,0.25)' : 'rgba(220,38,38,0.25)';
+                    ctx.fill();
+                });
+
+                // Tooltip
+                const parts = dates[nearest].split('-');
+                const dateLabel = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                const selisih = bongkarArr[nearest] - avgTarget;
+                const selisihColor = selisih >= 0 ? '#16A34A' : '#DC2626';
+                const selisihSign = selisih >= 0 ? '+' : '';
+                tooltip.innerHTML = `
+                    <div class="tt-date"><i class="far fa-calendar-alt" style="margin-right:4px; opacity:0.6;"></i>${dateLabel}</div>
+                    <div class="tt-row"><div class="tt-dot" style="background:#2563EB;"></div> Target: <strong style="margin-left:auto;">${avgTarget.toFixed(1)} T</strong></div>
+                    <div class="tt-row"><div class="tt-dot" style="background:#16A34A;"></div> Aktual: <strong style="margin-left:auto;">${bongkarArr[nearest].toFixed(1)} T</strong></div>
+                    <div class="tt-row"><div class="tt-dot" style="background:#DC2626;"></div> Inapan: <strong style="margin-left:auto;">${inapArr[nearest].toFixed(1)} T</strong></div>
+                    <div class="tt-row" style="margin-top:4px; padding-top:6px; border-top:1px solid #f1f5f9;"><span>Selisih:</span> <strong style="margin-left:auto; color:${selisihColor};">${selisihSign}${selisih.toFixed(1)} T</strong></div>
+                `;
+                tooltip.style.opacity = '1';
+
+                // Position tooltip (prevent overflow)
+                let tx = getX(nearest) + 12;
+                let ty = Math.min(my - 10, ch - 180);
+                if (ty < 0) ty = 10;
+                if (tx + 200 > cw) tx = getX(nearest) - 200;
+                if (tx < 0) tx = 4;
+                tooltip.style.left = tx + 'px';
+                tooltip.style.top = ty + 'px';
+            };
+
+            const handleLeave = () => {
+                tooltip.style.opacity = '0';
+                canvas.style.cursor = 'default';
+                if (_qtyChartAnimFrame) cancelAnimationFrame(_qtyChartAnimFrame);
+                _qtyChartAnimFrame = requestAnimationFrame(() => {
+                    renderQtyBongkarChart.__drawStatic();
+                });
+            };
+
+            // Store static draw function for hover overlay
+            renderQtyBongkarChart.__drawStatic = function() {
+                ctx.clearRect(0, 0, cw, ch);
+                // Grid
+                ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([]);
+                for (let i = 0; i <= gridSteps; i++) {
+                    const yy = padT + (plotH / gridSteps) * i;
+                    ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(cw - padR, yy); ctx.stroke();
+                    const gVal = (maxVal - (maxVal / gridSteps) * i);
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = `${isMobile ? '600 9px' : '600 11px'} Rajdhani, sans-serif`;
+                    ctx.textAlign = 'right';
+                    ctx.fillText(gVal.toFixed(0), padL - 6, yy + 4);
+                }
+                // X labels
+                ctx.fillStyle = '#64748b';
+                ctx.font = `${isMobile ? '600 8px' : '700 10px'} Rajdhani, sans-serif`;
+                ctx.textAlign = 'center';
+                dates.forEach((d, i) => {
+                    const parts = d.split('-');
+                    const label = `${parts[2]}/${parts[1]}`;
+                    if (dates.length > 15 && i % 2 !== 0 && i !== dates.length - 1) return;
+                    ctx.fillText(label, getX(i), ch - padB + 16 + (isMobile ? 0 : 4));
+                });
+                // Inapan area
+                ctx.beginPath();
+                ctx.moveTo(getX(0), getY(0));
+                for (let j = 0; j < dates.length; j++) ctx.lineTo(getX(j), getY(inapArr[j]));
+                ctx.lineTo(getX(dates.length - 1), getY(0));
+                ctx.closePath();
+                ctx.fillStyle = gradR;
+                ctx.fill();
+                ctx.beginPath();
+                for (let j = 0; j < dates.length; j++) { if (j === 0) ctx.moveTo(getX(j), getY(inapArr[j])); else ctx.lineTo(getX(j), getY(inapArr[j])); }
+                ctx.strokeStyle = '#DC2626'; ctx.lineWidth = 2; ctx.setLineDash([]); ctx.stroke();
+                // Bongkar area
+                ctx.beginPath();
+                ctx.moveTo(getX(0), getY(0));
+                for (let j = 0; j < dates.length; j++) ctx.lineTo(getX(j), getY(bongkarArr[j]));
+                ctx.lineTo(getX(dates.length - 1), getY(0));
+                ctx.closePath();
+                ctx.fillStyle = gradG;
+                ctx.fill();
+                ctx.beginPath();
+                for (let j = 0; j < dates.length; j++) { if (j === 0) ctx.moveTo(getX(j), getY(bongkarArr[j])); else ctx.lineTo(getX(j), getY(bongkarArr[j])); }
+                ctx.strokeStyle = '#16A34A'; ctx.lineWidth = 2.5; ctx.setLineDash([]); ctx.stroke();
+                // Target line
+                ctx.beginPath(); ctx.moveTo(padL, getY(avgTarget)); ctx.lineTo(cw - padR, getY(avgTarget));
+                ctx.strokeStyle = '#2563EB'; ctx.lineWidth = 2; ctx.setLineDash([8, 5]); ctx.stroke(); ctx.setLineDash([]);
+                ctx.fillStyle = '#2563EB'; ctx.font = `700 ${isMobile ? '9px' : '11px'} Rajdhani, sans-serif`; ctx.textAlign = 'left';
+                ctx.fillText(`Target: ${avgTarget.toFixed(1)}T`, cw - padR - (isMobile ? 68 : 90), getY(avgTarget) - 6);
+                // Points + labels
+                for (let j = 0; j < dates.length; j++) {
+                    const bColor = bongkarArr[j] >= avgTarget ? '#16A34A' : '#DC2626';
+                    ctx.beginPath(); ctx.arc(getX(j), getY(bongkarArr[j]), isMobile ? 3 : 4, 0, Math.PI * 2);
+                    ctx.fillStyle = bColor; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+                    ctx.fillStyle = bColor; ctx.font = labelFont; ctx.textAlign = 'center';
+                    ctx.fillText(bongkarArr[j].toFixed(isMobile ? 0 : 1), getX(j), getY(bongkarArr[j]) - (isMobile ? 6 : 8));
+                    if (inapArr[j] > 0) {
+                        ctx.beginPath(); ctx.arc(getX(j), getY(inapArr[j]), isMobile ? 2.5 : 3.5, 0, Math.PI * 2);
+                        ctx.fillStyle = '#DC2626'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+                        ctx.fillStyle = '#DC2626'; ctx.font = labelFont; ctx.textAlign = 'center';
+                        ctx.fillText(inapArr[j].toFixed(isMobile ? 0 : 1), getX(j), getY(inapArr[j]) + (isMobile ? 12 : 16));
+                    }
+                }
+            };
+
+            // Remove old listeners (re-binds on each render)
+            canvas.removeEventListener('mousemove', canvas._qtyHover);
+            canvas.removeEventListener('mouseleave', canvas._qtyLeave);
+            canvas.removeEventListener('touchmove', canvas._qtyTouch);
+            canvas.removeEventListener('touchend', canvas._qtyTouchEnd);
+            canvas._qtyHover = handleHover;
+            canvas._qtyLeave = handleLeave;
+            canvas._qtyTouch = (e) => { e.preventDefault(); const t = e.touches[0]; handleHover({ clientX: t.clientX, clientY: t.clientY }); };
+            canvas._qtyTouchEnd = handleLeave;
+            canvas.addEventListener('mousemove', canvas._qtyHover);
+            canvas.addEventListener('mouseleave', canvas._qtyLeave);
+            canvas.addEventListener('touchmove', canvas._qtyTouch, { passive: false });
+            canvas.addEventListener('touchend', canvas._qtyTouchEnd);
+        }
+
+        // Responsive resize for QTY chart
+        (function() {
+            let resizeTimer;
+            const resizeHandler = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (hubData) renderQtyBongkarChart(); }, 200); };
+            if (typeof ResizeObserver !== 'undefined') {
+                const ro = new ResizeObserver(resizeHandler);
+                const wrap = document.getElementById('qty-chart-wrap');
+                if (wrap) ro.observe(wrap);
+            } else {
+                window.addEventListener('resize', resizeHandler);
+            }
+        })();
     </script>
     <svg width="0" height="0" style="position: absolute;">
         <filter id="fire-distort">
