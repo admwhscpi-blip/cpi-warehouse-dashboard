@@ -1482,6 +1482,47 @@
             return (h * 60) + m;
         }
 
+        // Format tanggal ke format lokal web (DD/MM/YYYY)
+        function formatDateLocal(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            return dateStr;
+        }
+
+        // Tambah 1 hari ke string tanggal YYYY-MM-DD
+        // CATATAN: Gunakan local date methods (bukan toISOString) untuk menghindari timezone shift.
+        // toISOString() mengembalikan UTC — di UTC+7, midnight lokal = hari sebelumnya UTC → hasil salah.
+        function addOneDay(dateStr) {
+            const d = new Date(dateStr + 'T00:00:00');
+            d.setDate(d.getDate() + 1);
+            const y  = d.getFullYear();
+            const m  = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${dd}`;
+        }
+
+        // Baca actual datetime (milliseconds) dari sebuah time input element.
+        // Prioritas: dataset.actualDatetime (sudah dikonfirmasi +1 hari) → fallback ke date+time biasa
+        function getActualMs(timeInputEl) {
+            if (!timeInputEl) return null;
+            if (timeInputEl.dataset.actualDatetime) {
+                return parseInt(timeInputEl.dataset.actualDatetime, 10);
+            }
+            return null;
+        }
+
+        // Resolve actual datetime untuk satu time input dengan tanggal base
+        function resolveFieldActualMs(timeInputEl, baseDateStr) {
+            if (!timeInputEl || !timeInputEl.value || !baseDateStr) return null;
+            // Jika sudah punya actualDatetime tersimpan, pakai itu
+            if (timeInputEl.dataset.actualDatetime) {
+                return parseInt(timeInputEl.dataset.actualDatetime, 10);
+            }
+            // Fallback: gunakan baseDateStr + time value
+            return new Date(`${baseDateStr}T${timeInputEl.value}:00`).getTime();
+        }
+
         function getDateTimeMs(dateId, timeId, contextEl = null) {
             let dValue, tValue;
             if(contextEl && dateId.includes('t_ab_')) {
@@ -1513,17 +1554,62 @@
             return new Date(`${dValue}T${tValue}:00`).getTime();
         }
 
-        function validateTimestamps(el) {
+        // Urutan kronologis field beserta tanggal base masing-masing
+        function getChronologicalSequence(tipe, box) {
+            if (tipe === "Bareng" && box) {
+                // Untuk Bareng, AB fields ada di dalam truck-box
+                return [
+                    { el: box.querySelector('.trk-ab-arrival'), baseId: null, baseTrk: 'trk-ab-tanggal', name: 'AB Arrival Time', isBoxField: true },
+                    { el: box.querySelector('.trk-ab-qc'),     baseId: null, baseTrk: 'trk-ab-tanggal', name: 'AB QC Time',      isBoxField: true },
+                    { el: document.getElementById('t_pb_sampai'),  baseId: 't_pb_tanggal', name: 'PB Sampai Gudang'  },
+                    { el: document.getElementById('t_pb_start'),   baseId: 't_pb_tanggal', name: 'PB Start Bongkar'  },
+                    { el: document.getElementById('t_pb_hold'),    baseId: 't_pb_tanggal', name: 'PB Hold QC'        },
+                    { el: document.getElementById('t_pb_restart'), baseId: 't_pb_tanggal', name: 'PB Restart QC'     },
+                    { el: document.getElementById('t_pb_finish'),  baseId: 't_pb_tanggal', name: 'PB Finish'         }
+                ];
+            } else {
+                return [
+                    { el: document.getElementById('t_ab_arrival'),  baseId: 't_ab_tanggal', name: 'AB Arrival Time'   },
+                    { el: document.getElementById('t_ab_qc'),        baseId: 't_ab_tanggal', name: 'AB QC Time'         },
+                    { el: document.getElementById('t_pb_sampai'),    baseId: 't_pb_tanggal', name: 'PB Sampai Gudang'  },
+                    { el: document.getElementById('t_pb_start'),     baseId: 't_pb_tanggal', name: 'PB Start Bongkar'  },
+                    { el: document.getElementById('t_pb_hold'),      baseId: 't_pb_tanggal', name: 'PB Hold QC'        },
+                    { el: document.getElementById('t_pb_restart'),   baseId: 't_pb_tanggal', name: 'PB Restart QC'     },
+                    { el: document.getElementById('t_pb_finish'),    baseId: 't_pb_tanggal', name: 'PB Finish'         }
+                ];
+            }
+        }
+
+        // Resolve ms dari satu item sequence (termasuk actualDatetime dan isBoxField)
+        function resolveSeqItemMs(item, box) {
+            const el = item.el;
+            if (!el || !el.value) return null;
+            // Prioritas: dataset.actualDatetime
+            if (el.dataset.actualDatetime) return parseInt(el.dataset.actualDatetime, 10);
+            // Fallback: base date + time value
+            let baseDateStr = null;
+            if (item.isBoxField && box) {
+                const baseEl = box.querySelector('.' + item.baseTrk);
+                baseDateStr = baseEl ? baseEl.value : null;
+            } else if (item.baseId) {
+                const baseEl = document.getElementById(item.baseId);
+                baseDateStr = baseEl ? baseEl.value : null;
+            }
+            if (!baseDateStr || !el.value) return null;
+            return new Date(`${baseDateStr}T${el.value}:00`).getTime();
+        }
+
+        async function validateTimestamps(el) {
             const tipe = document.getElementById('inp_tipe_bongkaran').value;
             const box = el.closest('.truck-box');
 
-            // 1. Evaluasi Tanggal Mutlak
+            // 1. Evaluasi Tanggal Mutlak (AB-Tanggal vs PB-Tanggal)
             let d1;
             if (tipe === "Bareng" && box) {
                 const dInp = box.querySelector('.trk-ab-tanggal');
                 d1 = dInp ? dInp.value : "";
             } else {
-                d1 = document.getElementById('t_ab_tanggal').value;
+                d1 = document.getElementById('t_ab_tanggal') ? document.getElementById('t_ab_tanggal').value : "";
             }
             
             const d2 = document.getElementById('t_pb_tanggal').value;
@@ -1535,58 +1621,168 @@
                 }
             }
 
-            // 2. Logika Urut Kronologis Waktu
-            const seq = [
-                {d: 't_ab_tanggal', t: 't_ab_arrival', name: 'AB Arrival Time'},
-                {d: 't_ab_tanggal', t: 't_ab_qc', name: 'AB QC Time'},
-                {d: 't_pb_tanggal', t: 't_pb_sampai', name: 'PB Sampai Gudang'},
-                {d: 't_pb_tanggal', t: 't_pb_start', name: 'PB Start Bongkar'},
-                {d: 't_pb_tanggal', t: 't_pb_hold', name: 'PB Hold QC'},
-                {d: 't_pb_tanggal', t: 't_pb_restart', name: 'PB Restart QC'},
-                {d: 't_pb_tanggal', t: 't_pb_finish', name: 'PB Finish'}
-            ];
-
-            let lastValidTime = null;
-            let lastValidName = "";
-
-            for(let i=0; i<seq.length; i++) {
-                const item = seq[i];
-                // Pass el as context to getDateTimeMs
-                let ms = getDateTimeMs(item.d, item.t, el);
-                
-                if(ms) {
-                    if(lastValidTime && ms < lastValidTime) {
-                        Swal.fire('Urutan Waktu Salah', `Waktu ${item.name} secara logika tidak wajar / terdeteksi mundur dari waktu ${lastValidName}. Pastikan urutan Tanggal dan Jam sudah benar.`, 'error');
-                        el.value = ""; 
-                        return; 
+            // 2. Cari posisi el dalam urutan kronologis
+            const seq = getChronologicalSequence(tipe, box);
+            const elIdx = seq.findIndex(item => item.el === el);
+            
+            // Jika el bukan time input (date input), reset hanya field yang menggunakan date ini sebagai base
+            if (el.type !== 'time') {
+                // Tentukan baseId mana yang berubah:
+                // - t_ab_tanggal / trk-ab-tanggal → reset hanya AB fields
+                // - t_pb_tanggal → reset hanya PB fields
+                const changedId = el.id || '';
+                const changedClass = el.classList ? [...el.classList] : [];
+                seq.forEach(item => {
+                    if (!item.el) return;
+                    // Cek apakah item ini menggunakan date yang baru saja berubah
+                    const usesThisDate = (item.baseId && item.baseId === changedId) ||
+                                        (item.isBoxField && changedClass.includes(item.baseTrk));
+                    if (usesThisDate) {
+                        delete item.el.dataset.actualDatetime;
+                        delete item.el.dataset.actualDate;
                     }
-                    lastValidTime = ms;
-                    lastValidName = item.name;
+                });
+                checkDelayBoxes(tipe, box);
+                checkDurasiLengkap();
+                return;
+            }
+
+            if (elIdx === -1) {
+                // Field ini tidak ada di urutan (mungkin tanggal), skip
+                checkDurasiLengkap();
+                return;
+            }
+
+            // 3. Cari lastValidMs = ms dari field terisi terakhir sebelum el
+            let lastValidMs = null;
+            let lastValidName = '';
+            for (let i = 0; i < elIdx; i++) {
+                const ms = resolveSeqItemMs(seq[i], box);
+                if (ms !== null) {
+                    lastValidMs = ms;
+                    lastValidName = seq[i].name;
                 }
             }
 
+            // 4. Hitung ms dari el saat ini (dengan base datenya)
+            let baseDateStr = null;
+            if (seq[elIdx].isBoxField && box) {
+                const baseEl = box.querySelector('.' + seq[elIdx].baseTrk);
+                baseDateStr = baseEl ? baseEl.value : null;
+            } else if (seq[elIdx].baseId) {
+                const baseEl = document.getElementById(seq[elIdx].baseId);
+                baseDateStr = baseEl ? baseEl.value : null;
+            }
+
+            if (!baseDateStr) {
+                // Tidak ada tanggal base, tidak bisa validasi
+                checkDurasiLengkap();
+                return;
+            }
+
+            const currentMs = new Date(`${baseDateStr}T${el.value}:00`).getTime();
+
+            // 5. Bandingkan dengan last valid
+            if (lastValidMs !== null && currentMs < lastValidMs) {
+                // Midnight crossing detected — tampilkan popup konfirmasi
+                const nextDateStr = addOneDay(baseDateStr);
+                const nextDateFormatted = formatDateLocal(nextDateStr);
+                const prevTimeFormatted = lastValidName;
+                const curTimeVal = el.value;
+
+                const result = await Swal.fire({
+                    title: '⚠️ Jam Lebih Kecil dari Sebelumnya',
+                    html: `Jam <b>${curTimeVal}</b> lebih kecil dari waktu sebelumnya (<b>${prevTimeFormatted}</b>).<br><br>Apakah maksudnya <b>hari berikutnya (${nextDateFormatted})</b>?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: '✅ Ya, hari berikutnya',
+                    cancelButtonText: '❌ Tidak, koreksi jam',
+                    confirmButtonColor: '#10b981',
+                    cancelButtonColor: '#ef4444',
+                    allowOutsideClick: false
+                });
+
+                if (result.isConfirmed) {
+                    // Simpan actualDatetime = tanggal+1 + time
+                    const confirmedMs = new Date(`${nextDateStr}T${curTimeVal}:00`).getTime();
+                    el.dataset.actualDatetime = String(confirmedMs);
+                    el.dataset.actualDate = nextDateStr;
+                } else {
+                    // User ingin koreksi — kosongkan field
+                    el.value = '';
+                    delete el.dataset.actualDatetime;
+                    delete el.dataset.actualDate;
+                    checkDurasiLengkap();
+                    return;
+                }
+            } else {
+                // Normal: simpan actualDatetime sesuai baseDateStr
+                el.dataset.actualDatetime = String(currentMs);
+                el.dataset.actualDate = baseDateStr;
+            }
+
+            // 6. Validasi field setelah el (pastikan tidak ada yang jadi lebih kecil)
+            // Jika ada field setelah el yang sudah punya nilai, cek apakah masih valid
+            const myMs = parseInt(el.dataset.actualDatetime, 10);
+            for (let i = elIdx + 1; i < seq.length; i++) {
+                const nextEl = seq[i].el;
+                if (!nextEl || !nextEl.value) continue;
+                const nextMs = resolveSeqItemMs(seq[i], box);
+                if (nextMs !== null && nextMs < myMs) {
+                    // Field setelah ini jadi tidak valid, reset actualDatetime-nya saja
+                    // (jangan paksa clear, biarkan user lihat dengan validasi berikutnya)
+                    delete nextEl.dataset.actualDatetime;
+                    delete nextEl.dataset.actualDate;
+                }
+            }
+
+            checkDelayBoxes(tipe, box);
+            checkDurasiLengkap();
+        }
+
+        function checkDelayBoxes(tipe, box) {
             // Delay checks (Header Fields)
-            const abQC1 = (tipe === "Bareng" && box) ? box.querySelector('.trk-ab-qc').value : document.getElementById('t_ab_qc').value;
-            const pbSampai = document.getElementById('t_pb_sampai').value;
-            const pbStart = document.getElementById('t_pb_start').value;
+            const abQC1 = (tipe === "Bareng" && box) ? box.querySelector('.trk-ab-qc').value : (document.getElementById('t_ab_qc') ? document.getElementById('t_ab_qc').value : '');
+            const pbSampaiEl = document.getElementById('t_pb_sampai');
+            const pbStartEl = document.getElementById('t_pb_start');
+            const pbSampai = pbSampaiEl ? pbSampaiEl.value : '';
+            const pbStart = pbStartEl ? pbStartEl.value : '';
 
             if(abQC1 && pbSampai) {
-                const diffSpace = timeToMinutes(pbSampai) - timeToMinutes(abQC1);
-                let actualDiff1 = diffSpace < 0 ? (1440 + diffSpace) : diffSpace;
+                // Gunakan actualDatetime jika ada untuk selisih yang benar
+                let abQcMs = null, pbSampaiMs = null;
+                const abQcEl = (tipe === "Bareng" && box) ? box.querySelector('.trk-ab-qc') : document.getElementById('t_ab_qc');
+                if (abQcEl && abQcEl.dataset.actualDatetime) abQcMs = parseInt(abQcEl.dataset.actualDatetime, 10);
+                if (pbSampaiEl && pbSampaiEl.dataset.actualDatetime) pbSampaiMs = parseInt(pbSampaiEl.dataset.actualDatetime, 10);
+                
+                let actualDiff1;
+                if (abQcMs !== null && pbSampaiMs !== null) {
+                    actualDiff1 = (pbSampaiMs - abQcMs) / 60000;
+                } else {
+                    const diffSpace = timeToMinutes(pbSampai) - timeToMinutes(abQC1);
+                    actualDiff1 = diffSpace < 0 ? (1440 + diffSpace) : diffSpace;
+                }
                 const spaceBox = document.getElementById('delay-space-box');
                 if(actualDiff1 > 120) spaceBox.style.display = 'block';
                 else { spaceBox.style.display = 'none'; document.getElementById('t_delay_space').value = ""; }
             }
 
             if(pbSampai && pbStart) {
-                const diffOps = timeToMinutes(pbStart) - timeToMinutes(pbSampai);
-                let actualDiff2 = diffOps < 0 ? (1440 + diffOps) : diffOps;
+                let pbSampaiMs = null, pbStartMs = null;
+                if (pbSampaiEl && pbSampaiEl.dataset.actualDatetime) pbSampaiMs = parseInt(pbSampaiEl.dataset.actualDatetime, 10);
+                if (pbStartEl && pbStartEl.dataset.actualDatetime) pbStartMs = parseInt(pbStartEl.dataset.actualDatetime, 10);
+
+                let actualDiff2;
+                if (pbSampaiMs !== null && pbStartMs !== null) {
+                    actualDiff2 = (pbStartMs - pbSampaiMs) / 60000;
+                } else {
+                    const diffOps = timeToMinutes(pbStart) - timeToMinutes(pbSampai);
+                    actualDiff2 = diffOps < 0 ? (1440 + diffOps) : diffOps;
+                }
                 const opsBox = document.getElementById('delay-operasional-box');
                 if(actualDiff2 > 60) opsBox.style.display = 'block';
                 else { opsBox.style.display = 'none'; document.getElementById('t_delay_operasional').value = ""; }
             }
-
-            checkDurasiLengkap();
         }
 
         function checkDurasiLengkap() {
@@ -2015,6 +2211,20 @@
 
             const isLangsiran = (tipe === "Langsiran");
 
+            // Helper: baca actualDate dari dataset element (mendukung midnight crossing +1 hari)
+            function getElActualDate(el, fallbackId) {
+                if (!el) return (fallbackId && document.getElementById(fallbackId)) ? document.getElementById(fallbackId).value : '-';
+                return el.dataset.actualDate || (fallbackId && document.getElementById(fallbackId) ? document.getElementById(fallbackId).value : (el.value || '-'));
+            }
+
+            const abArrivalEl = document.getElementById('t_ab_arrival');
+            const abQcEl      = document.getElementById('t_ab_qc');
+            const pbSampaiEl  = document.getElementById('t_pb_sampai');
+            const pbStartEl   = document.getElementById('t_pb_start');
+            const pbHoldEl    = document.getElementById('t_pb_hold');
+            const pbRestartEl = document.getElementById('t_pb_restart');
+            const pbFinishEl  = document.getElementById('t_pb_finish');
+
             const payload = {
                 action: "saveBongkaran",
                 tipeBongkaran: tipe,
@@ -2022,14 +2232,21 @@
                 shift: cachedSetup.shift || "-",
                 sloc: cachedSetup.sloc || "-",
                 abTanggal: tipe === "Langsiran" ? selectedLangsiran.tanggal : (tipe === "Bareng" ? trucks[0].abTanggal : document.getElementById('t_ab_tanggal').value),
-                abArrivalTime: isLangsiran ? "-" : (tipe === "Bareng" ? trucks[0].abArrival : document.getElementById('t_ab_arrival').value),
-                abQcTime1: isLangsiran ? "-" : (tipe === "Bareng" ? trucks[0].abQc : document.getElementById('t_ab_qc').value),
+                abArrivalTime: isLangsiran ? "-" : (tipe === "Bareng" ? trucks[0].abArrival : (abArrivalEl ? abArrivalEl.value : '-')),
+                abArrivalDate: isLangsiran ? "-" : (tipe === "Bareng" ? trucks[0].abTanggal : getElActualDate(abArrivalEl, 't_ab_tanggal')),
+                abQcTime1: isLangsiran ? "-" : (tipe === "Bareng" ? trucks[0].abQc : (abQcEl ? abQcEl.value : '-')),
+                abQcDate1: isLangsiran ? "-" : (tipe === "Bareng" ? trucks[0].abTanggal : getElActualDate(abQcEl, 't_ab_tanggal')),
                 pbTanggal: document.getElementById('t_pb_tanggal').value,
-                pbSampaiGudang: isLangsiran ? "-" : document.getElementById('t_pb_sampai').value,
-                pbStartBongkar: document.getElementById('t_pb_start').value, 
-                pbHoldQc: isLangsiran ? "-" : document.getElementById('t_pb_hold').value,
-                pbRestartQc: isLangsiran ? "-" : document.getElementById('t_pb_restart').value,
-                pbFinish: document.getElementById('t_pb_finish').value,
+                pbSampaiGudang: isLangsiran ? "-" : (pbSampaiEl ? pbSampaiEl.value : '-'),
+                pbSampaiDate: isLangsiran ? "-" : getElActualDate(pbSampaiEl, 't_pb_tanggal'),
+                pbStartBongkar: pbStartEl ? pbStartEl.value : '-',
+                pbStartDate: getElActualDate(pbStartEl, 't_pb_tanggal'),
+                pbHoldQc: isLangsiran ? "-" : (pbHoldEl ? pbHoldEl.value : '-'),
+                pbHoldDate: isLangsiran ? "-" : getElActualDate(pbHoldEl, 't_pb_tanggal'),
+                pbRestartQc: isLangsiran ? "-" : (pbRestartEl ? pbRestartEl.value : '-'),
+                pbRestartDate: isLangsiran ? "-" : getElActualDate(pbRestartEl, 't_pb_tanggal'),
+                pbFinish: pbFinishEl ? pbFinishEl.value : '-',
+                pbFinishDate: getElActualDate(pbFinishEl, 't_pb_tanggal'),
                 delaySpace: isLangsiran ? "-" : (document.getElementById('t_delay_space').value || "-"),
                 delayOperasional: isLangsiran ? "-" : (document.getElementById('t_delay_operasional').value || "-"),
                 trucks: finalTrucks

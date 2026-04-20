@@ -1991,31 +1991,59 @@
         }
 
         function computeInapForRow(row) {
-            // Priority: ARRIVAL_DATE (Column N) vs TANGGAL_PB (Column Q)
-            // Fallback: TANGGAL
-            let startD = row.ARRIVAL_DATE || row.TANGGAL;
-            let endD = row.TANGGAL_PB || row.TANGGAL;
-
-            const arrDate = parseFlexDate(startD);
-            const arrTime = parseFlexTime(row.ARRIVAL_TIME);
-            const pbDate = parseFlexDate(endD);
-            const finTime = parseFlexTime(row.FINISH_TIME);
-
-            const arrDT = buildDateTime(arrDate, arrTime);
-            const finDT = buildDateTime(pbDate, finTime);
+            // BUG 2 FIX LANJUTAN: Jangan hitung ulang tanggal dari awal.
+            // Gunakan engine durasi yang sudah mem-build chronological order secara sempurna
+            // (termasuk auto-correct midnight crossing untuk tiap step)
+            const durData = computeDurationsForRow(row);
+            
+            const arrDT = durData.arrDT;
+            const finDT = durData.finDT;
 
             if (!arrDT || !finDT) return { valid: false, duration: 0, durationHours: 0, isInap: false };
 
-            const durationMin = calcMinutesBetween(arrDT, finDT);
+            const durationMin = durData.grandTotal !== null ? durData.grandTotal : calcMinutesBetween(arrDT, finDT);
             const durationHours = durationMin !== null ? durationMin / 60 : 0;
             const isInap = durationHours >= 24;
 
             return { valid: true, duration: durationMin || 0, durationHours, isInap, arrDT, finDT };
         }
 
+        // Helper: jika dtNext mundur dari dtPrev DAN tidak ada tanggal spesifik per-field tersimpan,
+        // coba tambah +1 hari pada dtNext (auto-correct midnight crossing untuk data lama)
+        function autoFixMidnightCrossing(dtPrev, dtNext, hasSpecificDate) {
+            if (!dtPrev || !dtNext || hasSpecificDate) return dtNext;
+            if (dtNext.getTime() < dtPrev.getTime()) {
+                const corrected = new Date(dtNext.getTime() + 24 * 60 * 60 * 1000);
+                return corrected;
+            }
+            return dtNext;
+        }
+
         function computeDurationsForRow(row) {
-            const arrDate = parseFlexDate(row.TANGGAL);
-            const pbDate = parseFlexDate(row.TANGGAL_PB || row.TANGGAL);
+            // BUG 2 FIX: Baca tanggal aktual per-field. Untuk data baru (setelah fix Bug 1),
+            // setiap field punya tanggal spesifiknya sendiri (mendukung midnight crossing).
+            // Untuk data lama, fallback ke TANGGAL (AB) dan TANGGAL_PB (PB) + auto-correct jika mundur.
+
+            const abBaseDateStr  = row.TANGGAL;
+            const pbBaseDateStr  = row.TANGGAL_PB || row.TANGGAL;
+
+            // Resolusi tanggal per-field: prioritas field spesifik, fallback ke base
+            // Tandai apakah field punya tanggal spesifik (untuk menentukan apakah auto-correct boleh dipakai)
+            const arrDateStr     = row.ARRIVAL_DATE    || row.AB_ARRIVAL_DATE   || abBaseDateStr;
+            const qcDateStr      = row.QC_DATE         || row.AB_QC_DATE        || abBaseDateStr;
+            const sampaiDateStr  = row.SAMPAI_DATE     || row.PB_SAMPAI_DATE    || pbBaseDateStr;
+            const startDateStr   = row.START_DATE      || row.PB_START_DATE     || pbBaseDateStr;
+            const holdDateStr    = row.HOLD_DATE        || row.PB_HOLD_DATE     || pbBaseDateStr;
+            const restartDateStr = row.RESTART_DATE    || row.PB_RESTART_DATE   || pbBaseDateStr;
+            const finishDateStr  = row.FINISH_DATE     || row.PB_FINISH_DATE    || pbBaseDateStr;
+
+            // Tanda: apakah punya tanggal per-field tersimpan (false = data lama, perlu auto-correct)
+            const hasQcDate     = !!(row.QC_DATE      || row.AB_QC_DATE);
+            const hasSampaiDate = !!(row.SAMPAI_DATE  || row.PB_SAMPAI_DATE);
+            const hasStartDate  = !!(row.START_DATE   || row.PB_START_DATE);
+            const hasHoldDate   = !!(row.HOLD_DATE    || row.PB_HOLD_DATE);
+            const hasRestartDate= !!(row.RESTART_DATE || row.PB_RESTART_DATE);
+            const hasFinishDate = !!(row.FINISH_DATE  || row.PB_FINISH_DATE);
 
             const tO = parseFlexTime(row.ARRIVAL_TIME);
             const tP = parseFlexTime(row.QC_SAMPLING_1);
@@ -2025,15 +2053,27 @@
             const tU = parseFlexTime(row.RESTART_QC);
             const tV = parseFlexTime(row.FINISH_TIME);
 
-            // O and P use date from N (arrDate)
-            const dtO = buildDateTime(arrDate, tO);
-            const dtP = buildDateTime(arrDate, tP);
-            // R through V use date from Q (pbDate)
-            const dtR = buildDateTime(pbDate, tR);
-            const dtS = buildDateTime(pbDate, tS);
-            const dtT = buildDateTime(pbDate, tT);
-            const dtU = buildDateTime(pbDate, tU);
-            const dtV = buildDateTime(pbDate, tV);
+            // Bangun DateTime awal menggunakan tanggal per-field (atau fallback base date)
+            let dtO = buildDateTime(parseFlexDate(arrDateStr),     tO);
+            let dtP = buildDateTime(parseFlexDate(qcDateStr),      tP);
+            let dtR = buildDateTime(parseFlexDate(sampaiDateStr),  tR);
+            let dtS = buildDateTime(parseFlexDate(startDateStr),   tS);
+            let dtT = buildDateTime(parseFlexDate(holdDateStr),    tT);
+            let dtU = buildDateTime(parseFlexDate(restartDateStr), tU);
+            let dtV = buildDateTime(parseFlexDate(finishDateStr),  tV);
+
+            // Auto-correct secara kronologis: jika field tidak punya tanggal per-field tersimpan
+            // dan nilainya mundur dari field sebelumnya, tambah +1 hari
+            if (dtO && dtP) dtP = autoFixMidnightCrossing(dtO, dtP, hasQcDate);
+            if (dtP && dtR) dtR = autoFixMidnightCrossing(dtP, dtR, hasSampaiDate);
+            else if (dtO && dtR) dtR = autoFixMidnightCrossing(dtO, dtR, hasSampaiDate);
+            if (dtR && dtS) dtS = autoFixMidnightCrossing(dtR, dtS, hasStartDate);
+            else if (dtP && dtS) dtS = autoFixMidnightCrossing(dtP, dtS, hasStartDate);
+            if (dtS && dtT) dtT = autoFixMidnightCrossing(dtS, dtT, hasHoldDate);
+            if (dtT && dtU) dtU = autoFixMidnightCrossing(dtT, dtU, hasRestartDate);
+            else if (dtS && dtU) dtU = autoFixMidnightCrossing(dtS, dtU, hasRestartDate);
+            if (dtU && dtV) dtV = autoFixMidnightCrossing(dtU, dtV, hasFinishDate);
+            else if (dtS && dtV) dtV = autoFixMidnightCrossing(dtS, dtV, hasFinishDate);
 
             // Antri Bongkar
             const oVsP = calcMinutesBetween(dtO, dtP); // Arrival → QC
@@ -2051,7 +2091,9 @@
             return {
                 antri: { total: antriTotal, oVsP, pVsR },
                 proses: { total: prosesTotal, rVsS, sVsT, tVsU, uVsV },
-                grandTotal: safeSum([antriTotal, prosesTotal])
+                grandTotal: safeSum([antriTotal, prosesTotal]),
+                arrDT: dtO,
+                finDT: dtV
             };
         }
 
@@ -2715,18 +2757,52 @@
                 </div>
             `;
 
-            let arrDate = r.ARRIVAL_DATE || '';
-            if (!arrDate && r.ARRIVAL_TIME) arrDate = r.TANGGAL || '';
-            let pbDate = r.TANGGAL_PB || r.TANGGAL || '-';
+            const abBaseDateStr  = r.TANGGAL;
+            const pbBaseDateStr  = r.TANGGAL_PB || r.TANGGAL;
+
+            let dtO = buildDateTime(parseFlexDate(r.ARRIVAL_DATE || r.AB_ARRIVAL_DATE || abBaseDateStr), parseFlexTime(r.ARRIVAL_TIME));
+            let dtP = buildDateTime(parseFlexDate(r.QC_DATE || r.AB_QC_DATE || abBaseDateStr), parseFlexTime(r.QC_SAMPLING_1));
+            let dtR = buildDateTime(parseFlexDate(r.SAMPAI_DATE || r.PB_SAMPAI_DATE || pbBaseDateStr), parseFlexTime(r.SAMPAI_GUDANG || r.START_PANGGIL));
+            let dtS = buildDateTime(parseFlexDate(r.START_DATE || r.PB_START_DATE || pbBaseDateStr), parseFlexTime(r.START_BONGKAR));
+            let dtT = buildDateTime(parseFlexDate(r.HOLD_DATE || r.PB_HOLD_DATE || pbBaseDateStr), parseFlexTime(r.HOLD_QC));
+            let dtU = buildDateTime(parseFlexDate(r.RESTART_DATE || r.PB_RESTART_DATE || pbBaseDateStr), parseFlexTime(r.RESTART_QC));
+            let dtV = buildDateTime(parseFlexDate(r.FINISH_DATE || r.PB_FINISH_DATE || pbBaseDateStr), parseFlexTime(r.FINISH_TIME));
+
+            const hasQcDate     = !!(r.QC_DATE      || r.AB_QC_DATE);
+            const hasSampaiDate = !!(r.SAMPAI_DATE  || r.PB_SAMPAI_DATE);
+            const hasStartDate  = !!(r.START_DATE   || r.PB_START_DATE);
+            const hasHoldDate   = !!(r.HOLD_DATE    || r.PB_HOLD_DATE);
+            const hasRestartDate= !!(r.RESTART_DATE || r.PB_RESTART_DATE);
+            const hasFinishDate = !!(r.FINISH_DATE  || r.PB_FINISH_DATE);
+
+            if (dtO && dtP) dtP = autoFixMidnightCrossing(dtO, dtP, hasQcDate);
+            if (dtP && dtR) dtR = autoFixMidnightCrossing(dtP, dtR, hasSampaiDate);
+            else if (dtO && dtR) dtR = autoFixMidnightCrossing(dtO, dtR, hasSampaiDate);
+            if (dtR && dtS) dtS = autoFixMidnightCrossing(dtR, dtS, hasStartDate);
+            else if (dtP && dtS) dtS = autoFixMidnightCrossing(dtP, dtS, hasStartDate);
+            if (dtS && dtT) dtT = autoFixMidnightCrossing(dtS, dtT, hasHoldDate);
+            if (dtT && dtU) dtU = autoFixMidnightCrossing(dtT, dtU, hasRestartDate);
+            else if (dtS && dtU) dtU = autoFixMidnightCrossing(dtS, dtU, hasRestartDate);
+            if (dtU && dtV) dtV = autoFixMidnightCrossing(dtU, dtV, hasFinishDate);
+            else if (dtS && dtV) dtV = autoFixMidnightCrossing(dtS, dtV, hasFinishDate);
+
+            // Helper to get formatted date from DateTime object (YYYY-MM-DD)
+            const getD = (dt) => {
+                if (!dt) return '';
+                const y = dt.getFullYear();
+                const m = String(dt.getMonth() + 1).padStart(2, '0');
+                const d = String(dt.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            };
 
             const events = [
-                { label: 'Arrival', time: r.ARRIVAL_TIME, date: arrDate, icon: 'fa-sign-in-alt', color: '#0284c7' },
-                { label: 'QC Sampling 1', time: r.QC_SAMPLING_1, icon: 'fa-vial', color: '#6366f1' },
-                { label: 'Sampai Gudang', time: r.SAMPAI_GUDANG, icon: 'fa-warehouse', color: '#10b981' },
-                { label: 'Start Bongkar', time: r.START_BONGKAR, icon: 'fa-box-open', color: '#0ea5e9' },
-                { label: 'Hold QC', time: r.HOLD_QC, icon: 'fa-hand-paper', color: '#ef4444' },
-                { label: 'Restart QC', time: r.RESTART_QC, icon: 'fa-play-circle', color: '#14b8a6' },
-                { label: 'Finish PB', time: r.FINISH_TIME, date: pbDate, icon: 'fa-flag-checkered', color: '#ef4444' }
+                { label: 'Arrival', time: r.ARRIVAL_TIME, date: getD(dtO), icon: 'fa-sign-in-alt', color: '#0284c7' },
+                { label: 'QC Sampling 1', time: r.QC_SAMPLING_1, date: getD(dtP), icon: 'fa-vial', color: '#6366f1' },
+                { label: 'Sampai Gudang', time: r.SAMPAI_GUDANG, date: getD(dtR), icon: 'fa-warehouse', color: '#10b981' },
+                { label: 'Start Bongkar', time: r.START_BONGKAR, date: getD(dtS), icon: 'fa-box-open', color: '#0ea5e9' },
+                { label: 'Hold QC', time: r.HOLD_QC, date: getD(dtT), icon: 'fa-hand-paper', color: '#ef4444' },
+                { label: 'Restart QC', time: r.RESTART_QC, date: getD(dtU), icon: 'fa-play-circle', color: '#14b8a6' },
+                { label: 'Finish PB', time: r.FINISH_TIME, date: getD(dtV), icon: 'fa-flag-checkered', color: '#ef4444' }
             ];
 
             let html = `<div class="timeline-container" style="padding:10px 0;">`;
