@@ -417,6 +417,25 @@
         .sim-wh-fill { width:100%; transition:height 0.8s ease-out; position:relative; z-index:2; min-height: 2px; }
         .sim-wh-pct { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-family:'Orbitron'; font-weight:900; font-size:1.1rem; text-shadow:0 0 10px rgba(0,0,0,0.8); z-index:10; pointer-events:none; }
         .sim-wh-footer { height:4px; width:100%; flex-shrink:0; }
+
+        /* Contract Expiry Badge - viewer */
+        .wh-contract-badge {
+            font-size: 0.55rem;
+            font-family: 'Orbitron';
+            padding: 3px 6px;
+            border-radius: 4px;
+            margin-top: 5px;
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            line-height: 1.4;
+        }
+
+        /* Contract states for viewer warehouse cards */
+        @keyframes pulse-emptying-light {
+            0%, 100% { box-shadow: 0 0 8px rgba(255, 107, 0, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(255, 107, 0, 0.7); }
+        }
     </style>
 </head>
 
@@ -562,30 +581,9 @@
                     <div style="flex:1; position:relative; padding:10px;"><canvas id="movementChart"></canvas></div>
                 </div>
 
-                <!-- STOCK vs CAPACITY (LANDSCAPE) -->
-                <div class="glass-panel"
-                    style="display:flex; flex-direction:column; padding:0; border:1px solid #38bdf8; box-shadow:0 4px 15px rgba(14,165,233,0.1); height:350px; margin-bottom:0;">
-                    <div style="padding:15px; border-bottom:1px solid rgba(0,243,255,0.3);">
-                        <div
-                            style="font-family:'Orbitron'; color:#00f3ff; font-size:1.1rem; display:flex; align-items:center; gap:10px;">
-                            <i class="fas fa-layer-group"></i> STOCK LEVEL vs CAPACITY
-                        </div>
-                    </div>
-                    <div style="flex:1; position:relative; padding:10px;"><canvas id="stockChart"></canvas></div>
-                </div>
-
-                <!-- DAILY FLUX (LANDSCAPE) -->
-                <div class="glass-panel"
-                    style="border:1px solid #4ade80; box-shadow:0 4px 15px rgba(34,197,94,0.1); height:350px; display:flex; flex-direction:column; margin-bottom:0;">
-                    <div
-                        style="font-family:'Orbitron'; color:#ff9e0b; font-size:1.1rem; padding:15px; border-bottom:1px solid rgba(255,158,11,0.3); display:flex; justify-content:space-between; align-items:center;">
-                        <span><i class="fas fa-chart-bar"></i> DAILY NET FLUX (IN - OUT)</span>
-                        <span style="font-family:'Rajdhani'; font-size:0.85rem; color:#64748b;">Analisa fluktuasi harian
-                            per material</span>
-                    </div>
-                    <div style="flex:1; position:relative; padding:10px;"><canvas id="fluxChart"></canvas></div>
-                </div>
+                <!-- STOCK vs CAPACITY (LANDSCAPE) REMOVED -->
             </div>
+
 
             <!-- WAREHOUSE + ALL CALENDARS EXPANDED -->
             <div class="glass-panel" style="border:1px solid #38bdf8; box-shadow:0 4px 15px rgba(14,165,233,0.1);">
@@ -655,6 +653,7 @@
         const VP = {
             shareData: null, session: [], data: null,
             currentSlicer: 'daily',
+            contractExpiries: [], // Restored from shareData
             movementChartInstance: null, stockChartInstance: null, fluxChartInstance: null,
             calendarSelectedDate: null,
             colorPalette: ['#00f3ff', '#39ff14', '#ffe600', '#ff9500', '#38bdf8', '#ff4d4d'],
@@ -722,6 +721,7 @@
 
                 this.session = this.shareData.session || [];
                 this.data = this.shareData.warehouseData || { warehouses: [], capacities: [], materials: [] };
+                this.contractExpiries = this.shareData.contractExpiries || [];
 
                 this.populateInfoStrip();
                 
@@ -811,7 +811,14 @@
                     const dStr = d.toISOString().split('T')[0];
                     let dIn = defaultIn, dOut = defaultOut;
                     if (sess.overrides && sess.overrides[dStr]) { if (sess.overrides[dStr].in !== undefined) dIn = Number(sess.overrides[dStr].in); if (sess.overrides[dStr].out !== undefined) dOut = Number(sess.overrides[dStr].out); }
-                    cur += (dIn * 1000) - (dOut * 1000); lastIn = dIn; lastOut = dOut;
+                    cur += (dIn * 1000) - (dOut * 1000); 
+
+                    if (this.contractExpiries && this.contractExpiries.length > 0) {
+                        const isRMSession = sess.facility === 'RM' || sess.facility === 'ALL' || (Array.isArray(sess.facility) && sess.facility.includes('RM'));
+                        if (isRMSession) cur += this.getContractTransferAtDate(dStr);
+                    }
+
+                    lastIn = dIn; lastOut = dOut;
                     d.setDate(d.getDate() + 1); loop++;
                 }
                 return { stock: cur, inVal: lastIn, outVal: lastOut };
@@ -823,6 +830,40 @@
                 const btn = document.getElementById('slicer-' + mode);
                 if (btn) btn.classList.add('active');
                 this.renderStockChart(); this.renderMovementChart();
+            },
+
+            // Contract helper functions (mirror of SimPage)
+            getContractTransferAtDate: function (dateStr) {
+                let total = 0;
+                this.contractExpiries.forEach(c => {
+                    if (dateStr >= c.startEmptyDate && dateStr <= c.contractEndDate) total += c.dailyTransferKg;
+                });
+                return total;
+            },
+
+            getContractStatus: function (warehouseName, dateStr) {
+                const contract = this.contractExpiries.find(c => c.gudang === warehouseName);
+                if (!contract) return null;
+                if (dateStr > contract.contractEndDate) return { status: 'expired', contract };
+                if (dateStr >= contract.startEmptyDate) return { status: 'emptying', contract };
+                return { status: 'expiring', contract };
+            },
+
+            getAccumulatedContractTransfer: function(sess, targetDateStr) {
+                if (!this.contractExpiries || this.contractExpiries.length === 0) return 0;
+                const isRMSession = sess.facility === 'RM' || sess.facility === 'ALL' || (Array.isArray(sess.facility) && sess.facility.includes('RM'));
+                if (!isRMSession) return 0;
+
+                let total = 0;
+                let dCur = new Date(sess.startDate);
+                let target = new Date(targetDateStr);
+                let loop = 0;
+                while(dCur <= target && loop < 1000) {
+                    total += this.getContractTransferAtDate(dCur.toISOString().split('T')[0]);
+                    dCur.setDate(dCur.getDate() + 1);
+                    loop++;
+                }
+                return total;
             },
 
             renderAll: function () {
@@ -1087,21 +1128,45 @@
                 // Unsimulated stock
                 const unsimulatedStock = this.getUnsimulatedStock();
 
-                let dataStock = [], dataCap = [];
+                let dataStock = [], dataCap = [], dataCapReduced = [];
                 for (let i = 0; i < fullDates.length; i += step) {
                     const dStr = fullDates[i].toISOString().split('T')[0];
                     let simTotal = 0;
-                    this.session.forEach(s => { simTotal += this.calculateStateAtDate(s, dStr).stock; });
-                    dataStock.push(unsimulatedStock + simTotal);
+                    let inflationOffset = 0;
+                    this.session.forEach(s => { 
+                        simTotal += this.calculateStateAtDate(s, dStr).stock; 
+                        inflationOffset += this.getAccumulatedContractTransfer(s, dStr);
+                    });
+                    dataStock.push(unsimulatedStock + simTotal - inflationOffset);
                     dataCap.push(totalCapacity);
+
+                    // Effective capacity: subtract emptied warehouse capacities
+                    let effectiveCap = totalCapacity;
+                    this.contractExpiries.forEach(c => {
+                        if (dStr >= c.startEmptyDate) {
+                            const whIdx = this.data.warehouses ? this.data.warehouses.indexOf(c.gudang) : -1;
+                            if (whIdx !== -1) {
+                                const fallbackCap = this.data.capacities[whIdx] > 100000 ? this.data.capacities[whIdx] / 1000 : this.data.capacities[whIdx];
+                                const capKg = (CONFIG.WAREHOUSE_CAPACITIES[c.gudang.toUpperCase()] || fallbackCap || 0) * 1000;
+                                effectiveCap = Math.max(0, effectiveCap - capKg);
+                            }
+                        }
+                    });
+                    dataCapReduced.push(effectiveCap);
+                }
+
+                const hasContractWarehouse = this.contractExpiries.length > 0;
+                const viewerDatasets = [
+                    { type: 'line', label: 'MAX CAPACITY', data: dataCap, borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false, order: 0 },
+                    { type: 'bar', label: 'TOTAL GLOBAL RM STOCK', data: dataStock, backgroundColor: dataStock.map(v => v > totalCapacity ? 'rgba(239,68,68,0.7)' : 'rgba(37,99,235,0.6)'), borderColor: dataStock.map(v => v > totalCapacity ? '#ef4444' : '#2563eb'), borderWidth: 1, barPercentage: 0.6, order: 1 }
+                ];
+                if (hasContractWarehouse) {
+                    viewerDatasets.push({ type: 'line', label: 'KAPASITAS EFEKTIF (POST PENGOSONGAN)', data: dataCapReduced, borderColor: '#ff6b00', borderWidth: 2, borderDash: [8, 4], pointRadius: 0, fill: false, order: 0 });
                 }
 
                 this.stockChartInstance = new Chart(ctx, {
                     type: 'bar', data: {
-                        labels, datasets: [
-                            { type: 'line', label: 'MAX CAPACITY', data: dataCap, borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false, order: 0 },
-                            { type: 'bar', label: 'TOTAL GLOBAL RM STOCK', data: dataStock, backgroundColor: dataStock.map(v => v > totalCapacity ? 'rgba(239,68,68,0.7)' : 'rgba(37,99,235,0.6)'), borderColor: dataStock.map(v => v > totalCapacity ? '#ef4444' : '#2563eb'), borderWidth: 1, barPercentage: 0.6, order: 1 }
-                        ]
+                        labels, datasets: viewerDatasets
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
@@ -1213,18 +1278,35 @@
                 fullDates.forEach((d, idx) => {
                     const dStr = d.toISOString().split('T')[0];
                     let simTotal = 0;
+                    let inflationOffset = 0;
                     this.session.forEach((s, si) => {
                         const st = this.calculateStateAtDate(s, dStr);
                         simTotal += st.stock;
+                        inflationOffset += this.getAccumulatedContractTransfer(s, dStr);
+
                         if (st.stock > perMatPeak[si].peakStock) {
                             perMatPeak[si].peakStock = st.stock;
                             perMatPeak[si].peakDate = dStr;
                             perMatPeak[si].peakDay = idx + 1;
                         }
                     });
-                    const globalTotal = unsimulatedStock + simTotal;
+                    const globalTotal = unsimulatedStock + simTotal - inflationOffset;
                     dailyTotals.push(globalTotal);
-                    if (!collapseDate && globalTotal > totalCapacity) {
+                    
+                    // Effective capacity
+                    let effectiveCap = totalCapacity;
+                    this.contractExpiries.forEach(c => {
+                        if (dStr >= c.startEmptyDate) {
+                            const whIdx = this.data.warehouses ? this.data.warehouses.indexOf(c.gudang) : -1;
+                            if (whIdx !== -1) {
+                                const fallbackCap = this.data.capacities[whIdx] > 100000 ? this.data.capacities[whIdx] / 1000 : this.data.capacities[whIdx];
+                                const capKg = (CONFIG.WAREHOUSE_CAPACITIES[c.gudang.toUpperCase()] || fallbackCap || 0) * 1000;
+                                effectiveCap -= capKg;
+                            }
+                        }
+                    });
+
+                    if (!collapseDate && globalTotal > effectiveCap) {
                         collapseDate = dStr;
                         collapseDay = idx + 1;
                     }
@@ -1604,12 +1686,28 @@
                 fullDates.forEach(d => {
                     const dStr = d.toISOString().split('T')[0];
                     let simTotal = 0;
-                    this.session.forEach(s => { simTotal += this.calculateStateAtDate(s, dStr).stock; });
-                    const gTotal = unsimStock + simTotal;
+                    let inflationOffset = 0;
+                    this.session.forEach(s => { 
+                        simTotal += this.calculateStateAtDate(s, dStr).stock; 
+                        inflationOffset += this.getAccumulatedContractTransfer(s, dStr);
+                    });
+                    const gTotal = unsimStock + simTotal - inflationOffset;
                     
-                    if (gTotal > totalCapacity) {
+                    let effectiveCap = totalCapacity;
+                    this.contractExpiries.forEach(c => {
+                        if (dStr >= c.startEmptyDate) {
+                            const whIdx = this.data.warehouses ? this.data.warehouses.indexOf(c.gudang) : -1;
+                            if (whIdx !== -1) {
+                                const fallbackCap = this.data.capacities[whIdx] > 100000 ? this.data.capacities[whIdx] / 1000 : this.data.capacities[whIdx];
+                                const capKg = (CONFIG.WAREHOUSE_CAPACITIES[c.gudang.toUpperCase()] || fallbackCap || 0) * 1000;
+                                effectiveCap -= capKg;
+                            }
+                        }
+                    });
+                    
+                    if (gTotal > effectiveCap) {
                         deficitLabels.push(this.formatDate(dStr));
-                        deficitValues.push((gTotal - totalCapacity) / 1000); // in Ton
+                        deficitValues.push((gTotal - effectiveCap) / 1000); // in Ton
                     }
                 });
 
@@ -1618,6 +1716,23 @@
                     return;
                 }
                 document.getElementById('collapse-deficit-container').style.display = 'block';
+
+                const existingNote = document.getElementById('deficit-contract-note');
+                if (existingNote) existingNote.remove();
+
+                if (this.contractExpiries && this.contractExpiries.length > 0) {
+                    const notes = this.contractExpiries.map(c => `<b style="color:#ef4444">${c.gudang}</b> mulai dikosongkan pada ${this.formatDate(c.startEmptyDate)}`);
+                    const noteHtml = `<div style="margin-bottom:15px; padding:12px; background:rgba(255,107,0,0.08); border:1px solid #ff6b00; border-left:4px solid #ff6b00; border-radius:4px; font-size:0.8rem; color:#475569; font-family:'Inter', sans-serif;">
+                        <span style="font-size:0.9rem;">⚠️</span> <b>NOTE (PENGOSONGAN GUDANG):</b> ${notes.join(' & ')}.<br>Kapasitas efektif otomatis berkurang setara keterisian gudang tersebut, sehingga kurva defisit melonjak secara instan pada tanggal perhitungan.
+                    </div>`;
+                    const noteEl = document.createElement('div');
+                    noteEl.id = 'deficit-contract-note';
+                    noteEl.innerHTML = noteHtml;
+                    
+                    const chartContainer = ctx.parentNode; 
+                    const mainContainer = document.getElementById('collapse-deficit-container');
+                    mainContainer.insertBefore(noteEl, chartContainer);
+                }
 
                 this.collapseDeficitChartInstance = new Chart(ctx, {
                     type: 'bar',
@@ -1768,11 +1883,13 @@
                 const unsimulatedStock = this.getUnsimulatedStock();
 
                 let simTotal = 0;
+                let inflationOffset = 0;
                 this.session.forEach(sess => {
                     simTotal += this.calculateStateAtDate(sess, targetDateStr).stock;
+                    inflationOffset += this.getAccumulatedContractTransfer(sess, targetDateStr);
                 });
 
-                let remainingToFill = unsimulatedStock + simTotal;
+                let remainingToFill = unsimulatedStock + simTotal - inflationOffset;
 
                 // Cascade fill from left to right
                 warehouses.forEach(name => {
@@ -1792,24 +1909,67 @@
                 let html = '';
                 warehouses.forEach(name => {
                     const wh = warehouseStocks[name];
-                    const totalStock = wh.allocated;
                     const capKg = wh.capacity;
-                    const percent = capKg > 0 ? (totalStock / capKg) * 100 : 0;
-                    
-                    // Thresholds matching user request: <80 Aman, 80-99 Warning, >=100 Collapse
-                    const isCollapse = percent >= 100;
-                    const isWarning = percent >= 80;
-                    
-                    const bc = isCollapse ? '#ef4444' : (isWarning ? '#f59e0b' : '#10b981');
-                    const fillColor = isCollapse ? 'linear-gradient(to top,#ef4444,#991b1b)' : (isWarning ? 'linear-gradient(to top,#f59e0b,#9a3412)' : 'linear-gradient(to top,#10b981,#064e3b)');
-                    
-                    html += `<div class="sim-wh-card">
+
+                    // Check contract status for this warehouse
+                    const contractState = this.getContractStatus(name, targetDateStr);
+
+                    // Override displayed stock for being emptied warehouses
+                    let displayStock = wh.allocated;
+                    if (contractState && contractState.status !== 'expiring') {
+                        const c = contractState.contract;
+                        if (contractState.status === 'emptying') {
+                            const startD = new Date(c.startEmptyDate);
+                            const targetD = new Date(targetDateStr);
+                            const daysPassed = Math.round((targetD - startD) / (1000 * 60 * 60 * 24));
+                            displayStock = Math.max(0, c.totalStockKg - (daysPassed * c.dailyTransferKg));
+                        } else if (contractState.status === 'expired') {
+                            displayStock = 0;
+                        }
+                    }
+
+                    const percent = capKg > 0 ? (displayStock / capKg) * 100 : 0;
+                    const visualH = Math.max((capKg / (maxCap * 1.2)) * MAX_H, 50);
+
+                    // Contract state styling
+                    let cardStyle = '';
+                    let bc, fillColor, badgeHtml = '';
+
+                    if (contractState) {
+                        if (contractState.status === 'expired') {
+                            bc = '#475569';
+                            fillColor = 'linear-gradient(to top,#475569,#1e293b)';
+                            cardStyle = 'filter:grayscale(60%); opacity:0.7;';
+                            badgeHtml = `<div class="wh-contract-badge expired" style="background:rgba(71,85,105,0.2);color:#94a3b8;border:1px solid #475569;">KONTRAK HABIS<br><span style="font-size:0.5rem;">${this.formatDate(contractState.contract.contractEndDate)}</span></div>`;
+                        } else if (contractState.status === 'emptying') {
+                            bc = '#ff6b00';
+                            fillColor = 'linear-gradient(to top,#ff6b00,#7c2d12)';
+                            const totalDays = contractState.contract.daysCount;
+                            const startD = new Date(contractState.contract.startEmptyDate);
+                            const targetD = new Date(targetDateStr);
+                            const daysPassed = Math.round((targetD - startD) / (1000 * 60 * 60 * 24)) + 1;
+                            const progressPct = Math.min(100, Math.round((daysPassed / totalDays) * 100));
+                            badgeHtml = `<div class="wh-contract-badge emptying" style="background:rgba(255,107,0,0.2);color:#ff6b00;border:1px solid #ff6b00;">DIKOSONGKAN (${progressPct}%)<br><span style="font-size:0.5rem;">Habis: ${this.formatDate(contractState.contract.contractEndDate)}</span></div>`;
+                        } else {
+                            bc = '#ff9e0b';
+                            const isCollapse = percent >= 100; const isWarning = percent >= 80;
+                            fillColor = isCollapse ? 'linear-gradient(to top,#ef4444,#991b1b)' : (isWarning ? 'linear-gradient(to top,#f59e0b,#9a3412)' : 'linear-gradient(to top,#10b981,#064e3b)');
+                            badgeHtml = `<div class="wh-contract-badge expiring" style="background:rgba(255,158,11,0.2);color:#ff9e0b;border:1px solid #ff9e0b;">⚠️ HABIS KONTRAK<br><span style="font-size:0.5rem;">${this.formatDate(contractState.contract.contractEndDate)}</span></div>`;
+                        }
+                    } else {
+                        const isCollapse = percent >= 100; const isWarning = percent >= 80;
+                        bc = isCollapse ? '#ef4444' : (isWarning ? '#f59e0b' : '#10b981');
+                        fillColor = isCollapse ? 'linear-gradient(to top,#ef4444,#991b1b)' : (isWarning ? 'linear-gradient(to top,#f59e0b,#9a3412)' : 'linear-gradient(to top,#10b981,#064e3b)');
+                    }
+
+                    html += `<div class="sim-wh-card" style="border-color:${bc}; ${contractState?.status === 'emptying' ? 'box-shadow:0 0 20px rgba(255,107,0,0.4);' : ''} ${cardStyle}">
                         <div class="sim-wh-header">
                             <div class="sim-wh-name">${name.replace('Gudang ', '').replace('GUDANG ', '')}</div>
                             <div class="sim-wh-cap">CAP: ${(capKg / 1000).toLocaleString('id-ID')} T</div>
-                            <div class="sim-wh-stock" style="color:${bc};">STOCK: ${(totalStock / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} T</div>
+                            <div class="sim-wh-stock" style="color:${bc};">STOCK: ${(displayStock / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} T</div>
+                            ${badgeHtml}
                         </div>
-                        <div class="sim-wh-bar">
+                        <div class="sim-wh-bar" style="border-color:${bc}44;">
                             <div class="sim-wh-bar-grid"></div>
                             <div class="sim-wh-fill" style="height:${Math.min(percent, 100)}%; background:${fillColor}; border-top:2px solid ${bc};">
                                 <div class="sim-wh-pct">${Math.round(percent)}%</div>
@@ -1820,6 +1980,7 @@
                 });
                 container.innerHTML = html;
             },
+
 
             // ---- DETAIL TABLE ----
             renderDetailTable: function (full) {
@@ -1839,7 +2000,16 @@
 
                 // Header
                 let headerHtml = '<tr><th>TANGGAL</th>';
-                showMats.forEach(m => headerHtml += `<th style="color:${this.session.find(s => s.material === m.name)?.color || '#1e293b'}">${m.name}<br><small>STOCK (KG)</small></th><th>IN</th><th>OUT</th>`);
+                showMats.forEach(m => {
+                    const sess = this.session.find(s => s.material === m.name);
+                    const isRMSession = sess && (sess.facility === 'RM' || sess.facility === 'ALL' || (Array.isArray(sess.facility) && sess.facility.includes('RM')));
+                    const hasContract = this.contractExpiries && this.contractExpiries.length > 0;
+
+                    headerHtml += `<th style="color:${sess?.color || '#1e293b'}">${m.name}<br><small>STOCK (KG)</small></th><th>IN</th><th>OUT</th>`;
+                    if (isRMSession && hasContract) {
+                        headerHtml += `<th style="color:#ff9e0b; background:rgba(255,107,0,0.05); border-left:2px solid rgba(255,107,0,0.2);"><small style="font-size:0.6rem;">TERIMA<br>PENGOSONGAN</small></th>`;
+                    }
+                });
                 headerHtml += `<th style="color:#64748b;">${unsimCountText} RM LAINNYA<br><small>STOCK (KG)</small></th><th>IN</th><th>OUT</th></tr>`;
                 thead.innerHTML = headerHtml;
 
@@ -1859,6 +2029,13 @@
                             bodyHtml += `<td style="font-weight:700; color:#1e293b;">${Math.round(state.stock).toLocaleString()}</td>`;
                             bodyHtml += `<td style="color:#10b981;">${state.inVal}</td>`;
                             bodyHtml += `<td style="color:#ef4444;">${state.outVal}</td>`;
+                            
+                            const isRMSession = sess.facility === 'RM' || sess.facility === 'ALL' || (Array.isArray(sess.facility) && sess.facility.includes('RM'));
+                            const hasContract = this.contractExpiries && this.contractExpiries.length > 0;
+                            if (isRMSession && hasContract) {
+                                const transferKg = this.getContractTransferAtDate(dStr);
+                                bodyHtml += `<td style="color:${transferKg > 0 ? '#d97706' : '#94a3b8'}; background:rgba(255,107,0,0.05); font-weight:600; border-left:2px solid rgba(255,107,0,0.2);">${transferKg > 0 ? '+' + transferKg.toLocaleString() : '-'}</td>`;
+                            }
                         }
                     });
 

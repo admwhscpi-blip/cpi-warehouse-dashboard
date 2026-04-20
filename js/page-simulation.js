@@ -6,6 +6,7 @@
 const SimPage = {
     data: null,
     session: [], // Comparison Queue: Array of Objects { material, facility, startDate, endDate, dailyIn, dailyOut, color, baseStock }
+    contractExpiries: [], // Array of { gudang, contractEndDate, startEmptyDate, totalStockKg, dailyTransferKg }
     colors: ['#00f3ff', '#bc13fe', '#ff2a2a', '#ff9e0b', '#0aff0a', '#ffffff'],
     chartInstance: null,
     stockChartInstance: null,
@@ -16,6 +17,7 @@ const SimPage = {
     currentSlicer: 'daily', // daily, weekly, monthly
     isFullscreen: false,
     analyticsFullscreen: false,
+    contractPanelOpen: false,
 
     init: async function () {
         console.log("SimPage Initializing...");
@@ -801,13 +803,29 @@ const SimPage = {
         let row2 = '<tr>';
 
         this.session.forEach(s => {
-            row1 += `<th colspan="3" class="th-group-header" style="color:${s.color}; border-bottom:2px solid ${s.color}; font-size:${isHud ? '0.65rem' : '0.85rem'};">${s.material}</th>`;
+            // Check if this material/session is for RM facility and we have contract expiries
+            const hasContract = this.contractExpiries.length > 0;
+            const colSpan = hasContract && (s.facility === 'RM' || s.facility === 'ALL' || (Array.isArray(s.facility) && s.facility.includes('RM'))) ? 4 : 3;
+            row1 += `<th colspan="${colSpan}" class="th-group-header" style="color:${s.color}; border-bottom:2px solid ${s.color}; font-size:${isHud ? '0.65rem' : '0.85rem'};">` +
+                    `${s.material} <span style="font-size:0.6rem; opacity:0.7;">(${s.facility})</span></th>`;
             row2 += `
                 <th class="col-stock" style="font-size:${isHud ? '0.55rem' : '0.8rem'};">STOCK</th>
                 <th class="col-in" style="font-size:${isHud ? '0.55rem' : '0.8rem'};">IN</th>
                 <th class="col-out" style="font-size:${isHud ? '0.55rem' : '0.8rem'};">OUT</th>
             `;
+            if (colSpan === 4) {
+                row2 += `<th style="background:rgba(255,107,0,0.15); color:#ff9e0b; font-size:${isHud ? '0.5rem' : '0.75rem'}; border-left:2px solid rgba(255,107,0,0.5); white-space:nowrap;">TERIMA<br>PENGOSONGAN</th>`;
+            }
         });
+
+        // If we have contract expiries but no RM session, still add a standalone group
+        const hasRMSession = this.session.some(s => s.facility === 'RM' || s.facility === 'ALL');
+        if (this.contractExpiries.length > 0 && !hasRMSession) {
+            row1 += `<th colspan="${this.contractExpiries.length}" style="background:rgba(255,107,0,0.15); color:#ff9e0b; font-size:${isHud ? '0.6rem' : '0.8rem'}; border-bottom:2px solid #ff9e0b; border-left:2px solid rgba(255,107,0,0.5);">TERIMA PENGOSONGAN → RM</th>`;
+            this.contractExpiries.forEach(c => {
+                row2 += `<th style="background:rgba(255,107,0,0.1); color:#ff9e0b; font-size:${isHud ? '0.5rem' : '0.7rem'}; border-left:1px solid rgba(255,107,0,0.3); white-space:nowrap;">${c.gudang}<br><span style="font-size:0.55rem;">/hari</span></th>`;
+            });
+        }
 
         row1 += '</tr>';
         row2 += '</tr>';
@@ -830,8 +848,15 @@ const SimPage = {
                 const state = this.calculateStateAtDate(s, dateStr, dateObj);
                 const stockTon = state.stock;
 
+                // Check if this session is for RM and we have contract transfers
+                const isRMSession = s.facility === 'RM' || s.facility === 'ALL';
+                const hasContract = this.contractExpiries.length > 0;
+                const transferKg = isRMSession && hasContract ? this.getContractTransferAtDate(dateStr) : 0;
+                const hasContractCol = hasContract && isRMSession;
+
                 tds += `
-                    <td style="color:${stockTon < 0 ? '#ef4444' : '#fff'}; font-weight:700; font-size:${isHud ? '0.7rem' : '0.85rem'};">${stockTon.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                    <td style="color:${stockTon < 0 ? '#ef4444' : '#fff'}; font-weight:700; font-size:${isHud ? '0.7rem' : '0.85rem'};">` +
+                        `${stockTon.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
                     <td style="padding:0;">
                         <input type="number" 
                             class="editable-cell" 
@@ -851,7 +876,25 @@ const SimPage = {
                         />
                     </td>
                 `;
+                if (hasContractCol) {
+                    const transferTon = (transferKg / 1000).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    tds += `<td style="background:rgba(255,107,0,0.1); color:${transferKg > 0 ? '#ff9e0b' : '#334155'}; font-weight:700; font-size:${isHud ? '0.65rem' : '0.8rem'}; border-left:2px solid rgba(255,107,0,0.3);">
+                        ${transferKg > 0 ? '+' + transferTon : '-'}
+                    </td>`;
+                }
             });
+
+            // If no RM session but contracts exist, show individual contract columns
+            const hasRMSession = this.session.some(s => s.facility === 'RM' || s.facility === 'ALL');
+            if (this.contractExpiries.length > 0 && !hasRMSession) {
+                this.contractExpiries.forEach(c => {
+                    const isActive = dateStr >= c.startEmptyDate && dateStr <= c.contractEndDate;
+                    const dailyTon = (c.dailyTransferKg / 1000).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    tds += `<td style="background:rgba(255,107,0,0.1); color:${isActive ? '#ff9e0b' : '#334155'}; font-weight:700; font-size:0.8rem; border-left:1px solid rgba(255,107,0,0.2);">
+                        ${isActive ? '+' + dailyTon : '-'}
+                    </td>`;
+                });
+            }
 
             tr.innerHTML = tds;
             tbody.appendChild(tr);
@@ -921,55 +964,91 @@ const SimPage = {
         // 3. Generate Time Series Data for GLOBAL STOCK
         let dataStock = [];
         let dataCap = [];
+        let dataCapReduced = []; // Effective capacity after removing emptied warehouses
 
         for (let i = 0; i < fullDates.length; i += step) {
             const d = fullDates[i];
             const dStr = d.toISOString().split('T')[0];
 
             let simulatedCurrentTotal = 0;
+            let inflationOffset = 0;
             this.session.forEach(s => {
                 // Ensure we use the exact logic as Movement Chart
                 const state = this.calculateStateAtDate(s, dStr, d);
                 simulatedCurrentTotal += state.stock;
+                inflationOffset += this.getAccumulatedContractTransfer(s, dStr);
             });
 
-            const currentGlobal = unsimulatedStock + simulatedCurrentTotal;
+            // Add contract transfer stock to global (stock is still in system, just moving to RM)
+            // Subtract inflationOffset to prevent double counting
+            const currentGlobal = unsimulatedStock + simulatedCurrentTotal - inflationOffset;
             dataStock.push(currentGlobal);
             dataCap.push(totalCapacity);
 
+            // Compute effective capacity: subtract capacity of warehouses being emptied at this date
+            let effectiveCap = totalCapacity;
+            this.contractExpiries.forEach(c => {
+                if (dStr >= c.startEmptyDate) {
+                    // This warehouse's capacity is no longer available
+                    const whIdx = this.data && this.data.warehouses ? this.data.warehouses.indexOf(c.gudang) : -1;
+                    if (whIdx !== -1) {
+                        const fallbackCap = this.data.capacities[whIdx] > 100000 ? this.data.capacities[whIdx] / 1000 : this.data.capacities[whIdx];
+                        const capKg = (CONFIG.WAREHOUSE_CAPACITIES[c.gudang.toUpperCase()] || fallbackCap || 0) * 1000;
+                        effectiveCap = Math.max(0, effectiveCap - capKg);
+                    }
+                }
+            });
+            dataCapReduced.push(effectiveCap);
+
             if (i === 0 || i === fullDates.length - 1) {
-                console.log(`[ChartDebug] Date: ${dStr}, SimTotal: ${simulatedCurrentTotal}, Global: ${currentGlobal}`);
+                console.log(`[ChartDebug] Date: ${dStr}, SimTotal: ${simulatedCurrentTotal}, Global: ${currentGlobal}, EffCap: ${effectiveCap}`);
             }
         }
 
-        // 4. Render Chart
+        // 4. Render Chart — add effective capacity line if contract expiries active
+        const hasContractWarehouse = this.contractExpiries.length > 0;
+        const chartDatasets = [
+            {
+                type: 'line',
+                label: 'MAX CAPACITY',
+                data: dataCap,
+                borderColor: '#FFE600',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: false,
+                order: 0
+            },
+            {
+                type: 'bar',
+                label: 'TOTAL GLOBAL RM STOCK',
+                data: dataStock,
+                backgroundColor: '#ffffff',
+                borderColor: 'transparent',
+                borderWidth: 0,
+                barPercentage: 0.6,
+                order: 1
+            }
+        ];
+        if (hasContractWarehouse) {
+            chartDatasets.push({
+                type: 'line',
+                label: 'KAPASITAS EFEKTIF (POST PENGOSONGAN)',
+                data: dataCapReduced,
+                borderColor: '#ff6b00',
+                borderWidth: 2,
+                borderDash: [8, 4],
+                pointRadius: 0,
+                fill: false,
+                order: 0,
+                backgroundColor: 'rgba(255,107,0,0.1)'
+            });
+        }
         const newChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [
-                    {
-                        type: 'line',
-                        label: 'MAX CAPACITY',
-                        data: dataCap,
-                        borderColor: '#FFE600', // NEON YELLOW
-                        borderWidth: 2,
-                        borderDash: [5, 5],
-                        pointRadius: 0,
-                        fill: false,
-                        order: 0
-                    },
-                    {
-                        type: 'bar',
-                        label: 'TOTAL GLOBAL RM STOCK',
-                        data: dataStock,
-                        backgroundColor: '#ffffff',
-                        borderColor: 'transparent',
-                        borderWidth: 0,
-                        barPercentage: 0.6,
-                        order: 1
-                    }
-                ]
+                datasets: chartDatasets
             },
             options: {
                 responsive: true,
@@ -1477,6 +1556,14 @@ const SimPage = {
 
             // Update Stock
             currentKg = currentKg + (inKg - outKg);
+
+            // FEATURE 3: Akumulasi Terima Pengosongan ke Stok RM
+            if (this.contractExpiries && this.contractExpiries.length > 0) {
+                const isRMSession = sessionObj.facility === 'RM' || sessionObj.facility === 'ALL' || (Array.isArray(sessionObj.facility) && sessionObj.facility.includes('RM'));
+                if (isRMSession) {
+                    currentKg += this.getContractTransferAtDate(dStr);
+                }
+            }
 
             lastIn = dIn;
             lastOut = dOut;
@@ -2381,11 +2468,13 @@ const SimPage = {
         const unsimulatedStock = Math.max(0, totalAllMatStock - simulatedBaseStock);
 
         let simTotal = 0;
+        let inflationOffset = 0;
         this.session.forEach(sess => {
             simTotal += this.calculateStateAtDate(sess, targetDateStr, targetDate).stock;
+            inflationOffset += this.getAccumulatedContractTransfer(sess, targetDateStr);
         });
 
-        let remainingToFill = unsimulatedStock + simTotal;
+        let remainingToFill = unsimulatedStock + simTotal - inflationOffset;
 
         // Cascade fill from left to right
         warehouses.forEach(name => {
@@ -2407,32 +2496,83 @@ const SimPage = {
         let html = '';
         warehouses.forEach((name, idx) => {
             const wh = warehouseStocks[name];
-            const totalStock = wh.allocated;
+            let totalStock = wh.allocated;
             const capKg = wh.capacity;
-            const percent = capKg > 0 ? (totalStock / capKg) * 100 : 0;
+
+            // Check contract status for this warehouse
+            const contractState = this.getContractStatus(name, targetDateStr);
+
+            // Override stock/capacity for visual if being emptied
+            let displayCapKg = capKg;
+            let displayStock = totalStock;
+            if (contractState && contractState.status !== 'expiring') {
+                // Being emptied or expired: stock goes down proportionally
+                const c = contractState.contract;
+                if (contractState.status === 'emptying') {
+                    const startD = new Date(c.startEmptyDate);
+                    const targetD = new Date(targetDateStr);
+                    const daysPassed = Math.round((targetD - startD) / (1000 * 60 * 60 * 24));
+                    const alreadyTransferred = daysPassed * c.dailyTransferKg;
+                    displayStock = Math.max(0, c.totalStockKg - alreadyTransferred);
+                } else if (contractState.status === 'expired') {
+                    displayStock = 0;
+                }
+            }
+
+            const percent = displayCapKg > 0 ? (displayStock / displayCapKg) * 100 : 0;
             const visualH = Math.max((capKg / (maxCap * 1.2)) * MAX_H, 50);
 
-            // Use red if >= 100% (since others will max at 100, overcapacity focuses red on the excess one too)
-            const isCritical = percent >= 85;
-            const isHigh = percent >= 70;
-            const fillColor = isCritical ? 'linear-gradient(to top, #ef4444, #991b1b)' :
-                (isHigh ? 'linear-gradient(to top, #f59e0b, #9a3412)' :
-                    'linear-gradient(to top, #00f3ff, #0e7490)');
-            const borderColor = isCritical ? '#ef4444' : (isHigh ? '#f59e0b' : '#00f3ff');
+            // Contract state styling
+            let cardExtraClass = '';
+            let fillColor, borderColor, badgeHtml = '';
+
+            if (contractState) {
+                if (contractState.status === 'expired') {
+                    cardExtraClass = 'contract-expired';
+                    fillColor = 'linear-gradient(to top, #475569, #1e293b)';
+                    borderColor = '#475569';
+                    badgeHtml = `<div class="wh-contract-badge expired">KONTRAK HABIS · ${this.formatDate(contractState.contract.contractEndDate)}</div>`;
+                } else if (contractState.status === 'emptying') {
+                    cardExtraClass = 'contract-emptying';
+                    fillColor = 'linear-gradient(to top, #ff6b00, #7c2d12)';
+                    borderColor = '#ff6b00';
+                    const totalDays = contractState.contract.daysCount;
+                    const startD = new Date(contractState.contract.startEmptyDate);
+                    const targetD = new Date(targetDateStr);
+                    const daysPassed = Math.round((targetD - startD) / (1000 * 60 * 60 * 24)) + 1;
+                    const progressPct = Math.min(100, Math.round((daysPassed / totalDays) * 100));
+                    badgeHtml = `<div class="wh-contract-badge emptying">SEDANG DIKOSONGKAN (${progressPct}%)</div><div style="font-size:0.55rem; color:#ff9e0b; margin-top:2px; text-align:center;">Habis: ${this.formatDate(contractState.contract.contractEndDate)}</div>`;
+                } else {
+                    cardExtraClass = 'contract-expiring';
+                    const isCritical = percent >= 85;
+                    const isHigh = percent >= 70;
+                    fillColor = isCritical ? 'linear-gradient(to top, #ef4444, #991b1b)' :
+                        (isHigh ? 'linear-gradient(to top, #f59e0b, #9a3412)' : 'linear-gradient(to top, #00f3ff, #0e7490)');
+                    borderColor = '#ff9e0b';
+                    badgeHtml = `<div class="wh-contract-badge expiring">⚠️ HABIS KONTRAK</div><div style="font-size:0.55rem; color:#ff9e0b; text-align:center;">${this.formatDate(contractState.contract.contractEndDate)}</div><div style="font-size:0.5rem; color:#94a3b8; text-align:center;">Kosong: ${this.formatDate(contractState.contract.startEmptyDate)}</div>`;
+                }
+            } else {
+                const isCritical = percent >= 85;
+                const isHigh = percent >= 70;
+                fillColor = isCritical ? 'linear-gradient(to top, #ef4444, #991b1b)' :
+                    (isHigh ? 'linear-gradient(to top, #f59e0b, #9a3412)' : 'linear-gradient(to top, #00f3ff, #0e7490)');
+                borderColor = isCritical ? '#ef4444' : (isHigh ? '#f59e0b' : '#00f3ff');
+            }
 
             html += `
-                <div class="sim-wh-card" style="height:${visualH + 80}px;">
+                <div class="sim-wh-card ${cardExtraClass}" style="height:${visualH + 100}px; border-color:${borderColor};">
                     <div class="sim-wh-header">
                         <div class="sim-wh-name">${name}</div>
-                        <div class="sim-wh-cap">Cap: ${(capKg / 1000).toLocaleString('id-ID')} T</div>
-                        <div class="sim-wh-stock" style="color:${borderColor};">Stock: ${(totalStock / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} T</div>
+                        <div class="sim-wh-cap">Cap: ${(displayCapKg / 1000).toLocaleString('id-ID')} T</div>
+                        <div class="sim-wh-stock" style="color:${borderColor};">Stock: ${(displayStock / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} T</div>
+                        ${badgeHtml}
                     </div>
-                    <div class="sim-wh-bar" style="height:${visualH}px;">
+                    <div class="sim-wh-bar" style="height:${visualH}px; border-color:${borderColor}44;">
                         <div class="sim-wh-bar-grid"></div>
                         <div class="sim-wh-fill" style="height:${Math.min(percent, 100)}%; background:${fillColor}; border-top:2px solid ${borderColor}; box-shadow:0 0 15px ${borderColor}44;"></div>
                         <div class="sim-wh-pct">${Math.round(percent)}%</div>
                     </div>
-                    <div class="sim-wh-footer"></div>
+                    <div class="sim-wh-footer" style="background:${borderColor};"></div>
                 </div>
             `;
         });
@@ -2500,6 +2640,7 @@ const SimPage = {
             materials: materials,
             dateRange: rangeStr,
             session: JSON.parse(JSON.stringify(this.session)), // Deep clone
+            contractExpiries: JSON.parse(JSON.stringify(this.contractExpiries)), // Include contract data
             warehouseData: this.data ? {
                 warehouses: this.data.warehouses,
                 capacities: this.data.capacities,
@@ -2633,6 +2774,181 @@ const SimPage = {
             `;
         });
         tbody.innerHTML = html;
+    },
+
+    // ===============================
+    // FEATURE 3: GUDANG HABIS KONTRAK
+    // ===============================
+
+    toggleContractPanel: function () {
+        this.contractPanelOpen = !this.contractPanelOpen;
+        const form = document.getElementById('contract-expiry-form');
+        const toggleBtn = document.getElementById('contract-panel-toggle-btn');
+        if (!form) return;
+        if (this.contractPanelOpen) {
+            form.style.display = 'block';
+            if (toggleBtn) toggleBtn.innerHTML = '▲ SEMBUNYIKAN PANEL';
+            this.populateContractGudangSelect();
+        } else {
+            form.style.display = 'none';
+            if (toggleBtn) toggleBtn.innerHTML = '⚠️ + GUDANG HABIS KONTRAK';
+        }
+    },
+
+    populateContractGudangSelect: function () {
+        const sel = document.getElementById('contract-gudang-select');
+        if (!sel || !this.data || !this.data.warehouses) return;
+        sel.innerHTML = '<option value="">-- Pilih Gudang --</option>';
+        this.data.warehouses.forEach(name => {
+            if (name.toUpperCase() === 'RM') return; // RM is the destination, skip it
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            sel.appendChild(opt);
+        });
+    },
+
+    addContractExpiry: function () {
+        const gudang = document.getElementById('contract-gudang-select').value;
+        const contractEndDate = document.getElementById('contract-end-date').value;
+        const startEmptyDate = document.getElementById('contract-start-empty').value;
+
+        if (!gudang) { alert('Pilih gudang yang akan habis kontrak!'); return; }
+        if (!contractEndDate) { alert('Isi tanggal habis kontrak!'); return; }
+        if (!startEmptyDate) { alert('Isi tanggal mulai pengosongan!'); return; }
+        if (new Date(startEmptyDate) > new Date(contractEndDate)) {
+            alert('Tanggal mulai pengosongan harus sebelum atau sama dengan tanggal habis kontrak!');
+            return;
+        }
+
+        // Check duplicate
+        if (this.contractExpiries.find(c => c.gudang === gudang)) {
+            alert(`Gudang ${gudang} sudah ada di daftar habis kontrak!`);
+            return;
+        }
+
+        // Calculate total stock at this warehouse from live data
+        let totalStockKg = 0;
+        if (this.data && this.data.materials) {
+            const whIdx = this.data.warehouses.indexOf(gudang);
+            if (whIdx !== -1) {
+                this.data.materials.forEach(m => {
+                    if (m.stocks && m.stocks[whIdx]) {
+                        totalStockKg += parseFloat(m.stocks[whIdx]) || 0;
+                    }
+                });
+            }
+        }
+
+        // Calculate days count (inclusive)
+        const startD = new Date(startEmptyDate);
+        const endD = new Date(contractEndDate);
+        const msPerDay = 1000 * 60 * 60 * 24;
+        const daysCount = Math.round((endD - startD) / msPerDay) + 1;
+        const dailyTransferKg = daysCount > 0 ? totalStockKg / daysCount : 0;
+
+        this.contractExpiries.push({
+            gudang,
+            contractEndDate,
+            startEmptyDate,
+            totalStockKg,
+            dailyTransferKg,
+            daysCount
+        });
+
+        this.renderContractList();
+        this.renderTable();
+        this.renderCharts();
+
+        // Reset inputs
+        document.getElementById('contract-gudang-select').value = '';
+        document.getElementById('contract-end-date').value = '';
+        document.getElementById('contract-start-empty').value = '';
+    },
+
+    removeContractExpiry: function (idx) {
+        this.contractExpiries.splice(idx, 1);
+        this.renderContractList();
+        this.renderTable();
+        this.renderCharts();
+    },
+
+    renderContractList: function () {
+        const container = document.getElementById('contract-list-display');
+        if (!container) return;
+        if (this.contractExpiries.length === 0) {
+            container.innerHTML = '<div style="color:#64748b; font-size:0.8rem; text-align:center; padding:10px;">Belum ada gudang habis kontrak ditambahkan.</div>';
+            return;
+        }
+        let html = '';
+        this.contractExpiries.forEach((c, idx) => {
+            const totalTon = (c.totalStockKg / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            const dailyTon = (c.dailyTransferKg / 1000).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            html += `
+                <div style="display:flex; align-items:center; gap:10px; background:rgba(255,107,0,0.08); border:1px solid rgba(255,107,0,0.4); border-radius:8px; padding:10px 14px; margin-bottom:8px;">
+                    <div style="flex:1;">
+                        <div style="font-family:'Orbitron'; color:#ff9e0b; font-size:0.85rem; font-weight:700;">⚠️ ${c.gudang}</div>
+                        <div style="font-size:0.75rem; color:#94a3b8; margin-top:3px;">
+                            Mulai kosong: <b style="color:#ff9e0b;">${this.formatDate(c.startEmptyDate)}</b> &nbsp;|&nbsp;
+                            Habis kontrak: <b style="color:#ef4444;">${this.formatDate(c.contractEndDate)}</b>
+                        </div>
+                        <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">
+                            Total stock: <b style="color:#fff;">${totalTon} T</b> &nbsp;|&nbsp;
+                            Avg transfer/hari → RM: <b style="color:#34d399;">${dailyTon} T/hari</b> &nbsp;(${c.daysCount} hari)
+                        </div>
+                    </div>
+                    <button onclick="SimPage.removeContractExpiry(${idx})" style="background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#ef4444; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:0.7rem; font-family:'Orbitron'; transition:0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.3)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'">✕ HAPUS</button>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    },
+
+    // Returns total Kg being transferred to RM on a given date from all active empties
+    getContractTransferAtDate: function (dateStr) {
+        let total = 0;
+        this.contractExpiries.forEach(c => {
+            if (dateStr >= c.startEmptyDate && dateStr <= c.contractEndDate) {
+                total += c.dailyTransferKg;
+            }
+        });
+        return total;
+    },
+
+    // Returns effective capacity (Kg) of a warehouse for a given date
+    // Returns 0 if it's being emptied (startEmptyDate reached)
+    getEffectiveCapacity: function (warehouseName, dateStr) {
+        const contract = this.contractExpiries.find(c => c.gudang === warehouseName);
+        if (!contract) return null; // null = no contract, use normal capacity
+        if (dateStr >= contract.startEmptyDate) return 0;
+        return null; // before empty date, use normal capacity
+    },
+
+    // Check contract status for visual purposes
+    getContractStatus: function (warehouseName, dateStr) {
+        const contract = this.contractExpiries.find(c => c.gudang === warehouseName);
+        if (!contract) return null;
+        if (dateStr > contract.contractEndDate) return { status: 'expired', contract };
+        if (dateStr >= contract.startEmptyDate) return { status: 'emptying', contract };
+        return { status: 'expiring', contract };
+    },
+
+    // Tracks total mathematical accumulation from warehouse transfer to RM stock 
+    getAccumulatedContractTransfer: function(sess, targetDateStr) {
+        if (!this.contractExpiries || this.contractExpiries.length === 0) return 0;
+        const isRMSession = sess.facility === 'RM' || sess.facility === 'ALL' || (Array.isArray(sess.facility) && sess.facility.includes('RM'));
+        if (!isRMSession) return 0;
+
+        let total = 0;
+        let dCur = new Date(sess.startDate);
+        let target = new Date(targetDateStr);
+        let loop = 0;
+        while(dCur <= target && loop < 1000) {
+            total += this.getContractTransferAtDate(dCur.toISOString().split('T')[0]);
+            dCur.setDate(dCur.getDate() + 1);
+            loop++;
+        }
+        return total;
     }
 };
 
