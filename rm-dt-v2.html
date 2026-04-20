@@ -1199,6 +1199,39 @@
             .qty-chart-wrap { height: 260px; }
             .qty-legend { gap: 10px; }
         }
+
+        /* === NEON FX FOR TREND INAPAN === */
+        .digital-bg-effect {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: 
+                linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px) 0 0 / 30px 30px,
+                linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px) 0 0 / 30px 30px;
+            pointer-events: none; z-index: 0;
+            animation: gridMove 30s linear infinite;
+        }
+        @keyframes gridMove {
+            0% { background-position: 0 0, 0 0; }
+            100% { background-position: -60px 60px, -60px 60px; }
+        }
+        .particle-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; overflow: hidden;
+        }
+        .particle-neon {
+            position: absolute; background: #00f5ff; border-radius: 50%;
+            box-shadow: 0 0 10px #00f5ff, 0 0 20px #a855f7;
+            animation: floatParticle linear infinite; bottom: 0;
+        }
+        @keyframes floatParticle {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(-300px) scale(1.2); opacity: 0; }
+        }
+        .glow-overlay-chart {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 30%;
+            background: linear-gradient(to top, rgba(168,85,247,0.1) 0%, transparent 100%);
+            pointer-events: none; z-index: 1;
+        }
     </style>
 </head>
 
@@ -1363,6 +1396,24 @@
                         <h4><i class="fas fa-chart-bar" style="color:var(--purple);"></i> Trend Harian</h4>
                     </div>
                     <div style="position:relative; height:220px;"><canvas id="inapTrendChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- ★ NEW NEON 3D CHART: TREND INAPAN ★ -->
+            <div class="chart-card-new neon-trend-card" style="margin-bottom: 30px; background: #0b1120; border: 1px solid rgba(0, 245, 255, 0.3); box-shadow: 0 15px 40px rgba(0, 245, 255, 0.15), inset 0 0 30px rgba(168, 85, 247, 0.1); overflow: hidden; position: relative;">
+                <div class="digital-bg-effect"></div>
+                <div class="glow-overlay-chart"></div>
+                <div id="neonParticlesContainer" class="particle-container"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; height: 100%; background: radial-gradient(circle at 50% 0%, rgba(0, 245, 255, 0.2) 0%, transparent 70%); pointer-events: none;"></div>
+                <div class="card-header-new" style="border-bottom: 1px solid rgba(0, 245, 255, 0.2); margin-bottom: 20px; position: relative; z-index: 2;">
+                    <h4 style="display: flex; align-items: center; gap: 8px;">
+                        <span style="color: #00f5ff; text-shadow: 0 0 15px rgba(0, 245, 255, 0.9), 0 0 30px rgba(168, 85, 247, 0.6); font-family: 'Orbitron', sans-serif; font-size: 1.25rem; letter-spacing: 2px;">
+                            <i class="fas fa-chart-line"></i> TREND INAPAN
+                        </span>
+                    </h4>
+                </div>
+                <div style="position:relative; height:360px; z-index: 2; padding: 0 10px 10px 10px;">
+                    <canvas id="neonInapTrendChart"></canvas>
                 </div>
             </div>
 
@@ -2386,6 +2437,7 @@
             // Render charts
             renderInapDoughnut(inap, tidakInap);
             renderInapTrend(rows);
+            renderNeonInapTrend(rows);
         }
 
         function animateCounter(id, end) {
@@ -2533,6 +2585,224 @@
                         }
                     }
                 }
+            });
+        }
+
+        function renderNeonInapTrend(rows) {
+            const dayMap = {};
+            rows.forEach(row => {
+                const tgl = String(row.TANGGAL || '').substring(0, 10);
+                if (!tgl || tgl.length < 8) return;
+                if (!dayMap[tgl]) dayMap[tgl] = { inap: 0 };
+                const r = computeInapForRow(row);
+                if (!r.valid) return;
+                if (r.isInap) dayMap[tgl].inap++;
+            });
+
+            const dates = Object.keys(dayMap).sort();
+            const labels = dates.map(d => { const p = d.split('-'); return `${p[2]}/${p[1]}`; });
+            const data = dates.map(d => dayMap[d].inap);
+
+            const ctx = document.getElementById('neonInapTrendChart').getContext('2d');
+            if (window.neonInapTrendChartInstance) window.neonInapTrendChartInstance.destroy();
+
+            // Dynamically generate particles
+            const particleContainer = document.getElementById('neonParticlesContainer');
+            if (particleContainer && particleContainer.children.length === 0) {
+                for (let i = 0; i < 20; i++) {
+                    const drop = document.createElement('div');
+                    drop.className = 'particle-neon';
+                    drop.style.left = Math.random() * 100 + '%';
+                    const size = Math.random() * 3 + 2;
+                    drop.style.width = size + 'px';
+                    drop.style.height = size + 'px';
+                    drop.style.animationDuration = (Math.random() * 4 + 2) + 's';
+                    drop.style.animationDelay = (Math.random() * 5) + 's';
+                    particleContainer.appendChild(drop);
+                }
+            }
+
+            // Create neon glow fill gradient for line
+            const gradientLine = ctx.createLinearGradient(0, 0, 0, 360);
+            gradientLine.addColorStop(0, '#00f5ff'); // Bright Cyan
+            gradientLine.addColorStop(0.5, '#a855f7'); // Purple transition
+            gradientLine.addColorStop(1, '#3b82f6'); // Blue bottom
+
+            const gradientFill = ctx.createLinearGradient(0, 0, 0, 360);
+            gradientFill.addColorStop(0, 'rgba(168, 85, 247, 0.4)');
+            gradientFill.addColorStop(0.5, 'rgba(0, 245, 255, 0.15)');
+            gradientFill.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+            // Create bar gradient for depth columns (digital rain aesthetic)
+            const barGradient = ctx.createLinearGradient(0, 0, 0, 360);
+            barGradient.addColorStop(0, 'rgba(0, 245, 255, 0.25)');
+            barGradient.addColorStop(1, 'rgba(168, 85, 247, 0)');
+
+            window.neonInapTrendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Trend Inapan',
+                            data: data,
+                            borderColor: gradientLine,
+                            backgroundColor: gradientFill,
+                            borderWidth: 4,
+                            fill: true,
+                            tension: 0.35,
+                            pointBackgroundColor: '#0b1120',
+                            pointBorderColor: '#00f5ff',
+                            pointBorderWidth: 3,
+                            pointRadius: 6,
+                            pointHoverRadius: 9,
+                            pointHoverBackgroundColor: '#00f5ff',
+                            pointHoverBorderColor: '#fff',
+                            order: 1
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Volume',
+                            data: data,
+                            backgroundColor: barGradient,
+                            borderColor: 'transparent',
+                            borderWidth: 0,
+                            barPercentage: 0.4,
+                            borderRadius: 4,
+                            order: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(11, 17, 32, 0.95)',
+                            titleColor: '#00f5ff',
+                            titleFont: { family: 'Rajdhani', size: 14, weight: 800 },
+                            bodyColor: '#fff',
+                            bodyFont: { family: 'Inter', size: 12 },
+                            borderColor: 'rgba(168, 85, 247, 0.5)',
+                            borderWidth: 1, padding: 12, displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    if(context.dataset.type === 'bar') return null;
+                                    return context.parsed.y + ' Truck Inap';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(0, 245, 255, 0.05)', drawBorder: false, tickLength: 8 },
+                            ticks: { color: 'rgba(0, 245, 255, 0.6)', font: { family: 'Rajdhani', weight: 600, size: 11 } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0, 245, 255, 0.05)', drawBorder: false },
+                            ticks: { color: 'rgba(0, 245, 255, 0.6)', font: { family: 'Rajdhani', weight: 600, size: 11 }, stepSize: 2 }
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'neonEffects',
+                    beforeDatasetsDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        const meta = chart.getDatasetMeta(0);
+                        if (!meta.data || meta.data.length === 0) return;
+                        
+                        ctx.save();
+                        
+                        // Vertical drops (digital rain lines)
+                        ctx.lineWidth = 1;
+                        const bottomY = chart.chartArea.bottom;
+                        
+                        meta.data.forEach((point, index) => {
+                            const val = chart.data.datasets[0].data[index];
+                            if(val === 0) return;
+                            
+                            // Vertical glow line
+                            ctx.beginPath();
+                            ctx.moveTo(point.x, point.y);
+                            ctx.lineTo(point.x, bottomY);
+                            
+                            const grad = ctx.createLinearGradient(point.x, point.y, point.x, bottomY);
+                            grad.addColorStop(0, 'rgba(0, 245, 255, 0.8)');
+                            grad.addColorStop(0.5, 'rgba(168, 85, 247, 0.4)');
+                            grad.addColorStop(1, 'rgba(0, 245, 255, 0)');
+                            
+                            ctx.strokeStyle = grad;
+                            ctx.stroke();
+                        });
+                        
+                        // Setup line glowing
+                        ctx.shadowColor = '#00f5ff'; 
+                        ctx.shadowBlur = 15;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 0;
+                    },
+                    afterDatasetsDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        const meta = chart.getDatasetMeta(0);
+                        if (!meta.data || meta.data.length === 0) {
+                            chart.ctx.restore();
+                            return;
+                        }
+                        
+                        // Draw Arrow at the last point
+                        const lastPointIndex = meta.data.length - 1;
+                        let lastPoint = meta.data[lastPointIndex];
+                        let prevPoint = null;
+                        
+                        for(let i = lastPointIndex - 1; i >= 0; i--) {
+                           if(meta.data[i]) {
+                              prevPoint = meta.data[i];
+                              break;
+                           }
+                        }
+                        
+                        if (lastPoint && prevPoint) {
+                            const dx = lastPoint.x - prevPoint.x;
+                            const dy = lastPoint.y - prevPoint.y;
+                            const angle = Math.atan2(dy, dx);
+                            
+                            ctx.save();
+                            ctx.translate(lastPoint.x, lastPoint.y);
+                            ctx.rotate(angle);
+                            
+                            // Glowing arrow tip
+                            ctx.beginPath();
+                            ctx.moveTo(10, 0); 
+                            ctx.lineTo(-12, -8);
+                            ctx.lineTo(-6, 0);
+                            ctx.lineTo(-12, 8);
+                            ctx.closePath();
+                            
+                            ctx.fillStyle = '#00f5ff';
+                            ctx.shadowColor = '#00f5ff';
+                            ctx.shadowBlur = 15;
+                            ctx.fill();
+                            
+                            // White core
+                            ctx.beginPath();
+                            ctx.moveTo(7, 0);
+                            ctx.lineTo(-8, -4);
+                            ctx.lineTo(-4, 0);
+                            ctx.lineTo(-8, 4);
+                            ctx.closePath();
+                            ctx.fillStyle = '#ffffff';
+                            ctx.shadowBlur = 0;
+                            ctx.fill();
+                            
+                            ctx.restore();
+                        }
+                        chart.ctx.restore();
+                    }
+                }]
             });
         }
 
