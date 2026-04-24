@@ -745,7 +745,57 @@
         </div>
     </div>
 
-    <!-- FULLSCREEN TABLE OVERLAY -->
+    <!-- ADD WAREHOUSE MODAL -->
+    <div id="add-wh-modal" onclick="if(event.target===this) VP.closeAddWarehouse()" style="
+        display:none; position:fixed; inset:0; z-index:9999;
+        background:rgba(15,23,42,0.55); backdrop-filter:blur(6px);
+        align-items:center; justify-content:center;
+    ">
+        <div style="
+            background:#fff; border-radius:20px; padding:32px 28px;
+            width:360px; max-width:94vw;
+            box-shadow: 0 30px 80px rgba(37,99,235,0.18), 0 8px 24px rgba(0,0,0,0.12);
+            border: 1px solid rgba(37,99,235,0.15);
+            animation: wh-modal-in 0.28s cubic-bezier(0.34,1.56,0.64,1);
+        ">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <div style="font-family:'Orbitron'; font-size:1rem; color:#1e293b; font-weight:900; letter-spacing:1px;">➕ TAMBAH GUDANG</div>
+                <button onclick="VP.closeAddWarehouse()" style="background:none; border:none; font-size:1.3rem; cursor:pointer; color:#94a3b8; line-height:1; padding:4px 8px; border-radius:6px; transition:background 0.15s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='none'">✕</button>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="display:block; font-family:'Rajdhani'; font-size:0.75rem; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Nama Gudang</label>
+                <input id="add-wh-name" type="text" placeholder="Contoh: GUDANG BARU" maxlength="30"
+                    style="width:100%; box-sizing:border-box; font-family:'Rajdhani'; font-size:1rem; font-weight:700; padding:10px 14px; border:2px solid #e2e8f0; border-radius:10px; outline:none; color:#1e293b; transition:border-color 0.2s;"
+                    onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'"
+                    onkeydown="if(event.key==='Enter') document.getElementById('add-wh-cap').focus()">
+            </div>
+
+            <div style="margin-bottom:24px;">
+                <label style="display:block; font-family:'Rajdhani'; font-size:0.75rem; font-weight:800; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Kapasitas (Ton)</label>
+                <input id="add-wh-cap" type="number" placeholder="Contoh: 2000" min="1" step="100"
+                    style="width:100%; box-sizing:border-box; font-family:'Rajdhani'; font-size:1rem; font-weight:700; padding:10px 14px; border:2px solid #e2e8f0; border-radius:10px; outline:none; color:#1e293b; transition:border-color 0.2s;"
+                    onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'"
+                    onkeydown="if(event.key==='Enter') VP.confirmAddWarehouse()">
+                <div style="font-size:0.7rem; color:#94a3b8; font-family:'Rajdhani'; margin-top:4px;">Kapasitas ini akan langsung mempengaruhi semua kalkulasi simulasi</div>
+            </div>
+
+            <!-- Custom warehouses list -->
+            <div id="custom-wh-list" style="margin-bottom:18px;"></div>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="VP.closeAddWarehouse()" style="flex:1; padding:11px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:10px; font-family:'Rajdhani'; font-size:0.9rem; font-weight:700; color:#475569; cursor:pointer; transition:background 0.15s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Batal</button>
+                <button onclick="VP.confirmAddWarehouse()" style="flex:2; padding:11px; background:linear-gradient(135deg,#2563eb,#1d4ed8); border:none; border-radius:10px; font-family:'Rajdhani'; font-size:0.9rem; font-weight:800; color:#fff; cursor:pointer; letter-spacing:0.5px; transition:opacity 0.15s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">✓ TAMBAH GUDANG</button>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes wh-modal-in {
+            from { opacity:0; transform: scale(0.88) translateY(20px); }
+            to   { opacity:1; transform: scale(1) translateY(0); }
+        }
+    </style>
+
     <div class="table-fullscreen-overlay" id="table-fullscreen-overlay">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <div style="font-family:'Orbitron'; color:#fff; font-size:1.2rem;"><i class="fas fa-table"></i> TABEL DETAIL
@@ -994,6 +1044,10 @@
             },
 
             renderAll: function () {
+                // Lock original warehouse count before any custom additions
+                if (this.data && this.data.warehouses && !this._originalWarehouseCount) {
+                    this._originalWarehouseCount = this.data.warehouses.length;
+                }
                 this.renderStockChart(); this.renderMovementChart(); this.renderFluxChart();
                 this.generateRangkuman();
                 this.renderAllCalendars(); this.renderWarehouseVisualization();
@@ -1155,6 +1209,27 @@
                     </div>
                     `;
                 });
+
+                // --- ADD WAREHOUSE BUTTON CARD ---
+                html += `
+                <div onclick="VP.showAddWarehouse()" title="Tambah gudang custom" style="
+                    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+                    border: 2px dashed rgba(37,99,235,0.35);
+                    border-radius: 12px; padding: 16px;
+                    display: flex; flex-direction: column;
+                    align-items: center; justify-content: center;
+                    cursor: pointer; gap: 10px;
+                    min-height: 160px;
+                    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+                    box-shadow: 0 4px 12px rgba(37,99,235,0.06);
+                "
+                onmouseover="this.style.background='linear-gradient(135deg,#dbeafe 0%,#e0f2fe 100%)'; this.style.borderColor='rgba(37,99,235,0.6)'; this.style.transform='translateY(-2px)';"
+                onmouseout="this.style.background='linear-gradient(135deg,#eff6ff 0%,#f0f9ff 100%)'; this.style.borderColor='rgba(37,99,235,0.35)'; this.style.transform='none';">
+                    <div style="width:42px; height:42px; background:rgba(37,99,235,0.12); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:900; color:#2563eb;">+</div>
+                    <div style="font-family:'Orbitron'; font-size:0.7rem; color:#2563eb; font-weight:700; text-align:center; letter-spacing:1px;">TAMBAH GUDANG</div>
+                    <div style="font-size:0.65rem; color:#94a3b8; text-align:center; font-family:'Rajdhani'; font-weight:600;">Input parameter custom</div>
+                </div>
+                `;
 
                 html += `</div></div>`;
                 el.innerHTML = html;
@@ -2409,6 +2484,110 @@
                 const clickX = event.clientX - rect.left;
                 const ratio = clickX / rect.width;
                 wrap.scrollLeft = ratio * (wrap.scrollWidth - wrap.clientWidth);
+            },
+
+            // ---- ADD CUSTOM WAREHOUSE ----
+            customWarehouses: [], // [{name, capacityTon}]
+
+            // Inject custom warehouses into this.data before any render
+            _applyCustomWarehouses: function() {
+                if (!this.data) return;
+                // Remove previously injected customs (anything not in original list)
+                const origLen = this._originalWarehouseCount || this.data.warehouses.length;
+                // Truncate to original length first
+                this.data.warehouses = this.data.warehouses.slice(0, origLen);
+                this.data.capacities = this.data.capacities.slice(0, origLen);
+                // Re-inject
+                this.customWarehouses.forEach(cw => {
+                    this.data.warehouses.push(cw.name);
+                    this.data.capacities.push(cw.capacityTon); // in Ton (converted as needed)
+                    CONFIG.WAREHOUSE_CAPACITIES[cw.name.toUpperCase()] = cw.capacityTon;
+                    // Add zero-stock row in materials
+                    if (this.data.materials) {
+                        this.data.materials.forEach(m => {
+                            if (!m.stocks) m.stocks = [];
+                            while (m.stocks.length < this.data.warehouses.length - 1) m.stocks.push(0);
+                            if (m.stocks.length < this.data.warehouses.length) m.stocks.push(0);
+                        });
+                    }
+                });
+            },
+
+            showAddWarehouse: function() {
+                const modal = document.getElementById('add-wh-modal');
+                if (!modal) return;
+                document.getElementById('add-wh-name').value = '';
+                document.getElementById('add-wh-cap').value = '';
+                // Render existing custom list
+                this._renderCustomWhList();
+                modal.style.display = 'flex';
+                setTimeout(() => document.getElementById('add-wh-name').focus(), 80);
+            },
+
+            closeAddWarehouse: function() {
+                const modal = document.getElementById('add-wh-modal');
+                if (modal) modal.style.display = 'none';
+            },
+
+            _renderCustomWhList: function() {
+                const el = document.getElementById('custom-wh-list');
+                if (!el) return;
+                if (this.customWarehouses.length === 0) { el.innerHTML = ''; return; }
+                let h = `<div style="font-family:'Rajdhani'; font-size:0.72rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Gudang Custom Aktif</div>`;
+                this.customWarehouses.forEach((cw, i) => {
+                    h += `<div style="display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:7px 12px; margin-bottom:5px;">
+                        <div style="font-family:'Rajdhani'; font-weight:700; font-size:0.9rem; color:#1e293b;">${cw.name} <span style="color:#64748b; font-size:0.75rem; font-weight:600;">— ${cw.capacityTon.toLocaleString('id-ID')} T</span></div>
+                        <button onclick="VP.removeCustomWarehouse(${i})" style="background:#fee2e2; border:none; color:#ef4444; border-radius:6px; padding:3px 9px; font-size:0.75rem; font-weight:800; cursor:pointer; font-family:'Rajdhani';">✕ Hapus</button>
+                    </div>`;
+                });
+                el.innerHTML = h;
+            },
+
+            confirmAddWarehouse: function() {
+                const nameInput = document.getElementById('add-wh-name');
+                const capInput = document.getElementById('add-wh-cap');
+                const name = (nameInput.value || '').trim().toUpperCase();
+                const cap = parseFloat(capInput.value);
+
+                if (!name) {
+                    nameInput.style.borderColor = '#ef4444';
+                    setTimeout(() => nameInput.style.borderColor = '#e2e8f0', 1500);
+                    nameInput.focus(); return;
+                }
+                if (isNaN(cap) || cap <= 0) {
+                    capInput.style.borderColor = '#ef4444';
+                    setTimeout(() => capInput.style.borderColor = '#e2e8f0', 1500);
+                    capInput.focus(); return;
+                }
+                // Check duplicate
+                if (this.data.warehouses.map(w => w.toUpperCase()).includes(name) ||
+                    this.customWarehouses.map(c => c.name.toUpperCase()).includes(name)) {
+                    nameInput.style.borderColor = '#f59e0b';
+                    nameInput.placeholder = 'Nama sudah ada!';
+                    setTimeout(() => { nameInput.style.borderColor = '#e2e8f0'; nameInput.placeholder = 'Contoh: GUDANG BARU'; }, 2000);
+                    nameInput.focus(); return;
+                }
+
+                // Store original count if not yet stored
+                if (!this._originalWarehouseCount) {
+                    this._originalWarehouseCount = this.data.warehouses.length;
+                }
+
+                this.customWarehouses.push({ name, capacityTon: cap });
+                this._applyCustomWarehouses();
+
+                nameInput.value = ''; capInput.value = '';
+                this._renderCustomWhList();
+                this.closeAddWarehouse();
+                this.refreshAll();
+            },
+
+            removeCustomWarehouse: function(idx) {
+                this.customWarehouses.splice(idx, 1);
+                this._applyCustomWarehouses();
+                this._renderCustomWhList();
+                this.closeAddWarehouse();
+                this.refreshAll();
             }
         };
 
