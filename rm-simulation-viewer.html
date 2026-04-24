@@ -599,6 +599,23 @@
                     style="font-family:'Orbitron'; font-size:1.6rem; font-weight:900; color:#00f3ff; text-shadow:0 0 20px rgba(0,243,255,0.6), 0 0 5px rgba(0,243,255,1); letter-spacing:2px; text-transform:uppercase;">
                     SIMULASI RM STORAGE - WH CIREBON</div>
             </div>
+            <!-- SAVE BUTTON -->
+            <div style="display:flex; align-items:center; padding-right:8px;">
+                <button id="btn-save-viewer" onclick="VP.saveCustomState()" title="Simpan konfigurasi gudang custom ke link ini" style="
+                    display:flex; align-items:center; gap:7px;
+                    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+                    border: 1px solid rgba(255,255,255,0.2);
+                    color: #fff; font-family:'Orbitron'; font-size:0.65rem; font-weight:700;
+                    padding: 8px 16px; border-radius: 8px; cursor:pointer;
+                    letter-spacing: 0.5px;
+                    box-shadow: 0 4px 16px rgba(37,99,235,0.4);
+                    transition: opacity 0.2s, transform 0.2s;
+                " onmouseover="this.style.opacity='0.85'; this.style.transform='translateY(-1px)';"
+                   onmouseout="this.style.opacity='1'; this.style.transform='none';">
+                    <span style="font-size:0.9rem;">💾</span>
+                    <span id="btn-save-label">SAVE</span>
+                </button>
+            </div>
         </div>
 
         <!-- INFO STRIP (Points 2-5) -->
@@ -909,8 +926,15 @@
                 
                 // If materials data is missing from payload, fetch live from API
                 if (!this.data.materials || this.data.materials.length === 0) {
-                    this.fetchLiveWarehouseData().then(() => this.renderAll()).catch(() => this.renderAll());
+                    this.fetchLiveWarehouseData().then(() => {
+                        this._restoreCustomState();
+                        this.renderAll();
+                    }).catch(() => {
+                        this._restoreCustomState();
+                        this.renderAll();
+                    });
                 } else {
+                    this._restoreCustomState();
                     this.renderAll();
                 }
             },
@@ -2588,6 +2612,106 @@
                 this._renderCustomWhList();
                 this.closeAddWarehouse();
                 this.refreshAll();
+            },
+
+            // ---- PERSIST CUSTOM STATE TO localStorage ----
+            _storageKey: function() {
+                const params = new URLSearchParams(window.location.search);
+                const raw = params.get('id') || params.get('payload') || params.get('data') || window.location.href;
+                // Simple stable hash of the key
+                let h = 0;
+                for (let i = 0; i < raw.length; i++) { h = ((h << 5) - h) + raw.charCodeAt(i); h |= 0; }
+                return 'sim_custom_wh_' + Math.abs(h).toString(36);
+            },
+
+            saveCustomState: function() {
+                try {
+                    const payload = {
+                        customWarehouses: this.customWarehouses,
+                        capacityOverrides: Object.fromEntries(
+                            Object.entries(CONFIG.WAREHOUSE_CAPACITIES)
+                        ),
+                        savedAt: new Date().toISOString()
+                    };
+                    localStorage.setItem(this._storageKey(), JSON.stringify(payload));
+
+                    // Update button UI
+                    const label = document.getElementById('btn-save-label');
+                    const btn = document.getElementById('btn-save-viewer');
+                    if (label) label.textContent = 'TERSIMPAN ✓';
+                    if (btn) {
+                        btn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
+                        btn.style.boxShadow = '0 4px 16px rgba(16,185,129,0.4)';
+                    }
+                    // Toast notification
+                    this._showToast('💾 Konfigurasi berhasil disimpan! Link ini akan mengingat gudang custom Anda.');
+                    // Reset button after 4s
+                    setTimeout(() => {
+                        if (label) label.textContent = 'SAVE';
+                        if (btn) {
+                            btn.style.background = 'linear-gradient(135deg,#1d4ed8,#2563eb)';
+                            btn.style.boxShadow = '0 4px 16px rgba(37,99,235,0.4)';
+                        }
+                    }, 4000);
+                } catch(e) {
+                    console.warn('Failed to save custom state:', e);
+                    this._showToast('⚠️ Gagal menyimpan. Browser mungkin memblokir localStorage.');
+                }
+            },
+
+            _restoreCustomState: function() {
+                try {
+                    const raw = localStorage.getItem(this._storageKey());
+                    if (!raw) return;
+                    const payload = JSON.parse(raw);
+
+                    // Restore capacity overrides
+                    if (payload.capacityOverrides) {
+                        Object.entries(payload.capacityOverrides).forEach(([k, v]) => {
+                            CONFIG.WAREHOUSE_CAPACITIES[k] = v;
+                        });
+                    }
+                    // Restore custom warehouses
+                    if (payload.customWarehouses && payload.customWarehouses.length > 0) {
+                        this.customWarehouses = payload.customWarehouses;
+                        if (!this._originalWarehouseCount) {
+                            this._originalWarehouseCount = this.data.warehouses.length;
+                        }
+                        this._applyCustomWarehouses();
+                        // Show restore notification
+                        const names = this.customWarehouses.map(c => c.name).join(', ');
+                        setTimeout(() => this._showToast(`🔄 Gudang custom dipulihkan: ${names}`), 600);
+                    }
+                } catch(e) {
+                    console.warn('Failed to restore custom state:', e);
+                }
+            },
+
+            _showToast: function(msg) {
+                let toast = document.getElementById('vp-toast');
+                if (!toast) {
+                    toast = document.createElement('div');
+                    toast.id = 'vp-toast';
+                    toast.style.cssText = `
+                        position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px);
+                        background:rgba(15,23,42,0.95); color:#fff; font-family:'Rajdhani',sans-serif;
+                        font-size:0.9rem; font-weight:700; padding:14px 24px; border-radius:12px;
+                        box-shadow:0 8px 32px rgba(0,0,0,0.28); z-index:99999;
+                        pointer-events:none; opacity:0;
+                        transition:opacity 0.3s ease, transform 0.3s ease;
+                        white-space:nowrap; max-width:90vw;
+                        border:1px solid rgba(255,255,255,0.1);
+                    `;
+                    document.body.appendChild(toast);
+                }
+                toast.textContent = msg;
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(-50%) translateY(0)';
+                clearTimeout(toast._timer);
+                toast._timer = setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateX(-50%) translateY(20px)';
+                }, 3500);
             }
         };
 
