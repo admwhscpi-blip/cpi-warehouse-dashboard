@@ -26,7 +26,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background: #f1f5f9;
+            background: #edf0f9;
             color: #1e293b;
             font-family: 'Rajdhani', sans-serif;
             min-height: 100vh;
@@ -471,7 +471,75 @@
             font-size: 0.65rem; color: #94a3b8; font-family: 'Rajdhani';
             font-weight: 600; letter-spacing: 0.5px;
         }
-    </style>
+        /* ==== PREMIUM CHART VISUAL UPGRADE ==== */
+
+        /* Glass panel elevate */
+        .glass-panel {
+            border-radius: 18px !important;
+            box-shadow: 0 6px 28px rgba(37,99,235,0.07), 0 2px 8px rgba(0,0,0,0.04) !important;
+            border: 1px solid rgba(37,99,235,0.10) !important;
+            transition: box-shadow 0.4s ease, transform 0.35s cubic-bezier(0.34,1.56,0.64,1) !important;
+        }
+        .glass-panel:hover {
+            box-shadow: 0 16px 48px rgba(37,99,235,0.11), 0 4px 14px rgba(0,0,0,0.05) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        /* 3D Chart Box */
+        .ch3d {
+            position: relative;
+            border-radius: 12px;
+            background: linear-gradient(150deg, #f5f8ff 0%, #fafcff 50%, #f0f4ff 100%);
+            border: 1px solid rgba(37,99,235,0.09);
+            box-shadow:
+                0 8px 28px rgba(37,99,235,0.08),
+                0 2px 8px rgba(0,0,0,0.05),
+                inset 0 1px 0 #fff,
+                inset 0 -1px 0 rgba(37,99,235,0.04);
+            overflow: hidden;
+            transition: transform 0.35s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.3s ease;
+        }
+        .ch3d:hover {
+            transform: perspective(900px) translateZ(6px);
+            box-shadow:
+                0 16px 44px rgba(37,99,235,0.13),
+                0 4px 14px rgba(0,0,0,0.07),
+                inset 0 1px 0 #fff;
+        }
+        /* glowing top accent strip */
+        .ch3d::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent 0%, rgba(37,99,235,0.55) 30%, rgba(14,165,233,0.55) 70%, transparent 100%);
+            z-index: 2;
+            border-radius: 12px 12px 0 0;
+        }
+        /* radial ambient light */  
+        .ch3d::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% -10%, rgba(37,99,235,0.05) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .ch3d canvas { position: relative; z-index: 1; }
+
+        /* Viewer top bar subtle */
+        .viewer-brand-bar {
+            background: rgba(237,240,249,0.9) !important;
+            backdrop-filter: blur(20px) !important;
+            border-bottom: 1px solid rgba(37,99,235,0.09) !important;
+        }
+        /* Info strip softer */
+        .info-strip {
+            background: rgba(255,255,255,0.88) !important;
+            box-shadow: 0 4px 20px rgba(37,99,235,0.07), 0 1px 4px rgba(0,0,0,0.04) !important;
+            border-radius: 14px !important;
+        }
+
 </head>
 
 <body>
@@ -573,14 +641,18 @@
                         </div>
                     </div>
                     <!-- GRAFIK RANGKUMAN (TOP) -->
-                    <div style="padding:15px 20px; border-bottom:1px solid #f1f5f9;">
-                        <div style="height:200px; position:relative;"><canvas id="summaryChart"></canvas></div>
+                    <div style="padding:15px 20px; border-bottom:1px solid #eef1f9;">
+                        <div class="ch3d" style="height:200px; position:relative; padding:6px;">
+                            <canvas id="summaryChart" style="border-radius:8px;"></canvas>
+                        </div>
                     </div>
                     
                     <!-- NEW: COLLAPSE DEFICIT ANALYSIS CHART -->
                     <div id="collapse-deficit-container" style="padding:15px 20px; border-bottom:1px solid #f1f5f9; display:none;">
                         <div style="font-family:'Orbitron'; font-size:0.7rem; color:#ef4444; letter-spacing:2px; margin-bottom:10px;"><i class="fas fa-exclamation-triangle"></i> ANALISIS KEKURANGAN RUANG (DEFISIT KAPASITAS)</div>
-                        <div style="height:150px; position:relative;"><canvas id="collapseDeficitChart"></canvas></div>
+                        <div class="ch3d" style="height:150px; position:relative; padding:6px;">
+                            <canvas id="collapseDeficitChart" style="border-radius:8px;"></canvas>
+                        </div>
                     </div>
                     <!-- EXECUTIVE SUMMARY CONTENT -->
                     <div id="executive-summary-content" style="padding:20px; font-family:'Rajdhani';">
@@ -613,7 +685,9 @@
                             <button class="slicer-btn" id="slicer-monthly" onclick="VP.setSlicer('monthly')">M</button>
                         </div>
                     </div>
-                    <div style="flex:1; position:relative; padding:10px;"><canvas id="movementChart"></canvas></div>
+                    <div class="ch3d" style="flex:1; position:relative; padding:10px; margin:10px;">
+                        <canvas id="movementChart" style="border-radius:8px;"></canvas>
+                    </div>
                 </div>
 
                 <!-- STOCK vs CAPACITY (LANDSCAPE) REMOVED -->
@@ -1244,29 +1318,57 @@
                 const fullDates = this.getDateRange(); if (fullDates.length === 0) return;
                 const labels = this.getLabels(fullDates), step = this.getStep();
 
+                // Glow plugin for lines
+                const lineGlowPlugin = {
+                    id: 'lineGlow',
+                    beforeDatasetDraw(chart, args) {
+                        if (args.meta.type !== 'line') return;
+                        const c = chart.ctx; c.save();
+                        const color = args.meta.dataset.options?.borderColor || 'rgba(37,99,235,0.4)';
+                        c.shadowColor = color; c.shadowBlur = 10;
+                    },
+                    afterDatasetDraw(chart) { chart.ctx.restore(); }
+                };
+
                 const datasets = this.session.map(s => {
                     let data = [];
                     for (let i = 0; i < fullDates.length; i += step) {
                         data.push(this.calculateStateAtDate(s, fullDates[i].toISOString().split('T')[0]).stock);
                     }
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                    gradient.addColorStop(0, s.color); gradient.addColorStop(1, 'rgba(255,255,255,0)');
-                    return { label: s.material, data, borderColor: s.color, backgroundColor: gradient, borderWidth: 3, pointRadius: 0, pointHoverRadius: 6, pointBackgroundColor: '#fff', tension: 0.4, fill: true };
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 360);
+                    gradient.addColorStop(0,   s.color);
+                    gradient.addColorStop(0.45, s.color + 'aa');
+                    gradient.addColorStop(1,    s.color + '00');
+                    return {
+                        label: s.material, data,
+                        borderColor: s.color, backgroundColor: gradient,
+                        borderWidth: 3.5, pointRadius: 3, pointHoverRadius: 8,
+                        pointBackgroundColor: '#fff', pointBorderColor: s.color,
+                        pointBorderWidth: 2.5, pointHoverBackgroundColor: s.color,
+                        tension: 0.45, fill: true
+                    };
                 });
 
                 this.movementChartInstance = new Chart(ctx, {
                     type: 'line', data: { labels, datasets },
+                    plugins: [lineGlowPlugin],
                     options: {
+                        animation: { duration: 1300, easing: 'easeInOutSine' },
                         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: { display: false }, tooltip: {
-                                backgroundColor: '#ffffff', titleColor: '#1e293b', bodyColor: '#475569', borderColor: '#e2e8f0', borderWidth: 1,
+                            lineGlow: {},
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(255,255,255,0.97)',
+                                titleColor: '#1e293b', bodyColor: '#475569',
+                                borderColor: 'rgba(37,99,235,0.15)', borderWidth: 1,
+                                padding: { x: 14, y: 10 }, cornerRadius: 10,
                                 callbacks: { label: c => `${c.dataset.label}: ${Math.round(c.raw).toLocaleString()} Kg` }
                             }
                         },
                         scales: {
-                            y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#1e293b', font: { size: 10, weight: 'bold' } }, beginAtZero: true },
-                            x: { grid: { display: false }, ticks: { color: '#1e293b', maxTicksLimit: 10, font: { size: 10, weight: 'bold' } } }
+                            y: { grid: { color: 'rgba(37,99,235,0.05)', drawBorder: false }, ticks: { color: '#64748b', font: { size: 10, weight: '700' } }, beginAtZero: true },
+                            x: { grid: { display: false }, ticks: { color: '#64748b', maxTicksLimit: 10, font: { size: 10, weight: '700' } } }
                         }
                     }
                 });
@@ -1689,25 +1791,69 @@
                     capData.push(totalCapacity);
                 }
 
+                // Premium gradient fills
+                const ctx2d = ctx.getContext('2d');
+                const h = ctx.offsetHeight || 200;
+                const gradNormal = ctx2d.createLinearGradient(0, 0, 0, h);
+                gradNormal.addColorStop(0,   'rgba(234,179,8,0.88)');
+                gradNormal.addColorStop(0.5, 'rgba(245,158,11,0.68)');
+                gradNormal.addColorStop(1,   'rgba(217,119,6,0.38)');
+                const gradOver = ctx2d.createLinearGradient(0, 0, 0, h);
+                gradOver.addColorStop(0,   'rgba(239,68,68,0.90)');
+                gradOver.addColorStop(0.5, 'rgba(220,38,38,0.70)');
+                gradOver.addColorStop(1,   'rgba(185,28,28,0.38)');
+
+                // Shadow plugin for bars
+                const barShadowPlugin = {
+                    id: 'barShadow',
+                    beforeDatasetDraw(chart, args) {
+                        const meta = args.meta;
+                        if (meta.type !== 'bar') return;
+                        const ctx = chart.ctx;
+                        ctx.save();
+                        ctx.shadowColor = 'rgba(37,99,235,0.18)';
+                        ctx.shadowBlur = 12;
+                        ctx.shadowOffsetY = 6;
+                    },
+                    afterDatasetDraw(chart) { chart.ctx.restore(); }
+                };
+
                 this.summaryChartInstance = new Chart(ctx, {
                     type: 'bar', data: {
                         labels, datasets: [
-                            { type: 'line', label: 'MAX CAPACITY', data: capData, borderColor: '#ff003c', borderWidth: 2, borderDash: [6, 4], pointRadius: 0, fill: false, order: 0 },
-                            { type: 'bar', label: 'TOTAL RM STOCK', data: stockData, backgroundColor: stockData.map(v => v > totalCapacity ? 'rgba(255,0,60,0.7)' : 'rgba(255,230,0,0.5)'), borderColor: 'transparent', borderWidth: 0, barPercentage: 0.8, order: 1 }
+                            { type: 'line', label: 'MAX CAPACITY', data: capData,
+                              borderColor: 'rgba(239,68,68,0.75)', borderWidth: 2.5,
+                              borderDash: [7, 4], pointRadius: 0, fill: false, order: 0, tension: 0.35 },
+                            { type: 'bar', label: 'TOTAL RM STOCK', data: stockData,
+                              backgroundColor: stockData.map(v => v > totalCapacity ? gradOver : gradNormal),
+                              borderColor: stockData.map(v => v > totalCapacity ? 'rgba(185,28,28,0.45)' : 'rgba(161,98,7,0.35)'),
+                              borderWidth: 1, borderRadius: 8, borderSkipped: false,
+                              barPercentage: 0.72, order: 1 }
                         ]
                     },
+                    plugins: [barShadowPlugin],
                     options: {
+                        animation: {
+                            duration: 1100, easing: 'easeInOutQuart',
+                            delay: ctx => ctx.type === 'data' ? ctx.dataIndex * 12 : 0
+                        },
                         responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: { labels: { color: '#1e293b', font: { family: 'Orbitron', size: 9, weight: 'bold' } } },
+                            barShadow: {},
+                            legend: { labels: { color: '#374151', font: { family: 'Orbitron', size: 9, weight: 'bold' }, boxWidth: 12, padding: 18, borderRadius: 3 } },
                             tooltip: {
-                                backgroundColor: '#ffffff', titleColor: '#1e293b', bodyColor: '#475569', borderColor: '#e2e8f0', borderWidth: 1,
+                                backgroundColor: 'rgba(255,255,255,0.97)',
+                                titleColor: '#1e293b', bodyColor: '#475569',
+                                borderColor: 'rgba(37,99,235,0.18)', borderWidth: 1,
+                                padding: { x: 14, y: 10 }, cornerRadius: 10,
                                 callbacks: { label: c => `${c.dataset.label}: ${(c.raw / 1000).toLocaleString('id-ID')} T` }
                             }
                         },
                         scales: {
-                            y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#1e293b', font: { size: 9, weight: 'bold' }, callback: v => (v / 1000000).toFixed(0) + 'M Kg' }, beginAtZero: true },
-                            x: { grid: { display: false }, ticks: { color: '#1e293b', maxTicksLimit: 12, font: { size: 9, weight: 'bold' } } }
+                            y: { grid: { color: 'rgba(37,99,235,0.05)', drawBorder: false },
+                                 ticks: { color: '#64748b', font: { size: 9, weight: '700' }, callback: v => (v / 1000000).toFixed(0) + 'M Kg' },
+                                 beginAtZero: true },
+                            x: { grid: { display: false }, ticks: { color: '#64748b', maxTicksLimit: 12, font: { size: 9, weight: '700' } } }
                         }
                     }
                 });
@@ -1782,6 +1928,23 @@
                     mainContainer.insertBefore(noteEl, chartContainer);
                 }
 
+                // Premium gradient for deficit bars
+                const ctx2d = ctx.getContext('2d');
+                const gradRed = ctx2d.createLinearGradient(0, 0, 0, ctx.offsetHeight || 150);
+                gradRed.addColorStop(0,   'rgba(239,68,68,0.92)');
+                gradRed.addColorStop(0.55, 'rgba(220,38,38,0.72)');
+                gradRed.addColorStop(1,   'rgba(185,28,28,0.40)');
+
+                const barShadow2 = {
+                    id: 'barShadow2',
+                    beforeDatasetDraw(chart, args) {
+                        if (args.meta.type !== 'bar') return;
+                        const ctx = chart.ctx; ctx.save();
+                        ctx.shadowColor = 'rgba(239,68,68,0.22)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 7;
+                    },
+                    afterDatasetDraw(chart) { chart.ctx.restore(); }
+                };
+
                 this.collapseDeficitChartInstance = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -1789,24 +1952,31 @@
                         datasets: [{
                             label: 'Space Deficit (Ton)',
                             data: deficitValues,
-                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                            borderColor: '#ef4444',
-                            borderWidth: 1,
-                            borderRadius: 4
+                            backgroundColor: gradRed,
+                            borderColor: 'rgba(185,28,28,0.45)',
+                            borderWidth: 1, borderRadius: 8, borderSkipped: false
                         }]
                     },
+                    plugins: [barShadow2],
                     options: {
+                        animation: { duration: 900, easing: 'easeInOutQuart', delay: ctx => ctx.type === 'data' ? ctx.dataIndex * 15 : 0 },
                         responsive: true, maintainAspectRatio: false,
                         plugins: {
+                            barShadow2: {},
                             legend: { display: false },
                             tooltip: {
-                                backgroundColor: '#ffffff', titleColor: '#1e293b', bodyColor: '#ef4444', borderColor: '#e2e8f0', borderWidth: 1,
+                                backgroundColor: 'rgba(255,255,255,0.97)',
+                                titleColor: '#1e293b', bodyColor: '#ef4444',
+                                borderColor: 'rgba(239,68,68,0.2)', borderWidth: 1,
+                                padding: { x: 12, y: 8 }, cornerRadius: 10,
                                 callbacks: { label: c => `Defisit: ${Math.round(c.raw).toLocaleString()} Ton` }
                             }
                         },
                         scales: {
-                            y: { grid: { color: 'rgba(0,0,0,0.05)' }, title: { display: true, text: 'TON', color: '#64748b' }, ticks: { color: '#1e293b', font: { weight: 'bold' } } },
-                            x: { grid: { display: false }, ticks: { color: '#1e293b', font: { size: 9, weight: 'bold' } } }
+                            y: { grid: { color: 'rgba(239,68,68,0.06)', drawBorder: false },
+                                 title: { display: true, text: 'TON', color: '#94a3b8', font: { size: 9 } },
+                                 ticks: { color: '#64748b', font: { weight: '700' } } },
+                            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 9, weight: '700' } } }
                         }
                     }
                 });
