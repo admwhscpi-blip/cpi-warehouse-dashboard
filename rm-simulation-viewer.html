@@ -436,6 +436,14 @@
             0%, 100% { box-shadow: 0 0 8px rgba(255, 107, 0, 0.3); }
             50% { box-shadow: 0 0 20px rgba(255, 107, 0, 0.7); }
         }
+
+        /* EDITABLE TABLE CELLS */
+        .editable-cell { cursor: pointer !important; transition: background 0.15s; }
+        .editable-cell:hover { background: #eff6ff !important; }
+        .cell-overridden { background: rgba(251, 191, 36, 0.12) !important; }
+        /* CAPACITY EDIT BUTTON */
+        .cap-edit-btn { cursor: pointer; opacity: 0.45; transition: opacity 0.2s; display: inline-block; font-size: 0.7em; vertical-align: middle; }
+        .cap-edit-btn:hover { opacity: 1; }
     </style>
 </head>
 
@@ -813,11 +821,6 @@
                     if (sess.overrides && sess.overrides[dStr]) { if (sess.overrides[dStr].in !== undefined) dIn = Number(sess.overrides[dStr].in); if (sess.overrides[dStr].out !== undefined) dOut = Number(sess.overrides[dStr].out); }
                     cur += (dIn * 1000) - (dOut * 1000); 
 
-                    if (this.contractExpiries && this.contractExpiries.length > 0) {
-                        const isRMSession = sess.facility === 'RM' || sess.facility === 'ALL' || (Array.isArray(sess.facility) && sess.facility.includes('RM'));
-                        if (isRMSession) cur += this.getContractTransferAtDate(dStr);
-                    }
-
                     lastIn = dIn; lastOut = dOut;
                     d.setDate(d.getDate() + 1); loop++;
                 }
@@ -1015,8 +1018,8 @@
                         <!-- Stock & Capacity Info -->
                         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:6px; position:relative; z-index:2;">
                             <div>
-                                <div style="color:#64748b; font-size:0.6rem; text-transform:uppercase; letter-spacing:1px; font-weight:700;">Capacity</div>
-                                <div style="color:#1e293b; font-size:0.9rem; font-family:'Rajdhani'; font-weight:800;">${(capKg/1000).toLocaleString('id-ID')} T</div>
+                                <div style="color:#64748b; font-size:0.6rem; text-transform:uppercase; letter-spacing:1px; font-weight:700; display:flex; align-items:center; gap:3px;">Capacity <span class="cap-edit-btn" onclick="VP.editCapacity(${idx}, ${capKg/1000}, this, event)" title="Klik untuk edit kapasitas">✏️</span></div>
+                                <div id="cap-display-${idx}" style="color:#1e293b; font-size:0.9rem; font-family:'Rajdhani'; font-weight:800;">${(capKg/1000).toLocaleString('id-ID')} T</div>
                             </div>
                             <div style="text-align:right;">
                                 <div style="color:var(--neon-blue); font-size:1.4rem; font-family:'Orbitron'; font-weight:900; line-height:1;">${(stockKg/1000).toLocaleString('id-ID', {maximumFractionDigits:1})}</div>
@@ -1132,12 +1135,10 @@
                 for (let i = 0; i < fullDates.length; i += step) {
                     const dStr = fullDates[i].toISOString().split('T')[0];
                     let simTotal = 0;
-                    let inflationOffset = 0;
-                    this.session.forEach(s => { 
-                        simTotal += this.calculateStateAtDate(s, dStr).stock; 
-                        inflationOffset += this.getAccumulatedContractTransfer(s, dStr);
+                    this.session.forEach(s => {
+                        simTotal += this.calculateStateAtDate(s, dStr).stock;
                     });
-                    dataStock.push(unsimulatedStock + simTotal - inflationOffset);
+                    dataStock.push(unsimulatedStock + simTotal);
                     dataCap.push(totalCapacity);
 
                     // Effective capacity: subtract emptied warehouse capacities
@@ -1278,11 +1279,9 @@
                 fullDates.forEach((d, idx) => {
                     const dStr = d.toISOString().split('T')[0];
                     let simTotal = 0;
-                    let inflationOffset = 0;
                     this.session.forEach((s, si) => {
                         const st = this.calculateStateAtDate(s, dStr);
                         simTotal += st.stock;
-                        inflationOffset += this.getAccumulatedContractTransfer(s, dStr);
 
                         if (st.stock > perMatPeak[si].peakStock) {
                             perMatPeak[si].peakStock = st.stock;
@@ -1290,7 +1289,7 @@
                             perMatPeak[si].peakDay = idx + 1;
                         }
                     });
-                    const globalTotal = unsimulatedStock + simTotal - inflationOffset;
+                    const globalTotal = unsimulatedStock + simTotal;
                     dailyTotals.push(globalTotal);
                     
                     // Effective capacity
@@ -1686,12 +1685,10 @@
                 fullDates.forEach(d => {
                     const dStr = d.toISOString().split('T')[0];
                     let simTotal = 0;
-                    let inflationOffset = 0;
-                    this.session.forEach(s => { 
-                        simTotal += this.calculateStateAtDate(s, dStr).stock; 
-                        inflationOffset += this.getAccumulatedContractTransfer(s, dStr);
+                    this.session.forEach(s => {
+                        simTotal += this.calculateStateAtDate(s, dStr).stock;
                     });
-                    const gTotal = unsimStock + simTotal - inflationOffset;
+                    const gTotal = unsimStock + simTotal;
                     
                     let effectiveCap = totalCapacity;
                     this.contractExpiries.forEach(c => {
@@ -1883,13 +1880,11 @@
                 const unsimulatedStock = this.getUnsimulatedStock();
 
                 let simTotal = 0;
-                let inflationOffset = 0;
                 this.session.forEach(sess => {
                     simTotal += this.calculateStateAtDate(sess, targetDateStr).stock;
-                    inflationOffset += this.getAccumulatedContractTransfer(sess, targetDateStr);
                 });
 
-                let remainingToFill = unsimulatedStock + simTotal - inflationOffset;
+                let remainingToFill = unsimulatedStock + simTotal;
 
                 // Cascade fill from left to right
                 warehouses.forEach(name => {
@@ -2005,9 +2000,9 @@
                     const isRMSession = sess && (sess.facility === 'RM' || sess.facility === 'ALL' || (Array.isArray(sess.facility) && sess.facility.includes('RM')));
                     const hasContract = this.contractExpiries && this.contractExpiries.length > 0;
 
-                    headerHtml += `<th style="color:${sess?.color || '#1e293b'}">${m.name}<br><small>STOCK (KG)</small></th><th>IN</th><th>OUT</th>`;
+                    headerHtml += `<th style="color:${sess?.color || '#1e293b'}">${m.name}<br><small>STOCK (KG)</small></th><th title="Klik cell untuk edit">IN<sup style="font-size:0.45rem;color:#2563eb;">✎</sup></th><th title="Klik cell untuk edit">OUT<sup style="font-size:0.45rem;color:#2563eb;">✎</sup></th>`;
                     if (isRMSession && hasContract) {
-                        headerHtml += `<th style="color:#ff9e0b; background:rgba(255,107,0,0.05); border-left:2px solid rgba(255,107,0,0.2);"><small style="font-size:0.6rem;">TERIMA<br>PENGOSONGAN</small></th>`;
+                        headerHtml += `<th style="color:#ff9e0b; background:rgba(255,107,0,0.05); border-left:2px solid rgba(255,107,0,0.2);"><small style="font-size:0.6rem;">TERIMA PENGOSONGAN<br><span style="color:#94a3b8;font-size:0.5rem;">(→ 103 MAT. LAIN)</span></small></th>`;
                     }
                 });
                 headerHtml += `<th style="color:#64748b;">${unsimCountText} RM LAINNYA<br><small>STOCK (KG)</small></th><th>IN</th><th>OUT</th></tr>`;
@@ -2026,9 +2021,12 @@
                         const sess = this.session.find(s => s.material === m.name);
                         if (sess) {
                             const state = this.calculateStateAtDate(sess, dStr);
+                            const si = this.session.indexOf(sess);
+                            const hasOvIn = sess.overrides && sess.overrides[dStr] && sess.overrides[dStr].in !== undefined;
+                            const hasOvOut = sess.overrides && sess.overrides[dStr] && sess.overrides[dStr].out !== undefined;
                             bodyHtml += `<td style="font-weight:700; color:#1e293b;">${Math.round(state.stock).toLocaleString()}</td>`;
-                            bodyHtml += `<td style="color:#10b981;">${state.inVal}</td>`;
-                            bodyHtml += `<td style="color:#ef4444;">${state.outVal}</td>`;
+                            bodyHtml += `<td class="editable-cell${hasOvIn ? ' cell-overridden' : ''}" style="color:#10b981;" onclick="VP.editCell(this,${si},'${dStr}','in')" title="Klik untuk edit">${state.inVal}${hasOvIn ? '<sup style="font-size:0.45rem;color:#d97706;">\u270e</sup>' : ''}</td>`;
+                            bodyHtml += `<td class="editable-cell${hasOvOut ? ' cell-overridden' : ''}" style="color:#ef4444;" onclick="VP.editCell(this,${si},'${dStr}','out')" title="Klik untuk edit">${state.outVal}${hasOvOut ? '<sup style="font-size:0.45rem;color:#d97706;">\u270e</sup>' : ''}</td>`;
                             
                             const isRMSession = sess.facility === 'RM' || sess.facility === 'ALL' || (Array.isArray(sess.facility) && sess.facility.includes('RM'));
                             const hasContract = this.contractExpiries && this.contractExpiries.length > 0;
@@ -2049,6 +2047,90 @@
                     bodyHtml += `<tr><td colspan="${3 * showMats.length + 4}" style="color:#bc13fe; text-align:center; padding:15px; font-weight:700;">... ${fullDates.length - 10} baris lagi — klik FULLSCREEN untuk melihat semua</td></tr>`;
                 }
                 tbody.innerHTML = bodyHtml;
+            },
+
+            // ---- EDITABLE CELL (INLINE TABLE EDIT) ----
+            editCell: function(cell, sessIdx, dateStr, field) {
+                const sess = this.session[sessIdx];
+                if (!sess) return;
+                const currentVal = (sess.overrides && sess.overrides[dateStr] && sess.overrides[dateStr][field] !== undefined)
+                    ? sess.overrides[dateStr][field]
+                    : (field === 'in' ? sess.defaultIn : sess.defaultOut);
+                const input = document.createElement('input');
+                input.type = 'number'; input.min = '0'; input.step = '0.1';
+                input.value = currentVal;
+                input.style.cssText = 'width:58px;background:#eff6ff;border:2px solid #2563eb;border-radius:4px;padding:2px 4px;font-family:Rajdhani,sans-serif;font-size:0.9rem;font-weight:700;text-align:center;outline:none;color:#1e293b;';
+                let saved = false;
+                const save = () => {
+                    if (saved) return; saved = true;
+                    const v = parseFloat(input.value);
+                    if (!isNaN(v) && v >= 0) {
+                        if (!sess.overrides) sess.overrides = {};
+                        if (!sess.overrides[dateStr]) sess.overrides[dateStr] = {};
+                        sess.overrides[dateStr][field] = v;
+                    }
+                    this.refreshAll();
+                };
+                input.addEventListener('blur', save);
+                input.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') { e.preventDefault(); save(); }
+                    if (e.key === 'Escape') { saved = true; this.refreshAll(); }
+                });
+                cell.innerHTML = '';
+                cell.appendChild(input);
+                input.focus(); input.select();
+            },
+
+            // ---- EDITABLE CAPACITY (CLICK PENCIL ON GUDANG CARD) ----
+            editCapacity: function(whIdx, currentCapTon, editBtn, event) {
+                if (event) event.stopPropagation();
+                // displayEl is the sibling div after the label div
+                const labelDiv = editBtn ? editBtn.parentElement : null;
+                const displayEl = labelDiv ? labelDiv.nextElementSibling : null;
+                if (!displayEl) return;
+                const whName = this.data && this.data.warehouses && this.data.warehouses[whIdx]
+                    ? this.data.warehouses[whIdx] : null;
+                const input = document.createElement('input');
+                input.type = 'number'; input.min = '10'; input.step = '100';
+                input.value = currentCapTon;
+                input.placeholder = 'ton';
+                input.style.cssText = 'width:75px;background:#eff6ff;border:2px solid #2563eb;border-radius:4px;padding:2px 6px;font-family:Rajdhani,sans-serif;font-size:0.9rem;font-weight:700;text-align:center;outline:none;color:#1e293b;';
+                let saved = false;
+                const save = () => {
+                    if (saved) return; saved = true;
+                    const v = parseFloat(input.value);
+                    if (!isNaN(v) && v > 0) {
+                        if (whName) CONFIG.WAREHOUSE_CAPACITIES[whName.toUpperCase()] = v;
+                    }
+                    this.refreshAll();
+                };
+                input.addEventListener('blur', save);
+                input.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') { e.preventDefault(); save(); }
+                    if (e.key === 'Escape') { saved = true; this.refreshAll(); }
+                });
+                displayEl.innerHTML = '';
+                displayEl.appendChild(input);
+                input.focus(); input.select();
+            },
+
+            // ---- REFRESH ALL CHARTS + TABLE + WIDGETS ----
+            refreshAll: function() {
+                this.renderInitialState();
+                this.renderMaterialList();
+                this.renderStockChart();
+                this.renderMovementChart();
+                this.generateRangkuman();
+                this.renderCollapseDeficitChart();
+                this.renderAllCalendars();
+                const selDate = this.calendarSelectedDate;
+                if (selDate) this.renderWarehouseVisualization(selDate);
+                else this.renderWarehouseVisualization();
+                this.renderDetailTable(false);
+                const fsOverlay = document.getElementById('table-fullscreen-overlay');
+                if (fsOverlay && fsOverlay.classList.contains('active')) {
+                    this.renderDetailTable(true);
+                }
             },
 
             toggleTableFullscreen: function () {
