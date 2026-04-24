@@ -444,6 +444,33 @@
         /* CAPACITY EDIT BUTTON */
         .cap-edit-btn { cursor: pointer; opacity: 0.45; transition: opacity 0.2s; display: inline-block; font-size: 0.7em; vertical-align: middle; }
         .cap-edit-btn:hover { opacity: 1; }
+
+        /* TABLE SCROLL CONTROLS */
+        .tbl-scroll-wrap { position: relative; }
+        .tbl-scroll-bar-track {
+            width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px;
+            margin: 6px 0 0; cursor: pointer; position: relative;
+        }
+        .tbl-scroll-bar-thumb {
+            height: 100%; background: #2563eb; border-radius: 4px;
+            position: absolute; top: 0; left: 0; min-width: 40px;
+            cursor: grab; transition: background 0.2s;
+        }
+        .tbl-scroll-bar-thumb:hover { background: #1d4ed8; }
+        .tbl-scroll-btns {
+            display: flex; gap: 6px; margin-bottom: 6px; align-items: center;
+        }
+        .tbl-scroll-btn {
+            background: #2563eb; color: #fff; border: none; border-radius: 4px;
+            width: 30px; height: 24px; font-size: 0.8rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s; flex-shrink: 0;
+        }
+        .tbl-scroll-btn:hover { background: #1d4ed8; }
+        .tbl-scroll-hint {
+            font-size: 0.65rem; color: #94a3b8; font-family: 'Rajdhani';
+            font-weight: 600; letter-spacing: 0.5px;
+        }
     </style>
 </head>
 
@@ -621,11 +648,23 @@
                     <button onclick="VP.toggleTableFullscreen()"
                         style="background:rgba(188,19,254,0.1); border:1px solid #bc13fe; color:#bc13fe; padding:5px 15px; font-family:'Orbitron'; font-size:0.65rem; cursor:pointer; border-radius:4px; transition:0.3s;">FULLSCREEN</button>
                 </div>
-                <div style="padding:15px; overflow-x:auto; max-height:500px; overflow-y:auto;">
+                <!-- SCROLL CONTROLS -->
+                <div style="padding:8px 15px 0; border-bottom:1px solid #f1f5f9;">
+                    <div class="tbl-scroll-btns">
+                        <button class="tbl-scroll-btn" onclick="VP.scrollTable('detail-tbl-wrap',-200)" title="Scroll kiri">◀</button>
+                        <button class="tbl-scroll-btn" onclick="VP.scrollTable('detail-tbl-wrap',200)" title="Scroll kanan">▶</button>
+                        <span class="tbl-scroll-hint">◀ ▶ scroll kanan-kiri &nbsp;|&nbsp; drag bar biru di bawah tabel</span>
+                    </div>
+                </div>
+                <div id="detail-tbl-wrap" style="padding:15px; overflow-x:auto; max-height:500px; overflow-y:auto;" onscroll="VP.syncScrollbar('detail-tbl-wrap','detail-tbl-thumb')">
                     <table class="detail-table" id="detail-table">
                         <thead id="detail-table-head"></thead>
                         <tbody id="detail-table-body"></tbody>
                     </table>
+                </div>
+                <!-- VISUAL SCROLLBAR -->
+                <div class="tbl-scroll-bar-track" id="detail-tbl-track" style="margin:0 15px 10px;" onclick="VP.clickScrollTrack(event,'detail-tbl-wrap','detail-tbl-track')">
+                    <div class="tbl-scroll-bar-thumb" id="detail-tbl-thumb"></div>
                 </div>
             </div>
         </div>
@@ -633,18 +672,28 @@
 
     <!-- FULLSCREEN TABLE OVERLAY -->
     <div class="table-fullscreen-overlay" id="table-fullscreen-overlay">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <div style="font-family:'Orbitron'; color:#fff; font-size:1.2rem;"><i class="fas fa-table"></i> TABEL DETAIL
                 SIMULASI — FULLSCREEN</div>
             <button onclick="VP.toggleTableFullscreen()"
                 style="background:#ef4444; border:none; color:#fff; padding:8px 20px; font-family:'Orbitron'; font-size:0.7rem; cursor:pointer; border-radius:4px;">✕
                 CLOSE</button>
         </div>
-        <div style="overflow:auto; max-height:calc(100vh - 80px);">
+        <!-- FULLSCREEN SCROLL CONTROLS -->
+        <div class="tbl-scroll-btns" style="margin-bottom:8px;">
+            <button class="tbl-scroll-btn" onclick="VP.scrollTable('fs-tbl-wrap',-300)" title="Scroll kiri">◀</button>
+            <button class="tbl-scroll-btn" onclick="VP.scrollTable('fs-tbl-wrap',300)" title="Scroll kanan">▶</button>
+            <span class="tbl-scroll-hint" style="color:#64748b;">◀ ▶ scroll atau drag bar biru di bawah</span>
+        </div>
+        <div id="fs-tbl-wrap" style="overflow:auto; max-height:calc(100vh - 120px);" onscroll="VP.syncScrollbar('fs-tbl-wrap','fs-tbl-thumb')">
             <table class="detail-table" id="detail-table-full">
                 <thead id="detail-table-head-full"></thead>
                 <tbody id="detail-table-body-full"></tbody>
             </table>
+        </div>
+        <!-- FULLSCREEN VISUAL SCROLLBAR -->
+        <div class="tbl-scroll-bar-track" id="fs-tbl-track" style="margin:6px 0 0;" onclick="VP.clickScrollTrack(event,'fs-tbl-wrap','fs-tbl-track')">
+            <div class="tbl-scroll-bar-thumb" id="fs-tbl-thumb"></div>
         </div>
     </div>
 
@@ -877,6 +926,8 @@
                 this.renderInitialState();
                 this.renderMaterialList();
                 this.renderCollapseDeficitChart();
+                // Init scroll thumb after table is painted
+                setTimeout(() => this.syncScrollbar('detail-tbl-wrap', 'detail-tbl-thumb'), 150);
             },
 
             // ---- FETCH LIVE DATA FROM API ----
@@ -1993,19 +2044,19 @@
                 const unsimTotal = this.getUnsimulatedStock();
                 const unsimCountText = (this.data && this.data.materials) ? (this.data.materials.length - showMats.length) : 'ALL';
 
-                // Header
+                // Header — simulated materials: STOCK | IN✎ | OUT✎  (NO contract column per-material)
                 let headerHtml = '<tr><th>TANGGAL</th>';
                 showMats.forEach(m => {
                     const sess = this.session.find(s => s.material === m.name);
-                    const isRMSession = sess && (sess.facility === 'RM' || sess.facility === 'ALL' || (Array.isArray(sess.facility) && sess.facility.includes('RM')));
-                    const hasContract = this.contractExpiries && this.contractExpiries.length > 0;
-
                     headerHtml += `<th style="color:${sess?.color || '#1e293b'}">${m.name}<br><small>STOCK (KG)</small></th><th title="Klik cell untuk edit">IN<sup style="font-size:0.45rem;color:#2563eb;">✎</sup></th><th title="Klik cell untuk edit">OUT<sup style="font-size:0.45rem;color:#2563eb;">✎</sup></th>`;
-                    if (isRMSession && hasContract) {
-                        headerHtml += `<th style="color:#ff9e0b; background:rgba(255,107,0,0.05); border-left:2px solid rgba(255,107,0,0.2);"><small style="font-size:0.6rem;">TERIMA PENGOSONGAN<br><span style="color:#94a3b8;font-size:0.5rem;">(→ 103 MAT. LAIN)</span></small></th>`;
-                    }
                 });
-                headerHtml += `<th style="color:#64748b;">${unsimCountText} RM LAINNYA<br><small>STOCK (KG)</small></th><th>IN</th><th>OUT</th></tr>`;
+                // 103 RM Lainnya — terima pengosongan masuk ke sini
+                const hasContract = this.contractExpiries && this.contractExpiries.length > 0;
+                headerHtml += `<th style="color:#64748b;">${unsimCountText} RM LAINNYA<br><small>STOCK (KG)</small></th><th>IN</th><th>OUT</th>`;
+                if (hasContract) {
+                    headerHtml += `<th style="color:#ff9e0b; background:rgba(255,107,0,0.06); border-left:3px solid rgba(255,107,0,0.3);"><small style="font-size:0.6rem;">TERIMA PENGOSONGAN<br><span style="color:#94a3b8;font-size:0.5rem;">(masuk ke mat. lain)</span></small></th>`;
+                }
+                headerHtml += '</tr>';
                 thead.innerHTML = headerHtml;
 
                 // Body
@@ -2025,26 +2076,40 @@
                             const hasOvIn = sess.overrides && sess.overrides[dStr] && sess.overrides[dStr].in !== undefined;
                             const hasOvOut = sess.overrides && sess.overrides[dStr] && sess.overrides[dStr].out !== undefined;
                             bodyHtml += `<td style="font-weight:700; color:#1e293b;">${Math.round(state.stock).toLocaleString()}</td>`;
-                            bodyHtml += `<td class="editable-cell${hasOvIn ? ' cell-overridden' : ''}" style="color:#10b981;" onclick="VP.editCell(this,${si},'${dStr}','in')" title="Klik untuk edit">${state.inVal}${hasOvIn ? '<sup style="font-size:0.45rem;color:#d97706;">\u270e</sup>' : ''}</td>`;
-                            bodyHtml += `<td class="editable-cell${hasOvOut ? ' cell-overridden' : ''}" style="color:#ef4444;" onclick="VP.editCell(this,${si},'${dStr}','out')" title="Klik untuk edit">${state.outVal}${hasOvOut ? '<sup style="font-size:0.45rem;color:#d97706;">\u270e</sup>' : ''}</td>`;
-                            
-                            const isRMSession = sess.facility === 'RM' || sess.facility === 'ALL' || (Array.isArray(sess.facility) && sess.facility.includes('RM'));
-                            const hasContract = this.contractExpiries && this.contractExpiries.length > 0;
-                            if (isRMSession && hasContract) {
-                                const transferKg = this.getContractTransferAtDate(dStr);
-                                bodyHtml += `<td style="color:${transferKg > 0 ? '#d97706' : '#94a3b8'}; background:rgba(255,107,0,0.05); font-weight:600; border-left:2px solid rgba(255,107,0,0.2);">${transferKg > 0 ? '+' + transferKg.toLocaleString() : '-'}</td>`;
-                            }
+                            bodyHtml += `<td class="editable-cell${hasOvIn ? ' cell-overridden' : ''}" style="color:#10b981;" onclick="VP.editCell(this,${si},'${dStr}','in')" title="Klik untuk edit">${state.inVal}${hasOvIn ? '<sup style="font-size:0.45rem;color:#d97706;">✎</sup>' : ''}</td>`;
+                            bodyHtml += `<td class="editable-cell${hasOvOut ? ' cell-overridden' : ''}" style="color:#ef4444;" onclick="VP.editCell(this,${si},'${dStr}','out')" title="Klik untuk edit">${state.outVal}${hasOvOut ? '<sup style="font-size:0.45rem;color:#d97706;">✎</sup>' : ''}</td>`;
                         }
                     });
 
-                    // Unsimulated materials (stagnan)
-                    bodyHtml += `<td style="color:#64748b;">${Math.round(unsimTotal).toLocaleString()}</td>`;
+                    // 103 RM Lainnya — stock increases by accumulated daily contract transfer
+                    const hasContract = this.contractExpiries && this.contractExpiries.length > 0;
+                    let accTransfer = 0;
+                    if (hasContract) {
+                        this.contractExpiries.forEach(c => {
+                            if (dStr >= c.startEmptyDate && dStr <= c.contractEndDate) {
+                                const startD = new Date(c.startEmptyDate);
+                                const curD = new Date(dStr);
+                                const daysElapsed = Math.round((curD - startD) / 86400000) + 1;
+                                accTransfer += c.dailyTransferKg * daysElapsed;
+                            } else if (dStr > c.contractEndDate) {
+                                accTransfer += c.totalStockKg || (c.dailyTransferKg * (c.daysCount || 1));
+                            }
+                        });
+                    }
+                    const unsimDynamic = Math.round(unsimTotal + accTransfer);
+                    const dailyTransfer = hasContract ? this.getContractTransferAtDate(dStr) : 0;
+                    bodyHtml += `<td style="color:${accTransfer > 0 ? '#1e293b' : '#64748b'}; font-weight:${accTransfer > 0 ? '700' : '400'};">${unsimDynamic.toLocaleString()}</td>`;
                     bodyHtml += `<td style="color:#64748b;">0</td>`;
                     bodyHtml += `<td style="color:#64748b;">0</td>`;
+                    // TERIMA PENGOSONGAN — far right
+                    if (hasContract) {
+                        bodyHtml += `<td style="color:${dailyTransfer > 0 ? '#d97706' : '#94a3b8'}; background:rgba(255,107,0,0.06); font-weight:700; border-left:3px solid rgba(255,107,0,0.3);">${dailyTransfer > 0 ? '+' + dailyTransfer.toLocaleString() : '-'}</td>`;
+                    }
                     bodyHtml += '</tr>';
                 }
                 if (!full && fullDates.length > 10) {
-                    bodyHtml += `<tr><td colspan="${3 * showMats.length + 4}" style="color:#bc13fe; text-align:center; padding:15px; font-weight:700;">... ${fullDates.length - 10} baris lagi — klik FULLSCREEN untuk melihat semua</td></tr>`;
+                    const cols = 3 * showMats.length + (hasContract ? 4 : 3) + 1;
+                    bodyHtml += `<tr><td colspan="${cols}" style="color:#bc13fe; text-align:center; padding:15px; font-weight:700;">... ${fullDates.length - 10} baris lagi — klik FULLSCREEN untuk melihat semua</td></tr>`;
                 }
                 tbody.innerHTML = bodyHtml;
             },
@@ -2130,7 +2195,9 @@
                 const fsOverlay = document.getElementById('table-fullscreen-overlay');
                 if (fsOverlay && fsOverlay.classList.contains('active')) {
                     this.renderDetailTable(true);
+                    setTimeout(() => this.syncScrollbar('fs-tbl-wrap', 'fs-tbl-thumb'), 80);
                 }
+                setTimeout(() => this.syncScrollbar('detail-tbl-wrap', 'detail-tbl-thumb'), 80);
             },
 
             toggleTableFullscreen: function () {
@@ -2140,7 +2207,37 @@
                 } else {
                     this.renderDetailTable(true);
                     overlay.classList.add('active');
+                    // Init fullscreen scrollbar after render
+                    setTimeout(() => this.syncScrollbar('fs-tbl-wrap', 'fs-tbl-thumb'), 100);
                 }
+            },
+
+            // ---- SCROLL HELPERS ----
+            scrollTable: function(wrapperId, delta) {
+                const el = document.getElementById(wrapperId);
+                if (el) el.scrollLeft += delta;
+            },
+            syncScrollbar: function(wrapperId, thumbId) {
+                const wrap = document.getElementById(wrapperId);
+                const thumb = document.getElementById(thumbId);
+                if (!wrap || !thumb) return;
+                const ratio = wrap.scrollWidth > wrap.clientWidth
+                    ? wrap.clientWidth / wrap.scrollWidth : 1;
+                const trackEl = thumb.parentElement;
+                const trackW = trackEl ? trackEl.offsetWidth : wrap.clientWidth;
+                thumb.style.width = Math.max(30, ratio * trackW) + 'px';
+                const maxScroll = wrap.scrollWidth - wrap.clientWidth;
+                const left = maxScroll > 0 ? (wrap.scrollLeft / maxScroll) * (trackW - parseFloat(thumb.style.width)) : 0;
+                thumb.style.left = left + 'px';
+            },
+            clickScrollTrack: function(event, wrapperId, trackId) {
+                const wrap = document.getElementById(wrapperId);
+                const track = document.getElementById(trackId);
+                if (!wrap || !track) return;
+                const rect = track.getBoundingClientRect();
+                const clickX = event.clientX - rect.left;
+                const ratio = clickX / rect.width;
+                wrap.scrollLeft = ratio * (wrap.scrollWidth - wrap.clientWidth);
             }
         };
 
