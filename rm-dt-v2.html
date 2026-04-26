@@ -257,6 +257,151 @@
             background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: 1px solid #059669;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); font-weight: 800;
         }
+        #tab-durbreakdown.view-tab.active {
+            background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; border: 1px solid #8b5cf6;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35); font-weight: 800;
+        }
+
+        /* === DURATION BREAKDOWN SECTION === */
+        .db-filter-panel {
+            background: rgba(255,255,255,0.75); backdrop-filter: blur(20px);
+            border: 1px solid rgba(139,92,246,0.3); border-radius: 20px;
+            padding: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;
+        }
+        .db-filter-panel:hover { box-shadow: 0 20px 45px rgba(139,92,246,0.1); border-color: var(--purple); }
+        .db-filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 160px; }
+        .db-filter-group label { font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; padding-left: 4px; }
+        .db-filter-group select {
+            width: 100%; height: 42px; padding: 0 32px 0 16px; border: 1.5px solid #e2e8f0; border-radius: 12px;
+            font-size: 0.9rem; font-family: 'Rajdhani',sans-serif; font-weight: 700;
+            background: #fff; color: var(--text-primary); outline: none; transition: 0.3s;
+            cursor: pointer; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
+        }
+        .db-filter-group select:hover { border-color: var(--purple); }
+        .db-filter-group select:focus { border-color: var(--purple); box-shadow: 0 0 0 4px rgba(139,92,246,0.12); }
+        .db-chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .db-chip {
+            padding: 7px 14px; border-radius: 20px; border: 1.5px solid #e2e8f0;
+            background: #fff; color: var(--text-secondary); font-size: 0.78rem; font-weight: 700;
+            cursor: pointer; transition: all 0.25s ease; white-space: nowrap; user-select: none;
+        }
+        .db-chip:hover { border-color: var(--purple); color: var(--purple); transform: translateY(-1px); }
+        .db-chip.active {
+            background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; border-color: transparent;
+            box-shadow: 0 4px 12px rgba(139,92,246,0.35);
+        }
+        .db-summary-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;
+        }
+        .db-summary-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.9));
+            border: 1px solid rgba(255,255,255,0.9); border-radius: var(--radius-lg); padding: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05); position: relative; overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .db-summary-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+        .db-summary-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 16px 16px 0 0; }
+        .db-summary-card .db-sc-label { font-size: 0.72rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .db-summary-card .db-sc-value { font-family: 'Rajdhani',sans-serif; font-size: 2rem; font-weight: 800; line-height: 1; }
+        .db-summary-card .db-sc-sub { font-size: 0.68rem; color: var(--text-secondary); font-weight: 600; margin-top: 6px; font-style: italic; }
+        .db-chart-panel {
+            background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+            padding: 24px; box-shadow: var(--shadow-md); margin-bottom: 24px;
+        }
+        .db-chart-panel .db-chart-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);
+        }
+        .db-chart-panel .db-chart-header h4 {
+            font-family: 'Rajdhani',sans-serif; font-size: 1.05rem; font-weight: 700;
+            color: var(--text-primary); display: flex; align-items: center; gap: 8px;
+        }
+        .db-table-wrap {
+            background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md); overflow: hidden;
+        }
+        .db-table-wrap .db-table-header {
+            display: flex; justify-content: space-between; align-items: center; padding: 18px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .db-table-wrap .db-table-header h4 {
+            font-family: 'Rajdhani',sans-serif; font-size: 1.05rem; font-weight: 700;
+            color: var(--text-primary); display: flex; align-items: center; gap: 8px;
+        }
+        .db-table-inner { max-height: 550px; overflow-y: auto; overflow-x: auto; }
+        .db-detail-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 700px; }
+        .db-detail-table thead th {
+            background: #0f172a; color: #f8fafc; padding: 12px 14px; text-align: left;
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;
+            position: sticky; top: 0; z-index: 5; cursor: pointer; user-select: none; white-space: nowrap;
+            transition: background 0.2s;
+        }
+        .db-detail-table thead th:hover { background: #1e293b; }
+        .db-detail-table thead th .sort-icon { margin-left: 4px; font-size: 0.6rem; opacity: 0.5; }
+        .db-detail-table thead th.sort-active .sort-icon { opacity: 1; color: #00f5ff; }
+        .db-detail-table tbody tr { transition: all 0.15s ease; background: #fff; }
+        .db-detail-table tbody tr:hover { background: rgba(139,92,246,0.04); }
+        .db-detail-table tbody td {
+            padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 0.82rem;
+            white-space: nowrap; font-family: 'Rajdhani',sans-serif; font-weight: 600;
+        }
+        .db-badge {
+            display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 0.7rem;
+            font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+        }
+        .db-badge-cepat  { background: #dcfce7; color: #16a34a; }
+        .db-badge-normal { background: #dbeafe; color: #1d4ed8; }
+        .db-badge-lama   { background: #fee2e2; color: #dc2626; }
+        /* --- mini cards grid --- */
+        .db-mini-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px; margin-bottom: 28px;
+        }
+        .db-mini-card {
+            background: #fff; border-radius: 16px; padding: 20px 22px;
+            border: 1px solid var(--border-color); box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+            border-top: 4px solid; /* color set inline */
+            opacity: 0; transform: translateY(20px);
+            transition: opacity 0.35s ease, transform 0.35s ease, box-shadow 0.25s;
+        }
+        .db-mini-card.db-visible {
+            opacity: 1; transform: translateY(0);
+        }
+        .db-mini-card:hover { box-shadow: 0 12px 30px rgba(0,0,0,0.1); }
+        .db-mini-card .dmc-label {
+            font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px;
+            color: var(--text-secondary); margin-bottom: 4px;
+        }
+        .db-mini-card .dmc-avg {
+            font-family: 'Rajdhani',sans-serif; font-size: 1.9rem; font-weight: 800; line-height: 1;
+            margin-bottom: 2px;
+        }
+        .db-mini-card .dmc-sub {
+            font-size: 0.65rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 14px;
+        }
+        .db-mini-card .dmc-chart-wrap { height: 70px; position: relative; }
+        .db-mini-card .dmc-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9;
+            font-size: 0.7rem; color: var(--text-secondary);
+        }
+        .db-mini-card .dmc-count { font-weight: 700; }
+        @keyframes dbFadeSlide {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 768px) {
+            .db-summary-grid { grid-template-columns: 1fr 1fr; }
+            .db-filter-panel { flex-direction: column; }
+            .db-mini-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .db-summary-grid { grid-template-columns: 1fr; }
+            .db-mini-grid { grid-template-columns: 1fr; }
+        }
 
         /* --- PREMIUM OPERATIONAL CLASSES --- */
         .premium-panel {
@@ -1161,7 +1306,7 @@
             border-radius: 16px 16px 0 0; z-index: 2;
             box-shadow: 0 2px 15px rgba(0, 245, 255, 0.5);
         }
-        .qty-target-panel:hover { box-shadow: 0 20px 50px rgba(0, 245, 255, 0.15), inset 0 0 40px rgba(0, 245, 255, 0.1); transform: translateY(-3px); }
+        .qty-target-panel:hover { box-shadow: 0 20px 50px rgba(0, 245, 255, 0.15), inset 0 0 40px rgba(0, 245, 255, 0.1); }
         .qty-header {
             display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 20px; padding-bottom: 16px;
@@ -1395,6 +1540,7 @@
                     <button class="view-tab" onclick="window.location.href='rm-dashboard.html?from=dtv2'" id="tab-inventory"><i class="fas fa-boxes-stacked"></i> Inventory</button>
                     <button class="view-tab" onclick="switchView('ops')" id="tab-ops"><i class="fas fa-chart-line"></i> Operasional</button>
                     <button class="view-tab" onclick="switchView('pivot')" id="tab-pivot"><i class="fas fa-table"></i> Pivot</button>
+                    <button class="view-tab" onclick="switchView('durbreakdown')" id="tab-durbreakdown"><i class="fas fa-stopwatch"></i> Duration Breakdown</button>
                 </div>
             </div>
 
@@ -1757,6 +1903,101 @@
                     <p>Silakan atur filter dan klik tombol <b>Proses Analisis</b></p>
                 </div>
             </div> <!-- CLOSE view-pivot -->
+
+            <!-- VIEW: DURATION BREAKDOWN -->
+            <div id="view-durbreakdown" style="display:none;">
+                <div class="section-title-bar">
+                    <h3><i class="fas fa-stopwatch" style="color:var(--purple);"></i> DURATION BREAKDOWN</h3>
+                    <span class="section-badge" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe); color:#7c3aed;">ANALISIS</span>
+                </div>
+
+                <!-- Filter Panel - Row 1: date + dropdowns -->
+                <div class="pivot-filter-panel" id="db-filter-panel" style="margin-bottom:0; border-radius:16px 16px 0 0; border-bottom:none; position:relative; z-index:10;">
+                    <div class="pivot-group">
+                        <label>Dari Tanggal</label>
+                        <input type="date" id="db_start_date" class="pivot-input" onchange="renderDurationBreakdown()">
+                    </div>
+                    <div class="pivot-group">
+                        <label>Sampai Tanggal</label>
+                        <input type="date" id="db_end_date" class="pivot-input" onchange="renderDurationBreakdown()">
+                    </div>
+                    <div class="pivot-group">
+                        <label>Material RM</label>
+                        <div class="pivot-multi-select" id="db-ms-material">
+                            <div class="ms-trigger" onclick="togglePivotDropdown('db-ms-material')">
+                                <span class="ms-label">SEMUA MATERIAL</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="ms-dropdown">
+                                <div class="ms-actions">
+                                    <button class="ms-btn" onclick="pivotSelectAll('db-ms-material')">Pilih Semua</button>
+                                    <button class="ms-btn" onclick="pivotDeselectAll('db-ms-material')">Hapus Semua</button>
+                                </div>
+                                <input type="text" class="ms-search" placeholder="Cari material..." onkeyup="filterPivotList(this)">
+                                <div class="ms-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pivot-group">
+                        <label>Lokasi (SLOC)</label>
+                        <div class="pivot-multi-select" id="db-ms-sloc">
+                            <div class="ms-trigger" onclick="togglePivotDropdown('db-ms-sloc')">
+                                <span class="ms-label">SEMUA SLOC</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="ms-dropdown">
+                                <div class="ms-actions">
+                                    <button class="ms-btn" onclick="pivotSelectAll('db-ms-sloc')">Pilih Semua</button>
+                                    <button class="ms-btn" onclick="pivotDeselectAll('db-ms-sloc')">Hapus Semua</button>
+                                </div>
+                                <input type="text" class="ms-search" placeholder="Cari lokasi..." onkeyup="filterPivotList(this)">
+                                <div class="ms-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pivot-group">
+                        <label>Jenis Truck</label>
+                        <div class="pivot-multi-select" id="db-ms-truck">
+                            <div class="ms-trigger" onclick="togglePivotDropdown('db-ms-truck')">
+                                <span class="ms-label">SEMUA TRUCK</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="ms-dropdown">
+                                <div class="ms-actions">
+                                    <button class="ms-btn" onclick="pivotSelectAll('db-ms-truck')">Pilih Semua</button>
+                                    <button class="ms-btn" onclick="pivotDeselectAll('db-ms-truck')">Hapus Semua</button>
+                                </div>
+                                <input type="text" class="ms-search" placeholder="Cari truck..." onkeyup="filterPivotList(this)">
+                                <div class="ms-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Panel - Row 2: chips -->
+                <div class="pivot-filter-panel" style="border-radius:0 0 16px 16px; border-top: 1px dashed #e2e8f0; padding-top:16px; margin-bottom:24px; position:relative; z-index:1;">
+                    <div class="pivot-group" style="flex: 1; min-width: 100%;">
+                        <label style="font-size:0.7rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; display:block;">Tipe Durasi <span style="font-weight:400; font-style:italic; color:#94a3b8;">(pilih satu atau lebih)</span></label>
+                        <div class="db-chip-group" id="db-duration-chips"></div>
+                    </div>
+                </div>
+
+                <!-- Mini Chart Grid -->
+                <div class="db-mini-grid" id="db-mini-grid"></div>
+
+                <!-- Detail Table -->
+                <div class="db-table-wrap" style="width: 100%; overflow: hidden;">
+                    <div class="db-table-header">
+                        <h4><i class="fas fa-list-alt" style="color:var(--purple);"></i> DATA DETAIL PER TRUCK</h4>
+                    </div>
+                    <div class="db-table-inner" style="width: 100%; overflow-x: auto;">
+                        <table class="db-detail-table" id="db-detail-table" style="min-width: 1000px;">
+                            <thead id="db-thead"><tr></tr></thead>
+                            <tbody id="db-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div> <!-- CLOSE view-durbreakdown -->
         </main>
     </div>
 
@@ -1906,17 +2147,23 @@
             document.getElementById('tab-leadtime').classList.toggle('active', mode === 'leadtime');
             document.getElementById('tab-ops').classList.toggle('active', mode === 'ops');
             document.getElementById('tab-pivot').classList.toggle('active', mode === 'pivot');
+            document.getElementById('tab-durbreakdown').classList.toggle('active', mode === 'durbreakdown');
             
             const vLead = document.getElementById('view-leadtime');
             const vOps = document.getElementById('view-ops');
             const vPivot = document.getElementById('view-pivot');
+            const vDb = document.getElementById('view-durbreakdown');
 
             vLead.style.display = mode === 'leadtime' ? 'block' : 'none';
             vOps.style.display = mode === 'ops' ? 'block' : 'none';
             vPivot.style.display = mode === 'pivot' ? 'block' : 'none';
+            vDb.style.display = mode === 'durbreakdown' ? 'block' : 'none';
 
             if (mode === 'pivot') {
                 initPivotFilters();
+            }
+            if (mode === 'durbreakdown') {
+                initDurationBreakdown();
             }
         }
 
@@ -4133,22 +4380,10 @@
                 }
             }
 
-            // 3D Tilt Logic
+            // 3D Tilt Logic - Removed to keep the chart static
             const panel = document.getElementById('qty-target-panel');
             if (panel && !panel._tiltBound) {
-                panel.addEventListener('mousemove', (e) => {
-                    const rect = panel.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    const xc = rect.width / 2;
-                    const yc = rect.height / 2;
-                    const dx = x - xc;
-                    const dy = y - yc;
-                    panel.style.transform = `perspective(1000px) rotateX(${-dy / 40}deg) rotateY(${dx / 60}deg) translateY(-5px)`;
-                });
-                panel.addEventListener('mouseleave', () => {
-                    panel.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)';
-                });
+                // Static version - no rotate on mousemove
                 panel._tiltBound = true;
             }
 
@@ -4586,6 +4821,397 @@
                 window.addEventListener('resize', resizeHandler);
             }
         })();
+
+        // ================================================================
+        // === DURATION BREAKDOWN - FULL FEATURE (REVISED) ===
+        // ================================================================
+        const DB_DURATION_TYPES = [
+            { key: 'samplingAwal',  label: 'Sampling Awal',     sub: 'Arrival → QC Sampling 1',       color: '#3b82f6' },
+            { key: 'panggilMasuk',  label: 'Panggil Masuk',     sub: 'QC Sampling 1 → Sampai Gudang', color: '#f59e0b' },
+            { key: 'tungguQC',      label: 'Tunggu QC Datang',  sub: 'Sampai Gudang → Start Bongkar', color: '#10b981' },
+            { key: 'bongkarAwal',   label: 'Bongkar Awal',      sub: 'Start Bongkar → Hold QC',       color: '#ef4444' },
+            { key: 'sampling2',     label: 'Durasi Sampling 2', sub: 'Hold QC → Restart QC',          color: '#8b5cf6' },
+            { key: 'bongkarAkhir',  label: 'Bongkar Akhir',     sub: 'Restart QC → Finish PB',        color: '#06b6d4' }
+        ];
+
+        let _dbSelectedTypes = [];
+        let _dbInitialized = false;
+        let _dbMiniCharts = {};
+        let _dbSortCol = null;
+        let _dbSortAsc = true;
+
+        function formatDbMin(m) {
+            if (m === null || m === undefined || isNaN(m)) return '-';
+            if (m < 0) m = 0;
+            const hrs = Math.floor(m / 60);
+            const mins = Math.round(m % 60);
+            return `${hrs}j ${String(mins).padStart(2, '0')}m`;
+        }
+
+        function computeDbDurations(row) {
+            const dur = computeDurationsForRow(row);
+            return {
+                samplingAwal:  dur.antri.oVsP,
+                panggilMasuk:  dur.antri.pVsR,
+                tungguQC:      dur.proses.rVsS,
+                bongkarAwal:   dur.proses.sVsT,
+                sampling2:     dur.proses.tVsU,
+                bongkarAkhir:  dur.proses.uVsV
+            };
+        }
+
+        // Count-up animation for a single DOM element (text content)
+        function dbCountUp(el, targetMin) {
+            if (!el) return;
+            if (targetMin === null || isNaN(targetMin)) { el.textContent = '-'; return; }
+            const startTime = performance.now();
+            const duration = 700;
+            function step(now) {
+                const p = Math.min((now - startTime) / duration, 1);
+                const eased = 1 - Math.pow(1 - p, 3);
+                const cur = eased * targetMin;
+                const h = Math.floor(cur / 60);
+                const m = Math.round(cur % 60);
+                el.textContent = `${h}j ${String(m).padStart(2,'0')}m`;
+                if (p < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        function initDurationBreakdown() {
+            if (_dbInitialized) return;
+            _dbInitialized = true;
+
+            if (!hubData || !hubData.templateDump) return;
+
+            // -- Populate date defaults (same as pivot) --
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const fmtDate = (d) => {
+                const yr = d.getFullYear();
+                const mo = String(d.getMonth() + 1).padStart(2, '0');
+                const da = String(d.getDate()).padStart(2, '0');
+                return `${yr}-${mo}-${da}`;
+            };
+            const dStart = document.getElementById('db_start_date');
+            const dEnd   = document.getElementById('db_end_date');
+            if (dStart) dStart.value = fmtDate(startOfMonth);
+            if (dEnd)   dEnd.value   = fmtDate(now);
+
+            // -- Populate multi-select dropdowns from bongkar rows --
+            const rows = hubData.templateDump || [];
+            const materials = new Set();
+            const slocs     = new Set();
+            const trucks    = new Set();
+            rows.forEach(r => {
+                const k = String(r.KEGIATAN || '').toUpperCase();
+                if (!k.includes('BONGKAR')) return;
+                const mat = String(r.JENIS_RM  || '').trim().toUpperCase();
+                const sloc = String(r.LOKASI   || '').trim().toUpperCase();
+                const trk  = String(r.JENIS_TRUCK || '').trim().toUpperCase();
+                if (mat)  materials.add(mat);
+                if (sloc) slocs.add(sloc);
+                if (trk)  trucks.add(trk);
+            });
+
+            const populateDb = (id, items, allLabel) => {
+                const list = document.getElementById(id)?.querySelector('.ms-list');
+                const trigger = document.getElementById(id)?.querySelector('.ms-label');
+                if (!list) return;
+                list.innerHTML = '';
+                if (trigger) trigger.textContent = allLabel;
+                Array.from(items).sort().forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'ms-item';
+                    div.onclick = (e) => {
+                        if (e.target.tagName !== 'INPUT') div.querySelector('input').checked = !div.querySelector('input').checked;
+                        updatePivotLabel(id);
+                        renderDurationBreakdown();
+                    };
+                    div.innerHTML = `<input type="checkbox" value="${item}" checked> <span>${item}</span>`;
+                    list.appendChild(div);
+                });
+                if (trigger) trigger.textContent = allLabel;
+            };
+
+            populateDb('db-ms-material', materials, 'SEMUA MATERIAL');
+            populateDb('db-ms-sloc',     slocs,     'SEMUA SLOC');
+            populateDb('db-ms-truck',    trucks,    'SEMUA TRUCK');
+
+            // -- Build chips --
+            const chipGroup = document.getElementById('db-duration-chips');
+            chipGroup.innerHTML = '';
+            DB_DURATION_TYPES.forEach(t => {
+                const chip = document.createElement('span');
+                chip.className = 'db-chip'; // Default: unselected
+                chip.textContent = t.label;
+                chip.dataset.key = t.key;
+                chip.onclick = () => {
+                    chip.classList.toggle('active');
+                    _dbSelectedTypes = Array.from(chipGroup.querySelectorAll('.db-chip.active')).map(c => c.dataset.key);
+                    renderDurationBreakdown();
+                };
+                chipGroup.appendChild(chip);
+            });
+
+            renderDurationBreakdown();
+        }
+
+        function renderDurationBreakdown() {
+            if (!hubData || !hubData.templateDump) return;
+
+            const startDate = document.getElementById('db_start_date')?.value || '';
+            const endDate   = document.getElementById('db_end_date')?.value   || '';
+
+            // get selected for multi-selects
+            const getDbSel = (id) => {
+                const checked = document.getElementById(id)?.querySelectorAll('input:checked') || [];
+                const total   = document.getElementById(id)?.querySelectorAll('input') || [];
+                if (checked.length === 0 || checked.length === total.length) return null; // null = all
+                return Array.from(checked).map(c => c.value);
+            };
+            const selMat   = getDbSel('db-ms-material');
+            const selSloc  = getDbSel('db-ms-sloc');
+            const selTruck = getDbSel('db-ms-truck');
+
+            // Filter to bongkar only
+            let rows = (hubData.templateDump || []).filter(r => {
+                const k = String(r.KEGIATAN || '').toUpperCase();
+                return k.includes('BONGKAR');
+            });
+
+            // Date filter
+            if (startDate) rows = rows.filter(r => String(r.TANGGAL||'').substring(0,10) >= startDate);
+            if (endDate)   rows = rows.filter(r => String(r.TANGGAL||'').substring(0,10) <= endDate);
+
+            // Multi-select filters
+            if (selMat)   rows = rows.filter(r => selMat.includes(String(r.JENIS_RM    ||'').trim().toUpperCase()));
+            if (selSloc)  rows = rows.filter(r => selSloc.includes(String(r.LOKASI     ||'').trim().toUpperCase()));
+            if (selTruck) rows = rows.filter(r => selTruck.includes(String(r.JENIS_TRUCK||'').trim().toUpperCase()));
+
+            // Update ms-labels to show selection count
+            ['db-ms-material','db-ms-sloc','db-ms-truck'].forEach(id => updatePivotLabel(id));
+
+            const selected = DB_DURATION_TYPES.filter(t => _dbSelectedTypes.includes(t.key));
+
+            // Compute per-row durations
+            const tableData = [];
+            const sumMap   = {};
+            const countMap = {};
+            const distMap  = {}; // distribution buckets for mini chart: [< 30min, 30-60, 60-120, 120-240, >240]
+            selected.forEach(t => {
+                sumMap[t.key]   = 0;
+                countMap[t.key] = 0;
+                distMap[t.key]  = [0,0,0,0,0];
+            });
+
+            rows.forEach(row => {
+                const d = computeDbDurations(row);
+                const entry = {
+                    nopol:   row.NOPOL   || '-',
+                    tanggal: row.TANGGAL || '-',
+                    durations: {},
+                    total: null,
+                    totalValid: false
+                };
+                let rowTotal = 0;
+                let hasAny   = false;
+                selected.forEach(t => {
+                    const v = d[t.key];
+                    entry.durations[t.key] = v;
+                    if (v !== null && !isNaN(v) && v >= 0) {
+                        sumMap[t.key]   += v;
+                        countMap[t.key] ++;
+                        rowTotal += v;
+                        hasAny = true;
+                        // distribution bucket
+                        if      (v < 30)  distMap[t.key][0]++;
+                        else if (v < 60)  distMap[t.key][1]++;
+                        else if (v < 120) distMap[t.key][2]++;
+                        else if (v < 240) distMap[t.key][3]++;
+                        else              distMap[t.key][4]++;
+                    }
+                });
+                entry.total      = hasAny ? rowTotal : null;
+                entry.totalValid = hasAny;
+                tableData.push(entry);
+            });
+
+            // Render mini-card grid
+            renderDbMiniGrid(selected, sumMap, countMap, distMap);
+
+            // Render detail table
+            renderDbTable(selected, tableData);
+        }
+
+        function renderDbMiniGrid(selected, sumMap, countMap, distMap) {
+            const grid = document.getElementById('db-mini-grid');
+            if (!grid) return;
+
+            // Destroy old charts
+            Object.values(_dbMiniCharts).forEach(c => { try { c.destroy(); } catch(e){} });
+            _dbMiniCharts = {};
+
+            if (selected.length === 0) {
+                grid.innerHTML = '<div style="padding:30px; color:var(--text-secondary); font-weight:600;">Pilih minimal 1 tipe durasi</div>';
+                return;
+            }
+
+            grid.innerHTML = selected.map(t => `
+                <div class="db-mini-card" id="dmc-card-${t.key}" style="border-top-color:${t.color};">
+                    <div class="dmc-label">${t.label}</div>
+                    <div class="dmc-avg" id="dmc-avg-${t.key}" style="color:${t.color};">-</div>
+                    <div class="dmc-sub">${t.sub}</div>
+                    <div class="dmc-chart-wrap"><canvas id="dmc-chart-${t.key}"></canvas></div>
+                    <div class="dmc-footer">
+                        <span>Data valid: <span class="dmc-count" style="color:${t.color};" id="dmc-cnt-${t.key}">0</span> truck</span>
+                        <span id="dmc-status-${t.key}"></span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Trigger fade-in with staggered delay
+            selected.forEach((t, idx) => {
+                const card = document.getElementById(`dmc-card-${t.key}`);
+                if (!card) return;
+                setTimeout(() => { card.classList.add('db-visible'); }, idx * 70);
+            });
+
+            // Count-up + mini charts
+            selected.forEach(t => {
+                const avg = countMap[t.key] > 0 ? sumMap[t.key] / countMap[t.key] : null;
+                const avgEl = document.getElementById(`dmc-avg-${t.key}`);
+                const cntEl = document.getElementById(`dmc-cnt-${t.key}`);
+                const stsEl = document.getElementById(`dmc-status-${t.key}`);
+
+                // count-up animation
+                dbCountUp(avgEl, avg);
+                if (cntEl) cntEl.textContent = countMap[t.key];
+
+                // Status indicator
+                if (stsEl && avg !== null) {
+                    const hrs = avg / 60;
+                    if (hrs < 1)       stsEl.innerHTML = '<span class="db-badge db-badge-cepat">Cepat</span>';
+                    else if (hrs <= 4)  stsEl.innerHTML = '<span class="db-badge db-badge-normal">Normal</span>';
+                    else               stsEl.innerHTML = '<span class="db-badge db-badge-lama">Lama</span>';
+                }
+
+                // Mini bar chart: distribution
+                const canvasEl = document.getElementById(`dmc-chart-${t.key}`);
+                if (!canvasEl) return;
+                const ctx = canvasEl.getContext('2d');
+                const dist = distMap[t.key];
+                const hex  = t.color;
+
+                _dbMiniCharts[t.key] = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['<30m','30-60m','1-2j','2-4j','>4j'],
+                        datasets: [{
+                            data: dist,
+                            backgroundColor: [
+                                hex + '55', hex + '77', hex + '99', hex + 'bb', hex + 'dd'
+                            ],
+                            borderColor: hex,
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        animation: { duration: 600, easing: 'easeOutQuart' },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15,23,42,0.9)',
+                                titleColor: hex, titleFont: { family: 'Rajdhani', size: 11, weight: 700 },
+                                bodyColor: '#fff', bodyFont: { family: 'Inter', size: 10 },
+                                padding: 8, cornerRadius: 8,
+                                callbacks: { label: c => ` ${c.parsed.y} truck` }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 9 } } },
+                            y: { display: false, beginAtZero: true }
+                        }
+                    }
+                });
+            });
+        }
+
+        function renderDbTable(selected, tableData) {
+            if (_dbSortCol !== null) {
+                tableData.sort((a, b) => {
+                    let va, vb;
+                    if      (_dbSortCol === '__total')   { va = a.total;   vb = b.total; }
+                    else if (_dbSortCol === '__nopol')   { va = a.nopol;   vb = b.nopol; }
+                    else if (_dbSortCol === '__tanggal') { va = a.tanggal; vb = b.tanggal; }
+                    else { va = a.durations[_dbSortCol]; vb = b.durations[_dbSortCol]; }
+
+                    if (typeof va === 'string' && typeof vb === 'string') {
+                        return _dbSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+                    }
+                    const na = (va == null || isNaN(va)) ? -Infinity : va;
+                    const nb = (vb == null || isNaN(vb)) ? -Infinity : vb;
+                    return _dbSortAsc ? na - nb : nb - na;
+                });
+            }
+
+            const sortIcon = (col) => {
+                const isActive = _dbSortCol === col;
+                const arrow    = isActive ? (_dbSortAsc ? '▲' : '▼') : '⇅';
+                return `<span class="sort-icon">${arrow}</span>`;
+            };
+            const thClick = (col) => `onclick="dbSortBy('${col}')"`;
+
+            let theadHtml = '<tr>';
+            theadHtml += `<th ${thClick('__nopol')}   class="${_dbSortCol==='__nopol'  ?'sort-active':''}">No Polisi ${sortIcon('__nopol')}</th>`;
+            theadHtml += `<th ${thClick('__tanggal')} class="${_dbSortCol==='__tanggal'?'sort-active':''}">Tanggal ${sortIcon('__tanggal')}</th>`;
+            selected.forEach(t => {
+                theadHtml += `<th ${thClick(t.key)} class="${_dbSortCol===t.key?'sort-active':''}" style="min-width:90px;">${t.label} ${sortIcon(t.key)}</th>`;
+            });
+            theadHtml += `<th ${thClick('__total')} class="${_dbSortCol==='__total'?'sort-active':''}" style="min-width:80px;">Total ${sortIcon('__total')}</th>`;
+            theadHtml += '<th style="min-width:70px;">Status</th>';
+            theadHtml += '</tr>';
+            document.getElementById('db-thead').innerHTML = theadHtml;
+
+            let tbodyHtml = '';
+            const dispData = tableData.slice(0, 1000);
+            dispData.forEach((entry, idx) => {
+                const totalHrs = entry.totalValid && entry.total !== null ? entry.total / 60 : null;
+                let badge = '-';
+                if (totalHrs !== null) {
+                    if      (totalHrs < 1)  badge = '<span class="db-badge db-badge-cepat">Cepat</span>';
+                    else if (totalHrs <= 4) badge = '<span class="db-badge db-badge-normal">Normal</span>';
+                    else                   badge = '<span class="db-badge db-badge-lama">Lama</span>';
+                }
+                tbodyHtml += `<tr class="fade-in-item" style="animation-delay:${Math.min(idx, 20) * 0.02}s;">`;
+                tbodyHtml += `<td style="font-weight:700; color:var(--text-primary); font-family:'Inter',sans-serif; font-size:0.8rem;">${entry.nopol}</td>`;
+                tbodyHtml += `<td style="color:var(--text-secondary);">${entry.tanggal}</td>`;
+                selected.forEach(t => {
+                    const v = entry.durations[t.key];
+                    tbodyHtml += `<td style="text-align:center; color:${(v !== null && !isNaN(v) && v >= 0) ? t.color : '#cbd5e1'};">${formatDbMin(v)}</td>`;
+                });
+                tbodyHtml += `<td style="text-align:center; font-weight:800; color:var(--text-primary);">${formatDbMin(entry.total)}</td>`;
+                tbodyHtml += `<td style="text-align:center;">${badge}</td>`;
+                tbodyHtml += '</tr>';
+            });
+
+            const colSpan = 4 + selected.length;
+            if (tableData.length === 0) {
+                tbodyHtml = `<tr><td colspan="${colSpan}" style="text-align:center; padding:40px; color:var(--text-secondary); font-style:italic;">Tidak ada data untuk filter ini</td></tr>`;
+            } else if (tableData.length > 1000) {
+                tbodyHtml += `<tr><td colspan="${colSpan}" style="text-align:center; padding:12px; color:var(--text-secondary); font-style:italic;">Menampilkan 1.000 data pertama dari ${tableData.length.toLocaleString()} data</td></tr>`;
+            }
+
+            document.getElementById('db-tbody').innerHTML = tbodyHtml;
+        }
+
+        function dbSortBy(col) {
+            if (_dbSortCol === col) { _dbSortAsc = !_dbSortAsc; }
+            else { _dbSortCol = col; _dbSortAsc = true; }
+            renderDurationBreakdown();
+        }
     </script>
     <svg width="0" height="0" style="position: absolute;">
         <filter id="fire-distort">
