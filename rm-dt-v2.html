@@ -5193,7 +5193,16 @@
                     const v = entry.durations[t.key];
                     if (v !== null && !isNaN(v) && v >= 0) {
                         const cellColor = t.color;
-                        const bdJsonEncoded = encodeURIComponent(entry.breakdownJson || '{}');
+                        let bdJsonStr = "";
+                        if (typeof entry.breakdownJson === 'object' && entry.breakdownJson !== null) {
+                            bdJsonStr = JSON.stringify(entry.breakdownJson);
+                        } else {
+                            bdJsonStr = String(entry.breakdownJson || '{}');
+                        }
+                        if (bdJsonStr.startsWith("'")) bdJsonStr = bdJsonStr.substring(1);
+                        if (bdJsonStr.endsWith("'")) bdJsonStr = bdJsonStr.substring(0, bdJsonStr.length - 1);
+                        
+                        const bdJsonEncoded = encodeURIComponent(bdJsonStr);
                         const safeNopol = entry.nopol.replace(/"/g, '&quot;');
                         const clickableHtml = `<span class="breakdown-clickable" style="cursor:pointer; text-decoration:underline; text-decoration-style:dotted;" onclick="event.preventDefault(); event.stopPropagation(); showBreakdownDetail(this)" data-nopol="${safeNopol}" data-typekey="${t.key}" data-typelabel="${t.label}" data-json="${bdJsonEncoded}" data-total="${v}" title="Klik untuk lihat rincian breakdown">${formatDbMin(v)}</span>`;
                         tbodyHtml += `<td style="text-align:center; color:${cellColor};">${clickableHtml}</td>`;
@@ -5243,24 +5252,20 @@
             const jsonKey = keyMap[typeKey];
             let bdData = {};
             try {
-                bdData = JSON.parse(decodeURIComponent(jsonStrEncoded));
+                let jsonStr = decodeURIComponent(jsonStrEncoded);
+                if (jsonStr.startsWith("'")) jsonStr = jsonStr.substring(1);
+                if (jsonStr.endsWith("'")) jsonStr = jsonStr.substring(0, jsonStr.length - 1);
+                bdData = JSON.parse(jsonStr);
             } catch (e) {
                 console.error("Gagal parse breakdown JSON", e);
             }
 
             let stepDetails = bdData[jsonKey] || [];
-            
-            // AGGREGATE FALLBACK: Jika kosong untuk tipe kunci ini, kumpulkan SEMUA rincian dari seluruh tipe kunci yang ada di JSON
             if (!stepDetails || stepDetails.length === 0) {
-                stepDetails = [];
-                if (Array.isArray(bdData)) {
-                    stepDetails = bdData;
-                } else if (typeof bdData === 'object' && bdData !== null) {
-                    for (let k in bdData) {
-                        if (Array.isArray(bdData[k])) {
-                            // Tambahkan informasi kategori kunci asal jika perlu, tapi kita kumpulkan datanya langsung
-                            stepDetails = stepDetails.concat(bdData[k]);
-                        }
+                for (let k in bdData) {
+                    if (k.startsWith(jsonKey) && Array.isArray(bdData[k])) {
+                        stepDetails = bdData[k];
+                        break;
                     }
                 }
             }
