@@ -5271,6 +5271,18 @@
             }
             
             let html = `<div style="text-align:left; font-size:0.95rem; margin-top:10px;">`;
+            
+            html += `<div id="breakdownChartWrapper" style="
+                        width:100%; 
+                        max-width:320px; 
+                        height:260px; 
+                        margin: 16px auto;
+                        position: relative;
+                        display: ${(!stepDetails || stepDetails.length === 0) ? 'none' : 'block'};
+                    ">
+                        <canvas id="breakdownChart"></canvas>
+                    </div>`;
+
             if (!stepDetails || stepDetails.length === 0) {
                 html += `<div style="padding:25px; text-align:center; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">
                             <i class="fas fa-info-circle" style="font-size:2rem; margin-bottom:10px; opacity:0.3;"></i><br>
@@ -5331,6 +5343,106 @@
                 focusConfirm: false,
                 customClass: {
                     popup: 'premium-panel'
+                },
+                didOpen: () => {
+                    if (stepDetails && stepDetails.length > 0) {
+                        if (window._breakdownChart instanceof Chart) {
+                            window._breakdownChart.destroy();
+                        }
+
+                        const labels = stepDetails.map(d => d.keterangan || d.ket || d.alasan || '-');
+                        const values = stepDetails.map(d => parseInt(d.waktu || d.min || d.durasi) || 0);
+                        const total  = values.reduce((a,b) => a+b, 0);
+
+                        const ctx = document.getElementById('breakdownChart').getContext('2d');
+                        const colors = ["#7C3AED","#A855F7","#C084FC","#E879F9","#6366F1","#818CF8","#38BDF8","#34D399"];
+
+                        const centerTextPlugin = {
+                            id: 'centerText',
+                            afterDraw(chart) {
+                                const { ctx, chartArea: { top, bottom, left, right } } = chart;
+                                ctx.save();
+                                
+                                ctx.font = 'bold 22px Inter, sans-serif';
+                                ctx.fillStyle = '#7C3AED';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                const centerX = (left + right) / 2;
+                                const centerY = (top + bottom) / 2 - 10;
+                                ctx.fillText(total, centerX, centerY);
+                                
+                                ctx.font = 'normal 12px Inter, sans-serif';
+                                ctx.fillStyle = '#64748b';
+                                ctx.fillText('menit', centerX, centerY + 20);
+                                
+                                ctx.restore();
+                            }
+                        };
+
+                        window._breakdownChart = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    data: values,
+                                    backgroundColor: stepDetails.map((_, i) => colors[i % colors.length]),
+                                    borderWidth: 3,
+                                    borderColor: '#ffffff',
+                                    hoverBorderColor: '#ffffff',
+                                    hoverOffset: 12
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                animation: {
+                                    animateRotate: true,
+                                    animateScale: true,
+                                    duration: 700,
+                                    easing: 'easeInOutQuart'
+                                },
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: {
+                                            usePointStyle: true,
+                                            boxWidth: 12,
+                                            padding: 10,
+                                            font: { size: 11 },
+                                            color: '#475569',
+                                            generateLabels(chart) {
+                                                const data = chart.data;
+                                                if (data.labels.length && data.datasets.length) {
+                                                    return data.labels.map((label, i) => {
+                                                        const value = data.datasets[0].data[i];
+                                                        return {
+                                                            text: `${label} · ${value} mnt`,
+                                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                                            strokeStyle: data.datasets[0].borderColor,
+                                                            lineWidth: data.datasets[0].borderWidth,
+                                                            hidden: isNaN(data.datasets[0].data[i]) || chart.getDatasetMeta(0).data[i].hidden,
+                                                            index: i
+                                                        };
+                                                    });
+                                                }
+                                                return [];
+                                            }
+                                        }
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: (ctx) => {
+                                                const pct = ((ctx.parsed / total) * 100).toFixed(1);
+                                                return ` ${ctx.label}: ${ctx.parsed} mnt (${pct}%)`;
+                                            }
+                                        }
+                                    }
+                                },
+                                cutout: '70%'
+                            },
+                            plugins: [centerTextPlugin]
+                        });
+                    }
                 }
             });
         }
