@@ -483,30 +483,31 @@
             color: var(--accent-primary);
         }
 
-        /* Delay Keterangan Area (Dynamically Displayed) */
-        .delay-space-container {
-            display: none;
-            background: #fffbeb;
-            border: 1px solid #fde68a;
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 15px;
-            animation: slideDown 0.3s ease-out forwards;
+        /* Breakdown Modal CSS */
+        #breakdown-modal input.bd-keterangan {
+            flex: 2;
         }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        #breakdown-modal input.bd-waktu {
+            flex: 1;
+            text-align: center;
         }
-
-        .delay-title {
-            color: #d97706;
-            font-size: 0.8rem;
-            font-weight: 700;
+        .bd-row {
+            display: flex;
+            gap: 10px;
             margin-bottom: 10px;
+            align-items: center;
+        }
+        .bd-row-btn {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
         }
 
         /* --- ADVANCED BLOCKED OVERLAY --- */
@@ -861,29 +862,9 @@
                         </div>
                     </div>
 
-                    <!-- Keterangan Delay Automations -->
-                    <div class="delay-space-container" id="delay-space-box">
-                        <div class="delay-title"><i class="fas fa-exclamation-triangle"></i> Terdeteksi Delay > 2 Jam (Space)</div>
-                        <select class="input-glass" id="t_delay_space" style="background:#fff;">
-                            <option value="">-- Pilih Keterangan Delay --</option>
-                            <option value="Persiapan Space">Persiapan Space</option>
-                            <option value="Tunggu Space">Tunggu Space</option>
-                            <option value="Sopir tidak respon">Sopir tidak respon</option>
-                            <option value="Jam istirahat">Jam istirahat</option>
-                        </select>
-                    </div>
-
-                    <div class="delay-space-container" id="delay-operasional-box" style="border-color:#fca5a5; background:#fef2f2;">
-                        <div class="delay-title" style="color:#dc2626;"><i class="fas fa-exclamation-circle"></i> Terdeteksi Delay > 1 Jam (Operasional)</div>
-                        <select class="input-glass" id="t_delay_operasional" style="background:#fff;">
-                            <option value="">-- Pilih Keterangan Delay --</option>
-                            <option value="Tunggu Kuli">Tunggu Kuli</option>
-                            <option value="Tunggu QC">Tunggu QC</option>
-                            <option value="Tunggu Pallet">Tunggu Pallet</option>
-                            <option value="Forklift Trouble">Forklift Trouble</option>
-                            <option value="Antri Bongkar">Antri Bongkar</option>
-                            <option value="Jam Istirahat">Jam Istirahat</option>
-                        </select>
+                    <!-- Keterangan Breakdown Automations (Triggered dynamically) -->
+                    <div id="breakdown-summary-container" style="margin-top:15px; display:flex; flex-direction:column; gap:10px;">
+                        <!-- Injected via JS when breakdowns are filled -->
                     </div>
 
                     <div class="form-grid" style="margin-top:15px;">
@@ -1014,6 +995,58 @@
 
         </main>
     </div>
+
+    <!-- MODAL BREAKDOWN DURASI -->
+    <div id="breakdown-modal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.85); backdrop-filter:blur(10px); z-index:20000; justify-content:center; align-items:center;">
+        <div style="background:white; border-radius:20px; padding:25px; width:90%; max-width:500px; box-shadow:0 25px 50px rgba(0,0,0,0.25);">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:15px; margin-bottom:15px;">
+                <div>
+                    <h3 style="margin:0; font-family:'Rajdhani', sans-serif; font-size:1.4rem; color:var(--text-primary);">BREAKDOWN DURASI</h3>
+                    <p id="bd-step-name" style="margin:0; font-size:0.85rem; color:var(--accent-primary); font-weight:bold;">Arrival vs QC</p>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:0.75rem; color:var(--text-secondary); font-weight:600;">Total Durasi Delay</div>
+                    <div id="bd-total-time" style="font-size:1.3rem; font-weight:900; color:#ef4444;">180 Menit</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:10px; font-size:0.8rem; color:var(--text-secondary);">
+                Silakan rincikan waktu delay tersebut. Total menit harus sama dengan total durasi.
+            </div>
+
+            <div id="bd-rows-container" style="max-height:300px; overflow-y:auto; padding-right:5px; margin-bottom:15px;">
+                <!-- Rows injected here -->
+            </div>
+
+            <button onclick="addBreakdownRow()" style="width:100%; padding:12px; border:1px dashed var(--accent-primary); background:#f0f9ff; color:var(--accent-primary); border-radius:10px; cursor:pointer; font-weight:600; margin-bottom:15px; transition:all 0.2s;">
+                <i class="fas fa-plus"></i> TAMBAH KETERANGAN
+            </button>
+
+            <div style="background:#f8fafc; padding:15px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border:1px solid #e2e8f0;">
+                <span style="font-weight:700; color:var(--text-secondary); font-size:0.9rem;">SISA WAKTU:</span>
+                <span id="bd-sisa-waktu" style="font-size:1.3rem; font-weight:900; color:#ef4444; transition:color 0.3s;">180 Menit</span>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="closeBreakdownModal(false)" style="flex:1; padding:12px; background:#f1f5f9; color:var(--text-secondary); border:none; border-radius:10px; font-weight:bold; cursor:pointer;">BATAL / KOREKSI JAM</button>
+                <button id="btn-save-breakdown" onclick="saveBreakdownData()" style="flex:1; padding:12px; background:var(--gradient-accent); color:white; border:none; border-radius:10px; font-weight:bold; cursor:not-allowed; opacity:0.5; transition:all 0.3s;">SIMPAN</button>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="keterangan-list">
+        <option value="Proses Normal">
+        <option value="Tunggu Kuli">
+        <option value="Tunggu QC">
+        <option value="Tunggu Forklift">
+        <option value="Tunggu Pallet">
+        <option value="Tunggu Space">
+        <option value="Persiapan Space">
+        <option value="Antri Bongkar">
+        <option value="Sopir Tidak Respon">
+        <option value="Jam Istirahat">
+        <option value="Forklift Trouble">
+    </datalist>
 
     <!-- ===== JAVASCRIPT LOGIC ===== -->
     <script>
@@ -1736,52 +1769,227 @@
                 }
             }
 
-            checkDelayBoxes(tipe, box);
+            checkDurationBreakdowns(tipe, box);
             checkDurasiLengkap();
         }
 
-        function checkDelayBoxes(tipe, box) {
-            // Delay checks (Header Fields)
-            const abQC1 = (tipe === "Bareng" && box) ? box.querySelector('.trk-ab-qc').value : (document.getElementById('t_ab_qc') ? document.getElementById('t_ab_qc').value : '');
-            const pbSampaiEl = document.getElementById('t_pb_sampai');
-            const pbStartEl = document.getElementById('t_pb_start');
-            const pbSampai = pbSampaiEl ? pbSampaiEl.value : '';
-            const pbStart = pbStartEl ? pbStartEl.value : '';
+        let durationBreakdowns = {};
+        let currentBdKey = null;
+        let currentBdTotal = 0;
 
-            if(abQC1 && pbSampai) {
-                // Gunakan actualDatetime jika ada untuk selisih yang benar
-                let abQcMs = null, pbSampaiMs = null;
-                const abQcEl = (tipe === "Bareng" && box) ? box.querySelector('.trk-ab-qc') : document.getElementById('t_ab_qc');
-                if (abQcEl && abQcEl.dataset.actualDatetime) abQcMs = parseInt(abQcEl.dataset.actualDatetime, 10);
-                if (pbSampaiEl && pbSampaiEl.dataset.actualDatetime) pbSampaiMs = parseInt(pbSampaiEl.dataset.actualDatetime, 10);
+        function generateBreakdownKey(item1, item2, box) {
+            let key = item1.name + "_" + item2.name;
+            if (box) {
+                // Get index of box
+                const container = document.getElementById('truck-forms-container');
+                const boxes = Array.from(container.querySelectorAll('.truck-box'));
+                const idx = boxes.indexOf(box);
+                if (idx !== -1) key += "_T" + (idx + 1);
+            }
+            return key.replace(/ /g, '');
+        }
+
+        function checkDurationBreakdowns(tipe, box) {
+            // First check the sequence for the current context (or main context if box is null)
+            const seq = getChronologicalSequence(tipe, box);
+            
+            for (let i = 0; i < seq.length - 1; i++) {
+                const item1 = seq[i];
+                const item2 = seq[i+1];
                 
-                let actualDiff1;
-                if (abQcMs !== null && pbSampaiMs !== null) {
-                    actualDiff1 = (pbSampaiMs - abQcMs) / 60000;
-                } else {
-                    const diffSpace = timeToMinutes(pbSampai) - timeToMinutes(abQC1);
-                    actualDiff1 = diffSpace < 0 ? (1440 + diffSpace) : diffSpace;
+                if (item1.el && item1.el.value && item2.el && item2.el.value) {
+                    let ms1 = resolveSeqItemMs(item1, box);
+                    let ms2 = resolveSeqItemMs(item2, box);
+                    
+                    if (ms1 !== null && ms2 !== null) {
+                        let diffMin = (ms2 - ms1) / 60000;
+                        
+                        let tolerance = 60;
+                        if (item1.name === 'AB QC Time' && item2.name === 'PB Sampai Gudang') tolerance = 180;
+                        
+                        let bdKey = generateBreakdownKey(item1, item2, box);
+
+                        if (diffMin > tolerance) {
+                            let requiredMin = Math.round(diffMin);
+                            let currentSum = sumBreakdown(durationBreakdowns[bdKey]);
+                            
+                            // If invalid, open modal and stop further checking
+                            if (currentSum !== requiredMin) {
+                                openBreakdownModal(bdKey, item1.name + " vs " + item2.name, requiredMin);
+                                return;
+                            }
+                        } else {
+                            if (durationBreakdowns[bdKey]) delete durationBreakdowns[bdKey];
+                        }
+                    }
                 }
-                const spaceBox = document.getElementById('delay-space-box');
-                if(actualDiff1 > 120) spaceBox.style.display = 'block';
-                else { spaceBox.style.display = 'none'; document.getElementById('t_delay_space').value = ""; }
             }
 
-            if(pbSampai && pbStart) {
-                let pbSampaiMs = null, pbStartMs = null;
-                if (pbSampaiEl && pbSampaiEl.dataset.actualDatetime) pbSampaiMs = parseInt(pbSampaiEl.dataset.actualDatetime, 10);
-                if (pbStartEl && pbStartEl.dataset.actualDatetime) pbStartMs = parseInt(pbStartEl.dataset.actualDatetime, 10);
+            // If we're changing PB fields in "Bareng" mode, we should technically check ALL trucks
+            if (tipe === "Bareng" && !box) {
+                const container = document.getElementById('truck-forms-container');
+                const boxes = container.querySelectorAll('.truck-box');
+                for (let b of boxes) {
+                    const bSeq = getChronologicalSequence(tipe, b);
+                    for (let i = 0; i < bSeq.length - 1; i++) {
+                        const item1 = bSeq[i];
+                        const item2 = bSeq[i+1];
+                        if (item1.el && item1.el.value && item2.el && item2.el.value) {
+                            let ms1 = resolveSeqItemMs(item1, b);
+                            let ms2 = resolveSeqItemMs(item2, b);
+                            if (ms1 !== null && ms2 !== null) {
+                                let diffMin = (ms2 - ms1) / 60000;
+                                let tolerance = (item1.name === 'AB QC Time' && item2.name === 'PB Sampai Gudang') ? 180 : 60;
+                                let bdKey = generateBreakdownKey(item1, item2, b);
 
-                let actualDiff2;
-                if (pbSampaiMs !== null && pbStartMs !== null) {
-                    actualDiff2 = (pbStartMs - pbSampaiMs) / 60000;
-                } else {
-                    const diffOps = timeToMinutes(pbStart) - timeToMinutes(pbSampai);
-                    actualDiff2 = diffOps < 0 ? (1440 + diffOps) : diffOps;
+                                if (diffMin > tolerance) {
+                                    let requiredMin = Math.round(diffMin);
+                                    if (sumBreakdown(durationBreakdowns[bdKey]) !== requiredMin) {
+                                        openBreakdownModal(bdKey, item1.name + " vs " + item2.name + " (Truck " + (Array.from(boxes).indexOf(b)+1) + ")", requiredMin);
+                                        return;
+                                    }
+                                } else {
+                                    if (durationBreakdowns[bdKey]) delete durationBreakdowns[bdKey];
+                                }
+                            }
+                        }
+                    }
                 }
-                const opsBox = document.getElementById('delay-operasional-box');
-                if(actualDiff2 > 60) opsBox.style.display = 'block';
-                else { opsBox.style.display = 'none'; document.getElementById('t_delay_operasional').value = ""; }
+            }
+
+            updateBreakdownSummaryUI();
+        }
+
+        function sumBreakdown(bdArray) {
+            if (!bdArray) return 0;
+            return bdArray.reduce((sum, item) => sum + (parseInt(item.waktu) || 0), 0);
+        }
+
+        function openBreakdownModal(key, stepName, totalMin) {
+            currentBdKey = key;
+            currentBdTotal = totalMin;
+            
+            document.getElementById('bd-step-name').innerText = stepName;
+            document.getElementById('bd-total-time').innerText = totalMin + " Menit";
+            
+            const container = document.getElementById('bd-rows-container');
+            container.innerHTML = '';
+            
+            // Populate existing rows if any, else add 1 empty row
+            const existing = durationBreakdowns[key] || [];
+            if (existing.length > 0) {
+                existing.forEach(item => addBreakdownRow(item.keterangan, item.waktu));
+            } else {
+                addBreakdownRow('', '');
+            }
+            
+            calculateSisaWaktu();
+            document.getElementById('breakdown-modal').style.display = 'flex';
+        }
+
+        function closeBreakdownModal(forceClose) {
+            document.getElementById('breakdown-modal').style.display = 'none';
+            // Note: If they cancel, they leave it invalid, which blocks checkDurasiLengkap
+            checkDurasiLengkap();
+        }
+
+        function addBreakdownRow(ket = '', waktu = '') {
+            const container = document.getElementById('bd-rows-container');
+            const row = document.createElement('div');
+            row.className = 'bd-row';
+            row.innerHTML = `
+                <input type="text" class="input-glass bd-keterangan" placeholder="Ketik/Pilih Keterangan..." list="keterangan-list" value="${ket}" oninput="calculateSisaWaktu()">
+                <input type="number" class="input-glass bd-waktu" placeholder="Menit" min="1" value="${waktu}" oninput="calculateSisaWaktu()">
+                <button class="bd-row-btn" onclick="this.parentElement.remove(); calculateSisaWaktu();"><i class="fas fa-trash"></i></button>
+            `;
+            container.appendChild(row);
+        }
+
+        function calculateSisaWaktu() {
+            const container = document.getElementById('bd-rows-container');
+            const rows = container.querySelectorAll('.bd-row');
+            let sum = 0;
+            rows.forEach(r => {
+                const w = parseInt(r.querySelector('.bd-waktu').value) || 0;
+                sum += w;
+            });
+            
+            const sisa = currentBdTotal - sum;
+            const sisaEl = document.getElementById('bd-sisa-waktu');
+            const btnSave = document.getElementById('btn-save-breakdown');
+            
+            if (sisa === 0) {
+                sisaEl.innerText = "PAS (0 Menit)";
+                sisaEl.style.color = "var(--success)";
+                btnSave.style.opacity = '1';
+                btnSave.style.cursor = 'pointer';
+                btnSave.disabled = false;
+            } else if (sisa > 0) {
+                sisaEl.innerText = sisa + " Menit Kurang";
+                sisaEl.style.color = "var(--warning)";
+                btnSave.style.opacity = '0.5';
+                btnSave.style.cursor = 'not-allowed';
+                btnSave.disabled = true;
+            } else {
+                sisaEl.innerText = Math.abs(sisa) + " Menit Berlebih";
+                sisaEl.style.color = "var(--danger)";
+                btnSave.style.opacity = '0.5';
+                btnSave.style.cursor = 'not-allowed';
+                btnSave.disabled = true;
+            }
+        }
+
+        function saveBreakdownData() {
+            const container = document.getElementById('bd-rows-container');
+            const rows = container.querySelectorAll('.bd-row');
+            let data = [];
+            
+            let valid = true;
+            rows.forEach(r => {
+                const ket = r.querySelector('.bd-keterangan').value.trim();
+                const w = parseInt(r.querySelector('.bd-waktu').value) || 0;
+                if (!ket || w <= 0) valid = false;
+                data.push({ keterangan: ket, waktu: w });
+            });
+            
+            if (!valid) {
+                Swal.fire('Data Tidak Valid', 'Semua baris keterangan dan menit harus diisi.', 'warning');
+                return;
+            }
+            
+            durationBreakdowns[currentBdKey] = data;
+            document.getElementById('breakdown-modal').style.display = 'none';
+            
+            updateBreakdownSummaryUI();
+            checkDurasiLengkap();
+        }
+
+        function updateBreakdownSummaryUI() {
+            const container = document.getElementById('breakdown-summary-container');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            let hasData = false;
+            for (let key in durationBreakdowns) {
+                if (durationBreakdowns[key] && durationBreakdowns[key].length > 0) {
+                    hasData = true;
+                    // Format key for display (e.g. ABArrivalTime_ABQCTime -> Arrival vs QC)
+                    let displayKey = key.replace(/([A-Z])/g, ' $1').trim().replace(/_/g, ' vs ');
+                    
+                    const div = document.createElement('div');
+                    div.style = "background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:12px; font-size:0.85rem;";
+                    
+                    let text = `<div style="color:var(--accent-primary); font-weight:700; margin-bottom:5px;"><i class="fas fa-check-circle"></i> Breakdown: ${displayKey}</div>`;
+                    durationBreakdowns[key].forEach(b => {
+                        text += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed #e2e8f0; padding:4px 0;">
+                                    <span style="color:var(--text-secondary);">${b.keterangan}</span>
+                                    <span style="font-weight:600;">${b.waktu}m</span>
+                                 </div>`;
+                    });
+                    
+                    div.innerHTML = text;
+                    container.appendChild(div);
+                }
             }
         }
 
@@ -1806,11 +2014,14 @@
             }
 
             if(allFilled) {
-                const sect = document.getElementById('sect-truck');
-                if(sect.classList.contains('locked')) {
+                // Tambahan: Pastikan tidak ada breakdown yang tertunda (belum diisi)
+                // Kita jalankan checkDurationBreakdowns untuk memastikan tidak ada modal yang harusnya kebuka
+                // Tapi hindari recursion. Jika form lengkap, dan ga ada masalah, buka sect-truck
+                const t = document.getElementById('sect-truck');
+                if(t.classList.contains('locked')) {
                     unlockAccordion('sect-truck');
                     document.getElementById('sect-durasi').querySelector('.accordion-header').classList.remove('active');
-                    sect.querySelector('.accordion-header').classList.add('active');
+                    t.querySelector('.accordion-header').classList.add('active');
                 }
             }
         }
@@ -1925,7 +2136,7 @@
             const list = document.getElementById('langsiran-list');
             list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Menghubungkan ke server muatan...</div>';
             
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbzJZyOdP5PwNlZzJxlaUtcq8mwFAblDOxbi06F3t-6BjHLjDKTYo5gvV06EcnIpG4sG/exec';
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbxkcoursvhRgV0gI69btwJqMd8IGZk8VntOhpaqvd6_ggqd2wL0n3mHVJhsLhn4D5Pr/exec';
             
             try {
                 const res = await fetch(scriptURL + '?action=getPendingLangsiran');
@@ -2079,11 +2290,11 @@
                 }
             }
 
-            if(document.getElementById('delay-space-box').style.display === 'block' && !document.getElementById('t_delay_space').value) {
-                Swal.fire('Keterangan Delay Space', 'Anda harus memilih alasan Delay > 2 Jam.', 'warning'); return;
-            }
-            if(document.getElementById('delay-operasional-box').style.display === 'block' && !document.getElementById('t_delay_operasional').value) {
-                Swal.fire('Keterangan Delay Operasional', 'Anda harus memilih alasan Delay > 1 Jam.', 'warning'); return;
+            // Validasi: pastikan checkDurationBreakdowns tidak mendeteksi ada breakdown yang belum diselesaikan
+            // Jika ada modal terbuka atau sisa waktu belum pas, batalkan submit
+            if (document.getElementById('breakdown-modal').style.display === 'flex') {
+                Swal.fire('Breakdown Belum Selesai', 'Anda harus menyelesaikan input breakdown durasi.', 'warning');
+                return;
             }
 
             const trucks = [];
@@ -2182,7 +2393,7 @@
                 showConfirmButton: false
             });
 
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbzJZyOdP5PwNlZzJxlaUtcq8mwFAblDOxbi06F3t-6BjHLjDKTYo5gvV06EcnIpG4sG/exec';
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbxkcoursvhRgV0gI69btwJqMd8IGZk8VntOhpaqvd6_ggqd2wL0n3mHVJhsLhn4D5Pr/exec';
             
             const cachedSetup = localStorage.getItem('RM01_SETUP_ACTIVE') ? JSON.parse(localStorage.getItem('RM01_SETUP_ACTIVE')) : {};
             const tipe = document.getElementById('inp_tipe_bongkaran').value;
@@ -2247,8 +2458,7 @@
                 pbRestartDate: isLangsiran ? "-" : getElActualDate(pbRestartEl, 't_pb_tanggal'),
                 pbFinish: pbFinishEl ? pbFinishEl.value : '-',
                 pbFinishDate: getElActualDate(pbFinishEl, 't_pb_tanggal'),
-                delaySpace: isLangsiran ? "-" : (document.getElementById('t_delay_space').value || "-"),
-                delayOperasional: isLangsiran ? "-" : (document.getElementById('t_delay_operasional').value || "-"),
+                breakdownData: JSON.stringify(durationBreakdowns),
                 trucks: finalTrucks
             };
 

@@ -172,7 +172,7 @@ function handleSaveBongkaran(data) {
     "TANGGAL", "Arrival Time", "QC Sampling 1 Time",
     "Tanggal PB", "Sampai Gudang", "Start Bongkar",
     "Hold QC", "Restart QC", "Finish",
-    "Delay Space", "Delay Operasional"
+    "Delay Space", "Delay Operasional", "Breakdown Durasi"
   ];
 
   if (!sheet) {
@@ -218,9 +218,12 @@ function handleSaveBongkaran(data) {
         data.pbRestartQc,
         data.pbFinish,
 
-        // Keterangan Auto-Delays
+        // Keterangan Auto-Delays (Legacy)
         data.delaySpace || "-",
-        data.delayOperasional || "-"
+        data.delayOperasional || "-",
+        
+        // Breakdown Durasi Baru (Kolom Y)
+        data.breakdownData || "-"
       ]);
 
       // UPDATE STATUS DI SHEET MUATAN (JIKA ADA ROW_ID)
@@ -495,6 +498,7 @@ function handleGetAnalyticsV2() {
           arrivalDate: findH(bH, ["ARRIVAL DATE"]),
           arrivalTime: findH(bH, ["ARRIVAL TIME"]),
           qcTime: findH(bH, ["QC SAMPLING 1 TIME", "QC TIME"]),
+          breakdownDurasi: findH(bH, ["BREAKDOWN DURASI", "BREAKDOWN_DURASI"]),
           timbangTime: findH(bH, ["TIME TIMBANG MASUK", "TIMBANG IN", "TIMBANG MASUK"]),
           tanggalPB: findH(bH, ["TANGGAL PB", "TANGGAL PROSES"]),
           sampaiGudang: findH(bH, ["SAMPAI GUDANG", "SM GUDANG"]),
@@ -566,7 +570,8 @@ function handleGetAnalyticsV2() {
               if (m2) return m2[3] + "-" + m2[2].padStart(2, "0") + "-" + m2[1].padStart(2, "0");
               return s;
             })(bIdx.tanggalPB >= 0 ? row[bIdx.tanggalPB] : ""),
-            SAMPAI_GUDANG: fmtTime(bIdx.sampaiGudang >= 0 ? row[bIdx.sampaiGudang] : "")
+            SAMPAI_GUDANG: fmtTime(bIdx.sampaiGudang >= 0 ? row[bIdx.sampaiGudang] : ""),
+            BREAKDOWN_DURASI: String(bIdx.breakdownDurasi >= 0 ? row[bIdx.breakdownDurasi] : "")
           });
 
           // Daily aggregation
