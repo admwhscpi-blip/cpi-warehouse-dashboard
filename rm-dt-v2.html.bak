@@ -1539,6 +1539,7 @@
                     <button class="view-tab" onclick="window.location.href='outstanding-rm.html?from=dtv2'" id="tab-outstanding-live"><i class="fas fa-list-check"></i> Outstanding (Live)</button>
                     <button class="view-tab" onclick="window.location.href='rm-dashboard.html?from=dtv2'" id="tab-inventory"><i class="fas fa-boxes-stacked"></i> Inventory</button>
                     <button class="view-tab" onclick="switchView('ops')" id="tab-ops"><i class="fas fa-chart-line"></i> Operasional</button>
+                    <button class="view-tab" onclick="switchView('pivot')" id="tab-pivot"><i class="fas fa-table"></i> Pivot</button>
                     <button class="view-tab" onclick="switchView('durbreakdown')" id="tab-durbreakdown"><i class="fas fa-stopwatch"></i> Duration Breakdown</button>
                 </div>
             </div>
@@ -1783,6 +1784,125 @@
                 </div>
             </div>
             </div> <!-- CLOSE view-ops -->
+
+            <!-- VIEW: PIVOT ANALYTICS -->
+            <div id="view-pivot" style="display:none;">
+                <div class="section-title-bar">
+                    <h3><i class="fas fa-filter" style="color:#10b981;"></i> PIVOT DATA & ANALYSIS</h3>
+                    <span class="section-badge" style="background:#d1fae5; color:#059669;">BONGKARAN</span>
+                </div>
+
+                <!-- 1. Filter Panel -->
+                <div class="pivot-filter-panel">
+                    <div class="pivot-group">
+                        <label>Dari Tanggal</label>
+                        <input type="date" id="p_start_date" class="pivot-input">
+                    </div>
+                    <div class="pivot-group">
+                        <label>Sampai Tanggal</label>
+                        <input type="date" id="p_end_date" class="pivot-input">
+                    </div>
+                    <div class="pivot-group">
+                        <label>Material RM</label>
+                        <div class="pivot-multi-select" id="ms-material">
+                            <div class="ms-trigger" onclick="togglePivotDropdown('ms-material')">
+                                <span class="ms-label">PILIH MATERIAL</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="ms-dropdown">
+                                <div class="ms-actions">
+                                    <button class="ms-btn" onclick="pivotSelectAll('ms-material')">Pilih Semua</button>
+                                    <button class="ms-btn" onclick="pivotDeselectAll('ms-material')">Hapus Semua</button>
+                                </div>
+                                <input type="text" class="ms-search" placeholder="Cari material..." onkeyup="filterPivotList(this)">
+                                <div class="ms-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pivot-group">
+                        <label>Lokasi (SLOC)</label>
+                        <div class="pivot-multi-select" id="ms-sloc">
+                            <div class="ms-trigger" onclick="togglePivotDropdown('ms-sloc')">
+                                <span class="ms-label">PILIH LOKASI</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="ms-dropdown">
+                                <div class="ms-actions">
+                                    <button class="ms-btn" onclick="pivotSelectAll('ms-sloc')">Pilih Semua</button>
+                                    <button class="ms-btn" onclick="pivotDeselectAll('ms-sloc')">Hapus Semua</button>
+                                </div>
+                                <input type="text" class="ms-search" placeholder="Cari lokasi..." onkeyup="filterPivotList(this)">
+                                <div class="ms-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pivot-group">
+                        <label>Jenis Truck</label>
+                        <div class="pivot-multi-select" id="ms-truck">
+                            <div class="ms-trigger" onclick="togglePivotDropdown('ms-truck')">
+                                <span class="ms-label">PILIH TRUCK</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="ms-dropdown">
+                                <div class="ms-actions">
+                                    <button class="ms-btn" onclick="pivotSelectAll('ms-truck')">Pilih Semua</button>
+                                    <button class="ms-btn" onclick="pivotDeselectAll('ms-truck')">Hapus Semua</button>
+                                </div>
+                                <input type="text" class="ms-search" placeholder="Cari truck..." onkeyup="filterPivotList(this)">
+                                <div class="ms-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="pivot-btn-run" onclick="runPivotAnalysis()">
+                        <i class="fas fa-play"></i> PROSES ANALISIS PIVOT
+                    </button>
+                </div>
+
+                <!-- 2. Summary Analysis -->
+                <div id="pivot-summary-container" style="display:none; margin-bottom:24px;">
+                    <div class="pivot-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                        <div class="pivot-summary-card" id="summary-sloc-body"></div>
+                        <div class="pivot-summary-card" id="summary-gudang-body"></div>
+                        <div class="pivot-summary-card" id="summary-inap-body"></div>
+                    </div>
+                </div>
+
+                <!-- 3. Detail Data Table -->
+                <div id="pivot-table-container" style="display:none;">
+                    <div class="section-title-bar" style="justify-content:space-between;">
+                        <h3><i class="fas fa-list-ul" style="color:var(--accent-primary);"></i> DATA DETAIL TERFILTER</h3>
+                        <span id="pivot-result-count" class="section-badge" style="background:#0f172a; color:#fff;">0 Data</span>
+                    </div>
+                    <div class="pivot-table-wrap">
+                        <table class="pivot-premium-table pivot-mini-table" id="pivot-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:30px;">NO</th>
+                                    <th class="text-left-pivot" style="width:180px;">NOPOL & MAT</th>
+                                    <th style="width:50px;">SLOC</th>
+                                    <th style="width:65px;">TGL ARR</th>
+                                    <th style="width:45px;">ARR</th>
+                                    <th style="width:45px;">QC</th>
+                                    <th style="width:65px;">TGL PB</th>
+                                    <th style="width:45px;">WHS</th>
+                                    <th style="width:45px;">STRT</th>
+                                    <th style="width:45px;">HLD</th>
+                                    <th style="width:45px;">RST</th>
+                                    <th style="width:45px;">FIN</th>
+                                    <th style="width:65px;">DUR</th>
+                                    <th style="text-align:right; padding-right:15px; width:80px;">KG</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pivot-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="pivot-empty-state" style="text-align:center; padding:60px; color:var(--text-secondary);">
+                    <i class="fas fa-table-list" style="font-size:3rem; opacity:0.1; margin-bottom:20px;"></i>
+                    <p>Silakan atur filter dan klik tombol <b>Proses Analisis</b></p>
+                </div>
+            </div> <!-- CLOSE view-pivot -->
 
             <!-- VIEW: DURATION BREAKDOWN -->
             <div id="view-durbreakdown" style="display:none;">
@@ -2065,16 +2185,22 @@
         function switchView(mode) {
             document.getElementById('tab-leadtime').classList.toggle('active', mode === 'leadtime');
             document.getElementById('tab-ops').classList.toggle('active', mode === 'ops');
+            document.getElementById('tab-pivot').classList.toggle('active', mode === 'pivot');
             document.getElementById('tab-durbreakdown').classList.toggle('active', mode === 'durbreakdown');
             
             const vLead = document.getElementById('view-leadtime');
             const vOps = document.getElementById('view-ops');
+            const vPivot = document.getElementById('view-pivot');
             const vDb = document.getElementById('view-durbreakdown');
 
-            if (vLead) vLead.style.display = mode === 'leadtime' ? 'block' : 'none';
-            if (vOps) vOps.style.display = mode === 'ops' ? 'block' : 'none';
-            if (vDb) vDb.style.display = mode === 'durbreakdown' ? 'block' : 'none';
+            vLead.style.display = mode === 'leadtime' ? 'block' : 'none';
+            vOps.style.display = mode === 'ops' ? 'block' : 'none';
+            vPivot.style.display = mode === 'pivot' ? 'block' : 'none';
+            vDb.style.display = mode === 'durbreakdown' ? 'block' : 'none';
 
+            if (mode === 'pivot') {
+                initPivotFilters();
+            }
             if (mode === 'durbreakdown') {
                 initDurationBreakdown();
             }
@@ -3967,6 +4093,11 @@
             updatePivotLabel(id);
         }
 
+        function getSelectedPivotValues(id) {
+            const vals = [];
+            document.getElementById(id).querySelectorAll('input:checked').forEach(i => vals.push(i.value));
+            return vals;
+        }
 
         function filterPivotList(input) {
             const term = input.value.toUpperCase();
@@ -3987,6 +4118,234 @@
             }
         });
 
+        function initPivotFilters() {
+            if (!hubData || !hubData.templateDump || hubData.templateDump.length === 0) return;
+            if (pivotInitialized) return;
+            
+            const rows = hubData.templateDump;
+            const materials = new Set();
+            const slocs = new Set();
+            const trucks = new Set();
+
+            rows.forEach(r => {
+                // FOCUS: Only detect filters from Bongkaran entries
+                const keg = String(r.KEGIATAN || r.ACTIVITY || '').toUpperCase();
+                if (!keg.includes('BONGKAR')) return;
+
+                const mat = String(r.JENIS_RM || '').trim().toUpperCase();
+                const sloc = String(r.LOKASI || '').trim().toUpperCase();
+                const trk = String(r.JENIS_TRUCK || '').trim().toUpperCase();
+                
+                if (mat) materials.add(mat);
+                if (sloc) slocs.add(sloc);
+                if (trk) trucks.add(trk);
+            });
+
+            if (materials.size === 0 && slocs.size === 0) return; // Haven't really found data
+
+            const populate = (id, items) => {
+                const list = document.getElementById(id).querySelector('.ms-list');
+                list.innerHTML = '';
+                Array.from(items).sort().forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'ms-item';
+                    div.onclick = (e) => {
+                        if (e.target.tagName !== 'INPUT') {
+                            const cb = div.querySelector('input');
+                            cb.checked = !cb.checked;
+                        }
+                        updatePivotLabel(id);
+                    };
+                    div.innerHTML = `<input type="checkbox" value="${item}"> <span>${item}</span>`;
+                    list.appendChild(div);
+                });
+                updatePivotLabel(id);
+            };
+
+            populate('ms-material', materials);
+            populate('ms-sloc', slocs);
+            populate('ms-truck', trucks);
+
+            // Set default dates
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const pStart = document.getElementById('p_start_date');
+            const pEnd = document.getElementById('p_end_date');
+            if (pStart) pStart.value = startOfMonth.toISOString().substring(0, 10);
+            if (pEnd) pEnd.value = now.toISOString().substring(0, 10);
+
+            pivotInitialized = true;
+        }
+
+        function runPivotAnalysis() {
+            if (!hubData || !hubData.templateDump) {
+                Swal.fire('Error', 'Data belum tersedia.', 'error');
+                return;
+            }
+
+            const startDate = document.getElementById('p_start_date').value;
+            const endDate = document.getElementById('p_end_date').value;
+            
+            const selMaterials = getSelectedPivotValues('ms-material');
+            const selSlocs = getSelectedPivotValues('ms-sloc');
+            const selTrucks = getSelectedPivotValues('ms-truck');
+
+            if (!startDate || !endDate) {
+                Swal.fire('Info', 'Mohon set rentang tanggal analisis.', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Memproses Data...',
+                html: 'Mohon tunggu sebentar',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            const filtered = hubData.templateDump.filter(r => {
+                const tgl = String(r.TANGGAL || '').substring(0, 10);
+                if (!tgl || tgl < startDate || tgl > endDate) return false;
+
+                // FOCUS: Only include Bongkaran in Pivot results
+                const keg = String(r.KEGIATAN || r.ACTIVITY || '').toUpperCase();
+                if (!keg.includes('BONGKAR')) return false;
+
+                // Category filters (Multi-select)
+                const mat = String(r.JENIS_RM || '').trim().toUpperCase();
+                const sloc = String(r.LOKASI || '').trim().toUpperCase();
+                const trk = String(r.JENIS_TRUCK || '').trim().toUpperCase();
+
+                if (selMaterials.length > 0 && !selMaterials.includes(mat)) {
+                    // Cek if fully deselected (length 0) counts as "all" in our updatePivotLabel logic
+                    // But here we check if user has selected some and this row is NOT one of them.
+                    return false;
+                }
+                if (selSlocs.length > 0 && !selSlocs.includes(sloc)) return false;
+                if (selTrucks.length > 0 && !selTrucks.includes(trk)) return false;
+
+                return true;
+            });
+
+            // UI Updates
+            Swal.close();
+            const emptyState = document.getElementById('pivot-empty-state');
+            const summaryCont = document.getElementById('pivot-summary-container');
+            const tableCont = document.getElementById('pivot-table-container');
+
+            if (filtered.length === 0) {
+                emptyState.style.display = 'block';
+                summaryCont.style.display = 'none';
+                tableCont.style.display = 'none';
+                Swal.fire('Info', 'Tidak ditemukan data untuk kriteria tersebut.', 'info');
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            summaryCont.style.display = 'block';
+            tableCont.style.display = 'block';
+            
+            animateCounter('pivot-result-count', filtered.length);
+            document.getElementById('pivot-result-count').textContent = `${filtered.length} Data Ditemukan`;
+
+            renderPivotSummary(filtered);
+            renderPivotTable(filtered);
+        }
+
+        function renderPivotSummary(rows) {
+            const slocMap = {}, gudangMap = {};
+            let grandTotal = 0;
+            let inapCount = 0;
+            let tidakInapCount = 0;
+
+            rows.forEach(r => {
+                const s = String(r.LOKASI || 'LAIN-LAIN').trim().toUpperCase();
+                const g = String(r.GUDANG || r.LOKASI || 'RM').trim().toUpperCase();
+                const v = Number(r.REAL_BONGKAR_MT || r.REAL_BONGKAR_KG || 0);
+
+                slocMap[s] = (slocMap[s] || 0) + v;
+                gudangMap[g] = (gudangMap[g] || 0) + v;
+                grandTotal += v;
+
+                const inapData = computeInapForRow(r);
+                if (inapData.isInap) {
+                    inapCount++;
+                } else {
+                    tidakInapCount++;
+                }
+            });
+
+            const buildContent = (title, icon, map, color) => {
+                let h = `<h4><i class="${icon}" style="color:${color};"></i> ${title}</h4>`;
+                Object.entries(map).sort((a,b) => b[1] - a[1]).forEach(([k, v]) => {
+                    h += `<div class="pivot-summary-item"><span class="pivot-summary-label">${k}</span><span class="pivot-summary-val">${v.toLocaleString('id-ID')} KG</span></div>`;
+                });
+                h += `<div class="pivot-summary-ftr"><span>TOTAL</span><span>${grandTotal.toLocaleString('id-ID')} KG</span></div>`;
+                return h;
+            };
+
+            document.getElementById('summary-sloc-body').innerHTML = buildContent('RINGKASAN PER LOKASI', 'fas fa-warehouse', slocMap, '#0284c7');
+            document.getElementById('summary-gudang-body').innerHTML = buildContent('RINGKASAN PER GUDANG', 'fas fa-box', gudangMap, '#f59e0b');
+
+            // --- Custom Inap Summary ---
+            const totalTrucks = inapCount + tidakInapCount;
+            const inapPct = totalTrucks > 0 ? ((inapCount / totalTrucks) * 100).toFixed(1) : 0;
+            const tidakInapPct = totalTrucks > 0 ? ((tidakInapCount / totalTrucks) * 100).toFixed(1) : 0;
+
+            let inaph = `<h4><i class="fas fa-moon" style="color:#ef4444;"></i> STATUS INAP</h4>`;
+            
+            inaph += `<div class="pivot-summary-item" style="border-left: 4px solid #10b981; padding-left:10px;"><span class="pivot-summary-label">TIDAK INAP (< 24 JAM)</span><span class="pivot-summary-val" style="color:#10b981;">${tidakInapCount} <span style="font-size:0.7rem; color:var(--text-secondary);">(${tidakInapPct}%)</span></span></div>`;
+            inaph += `<div class="pivot-summary-item" style="border-left: 4px solid #ef4444; padding-left:10px;"><span class="pivot-summary-label">TRUCK INAP (> 24 JAM)</span><span class="pivot-summary-val" style="color:#ef4444;">${inapCount} <span style="font-size:0.7rem; color:var(--text-secondary);">(${inapPct}%)</span></span></div>`;
+            inaph += `<div class="pivot-summary-ftr"><span>TOTAL TRUCK</span><span>${totalTrucks.toLocaleString('id-ID')}</span></div>`;
+
+            document.getElementById('summary-inap-body').innerHTML = inaph;
+        }
+
+        function renderPivotTable(rows) {
+            const tbody = document.getElementById('pivot-tbody');
+            let html = '';
+            
+            rows.slice(0, 1000).forEach((r, idx) => {
+                const netto = Number(r.REAL_BONGKAR_MT || r.REAL_BONGKAR_KG || 0);
+                const inapData = computeInapForRow(r);
+                
+                let durText = '-';
+                if (inapData.valid) {
+                    const totalMins = inapData.duration || 0;
+                    const h = Math.floor(totalMins / 60);
+                    const m = Math.floor(totalMins % 60);
+                    durText = h > 0 ? `${h}j ${m}m` : `${m}m`;
+                }
+
+                const rowClass = inapData.isInap ? 'inap-row-v2' : 'active-row-glow';
+
+                html += `
+                <tr class="fade-in-item ${rowClass}" style="animation-delay:${idx < 20 ? idx * 0.02 : 0}s; ${inapData.isInap ? 'background:rgba(239,68,68,0.05);' : ''}">
+                    <td style="text-align:center; font-weight:700; color:#94a3b8; font-size:0.6rem;">${idx + 1}</td>
+                    <td class="text-left-pivot">
+                        <div style="font-weight:700; color:var(--text-primary); line-height:1.2; font-size:0.75rem;">${r.NOPOL || '-'}</div>
+                        <div style="font-size:0.58rem; color:var(--accent-primary); font-weight:600; text-transform:uppercase;">${r.JENIS_RM || '-'}</div>
+                    </td>
+                    <td style="font-weight:700; color:#475569; text-align:center;">${r.LOKASI || '-'}</td>
+                    <td class="date-col" style="text-align:center;">${r.TANGGAL || '-'}</td>
+                    <td class="num-col" style="text-align:center;">${r.ARRIVAL_TIME || '-'}</td>
+                    <td class="num-col" style="text-align:center;">${r.QC_SAMPLING_1 || '-'}</td>
+                    <td class="date-col" style="text-align:center; color:var(--accent-primary);">${r.TANGGAL_PB || '-'}</td>
+                    <td class="num-col" style="text-align:center;">${r.SAMPAI_GUDANG || '-'}</td>
+                    <td class="num-col" style="text-align:center;">${r.START_BONGKAR || '-'}</td>
+                    <td class="num-col" style="text-align:center;">${r.HOLD_QC || '-'}</td>
+                    <td class="num-col" style="text-align:center;">${r.RESTART_QC || '-'}</td>
+                    <td class="num-col" style="text-align:center;">${r.FINISH_TIME || '-'}</td>
+                    <td class="num-col dur-text" style="text-align:right; padding-right:8px; ${inapData.isInap ? 'color:#ef4444;' : 'color:#64748b;'}">${durText}</td>
+                    <td style="text-align:right; font-family:'Rajdhani', sans-serif; font-weight:800; color:var(--accent-primary); font-size:0.95rem; padding-right:15px;">${netto.toLocaleString('id-ID')}</td>
+                </tr>`;
+            });
+
+            if (rows.length > 1000) {
+                html += `<tr><td colspan="13" style="text-align:center; padding:12px; color:var(--text-secondary); font-style:italic;">Menampilkan 1.000 data pertama dari total ${rows.length.toLocaleString()} data...</td></tr>`;
+            }
+
+            tbody.innerHTML = html;
+        }
 
         // ====================================================
         // === QTY BONGKAR vs TARGET & INAPAN (Canvas API) ===
@@ -4693,8 +5052,7 @@
                     durations: {},
                     total: null,
                     totalValid: false,
-                    breakdownJson: row.BREAKDOWN_DURASI || '{}',
-                    kg: Number(row.REAL_BONGKAR_MT || row.REAL_BONGKAR_KG || 0)
+                    breakdownJson: row.BREAKDOWN_DURASI || '{}'
                 };
                 let rowTotal = 0;
                 let hasAny   = false;
@@ -4837,13 +5195,8 @@
                 grandTotal += v;
 
                 const inapData = computeInapForRow(r);
-                if (inapData.valid) {
-                    const dur = inapData.duration;
-                    if (dur !== null && !isNaN(dur) && dur >= 0) {
-                        if (inapData.isInap) inapCount++;
-                        else tidakInapCount++;
-                    }
-                }
+                if (inapData.isInap) inapCount++;
+                else tidakInapCount++;
             });
 
             // Find max for bar calculations
@@ -5070,7 +5423,6 @@
                     if      (_dbSortCol === '__total')   { va = a.total;   vb = b.total; }
                     else if (_dbSortCol === '__nopol')   { va = a.nopol;   vb = b.nopol; }
                     else if (_dbSortCol === '__tanggal') { va = a.tanggal; vb = b.tanggal; }
-                    else if (_dbSortCol === '__kg')      { va = a.kg;      vb = b.kg; }
                     else { va = a.durations[_dbSortCol]; vb = b.durations[_dbSortCol]; }
 
                     if (typeof va === 'string' && typeof vb === 'string') {
@@ -5096,7 +5448,6 @@
                 theadHtml += `<th ${thClick(t.key)} class="${_dbSortCol===t.key?'sort-active':''}" style="min-width:90px;">${t.label} ${sortIcon(t.key)}</th>`;
             });
             theadHtml += `<th ${thClick('__total')} class="${_dbSortCol==='__total'?'sort-active':''}" style="min-width:80px;">Total ${sortIcon('__total')}</th>`;
-            theadHtml += `<th ${thClick('__kg')} class="${_dbSortCol==='__kg'?'sort-active':''}" style="min-width:90px;">KG/Netto ${sortIcon('__kg')}</th>`;
             theadHtml += '<th style="min-width:70px;">Status</th>';
             theadHtml += '</tr>';
             document.getElementById('db-thead').innerHTML = theadHtml;
@@ -5136,13 +5487,11 @@
                     }
                 });
                 tbodyHtml += `<td style="text-align:center; font-weight:800; color:var(--text-primary);">${formatDbMin(entry.total)}</td>`;
-                const dispKg = (entry.kg && entry.kg > 0) ? entry.kg.toLocaleString('id-ID') : '-';
-                tbodyHtml += `<td style="text-align:center; font-family:'Rajdhani', sans-serif; font-weight:700; color:var(--accent-primary);">${dispKg}</td>`;
                 tbodyHtml += `<td style="text-align:center;">${badge}</td>`;
                 tbodyHtml += '</tr>';
             });
 
-            const colSpan = 5 + selected.length;
+            const colSpan = 4 + selected.length;
             if (tableData.length === 0) {
                 tbodyHtml = `<tr><td colspan="${colSpan}" style="text-align:center; padding:40px; color:var(--text-secondary); font-style:italic;">Tidak ada data untuk filter ini</td></tr>`;
             } else if (tableData.length > 1000) {

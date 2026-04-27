@@ -1945,12 +1945,19 @@
             let data = [];
             
             let valid = true;
+            let ketKosong = false;
             rows.forEach(r => {
                 const ket = r.querySelector('.bd-keterangan').value.trim();
                 const w = parseInt(r.querySelector('.bd-waktu').value) || 0;
+                if (ket === '') ketKosong = true;
                 if (!ket || w <= 0) valid = false;
                 data.push({ keterangan: ket, waktu: w });
             });
+            
+            if (ketKosong) {
+                Swal.fire('Data Tidak Valid', 'Keterangan wajib diisi', 'warning');
+                return;
+            }
             
             if (!valid) {
                 Swal.fire('Data Tidak Valid', 'Semua baris keterangan dan menit harus diisi.', 'warning');

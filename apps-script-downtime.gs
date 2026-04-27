@@ -78,6 +78,44 @@ function doGet(e) {
   forceMuatHeaders();
   forceBongkarHeaders();
 
+  // ===== ACTION: proxyGPS - CORS Relay untuk Fleet Tracker =====
+  // Karena browser memblok direct fetch ke TrackSolid (CORS policy),
+  // request dirutekan via Apps Script yang tidak punya batasan CORS.
+  if (e && e.parameter.action === 'proxyGPS') {
+    try {
+      const targetUrl = e.parameter.url;
+      if (!targetUrl || !targetUrl.startsWith('http')) {
+        return ContentService.createTextOutput(JSON.stringify({ error: 'URL tidak valid atau kosong.' }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // Fetch ke URL GPS eksternal (TrackSolid dll)
+      const response = UrlFetchApp.fetch(targetUrl, {
+        muteHttpExceptions: true,
+        followRedirects: true,
+        headers: { 'Accept': 'application/json, text/plain, */*' }
+      });
+
+      const rawText = response.getContentText();
+      const statusCode = response.getResponseCode();
+
+      if (statusCode !== 200) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: 'GPS API returned HTTP ' + statusCode,
+          rawBody: rawText.substring(0, 500)
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // Kembalikan response mentah ke browser (biarkan frontend parsing)
+      return ContentService.createTextOutput(rawText).setMimeType(ContentService.MimeType.JSON);
+
+    } catch (err) {
+      return ContentService.createTextOutput(JSON.stringify({
+        error: 'proxyGPS error: ' + err.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // 0. Action: Master Data (v19.9 Deployment Intelligence)
   if (e && e.parameter.action === 'getData') {
     let sheet = ss.getSheetByName(SHEET_NAME);
