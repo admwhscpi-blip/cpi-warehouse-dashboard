@@ -551,6 +551,14 @@
                                 <label>Nopol Truck</label>
                                 <input type="text" class="input-glass" id="m_nopol" placeholder="B 1234 XX">
                             </div>
+                            <div class="form-group">
+                                <label>EKSPEDISI</label>
+                                <select class="input-glass" id="m_ekspedisi">
+                                    <option value="-" disabled selected>-- PILIH EKSPEDISI --</option>
+                                    <option value="SARIJAYA PUTRI">SARIJAYA PUTRI</option>
+                                    <option value="CELI">CELI</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Material Muat</label>
@@ -712,7 +720,7 @@
             document.getElementById('m_krani').value = currentUser.toUpperCase();
 
             const isArif = (currentUser === 'ARIF');
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbwBxIXah7j0pVPiEq8-GY4F8SJEX_BWFSZkyfE9046VMfs6jkN-vK42N17TeyaFDeRd/exec';
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbxCWSq09bRguZNT7VV3AFtKnoF67I3GJ7tXx3tTAyNeinmYSGgvUaGfRbgO7NhLknEw/exec';
 
             // 2. Krani Check: Selalu cek Master Attendance ARIF
             if (!isArif) {
@@ -916,6 +924,7 @@
                 kategori_risip: document.getElementById('m_kategori').value,
                 gudang: document.getElementById('m_gudang').value,
                 nopol: document.getElementById('m_nopol').value,
+                ekspedisi: document.getElementById('m_ekspedisi').value || '-',
                 material: document.getElementById('m_material').value === "OTHER" ? document.getElementById('m_mat_other').value : document.getElementById('m_material').value,
                 netto: document.getElementById('m_netto').value || "-",
                 jumlah_bag: document.getElementById('m_jumlah_bag').value,
@@ -955,7 +964,7 @@
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 detik timeout
 
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbxkcoursvhRgV0gI69btwJqMd8IGZk8VntOhpaqvd6_ggqd2wL0n3mHVJhsLhn4D5Pr/exec';
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbxCWSq09bRguZNT7VV3AFtKnoF67I3GJ7tXx3tTAyNeinmYSGgvUaGfRbgO7NhLknEw/exec';
             const payload = {
                 action: 'saveMuat',
                 ...fields

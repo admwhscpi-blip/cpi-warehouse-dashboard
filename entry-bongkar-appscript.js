@@ -353,7 +353,7 @@ function handleSaveMuat(data) {
       "Timestamp", "Tanggal", "Shift", "Kategori", "Nopol",
       "Material", "Netto (Kg)", "Jumlah Bag", "Tim Harian", "Jumlah Kuli",
       "Nama Krani", "Bongkar Stapel", "Start Muat", "Finish", "OTW Pabrik",
-      "Status Validasi", "Validator", "SYSTEM_VERSION", "Gudang Muat"
+      "Status Validasi", "Validator", "SYSTEM_VERSION", "Gudang Muat", "Ekspedisi"
     ];
     sheet.appendRow(headers);
     sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
@@ -378,7 +378,8 @@ function handleSaveMuat(data) {
     "",                         // P=15: Status Validasi
     "",                         // Q=16: Validator
     "v20.0.3 ABSOLUTE-SYNC",    // R=17: SYSTEM_VERSION
-    data.gudang || 'RM'          // S=18: Gudang Muat (Default RM)
+    data.gudang || 'RM',         // S=18: Gudang Muat (Default RM)
+    data.ekspedisi || '-'       // T=19: Ekspedisi
   ]);
 
   return ContentService.createTextOutput(JSON.stringify({ success: true, message: "Data Muatan Berhasil Tersimpan" }))
@@ -609,6 +610,7 @@ function handleGetAnalyticsV2() {
                               ? mH.findIndex(h => h === "FINISH") : 13; // N=13
         const mOtwPabrik    = mH.findIndex(h => h.includes("OTW PABRIK") || h.includes("OTW_PABRIK")) >= 0
                               ? mH.findIndex(h => h.includes("OTW PABRIK") || h.includes("OTW_PABRIK")) : 14; // O=14
+        const mEkspedisi    = mH.indexOf("EKSPEDISI") >= 0 ? mH.indexOf("EKSPEDISI") : 19; // T=19
 
         for (let i = 1; i < mData.length; i++) {
           let rawTgl = mData[i][mTanggal];
@@ -647,6 +649,7 @@ function handleGetAnalyticsV2() {
             START_MUAT:     fmtTime(mData[i][mStartMuat]),
             FINISH:         fmtTime(mData[i][mFinish]),
             OTW_PABRIK:     fmtTime(mData[i][mOtwPabrik]),
+            EKSPEDISI:      String(mData[i][mEkspedisi] || "-"),
             DURASI_BONGKAR: null, PB_START: null, TUNGGU_QC: null
           });
         }
