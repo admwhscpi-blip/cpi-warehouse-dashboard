@@ -1709,6 +1709,22 @@
                 </div>
             </div>
 
+            <!-- Breakdown Durasi Harian -->
+            <div style="margin-top:24px; background:#fff; border-radius:16px; padding:20px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.05); border:1px solid #e2e8f0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                    <div style="font-size:0.8rem; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">⏱ Breakdown Durasi Harian per Gudang</div>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <span style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:#64748b;"><span style="width:10px;height:10px;border-radius:2px;background:#ede9fe;display:inline-block;"></span>0–24%</span>
+                        <span style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:#64748b;"><span style="width:10px;height:10px;border-radius:2px;background:#c4b5fd;display:inline-block;"></span>25–49%</span>
+                        <span style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:#64748b;"><span style="width:10px;height:10px;border-radius:2px;background:#8b5cf6;display:inline-block;"></span>50–74%</span>
+                        <span style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:#64748b;"><span style="width:10px;height:10px;border-radius:2px;background:#6d28d9;display:inline-block;"></span>75%+</span>
+                    </div>
+                </div>
+                <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+                    <table id="heatmap-breakdown-table" style="width:100%; border-collapse:collapse; font-size:0.75rem;"></table>
+                </div>
+            </div>
+
             <!-- ★ 3. LEADTIME TABLE ★ -->
             <div class="leadtime-section">
                 <div class="card-header-new" style="margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--border-color);">
@@ -3021,7 +3037,108 @@
             </div>`;
 
             container.innerHTML = html;
+            renderBreakdownTable(matrix, selectedMonth);
         }
+
+        function renderBreakdownTable(matrix, selectedMonth) {
+            const table = document.getElementById('heatmap-breakdown-table');
+            if (!table) return;
+            
+            const rows = getBongkarRows();
+            const filtered = filterBySelectedMonth(rows);
+            const breakdown = {};
+            
+            filtered.forEach(r => {
+                const tanggal = String(r.TANGGAL || '').substring(0, 10);
+                const gudang = String(r.LOKASI || r.GUDANG || 'LAIN').trim().toUpperCase();
+                const key = `${tanggal}|${gudang}`;
+                
+                if (!breakdown[key]) {
+                    breakdown[key] = { tanggal, gudang, hours: new Set() };
+                }
+                
+                const startTime = String(r.START_BONGKAR || '').trim();
+                const finishTime = String(r.FINISH_TIME || '').trim();
+                
+                if (startTime && finishTime) {
+                    const [sh, sm] = startTime.split(':').map(Number);
+                    const [fh, fm] = finishTime.split(':').map(Number);
+                    const startHour = sh;
+                    let endHour = fh;
+                    
+                    if (isNaN(startHour) || isNaN(endHour)) return; 
+                    if (endHour < startHour) endHour += 24;
+                    
+                    for (let h = startHour; h <= endHour; h++) {
+                        breakdown[key].hours.add(h % 24);
+                    }
+                }
+            });
+            
+            // Group by tanggal
+            const byDate = {};
+            Object.keys(breakdown).forEach(key => {
+                const data = breakdown[key];
+                if (!byDate[data.tanggal]) byDate[data.tanggal] = {};
+                byDate[data.tanggal][data.gudang] = data.hours.size;
+            });
+            
+            // Get all unique gudang
+            const allGudang = [...new Set(Object.values(byDate).flatMap(d => Object.keys(d)))].sort();
+            
+            // Helper: format tanggal ke "Senin, 08 Apr 2026"
+            const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+            const BULAN_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+            function formatTanggal(tglStr) {
+                const d = new Date(tglStr + 'T00:00:00');
+                if (isNaN(d.getTime())) return tglStr.substring(5);
+                return `${HARI[d.getDay()]}, ${String(d.getDate()).padStart(2,'0')} ${BULAN_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+            }
+
+            // Helper: color scale — 0=gray, low=teal, mid=amber, high=red (kontras jelas)
+            function getCellStyle(pct) {
+                const p = parseInt(pct);
+                if (p === 0)  return { bg:'#f1f5f9', text:'#94a3b8', label:'#cbd5e1' };
+                if (p < 25)   return { bg:'#ccfbf1', text:'#0f766e', label:'#14b8a6' };
+                if (p < 50)   return { bg:'#d1fae5', text:'#047857', label:'#10b981' };
+                if (p < 75)   return { bg:'#fef3c7', text:'#b45309', label:'#f59e0b' };
+                if (p < 90)   return { bg:'#ffedd5', text:'#c2410c', label:'#f97316' };
+                return               { bg:'#fee2e2', text:'#b91c1c', label:'#ef4444' };
+            }
+
+            // Build header
+            let html = `<tr style="background:#1e293b; color:#fff;">
+                <th style="padding:7px 12px; text-align:left; font-family:'Rajdhani',monospace; font-weight:700; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap; border-right:2px solid rgba(255,255,255,0.15); background:#1e293b;">TANGGAL</th>`;
+            allGudang.forEach(g => {
+                html += `<th style="padding:7px 8px; text-align:center; font-family:'Rajdhani',monospace; font-weight:700; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.3px; white-space:nowrap; background:#1e293b;">${g}</th>`;
+            });
+            html += `</tr>`;
+
+            // Build rows
+            Object.keys(byDate).sort().forEach((tanggal, idx) => {
+                const dateData = byDate[tanggal];
+                const zebra = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                html += `<tr style="border-bottom:1px solid #e2e8f0; background:${zebra};" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='${zebra}'">
+                    <td style="padding:5px 12px; font-family:'Rajdhani',monospace; font-weight:700; font-size:0.68rem; color:#374151; white-space:nowrap; border-right:2px solid #e2e8f0;">${formatTanggal(tanggal)}</td>`;
+                allGudang.forEach(g => {
+                    const jam = dateData[g] || 0;
+                    const off = 24 - jam;
+                    const pct = ((jam / 24) * 100).toFixed(0);
+                    const cs = getCellStyle(pct);
+                    html += `<td style="padding:4px 6px; text-align:center; font-family:'Rajdhani',monospace; background:${cs.bg}; border-right:1px solid #e2e8f0; white-space:nowrap;">
+                        <span style="font-weight:800; font-size:0.7rem; color:${cs.text};">${jam}h</span>
+                        <span style="font-size:0.6rem; color:${cs.label}; margin:0 2px;">|</span>
+                        <span style="font-size:0.6rem; color:${cs.label};">off ${off}h</span>
+                        <span style="font-size:0.6rem; color:${cs.label}; margin:0 2px;">|</span>
+                        <span style="font-weight:700; font-size:0.65rem; color:${cs.text};">${pct}%</span>
+                    </td>`;
+                });
+                html += `</tr>`;
+            });
+
+            table.innerHTML = html;
+        }
+
 
         // =====================================
         // === 7. MONTH FILTER RENDERING ===
