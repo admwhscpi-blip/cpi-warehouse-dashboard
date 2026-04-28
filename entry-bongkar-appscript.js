@@ -595,11 +595,20 @@ function handleGetAnalyticsV2() {
       if (mSheet2 && mSheet2.getLastRow() > 1) {
         const mData = mSheet2.getDataRange().getValues();
         const mH = mData[0].map(h => String(h).toUpperCase());
-        const mTanggal = mH.indexOf("TANGGAL") >= 0 ? mH.indexOf("TANGGAL") : 1;
-        const mNetto = mH.findIndex(h => h.includes("NETTO"));
-        const mKat = mH.indexOf("KATEGORI") >= 0 ? mH.indexOf("KATEGORI") : 3;
-        const mMaterial = mH.indexOf("MATERIAL") >= 0 ? mH.indexOf("MATERIAL") : 5;
-        const mGudang = mH.indexOf("GUDANG MUAT") >= 0 ? mH.indexOf("GUDANG MUAT") : 18; // S=18
+        const mTanggal      = mH.indexOf("TANGGAL")      >= 0 ? mH.indexOf("TANGGAL")      : 1;
+        const mNetto        = mH.findIndex(h => h.includes("NETTO"));
+        const mKat          = mH.indexOf("KATEGORI")     >= 0 ? mH.indexOf("KATEGORI")     : 3;
+        const mMaterial     = mH.indexOf("MATERIAL")     >= 0 ? mH.indexOf("MATERIAL")     : 5;
+        const mGudang       = mH.indexOf("GUDANG MUAT")  >= 0 ? mH.indexOf("GUDANG MUAT")  : 18; // S=18
+        const mNopol        = mH.indexOf("NOPOL")        >= 0 ? mH.indexOf("NOPOL")        : 4;  // E=4
+        const mBongkarStapel= mH.findIndex(h => h.includes("BONGKAR STAPEL") || h.includes("BONGKAR_STAPEL")) >= 0
+                              ? mH.findIndex(h => h.includes("BONGKAR STAPEL") || h.includes("BONGKAR_STAPEL")) : 11; // L=11
+        const mStartMuat    = mH.findIndex(h => h.includes("START MUAT") || h.includes("START_MUAT")) >= 0
+                              ? mH.findIndex(h => h.includes("START MUAT") || h.includes("START_MUAT")) : 12; // M=12
+        const mFinish       = mH.findIndex(h => h === "FINISH") >= 0
+                              ? mH.findIndex(h => h === "FINISH") : 13; // N=13
+        const mOtwPabrik    = mH.findIndex(h => h.includes("OTW PABRIK") || h.includes("OTW_PABRIK")) >= 0
+                              ? mH.findIndex(h => h.includes("OTW PABRIK") || h.includes("OTW_PABRIK")) : 14; // O=14
 
         for (let i = 1; i < mData.length; i++) {
           let rawTgl = mData[i][mTanggal];
@@ -625,11 +634,19 @@ function handleGetAnalyticsV2() {
           };
           dailyMap[tgl].muat += netto;
 
-          // MUAT template entries
+          // MUAT template entries — with timing fields for Duration Breakdown
           templateRows.push({
-            TANGGAL: tgl, JENIS_RM: String(mData[i][mMaterial] || ""), KEGIATAN: "MUAT",
+            TANGGAL:        tgl,
+            JENIS_RM:       String(mData[i][mMaterial] || ""),
+            KEGIATAN:       "MUAT",
             REAL_BONGKAR_MT: netto,
-            LOKASI: String(mData[i][mGudang >= 0 ? mGudang : 18] || "RM"),
+            REAL_BONGKAR_KG: netto,
+            NOPOL:          String(mData[i][mNopol] || ""),
+            LOKASI:         String(mData[i][mGudang >= 0 ? mGudang : 18] || "RM"),
+            BONGKAR_STAPEL: fmtTime(mData[i][mBongkarStapel]),
+            START_MUAT:     fmtTime(mData[i][mStartMuat]),
+            FINISH:         fmtTime(mData[i][mFinish]),
+            OTW_PABRIK:     fmtTime(mData[i][mOtwPabrik]),
             DURASI_BONGKAR: null, PB_START: null, TUNGGU_QC: null
           });
         }
