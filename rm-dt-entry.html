@@ -2301,7 +2301,49 @@
             // Jika ada modal terbuka atau sisa waktu belum pas, batalkan submit
             if (document.getElementById('breakdown-modal').style.display === 'flex') {
                 Swal.fire('Breakdown Belum Selesai', 'Anda harus menyelesaikan input breakdown durasi.', 'warning');
-                return;
+                return false;
+            }
+
+            // Pengecekan Validasi Breakdown Terakhir
+            let isBreakdownValid = true;
+            
+            const checkSeqBreakdown = (seq, boxContext) => {
+                for (let i = 0; i < seq.length - 1; i++) {
+                    const item1 = seq[i];
+                    const item2 = seq[i+1];
+                    if (item1.el && item1.el.value && item2.el && item2.el.value) {
+                        let ms1 = resolveSeqItemMs(item1, boxContext);
+                        let ms2 = resolveSeqItemMs(item2, boxContext);
+                        if (ms1 !== null && ms2 !== null) {
+                            let diffMin = (ms2 - ms1) / 60000;
+                            let tolerance = (item1.name === 'AB QC Time' && item2.name === 'PB Sampai Gudang') ? 180 : 60;
+                            if (diffMin > tolerance) {
+                                let bdKey = generateBreakdownKey(item1, item2, boxContext);
+                                let currentSum = sumBreakdown(durationBreakdowns[bdKey]);
+                                if (currentSum !== Math.round(diffMin)) {
+                                    isBreakdownValid = false;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            if (tipe === "Bareng") {
+                const container = document.getElementById('truck-forms-container');
+                if (container) {
+                    const boxes = container.querySelectorAll('.truck-box');
+                    for (let b of boxes) {
+                        checkSeqBreakdown(getChronologicalSequence(tipe, b), b);
+                    }
+                }
+            } else {
+                checkSeqBreakdown(getChronologicalSequence(tipe, null), null);
+            }
+
+            if (!isBreakdownValid) {
+                Swal.fire('Data Tidak Valid', 'Maaf, Detail Breakdown Durasi wajib diisi sebelum data dapat disimpan.', 'warning');
+                return false;
             }
 
             const trucks = [];
