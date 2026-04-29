@@ -1,673 +1,2359 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMART WAREHOUSE V2.0 - BKK Stock</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;700&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="css/rm_stock_v2.css">
-    <link rel="stylesheet" href="homepage-style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aplikasi Bulk Storage BKK</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        // ==========================================
+        // CONFIGURATIONS
+        // ==========================================
+        const CONFIG = {
+            APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwI0h8J_9467WoewjTNLa-Tig_7h5e0X4RZQwVOZLVdRsKSzM8acnRZNg3mMGIxJXBc/exec', // ← user isi ini setelah deploy
+            SPREADSHEET_ID: '1BsbFWFpI6FXQjN5Pgz18xIkalpB8S2BZc67l6PZUDGc',
+            APP_VERSION: '1.0',
+            KOORDINATOR_PASSWORD: 'KOORDINATOR',
+            CACHE_TTL_MINUTES: 5,
+            DEFAULT_TIMEZONE: 'Asia/Jakarta'
+        };
 
+        // ==========================================
+        // USER AUTHENTICATION & ROLES
+        // ==========================================
+        const USERS_DATABASE = {
+            'Antu': { password: '1891', role: 'bongkar' },      // Dashboard + Entry Bongkar
+            'Khotim': { password: '1891', role: 'bongkar' },    // Dashboard + Entry Bongkar
+            'Yadi': { password: '1891', role: 'bongkar' },      // Dashboard + Entry Bongkar
+            'Asep': { password: '1891', role: 'kirim' },        // Dashboard + Entry Kirim
+            'Udin': { password: '1891', role: 'kirim' },        // Dashboard + Entry Kirim
+            'Ajis': { password: '1891', role: 'kirim' }         // Dashboard + Entry Kirim
+        };
+
+        const ROLE_PERMISSIONS = {
+            'bongkar': ['page-dashboard', 'page-bongkar', 'page-history'],
+            'kirim': ['page-dashboard', 'page-kirim', 'page-history']
+        };
+    </script>
     <style>
+        :root {
+            --bg-base: #f1f5f9;
+            --bg-panel: #ffffff;
+            --bg-card: #ffffff;
+            --sidebar-bg: #0f172a;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent: #0284c7;
+            --accent-hover: #0369a1;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --border: #e2e8f0;
+            --font-heading: 'Orbitron', sans-serif;
+            --font-subheading: 'Rajdhani', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 15px rgba(0,0,0,0.03);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.05);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-body);
+        }
+
         body {
-            background-color: #050505;
-            color: #fff;
-            overflow-x: hidden;
-        }
-
-        .navbar {
-            border-bottom: 1px solid rgba(16, 185, 129, 0.1);
-            position: sticky;
-            top: 0;
-            background: rgba(5, 5, 5, 0.95);
-            z-index: 1000;
-        }
-
-        .bkk-container {
-            padding: 40px 60px;
-        }
-
-        .bkk-panel {
-            background: rgba(10, 10, 10, 0.8);
-            border: 1px solid rgba(16, 185, 129, 0.1);
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 40px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(10px);
-        }
-
-        .panel-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 30px;
-            border-bottom: 1px solid rgba(16, 185, 129, 0.1);
-            padding-bottom: 15px;
-        }
-
-        .panel-title {
-            font-family: 'Orbitron';
-            font-size: 1.4rem;
-            color: #10b981;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
-        }
-
-        /* Warehouse Grid - RM Style */
-        .warehouse-farm-layout {
-            display: flex;
-            gap: 30px;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 20px 0;
-            min-height: 350px;
-        }
-
-        .warehouse-unit {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            position: relative;
         }
 
-        .warehouse-visual {
-            position: relative;
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 50%, rgba(16, 185, 129, 0.02) 100%);
-            border: 2px solid rgba(16, 185, 129, 0.3);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow:
-                0 0 20px rgba(0, 0, 0, 0.5),
-                inset 0 0 15px rgba(16, 185, 129, 0.05);
-            backdrop-filter: blur(2px);
+        /* Layout */
+        .app-container {
             display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            /* Width and height set dynamically via JS */
-            height: 220px;
-            /* Grid pattern */
-            background-image:
-                linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-
-        .warehouse-fill {
-            width: 100%;
-            background: linear-gradient(180deg, #10b981 0%, #064e3b 100%);
-            box-shadow: 0 -2px 10px rgba(16, 185, 129, 0.5);
-            position: relative;
-            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .warehouse-fill::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.5);
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-        }
-
-        .warehouse-shine {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg,
-                    rgba(255, 255, 255, 0) 0%,
-                    rgba(255, 255, 255, 0.03) 20%,
-                    rgba(255, 255, 255, 0.1) 40%,
-                    rgba(255, 255, 255, 0.03) 60%,
-                    rgba(255, 255, 255, 0) 100%);
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        .warehouse-info-card {
-            margin-top: 20px;
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            border-radius: 8px;
-            /* Width set dynamically */
-            padding: 12px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            position: relative;
+            flex: 1;
+            height: 100vh;
             overflow: hidden;
         }
 
-        .warehouse-info-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #10b981, transparent);
+        /* Navigation */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: none;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+            z-index: 100;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.05);
         }
 
-        .warehouse-name-label {
-            font-family: 'Orbitron';
+        .brand {
+            padding: 30px 20px 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .brand h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.25rem;
             color: #fff;
-            font-size: 0.85rem;
-            font-weight: 700;
-            margin-bottom: 5px;
             letter-spacing: 1px;
-            border-bottom: 1px solid rgba(16, 185, 129, 0.2);
-            padding-bottom: 5px;
+            line-height: 1.2;
+            margin: 0;
         }
 
-        .warehouse-big-percent {
-            font-family: 'Orbitron';
-            font-size: 1.4rem;
-            color: #10b981;
-            font-weight: 900;
-            margin-bottom: 5px;
-            text-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
-        }
-
-        .warehouse-data-row {
-            font-family: 'Rajdhani';
-            font-size: 0.75rem;
-            color: #94a3b8;
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 2px;
-        }
-
-        .remark-badge {
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-            border: 1px solid #10b981;
+        .brand-version {
             font-size: 0.6rem;
+            color: #fff;
+            background: var(--accent);
             padding: 2px 6px;
             border-radius: 4px;
-            text-transform: uppercase;
-            margin-top: 5px;
-            display: inline-block;
+            margin-left: 5px;
+        }
+
+        /* Clock Widget */
+        .mini-clock-wrapper { margin-top: 20px; transform: scale(0.8); transform-origin: left top; width: 125%; margin-bottom: -15px; }
+        .clock-container { display: flex; align-items: center; gap: 15px; padding: 8px 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 40px; font-family: 'Orbitron', sans-serif; color: #fff; min-width: 320px; height: 60px; }
+        .clock-date-group { display: flex; flex-direction: column; align-items: flex-end; min-width: 120px; line-height: 1.1; }
+        .clock-day { font-size: 0.65rem; color: var(--accent); letter-spacing: 2px; }
+        .clock-date { font-size: 1.2rem; font-weight: 800; white-space: nowrap; }
+        .clock-visual { position: relative; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        .clock-circle { position: absolute; inset: 0; border: 2px solid rgba(255,255,255,0.1); border-radius: 50%; }
+        .clock-progress { position: absolute; inset: 0; border: 2px solid transparent; border-top: 2px solid var(--accent); border-radius: 50%; transition: transform 1s linear; }
+        .clock-time-group { display: flex; flex-direction: column; align-items: center; z-index: 5; }
+        .clock-ampm { font-size: 0.4rem; font-weight: 800; color: var(--accent); }
+        .clock-time { font-size: 1.2rem; font-weight: 800; line-height: 1; }
+
+        .nav-links {
+            list-style: none;
+            padding: 25px 12px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            position: relative;
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid transparent;
+            color: #94a3b8;
+            font-family: 'Rajdhani', sans-serif;
             font-weight: 700;
-        }
-
-        /* Table Styles */
-        .bkk-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .bkk-table th {
-            text-align: left;
-            padding: 15px 20px;
-            color: #64748b;
-            font-family: 'Orbitron';
-            font-size: 0.75rem;
+            font-size: 0.95rem;
             text-transform: uppercase;
-            border-bottom: 1px solid rgba(16, 185, 129, 0.1);
-        }
-
-        .bkk-table td {
-            padding: 20px;
-            font-family: 'Rajdhani';
-            font-weight: 600;
-            font-size: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            color: #cbd5e1;
-        }
-
-        .percent-bar-bg {
-            width: 100px;
-            height: 6px;
-            background: #1a1a1a;
-            border-radius: 3px;
-        }
-
-        .percent-bar-fill {
-            height: 100%;
-            background: #10b981;
-            border-radius: 3px;
-        }
-
-        /* FOCUS OVERLAY STYLES */
-        .focus-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(15px);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            display: flex;
             align-items: center;
+            gap: 12px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        /* Electric Card Effect */
+        .nav-item::before {
+            content: ''; position: absolute; inset: -1px;
+            background: conic-gradient(from 0deg, transparent, var(--accent), transparent, var(--accent), transparent);
+            border-radius: 12px; z-index: -1; opacity: 0;
+            animation: rotating 4s linear infinite;
+        }
+        .nav-item::after {
+            content: ''; position: absolute; inset: 1px;
+            background: #0f172a; border-radius: 11px; z-index: -1;
+            transition: background 0.3s;
+        }
+
+        .nav-item:hover { color: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .nav-item:hover::before, .nav-item.active::before { opacity: 1; }
+        .nav-item.active { 
+            color: #fff; font-weight: 800;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 15px rgba(2, 132, 199, 0.3);
+            transform: scale(1.03) translateX(5px);
+        }
+        .nav-item.active::after { background: #1e293b; }
+
+        @keyframes rotating { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
             flex-direction: column;
-            animation: fadeIn 0.4s ease;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header {
+            height: 70px;
+            background-color: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .page-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 950;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin: 0;
+            color: #fff;
+            background: linear-gradient(to top, #0284c7 0%, #38bdf8 50%, #ffffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: url(#fire-distort);
+            position: relative;
+            display: inline-block;
+            text-shadow: 
+                0px -1px 1px #fff,
+                0px -2px 3px #38bdf8,
+                0px -5px 6px #0ea5e9,
+                0px -10px 15px #0284c7;
+            animation: fire-shadow-move 1.5s infinite alternate ease-in-out;
+            z-index: 1;
+        }
+
+        @keyframes fire-shadow-move {
+            0% { text-shadow: 0px -1px 1px #fff, 0px -2px 3px #38bdf8, 0px -5px 6px #0ea5e9, 0px -10px 15px #0284c7; transform: translateY(0) scale(1.0); }
+            50% { text-shadow: 0px -1px 2px #fff, 0px -3px 5px #7dd3fc, 0px -8px 12px #0284c7, 0px -18px 25px #0369a1; transform: translateY(-1px) scale(1.01); }
+            100% { text-shadow: 0px -1px 1px #fff, 0px -2px 4px #bae6fd, 0px -6px 10px #0ea5e9, 0px -12px 20px #075985; transform: translateY(0) scale(1.0); }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .header-user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            padding: 8px 18px;
+            border-radius: 30px;
+            color: var(--accent);
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .header-username {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: none;
+            color: var(--danger);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 10px;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-logout:hover {
+            opacity: 1;
+            transform: translateX(-3px);
+        }
+
+        .btn-refresh {
+            background: var(--bg-base);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+
+        .btn-refresh:hover {
+            background: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Pages */
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .page.active {
+            display: block;
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .focus-content {
+        /* Tanks Layout */
+        .tanks-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .tank-card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 25px;
+        }
+
+        .tank-title {
+            font-family: var(--font-heading);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .tank-visual {
+            width: 70px;
+            height: 160px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            position: relative;
+            background-color: #f8fafc;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .tank-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s;
+        }
+
+        .tank-overlay-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            text-shadow: 0 0 10px rgba(255,255,255,0.8);
+            font-family: var(--font-subheading);
+        }
+
+        .tank-info {
+            width: 100%;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .tank-info p {
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tank-info .highlight {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .status-ok { background: rgba(46, 213, 115, 0.2); color: var(--success); }
+        .status-warning { background: rgba(255, 165, 2, 0.2); color: var(--warning); }
+        .status-danger { background: rgba(255, 71, 87, 0.2); color: var(--danger); }
+
+        /* Tables & Cards */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            background-color: var(--bg-panel);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            min-width: 800px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            font-family: var(--font-subheading);
+            color: var(--text-secondary);
+            background-color: #f8fafc;
+            font-weight: 700;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        .card-list {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .data-card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .data-card-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .data-card-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .data-card-value {
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* Forms */
+        .form-container {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 650px;
+            margin: 0 auto;
+            box-shadow: var(--shadow-md);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            background-color: #f8fafc;
+            border: 2px solid #e2e8f0;
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 1rem;
+            min-height: 48px;
+            outline: none;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent) 0%, #0369a1 100%);
+            color: #ffffff;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-family: var(--font-subheading);
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            min-height: 48px;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            box-shadow: 0 10px 20px -5px rgba(2, 132, 199, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -5px rgba(2, 132, 199, 0.5);
+        }
+
+        .btn:disabled {
+            background-color: var(--text-secondary);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-heading);
+            white-space: nowrap;
+            min-height: 44px;
+        }
+
+        .tab-btn.active {
+            background-color: rgba(0, 229, 204, 0.1);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Modal / Password Prompt */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
             width: 90%;
-            max-width: 500px;
-            animation: slideUp 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .modal-title {
+            font-family: var(--font-heading);
+            color: var(--accent);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .warning-box {
+            background: rgba(255, 165, 2, 0.1);
+            border-left: 4px solid var(--warning);
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: #334155;
+            color: #ffffff;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            font-weight: 600;
+            animation: slideIn 0.3s ease forwards;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-body);
+        }
+
+        .toast.error { background-color: var(--danger) !important; color: #ffffff !important; }
+        .toast.success { background-color: var(--success) !important; color: #ffffff !important; }
+        .toast.warning { background-color: var(--warning) !important; color: #ffffff !important; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Loader */
+        .loader-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 10, 15, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 229, 204, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Filters */
+        .filters-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            width: auto;
+            min-width: 150px;
+        }
+
+        /* Responsive Breakpoints */
+        
+        /* Tablet (768px - 1023px) */
+        @media (max-width: 1023px) {
+            .tanks-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .sidebar {
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: -250px;
+            }
+            .sidebar.open {
+                left: 0;
+            }
+            .mobile-menu-btn {
+                display: block;
+            }
+            .sidebar-overlay {
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 99;
+                display: none;
+            }
+            .sidebar-overlay.active {
+                display: block;
+            }
+        }
+
+        /* Mobile (<= 767px) */
+        @media (max-width: 767px) {
+            .tanks-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .table-responsive {
+                display: none; /* Hide table on mobile */
+            }
+            
+            .card-list {
+                display: flex; /* Show cards instead */
+            }
+
+            /* Bottom Nav for Mobile */
+            .sidebar {
+                display: none;
+            }
+            
+            .mobile-bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: var(--bg-panel);
+                border-top: 1px solid var(--border);
+                z-index: 100;
+                padding: 5px 0;
+                justify-content: space-around;
+            }
+
+            .bottom-nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+                color: var(--text-secondary);
+                padding: 5px;
+                font-size: 0.7rem;
+                cursor: pointer;
+            }
+
+            .bottom-nav-item.active {
+                color: var(--accent);
+            }
+
+            .bottom-nav-icon {
+                font-size: 1.2rem;
+            }
+
+            .main-content {
+                padding-bottom: 60px; /* Space for bottom nav */
+            }
+
+            .header {
+                padding: 0 10px;
+            }
+            
+            .mobile-menu-btn {
+                display: none; /* Hide hamburger if using bottom nav */
+            }
+        }
+
+        @media (min-width: 768px) {
+            .mobile-bottom-nav {
+                display: none;
+            }
+        }
+
+        /* ==========================================
+           CLOCK WIDGET STYLING (dari DT V2)
+           ========================================== */
+
+        .mini-clock-wrapper {
+            margin-top: 20px;
+            transform: scale(0.8);
+            transform-origin: left top;
+            width: 125%;
+            margin-bottom: -15px;
+            padding: 0 10px;
+        }
+
+        .clock-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 8px 15px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 40px;
+            font-family: var(--font-heading);
+            color: #fff;
+            min-width: 280px;
+            height: 60px;
+        }
+
+        .clock-visual {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 100px;
+        }
+
+        .clock-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.2);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clock-progress {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            border-right-color: transparent;
+            border-bottom-color: transparent;
+            animation: clockSpin 60s linear infinite;
+        }
+
+        @keyframes clockSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .clock-time-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 60px;
+            line-height: 1;
+        }
+
+        .clock-ampm {
+            font-size: 0.65rem;
+            color: var(--accent);
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .clock-time {
+            font-size: 1.1rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .clock-date-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 120px;
+            line-height: 1.1;
+            flex: 1;
+        }
+
+        .clock-day {
+            font-size: 0.65rem;
+            color: var(--accent);
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+
+        .clock-date {
+            font-size: 1.1rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        /* Login Page - Full Screen */
+        #page-login {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #f1f5f9;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1000;
+            overflow: auto;
+        }
+
+        #page-login.active {
+            display: flex;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 420px;
+            animation: slideUp 0.5s ease-out;
         }
 
         @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(50px);
+                transform: translateY(30px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
 
-        /* REFINING VISUALS IN FOCUS */
-        .focus-content .warehouse-visual {
-            width: 100% !important;
-            height: 350px !important;
-            background-size: 30px 30px;
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
         }
 
-        .focus-content .warehouse-info-card {
-            width: 100% !important;
-            padding: 25px !important;
+        .login-header h1 {
+            font-family: var(--font-heading);
+            font-size: 2.2rem;
+            color: var(--accent);
+            margin: 0 0 8px 0;
+            letter-spacing: 2px;
+            font-weight: 700;
         }
 
-        .focus-content .warehouse-name-label {
-            font-size: 1.5rem !important;
-            margin-bottom: 15px !important;
+        .login-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin: 0;
         }
 
-        .focus-content .warehouse-big-percent {
-            font-size: 3.5rem !important;
-            margin-bottom: 20px !important;
+        .login-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
         }
 
-        .focus-content .warehouse-data-row {
-            font-size: 1.1rem !important;
-            margin-bottom: 10px !important;
-        }
-
-        .focus-content .usage-btn-large {
-            margin-top: 20px;
-            padding: 10px 30px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid #10b981;
-            color: #10b981;
-            font-family: 'Orbitron';
+        .login-form-group label {
+            font-weight: 700;
+            color: var(--text-primary);
             font-size: 0.9rem;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .login-form-group input {
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: var(--font-body);
+            transition: all 0.3s;
+            background: var(--bg-base);
+        }
+
+        .login-form-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+        }
+
+        #loginForm button {
+            padding: 12px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+            width: 100%;
         }
 
-        .close-hint {
-            position: absolute;
-            bottom: 40px;
-            color: #64748b;
-            font-family: 'Orbitron';
-            font-size: 0.8rem;
-            letter-spacing: 2px;
-            opacity: 0.6;
-            animation: breathe 2s infinite;
+        #loginForm button:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(2, 132, 199, 0.3);
         }
 
-        @keyframes breathe {
+        #loginForm button:active {
+            transform: translateY(0);
+        }
 
-            0%,
-            100% {
-                opacity: 0.3;
-            }
+        #loginError {
+            display: none;
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-align: center;
+            border-left: 4px solid #c33;
+            margin-bottom: 15px;
+            animation: shake 0.5s ease-in-out;
+        }
 
-            50% {
-                opacity: 0.8;
-            }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
         }
     </style>
 </head>
+<body>
 
-<body style="background-color: #050505; color: #fff;">
-
-    <!-- LOADING OVERLAY -->
-    <div id="loading-overlay" class="loading-overlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text-main">WAIT JURAGAN...</div>
-        <div class="loading-text-sub">SEDANG AMBIL DATA DARI SHEETS<br>(PASTIKAN JARINGAN LANCAR)</div>
-    </div>
-    <!-- NAVBAR -->
-    <nav class="navbar">
-        <a href="homepage-v1.html" class="logo-link">
-            <div class="logo-text">
-                <span class="brand-smart">SMART WAREHOUSE</span>
-                <span class="brand-v2">V2.0</span>
+    <div class="app-container">
+        <!-- Sidebar for Desktop/Tablet -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <h1>SMART WAREHOUSE <span class="brand-version">BKK</span></h1>
             </div>
-        </a>
-
-        <div class="nav-links">
-            <!-- MENU DIKOSONGKAN -->
-        </div>
-
-        <div class="nav-actions">
-            <!-- TOMBOL DIHAPUS -->
-        </div>
-    </nav>
-
-    <div class="bkk-container">
-        <!-- WAREHOUSE FARM VISUALS -->
-        <div class="bkk-panel">
-            <div class="panel-header">
-                <div>
-                    <div class="panel-title">BKK STORAGE LAYOUT</div>
+            
+            <!-- Clock Widget -->
+            <div class="mini-clock-wrapper">
+                <div class="clock-container">
+                    <div class="clock-date-group">
+                        <div class="clock-day" id="clockDay">MONDAY</div>
+                        <div class="clock-date" id="clockDate">APRIL 29</div>
+                    </div>
+                    <div class="clock-visual">
+                        <div class="clock-circle"></div>
+                        <div class="clock-progress" id="clockProgress"></div>
+                        <div class="clock-time-group">
+                            <div class="clock-ampm" id="clockAMPM">AM</div>
+                            <div class="clock-time" id="clockTime">12:00</div>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <ul class="nav-links">
+                <li class="nav-item active" data-target="page-dashboard">
+                    <span>📊</span> Dashboard
+                </li>
+                <li class="nav-item" data-target="page-bongkar">
+                    <span>📥</span> Entry Bongkaran
+                </li>
+                <li class="nav-item" data-target="page-kirim">
+                    <span>📤</span> Entry Kirim Prod
+                </li>
+                <li class="nav-item" data-target="page-opname">
+                    <span>🔒</span> Stock Opname
+                </li>
+                <li class="nav-item" data-target="page-history">
+                    <span>📝</span> Riwayat Transaksi
+                </li>
+            </ul>
+        </aside>
 
-            <div class="warehouse-farm-layout" id="warehouse-visual-grid">
-                <!-- Filled by JS -->
-            </div>
-        </div>
-
-        <!-- WAREHOUSE DATA TABLE -->
-        <div class="bkk-panel">
-            <div class="panel-header">
-                <div>
-                    <div class="panel-title" style="font-size:1.2rem; color:#fff;">Physical Inventory Data</div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+                <h1 class="page-title" id="headerTitle">DASHBOARD</h1>
+                <div class="header-actions">
+                    <button id="btnRefresh" class="btn-refresh" title="Refresh">🔄</button>
+                    
+                    <div class="header-user-info">
+                        <div class="header-username">
+                            <i class="fa-solid fa-circle-user"></i> <span id="headerUsername">-</span>
+                        </div>
+                        <button id="btnLogout" class="btn-logout">
+                            <i class="fa-solid fa-right-from-bracket"></i> LOGOUT
+                        </button>
+                    </div>
                 </div>
+            </header>
+
+            <div class="content-area" id="contentArea">
+                
+                <!-- Loader -->
+                <div class="loader-overlay" id="globalLoader" style="display: none;">
+                    <div class="spinner"></div>
+                    <div id="loaderText">Memuat Data...</div>
+                </div>
+
+                <!-- PAGE: DASHBOARD -->
+                <section class="page" id="page-dashboard">
+                    <div class="tanks-grid" id="tanksContainer">
+                        <!-- Tanks will be rendered here -->
+                    </div>
+
+                    <h3 style="font-family: var(--font-heading); margin-bottom: 15px; color: var(--accent);">PHYSICAL INVENTORY DATA</h3>
+                    
+                    <!-- Desktop Table -->
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>WAREHOUSE</th>
+                                    <th>MATERIAL</th>
+                                    <th>SUPPLIER</th>
+                                    <th>STOCK (KG)</th>
+                                    <th>CAPACITY (KG)</th>
+                                    <th>FILL %</th>
+                                    <th>AGE (DAYS)</th>
+                                    <th>DOH</th>
+                                    <th>USAGE/DAY</th>
+                                    <th>REMARK</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventoryTableBody">
+                                <!-- Data -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mobile Cards -->
+                    <div class="card-list" id="inventoryCardList">
+                        <!-- Data -->
+                    </div>
+                </section>
+
+                <!-- PAGE: ENTRY BONGKARAN -->
+                <section class="page" id="page-bongkar">
+                    <div class="form-container">
+                        <h2 style="margin-bottom: 25px; font-family: var(--font-subheading); font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 1px;">ENTRY BONGKARAN MATERIAL</h2>
+                        <form id="formBongkar">
+                            <div class="form-group">
+                                <label class="form-label">Tanggal</label>
+                                <input type="date" class="form-control" id="b_tanggal" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">BK Tujuan</label>
+                                <select class="form-control" id="b_bk" required>
+                                    <option value="">-- Pilih BK --</option>
+                                    <option value="BK1">BK1</option>
+                                    <option value="BK2">BK2</option>
+                                    <option value="BK3">BK3</option>
+                                    <option value="BK4">BK4</option>
+                                    <option value="BK5">BK5</option>
+                                    <option value="BK6">BK6</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Material</label>
+                                <select class="form-control" id="b_material" required>
+                                    <option value="">-- Pilih Material --</option>
+                                    <option value="SBM (BK Kedelai) US HiPro (I) 201100">SBM (BK Kedelai) US HiPro (I) 201100</option>
+                                    <option value="SBM (BK Kedelai) Brasil HiPro. (I) 201102">SBM (BK Kedelai) Brasil HiPro. (I) 201102</option>
+                                    <option value="SBM (BK Kedelai) Brasil LoPro. (I) 201103">SBM (BK Kedelai) Brasil LoPro. (I) 201103</option>
+                                    <option value="SBM (BK Kedelai) Argentina HiPro (I) 201104">SBM (BK Kedelai) Argentina HiPro (I) 201104</option>
+                                    <option value="SBM (BK Kedelai) India (I) 201106">SBM (BK Kedelai) India (I) 201106</option>
+                                    <option value="SBM (BK Kedelai) Paraguay HiPro. (I) 201112">SBM (BK Kedelai) Paraguay HiPro. (I) 201112</option>
+                                    <option value="SBM (BK Kedelai) US HiPro (L/I) 201300">SBM (BK Kedelai) US HiPro (L/I) 201300</option>
+                                    <option value="SBM (BK Kedelai) Brasil HiPro. (L/I) 201302">SBM (BK Kedelai) Brasil HiPro. (L/I) 201302</option>
+                                    <option value="SBM (BK Kedelai) Argentina HiPro (L/I) 201304">SBM (BK Kedelai) Argentina HiPro (L/I) 201304</option>
+                                    <option value="Palm Karnel Meal (L) 412200">Palm Karnel Meal (L) 412200</option>
+                                    <option value="Palm Kernel Meal %Fat 9.1 Above (L) 412204">Palm Kernel Meal %Fat 9.1 Above (L) 412204</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Netto (KG)</label>
+                                <input type="number" class="form-control" id="b_netto" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Operator</label>
+                                <input type="text" class="form-control" id="b_operator" readonly required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Shift</label>
+                                <select class="form-control" id="b_shift" required>
+                                    <option value="">-- Pilih Shift --</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn">Simpan Bongkaran</button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- PAGE: ENTRY KIRIM -->
+                <section class="page" id="page-kirim">
+                    <div class="form-container">
+                        <h2 style="margin-bottom: 20px; font-family: var(--font-heading); color: var(--accent);">ENTRY KIRIM KE PRODUKSI</h2>
+                        <form id="formKirim">
+                            <div class="form-group">
+                                <label class="form-label">Tanggal</label>
+                                <input type="date" class="form-control" id="k_tanggal" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">BK Asal</label>
+                                <select class="form-control" id="k_bk" required>
+                                    <option value="">-- Pilih BK --</option>
+                                </select>
+                                <small id="k_stok_info" style="color: var(--text-secondary); display: block; margin-top: 5px;"></small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Material</label>
+                                <input type="text" class="form-control" id="k_material" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Netto (KG)</label>
+                                <input type="number" class="form-control" id="k_netto" min="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Shift</label>
+                                <select id="k_shift" class="form-control" required>
+                                    <option value="">-- Pilih Shift --</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Grinding / Intake</label>
+                                <select id="k_grinding" class="form-control" required>
+                                    <option value="">-- Pilih Intake --</option>
+                                    <option value="Intake 11">Intake 11</option>
+                                    <option value="Intake 12">Intake 12</option>
+                                    <option value="Intake 16">Intake 16</option>
+                                    <option value="Intake 17">Intake 17</option>
+                                    <option value="HM22">HM22</option>
+                                    <option value="HM26">HM26</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Operator</label>
+                                <input type="text" id="k_operator" class="form-control" placeholder="Nama operator" readonly required>
+                            </div>
+                            <button type="submit" class="btn">SIMPAN PENGIRIMAN</button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- PAGE: OPNAME -->
+                <section class="page" id="page-opname">
+                    <div class="form-container" id="opnameFormContainer" style="display: none;">
+                        <h2 style="margin-bottom: 20px; font-family: var(--font-heading); color: var(--accent);">STOCK OPNAME</h2>
+                        
+                        <div class="warning-box">
+                            <strong>⚠️ PERHATIAN</strong><br>
+                            Dengan menyimpan stock opname ini, sistem akan menggunakan nilai fisik sebagai titik acuan stok baru. Semua transaksi sebelum tanggal ini tidak akan dihitung lagi untuk saldo.
+                        </div>
+
+                        <form id="formOpname">
+                            <div class="form-group">
+                                <label class="form-label">Tanggal Opname</label>
+                                <input type="date" class="form-control" id="o_tanggal" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">BK yang diopname</label>
+                                <select class="form-control" id="o_bk" required>
+                                    <option value="">-- Pilih BK --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Material Saat Opname</label>
+                                <input type="text" class="form-control" id="o_material" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Stok Fisik (KG)</label>
+                                <input type="number" class="form-control" id="o_stok" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Input By (Koordinator)</label>
+                                <input type="text" class="form-control" id="o_inputby" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Keterangan</label>
+                                <textarea class="form-control" id="o_ket" required></textarea>
+                            </div>
+                            <button type="button" class="btn" id="btnTriggerOpname">SIMPAN OPNAME</button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- PAGE: HISTORY -->
+                <section class="page" id="page-history">
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="tab-hist-bongkar">Bongkar</button>
+                        <button class="tab-btn" data-tab="tab-hist-kirim">Kirim</button>
+                        <button class="tab-btn" data-tab="tab-hist-opname">Opname</button>
+                    </div>
+
+                    <div class="filters-container">
+                        <select class="form-control filter-select" id="hist_filter_bk">
+                            <option value="">Semua BK</option>
+                        </select>
+                        <button class="btn btn-cancel" id="btnLoadHistory" style="width: auto;">Terapkan Filter</button>
+                    </div>
+
+                    <!-- History Bongkar -->
+                    <div class="tab-content active" id="tab-hist-bongkar">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead><tr><th>Tanggal</th><th>No.ID</th><th>BK</th><th>Material</th><th>Supplier</th><th>Netto (KG)</th><th>No.Pol</th><th>Input By</th></tr></thead>
+                                <tbody id="tbHistBongkar"></tbody>
+                            </table>
+                        </div>
+                        <div class="card-list" id="clHistBongkar"></div>
+                    </div>
+
+                    <!-- History Kirim -->
+                    <div class="tab-content" id="tab-hist-kirim">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead><tr><th>Tanggal</th><th>No.ID</th><th>BK</th><th>Material</th><th>Netto (KG)</th><th>Shift</th><th>Grinding</th><th>Operator</th><th>Input By</th></tr></thead>
+                                <tbody id="tbHistKirim"></tbody>
+                            </table>
+                        </div>
+                        <div class="card-list" id="clHistKirim"></div>
+                    </div>
+
+                    <!-- History Opname -->
+                    <div class="tab-content" id="tab-hist-opname">
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead><tr><th>Tanggal</th><th>No.ID</th><th>BK</th><th>Material</th><th>Stok Fisik (KG)</th><th>Input By</th><th>Ket</th></tr></thead>
+                                <tbody id="tbHistOpname"></tbody>
+                            </table>
+                        </div>
+                        <div class="card-list" id="clHistOpname"></div>
+                    </div>
+                </section>
+
             </div>
-            <table class="bkk-table">
-                <thead>
-                    <tr>
-                        <th>Warehouse</th>
-                        <th>Material</th>
-                        <th>Supplier</th>
-                        <th>Stock (kg)</th>
-                        <th>Capacity (kg)</th>
-                        <th>Fill %</th>
-                        <th>Age (Days)</th>
-                        <th>DoH</th>
-                        <th>Usage/Day</th>
-                        <th>Remark</th>
-                    </tr>
-                </thead>
-                <tbody id="warehouse-table-body"></tbody>
-            </table>
+        </main>
+        
+        <!-- Bottom Nav for Mobile -->
+        <nav class="mobile-bottom-nav">
+            <div class="bottom-nav-item active" data-target="page-dashboard">
+                <span class="bottom-nav-icon">📊</span>
+                <span>Dash</span>
+            </div>
+            <div class="bottom-nav-item" data-target="page-bongkar">
+                <span class="bottom-nav-icon">📥</span>
+                <span>In</span>
+            </div>
+            <div class="bottom-nav-item" data-target="page-kirim">
+                <span class="bottom-nav-icon">📤</span>
+                <span>Out</span>
+            </div>
+            <div class="bottom-nav-item" data-target="page-opname">
+                <span class="bottom-nav-icon">🔒</span>
+                <span>Opname</span>
+            </div>
+            <div class="bottom-nav-item" data-target="page-history">
+                <span class="bottom-nav-icon">📝</span>
+                <span>Hist</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Password Modal -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal-box">
+            <h3 class="modal-title">Akses Terlindungi</h3>
+            <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-secondary);">Masukkan password Koordinator untuk mengakses halaman Stock Opname.</p>
+            <input type="password" class="form-control" id="opnamePasswordInput" placeholder="Password...">
+            <div class="btn-group">
+                <button class="btn btn-cancel" id="btnCancelPassword">Batal</button>
+                <button class="btn" id="btnSubmitPassword">Akses</button>
+            </div>
         </div>
     </div>
 
-    <!-- FOCUS OVERLAY -->
-    <div id="focus-overlay" class="focus-overlay">
-        <div id="focus-content" class="focus-content"></div>
-        <div class="close-hint">PRESS [ESC] TO RETURN TO MONITORING</div>
+    <!-- Confirm Opname Modal -->
+    <div class="modal-overlay" id="confirmOpnameModal">
+        <div class="modal-box">
+            <h3 class="modal-title">Konfirmasi Opname</h3>
+            <div class="warning-box" id="confirmOpnameText">
+                <!-- Text injected via JS -->
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-cancel" id="btnCancelConfirmOpname">Batal</button>
+                <button class="btn" id="btnSubmitConfirmOpname" style="background: var(--danger);">Ya, Simpan Opname</button>
+            </div>
+        </div>
     </div>
 
-    <script src="js/app-config.js"></script>
-    <!-- SCRIPT -->
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- PAGE: LOGIN -->
+    <section class="page" id="page-login">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>SMART WAREHOUSE</h1>
+                <p>Authentication Required for BKK Dashboard</p>
+            </div>
+            
+            <form id="loginForm">
+                <div id="loginError"></div>
+                
+                <div class="login-form-group">
+                    <label>👤 USERNAME</label>
+                    <input 
+                        type="text" 
+                        id="loginUsername" 
+                        placeholder="Masukkan nama user..."
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+                
+                <div class="login-form-group">
+                    <label>🔐 PIN CODE</label>
+                    <input 
+                        type="password" 
+                        id="loginPassword" 
+                        placeholder="Masukkan PIN..."
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+                
+                <button type="submit">AUTHORIZE ACCESS</button>
+            </form>
+        </div>
+    </section>
+
     <script>
-        // BKK API URL (Google Apps Script Web App)
-        const BKK_API_URL = CONFIG.BKK_API_URL;
-
-        // Fallback dummy data for testing
-        const dummyData = {
-            warehouses: ["BULK A", "BULK B", "BULK C", "FLAT 1", "FLAT 2", "FLAT 3"],
-            capacities: [500000, 500000, 600000, 1000000, 1000000, 800000],
-            materials: [
-                { name: "PK", supplier: "PT. ABC", warehouse: "BULK A", stock: 450000, capacity: 500000, percentage: 90, age: 12, remark: "FAST MOVE", usageDaily: 86000, doh: 5.2 },
-                { name: "PK", supplier: "PT. XYZ", warehouse: "BULK B", stock: 120000, capacity: 500000, percentage: 24, age: 4, remark: "INCOMING", usageDaily: 86000, doh: 1.4 },
-                { name: "PKS", supplier: "PT. DEF", warehouse: "BULK C", stock: 380000, capacity: 600000, percentage: 63, age: 15, remark: "STABLE", usageDaily: 78000, doh: 4.8 },
-                { name: "PK", supplier: "EXTERNAL", warehouse: "FLAT 1", stock: 850000, capacity: 1000000, percentage: 85, age: 22, remark: "HIGH STOCK", usageDaily: 86000, doh: 9.8 },
-                { name: "PKS", supplier: "PT. GHI", warehouse: "FLAT 2", stock: 720000, capacity: 1000000, percentage: 72, age: 18, remark: "NORMAL", usageDaily: 78000, doh: 9.2 },
-                { name: "PK", supplier: "PT. JKL", warehouse: "FLAT 3", stock: 560000, capacity: 800000, percentage: 70, age: 10, remark: "ACTIVE", usageDaily: 86000, doh: 6.5 }
-            ]
+        // ==========================================
+        // STATE & CACHING
+        // ==========================================
+        let appState = {
+            bkList: [],
+            dashboardData: null,
+            historyData: { bongkar: [], kirim: [], opname: [] },
+            currentUser: null,      // ← TAMBAH INI
+            currentRole: null       // ← TAMBAH INI
         };
 
-        async function fetchBKKData() {
-            if (!BKK_API_URL) {
-                console.warn("BKK_API_URL not set, using dummy data");
-                return dummyData;
-            }
+        const CACHE_KEY = 'bkk_dashboard_cache';
 
-            return new Promise((resolve) => {
-                const cb = 'bkk_dash_' + Math.round(Math.random() * 100000);
-                window[cb] = (data) => {
-                    delete window[cb];
-                    const scriptTag = document.getElementById(cb);
-                    if (scriptTag) document.body.removeChild(scriptTag);
+        function getCachedData(key) {
+            const cached = localStorage.getItem(key);
+            if (!cached) return null;
+            try {
+                const { data, timestamp } = JSON.parse(cached);
+                if (Date.now() - timestamp > (CONFIG.CACHE_TTL_MINUTES * 60 * 1000)) return null;
+                return data;
+            } catch(e) { return null; }
+        }
 
-                    // DATA ADAPTATION FOR BKK-DASHBOARD
-                    let materials = data.materials || [];
+        function setCacheData(key, data) {
+            localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
+        }
 
-                    if (materials.length === 0 && data.silos) {
-                        materials = data.silos.map(s => ({
-                            warehouse: s.id,
-                            name: s.material || 'EMPTY',
-                            supplier: s.vessel || s.supplier || '-',
-                            stock: s.stock || 0,
-                            capacity: s.capacity || (s.stock / (s.percentage || 1)) || 3000000,
-                            percentage: (s.percentage || 0) * (s.percentage < 1 ? 100 : 1),
-                            age: s.age || 0,
-                            doh: s.doh || 0,
-                            usageDaily: s.usage || 0,
-                            remark: s.status || 'OK'
-                        }));
+        function invalidateCache() {
+            localStorage.removeItem(CACHE_KEY + '_getBKKDashboard');
+            localStorage.removeItem(CACHE_KEY + '_getBKList');
+        }
+
+        // ==========================================
+        // UTILS
+        // ==========================================
+        function showLoader(text = 'Memuat Data...') {
+            document.getElementById('loaderText').textContent = text;
+            document.getElementById('globalLoader').style.display = 'flex';
+        }
+
+        function hideLoader() {
+            document.getElementById('globalLoader').style.display = 'none';
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease reverse forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('id-ID').format(num);
+        }
+
+        function getTodayDate() {
+            const d = new Date();
+            let month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+            return [year, month, day].join('-');
+        }
+
+        function parseDateString(dateStr) {
+            if(!dateStr) return "-";
+            const d = new Date(dateStr);
+            if(isNaN(d.getTime())) return String(dateStr).substring(0, 10);
+            return d.toLocaleDateString('id-ID');
+        }
+
+        // ==========================================
+        // API CALLS
+        // ==========================================
+        // GET via JSONP — bypass CORS untuk file:/// 
+        function fetchAPI(action, params = {}) {
+            return new Promise((resolve, reject) => {
+                if (CONFIG.APPS_SCRIPT_URL.includes('GANTI_DENGAN_URL')) {
+                    reject(new Error("URL Apps Script belum dikonfigurasi."));
+                    return;
+                }
+                const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+                const url = new URL(CONFIG.APPS_SCRIPT_URL);
+                url.searchParams.append('action', action);
+                url.searchParams.append('callback', cbName);
+                for (const key in params) {
+                    url.searchParams.append(key, params[key]);
+                }
+
+                const timeout = setTimeout(() => {
+                    delete window[cbName];
+                    reject(new Error('Request timeout (60s). Silakan coba lagi.'));
+                }, 60000);
+
+                window[cbName] = function(result) {
+                    clearTimeout(timeout);
+                    delete window[cbName];
+                    script.remove();
+                    if (result && result.status === 'success') {
+                        resolve(result.data);
+                    } else {
+                        reject(new Error((result && result.message) || 'API Error'));
                     }
-                    data.materials = materials;
-                    resolve(data);
                 };
 
-                const tag = document.createElement('script');
-                tag.id = cb;
-                const sep = BKK_API_URL.includes('?') ? '&' : '?';
-                tag.src = `${BKK_API_URL}${sep}callback=${cb}&t=${Date.now()}`;
-                tag.onerror = () => {
-                    console.error("JSONP Fetch Failed for BKK-Dashboard");
-                    resolve(dummyData);
+                const script = document.createElement('script');
+                script.src = url.toString();
+                script.onerror = () => {
+                    clearTimeout(timeout);
+                    delete window[cbName];
+                    reject(new Error('Gagal memuat script. Cek URL Apps Script.'));
                 };
-                document.body.appendChild(tag);
+                document.head.appendChild(script);
             });
+        }
+
+        // POST via no-cors — Apps Script terima lewat postData
+        async function postAPI(action, data) {
+            const payload = { action, ...data };
+            // Kirim sebagai GET dengan semua parameter di URL supaya bypass CORS file:///
+            return new Promise((resolve, reject) => {
+                const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+                const url = new URL(CONFIG.APPS_SCRIPT_URL);
+                url.searchParams.append('action', action);
+                url.searchParams.append('callback', cbName);
+                for (const key in data) {
+                    url.searchParams.append(key, data[key]);
+                }
+
+                const timeout = setTimeout(() => {
+                    delete window[cbName];
+                    reject(new Error('Request timeout (60s). Silakan coba lagi.'));
+                }, 60000);
+
+                window[cbName] = function(result) {
+                    clearTimeout(timeout);
+                    delete window[cbName];
+                    script.remove();
+                    if (result && result.status === 'success') {
+                        resolve(result.data);
+                    } else {
+                        reject(new Error((result && result.message) || 'Gagal menyimpan data'));
+                    }
+                };
+
+                const script = document.createElement('script');
+                script.src = url.toString();
+                script.onerror = () => {
+                    clearTimeout(timeout);
+                    delete window[cbName];
+                    reject(new Error('Gagal menghubungi server.'));
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        // ==========================================
+        // UI RENDERING
+        // ==========================================
+        function getStatusColorClass(fillPercentage) {
+            if (fillPercentage <= 30) return { fill: 'var(--danger)', bg: 'status-danger', text: 'LOW' };
+            if (fillPercentage <= 70) return { fill: 'var(--warning)', bg: 'status-warning', text: 'NORMAL' };
+            return { fill: 'var(--accent)', bg: 'status-ok', text: 'GOOD' };
         }
 
         function renderDashboard(data) {
-            // 1. Calculate width scaling based on capacity
-            const maxCapacity = Math.max(...data.materials.map(m => m.capacity || 0));
-            const minWidth = 120;
-            const maxWidth = 240;
-
-            // 2. Render Visual Grid
-            const visualGrid = document.getElementById('warehouse-visual-grid');
-            visualGrid.innerHTML = '';
-
-            data.materials.forEach((item) => {
-                // Calculate percentage from stock/capacity if not provided
-                let pct = item.percentage || 0;
-                if (item.stock && item.capacity && item.capacity > 0) {
-                    pct = (item.stock / item.capacity) * 100;
-                }
-                pct = Math.min(100, Math.max(0, pct));
-
-                // Calculate dynamic width based on capacity ratio
-                const widthRatio = (item.capacity || 0) / maxCapacity;
-                const dynamicWidth = minWidth + (widthRatio * (maxWidth - minWidth));
-
-                const card = document.createElement('div');
-                card.className = 'warehouse-unit';
-                card.innerHTML = `
-                    <div class="warehouse-visual" style="width: ${dynamicWidth}px;">
-                        <div class="warehouse-shine"></div>
-                        <div class="warehouse-fill" style="height:${pct}%"></div>
-                    </div>
-                    
-                    <div class="warehouse-info-card" style="width: ${dynamicWidth}px;">
-                        <div class="warehouse-name-label">${item.warehouse || item.name}</div>
-                        <div class="warehouse-big-percent">${pct.toFixed(1)}%</div>
-                        
-                        <div class="warehouse-data-row" style="font-size: 0.7rem; color: #10b981;">
-                            <span>${item.name || 'N/A'}</span>
-                        </div>
-                        <div class="warehouse-data-row" style="font-size: 0.65rem; color: #64748b; margin-bottom: 4px;">
-                            <span>${item.supplier || '-'}</span>
-                        </div>
-                        
-                        <div class="warehouse-data-row">
-                            <span>S: ${((item.stock || 0) / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} T</span>
-                            <span>C: ${((item.capacity || 0) / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} T</span>
-                        </div>
-                        <div class="warehouse-data-row" style="justify-content:center; margin-top:5px;">
-                            Age: ${item.age || 0} Days
-                        </div>
-                        
-                        ${item.remark && item.remark !== 'IDLE' && item.remark !== '' ? `<div class="remark-badge">${item.remark}</div>` : ''}
-                    </div>
-                `;
-                visualGrid.appendChild(card);
-            });
-
-            // 3. Render Table
-            const tbody = document.getElementById('warehouse-table-body');
+            const tanksContainer = document.getElementById('tanksContainer');
+            const tbody = document.getElementById('inventoryTableBody');
+            const cardList = document.getElementById('inventoryCardList');
+            
+            tanksContainer.innerHTML = '';
             tbody.innerHTML = '';
+            cardList.innerHTML = '';
 
-            data.materials.forEach(item => {
-                // Calculate actual percentage from stock/capacity
-                let pct = item.percentage || 0;
-                if (item.stock && item.capacity && item.capacity > 0) {
-                    pct = (item.stock / item.capacity) * 100;
-                }
-                pct = Math.min(100, Math.max(0, pct));
+            data.forEach(bk => {
+                const fillPct = bk.KAPASITAS_KG > 0 ? (bk.STOK_AKTIF / bk.KAPASITAS_KG) * 100 : 0;
+                const fillFormatted = Math.min(fillPct, 100).toFixed(1);
+                const status = getStatusColorClass(fillPct);
+                
+                const stockTon = (bk.STOK_AKTIF / 1000).toFixed(1);
+                const capTon = (bk.KAPASITAS_KG / 1000).toFixed(1);
 
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.warehouse}</td>
-                    <td style="color:#10b981; font-weight:700;">${item.name}</td>
-                    <td style="color:#64748b;">${item.supplier}</td>
-                    <td style="color:${item.stock === 0 ? '#ef4444' : '#4ade80'}">${item.stock?.toLocaleString()}</td>
-                    <td>${item.capacity?.toLocaleString()}</td>
-                    <td>
-                        <div class="percent-bar-bg">
-                            <div class="percent-bar-fill" style="width:${pct}%;"></div>
-                        </div>
-                    </td>
-                    <td>${item.age}</td>
-                    <td style="color:#10b981;">${item.doh}</td>
-                    <td>${item.usageDaily?.toLocaleString()}</td>
-                    <td style="color:${item.remark !== 'IDLE' ? '#10b981' : '#64748b'}">${item.remark}</td>
+                // Render Tank Card
+                const tankCard = document.createElement('div');
+                tankCard.className = 'tank-card';
+                tankCard.innerHTML = `
+                    <div class="tank-title">${bk.BK_ID}</div>
+                    <div class="tank-visual">
+                        <div class="tank-fill" style="height: ${fillFormatted}%; background-color: ${status.fill};"></div>
+                        <div class="tank-overlay-text">${fillFormatted}%</div>
+                    </div>
+                    <div class="tank-info">
+                        <p title="${bk.MATERIAL_DEFAULT}">${bk.MATERIAL_DEFAULT || '-'}</p>
+                        <p title="${bk.SUPPLIER_DEFAULT}" style="color: var(--text-secondary);">${bk.SUPPLIER_DEFAULT || '-'}</p>
+                        <p>S: <span class="highlight">${formatNumber(stockTon)} T</span> &nbsp; C: ${formatNumber(capTon)} T</p>
+                        <p>Age: ${bk.AGE_DAYS} Days</p>
+                        <div class="status-badge ${status.bg}">${status.text}</div>
+                    </div>
                 `;
-                tbody.appendChild(row);
+                tanksContainer.appendChild(tankCard);
+
+                // Render Table Row
+                const usagePerDay = 0; // Default for Phase 1
+                const doh = usagePerDay > 0 ? (bk.STOK_AKTIF / usagePerDay).toFixed(1) : 0;
+                const remark = fillPct <= 30 ? "Need Restock" : "OK";
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${bk.BK_ID} - ${bk.NAMA_BK}</td>
+                    <td>${bk.MATERIAL_DEFAULT || '-'}</td>
+                    <td>${bk.SUPPLIER_DEFAULT || '-'}</td>
+                    <td style="font-weight:bold; color:var(--accent);">${formatNumber(bk.STOK_AKTIF)}</td>
+                    <td>${formatNumber(bk.KAPASITAS_KG)}</td>
+                    <td>${fillFormatted}%</td>
+                    <td>${bk.AGE_DAYS}</td>
+                    <td>${doh}</td>
+                    <td>${usagePerDay}</td>
+                    <td><span class="status-badge ${status.bg}">${remark}</span></td>
+                `;
+                tbody.appendChild(tr);
+
+                // Render Mobile Card
+                const card = document.createElement('div');
+                card.className = 'data-card';
+                card.innerHTML = `
+                    <div class="data-card-row"><span class="data-card-label">Warehouse</span><span class="data-card-value" style="color:var(--accent);">${bk.BK_ID} - ${bk.NAMA_BK}</span></div>
+                    <div class="data-card-row"><span class="data-card-label">Material</span><span class="data-card-value">${bk.MATERIAL_DEFAULT || '-'}</span></div>
+                    <div class="data-card-row"><span class="data-card-label">Stock</span><span class="data-card-value highlight">${formatNumber(bk.STOK_AKTIF)} KG</span></div>
+                    <div class="data-card-row"><span class="data-card-label">Fill %</span><span class="data-card-value">${fillFormatted}%</span></div>
+                    <div class="data-card-row"><span class="data-card-label">Age</span><span class="data-card-value">${bk.AGE_DAYS} Days</span></div>
+                `;
+                cardList.appendChild(card);
             });
         }
 
-        // Initialize
-        (async function () {
-            const data = await fetchBKKData();
-            renderDashboard(data);
-
-            // HANDLE FOCUS PARAMETER
-            const urlParams = new URLSearchParams(window.location.search);
-            const focusTarget = urlParams.get('focus');
-
-            if (focusTarget) {
-                const targetMaterial = data.materials.find(m => m.warehouse === focusTarget);
-                if (targetMaterial) {
-                    showFocusMode(targetMaterial);
-                }
+        function populateBKDropdowns() {
+            // CHECK: User sudah login?
+            if (!appState.currentUser) {
+                return;
             }
+            const b_bk = document.getElementById('b_bk');
+            const k_bk = document.getElementById('k_bk');
+            const o_bk = document.getElementById('o_bk');
+            const hist_bk = document.getElementById('hist_filter_bk');
 
-            // AUTO-REFRESH
-            if (BKK_API_URL) {
-                setInterval(async () => {
-                    const freshData = await fetchBKKData();
-                    renderDashboard(freshData);
-                }, 30000);
+            const optionsHTML = '<option value="">-- Pilih BK --</option>' + 
+                appState.bkList.map(bk => `<option value="${bk.BK_ID}">${bk.BK_ID} - ${bk.NAMA_BK}</option>`).join('');
+            
+            if (b_bk) b_bk.innerHTML = optionsHTML;
+            if (k_bk) k_bk.innerHTML = optionsHTML;
+            if (o_bk) o_bk.innerHTML = optionsHTML;
+            if (hist_bk) {
+                hist_bk.innerHTML = '<option value="">Semua BK</option>' + 
+                    appState.bkList.map(bk => `<option value="${bk.BK_ID}">${bk.BK_ID} - ${bk.NAMA_BK}</option>`).join('');
             }
-        })();
-
-        function showFocusMode(item) {
-            const overlay = document.getElementById('focus-overlay');
-            const content = document.getElementById('focus-content');
-
-            let pct = item.percentage || 0;
-            if (item.stock && item.capacity) pct = (item.stock / item.capacity) * 100;
-            pct = Math.min(100, Math.max(0, pct));
-
-            content.innerHTML = `
-                <div class="warehouse-visual">
-                    <div class="warehouse-shine"></div>
-                    <div class="warehouse-fill" style="height:${pct}%"></div>
-                </div>
-                <div class="warehouse-info-card">
-                    <div class="warehouse-name-label">${item.warehouse}</div>
-                    <div class="warehouse-big-percent">${pct.toFixed(1)}%</div>
-                    
-                    <div class="warehouse-data-row" style="color: #10b981; justify-content: center; font-weight: 700;">
-                        <span>${item.name}</span>
-                    </div>
-                    <div class="warehouse-data-row" style="color: #64748b; justify-content: center; font-size: 0.9rem; margin-bottom: 15px;">
-                        <span>${item.supplier || '-'}</span>
-                    </div>
-                    
-                    <div class="warehouse-data-row" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
-                        <span style="color: #64748b;">S: ${((item.stock || 0) / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} T</span>
-                        <span style="color: #64748b;">C: ${((item.capacity || 0) / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} T</span>
-                    </div>
-                    
-                    <div class="warehouse-data-row" style="justify-content: center; margin-top: 5px; color: #94a3b8;">
-                        Age: ${item.age || 0} Days
-                    </div>
-
-                    <button class="usage-btn-large">USAGE</button>
-                </div>
-            `;
-
-            overlay.style.display = 'flex';
         }
 
-        // Handle Escape Key
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                const urlParams = new URLSearchParams(window.location.search);
-                const fromPage = urlParams.get('from');
-                if (fromPage === 'outstanding') {
-                    window.location.href = 'outstanding.html';
-                } else {
-                    document.getElementById('focus-overlay').style.display = 'none';
-                }
-            }
-        });
-        // Initialize
-        window.onload = () => {
-            try {
-                // Dashboard already renders via direct script or other means, 
-                // but we ensure overlay hides.
-            } catch (err) {
-                console.error("Dashboard init error:", err);
-            } finally {
-                setTimeout(() => {
-                    const overlay = document.getElementById('loading-overlay');
-                    if (overlay) overlay.classList.add('hidden');
-                }, 1200);
-            }
-        };
-    </script>
-</body>
+        function renderHistoryTable(tabId, data) {
+            let tbId = '', clId = '';
+            let htmlTb = '', htmlCl = '';
 
+            if (tabId === 'tab-hist-bongkar') {
+                tbId = 'tbHistBongkar'; clId = 'clHistBongkar';
+                data.forEach(d => {
+                    htmlTb += `<tr><td>${parseDateString(d.TANGGAL)}</td><td>${d.ID}</td><td>${d.BK_ID}</td><td>${d.MATERIAL}</td><td>${d.SUPPLIER}</td><td>${formatNumber(d.NETTO_KG)}</td><td>${d.NO_POLISI}</td><td>${d.INPUT_BY}</td></tr>`;
+                    htmlCl += `<div class="data-card">
+                        <div class="data-card-row"><span class="data-card-label">${parseDateString(d.TANGGAL)}</span><span class="data-card-value">${d.BK_ID}</span></div>
+                        <div class="data-card-row"><span class="data-card-label">Material</span><span class="data-card-value">${d.MATERIAL}</span></div>
+                        <div class="data-card-row"><span class="data-card-label">Netto</span><span class="data-card-value highlight">${formatNumber(d.NETTO_KG)} KG</span></div>
+                    </div>`;
+                });
+            } else if (tabId === 'tab-hist-kirim') {
+                tbId = 'tbHistKirim'; clId = 'clHistKirim';
+                data.forEach(d => {
+                    htmlTb += `<tr><td>${parseDateString(d.TANGGAL)}</td><td>${d.ID}</td><td>${d.BK_ID}</td><td>${d.MATERIAL}</td><td>${formatNumber(d.NETTO_KG)}</td><td>${d.SHIFT || '-'}</td><td>${d.GRINDING || '-'}</td><td>${d.OPERATOR || '-'}</td><td>${d.INPUT_BY}</td></tr>`;
+                    htmlCl += `<div class="data-card">
+                        <div class="data-card-row"><span class="data-card-label">${parseDateString(d.TANGGAL)}</span><span class="data-card-value">${d.BK_ID}</span></div>
+                        <div class="data-card-row"><span class="data-card-label">Grinding</span><span class="data-card-value">${d.GRINDING || '-'}</span></div>
+                        <div class="data-card-row"><span class="data-card-label">Netto</span><span class="data-card-value" style="color:var(--danger);">${formatNumber(d.NETTO_KG)} KG</span></div>
+                    </div>`;
+                });
+            } else if (tabId === 'tab-hist-opname') {
+                tbId = 'tbHistOpname'; clId = 'clHistOpname';
+                data.forEach(d => {
+                    htmlTb += `<tr><td>${parseDateString(d.TANGGAL)}</td><td>${d.ID}</td><td>${d.BK_ID}</td><td>${d.MATERIAL}</td><td>${formatNumber(d.STOK_FISIK_KG)}</td><td>${d.INPUT_BY}</td><td>${d.KETERANGAN}</td></tr>`;
+                    htmlCl += `<div class="data-card">
+                        <div class="data-card-row"><span class="data-card-label">${parseDateString(d.TANGGAL)}</span><span class="data-card-value">${d.BK_ID}</span></div>
+                        <div class="data-card-row"><span class="data-card-label">Fisik</span><span class="data-card-value highlight">${formatNumber(d.STOK_FISIK_KG)} KG</span></div>
+                        <div class="data-card-row"><span class="data-card-label">PIC</span><span class="data-card-value">${d.INPUT_BY}</span></div>
+                    </div>`;
+                });
+            }
+
+            document.getElementById(tbId).innerHTML = htmlTb || '<tr><td colspan="8" style="text-align:center;">Tidak ada data</td></tr>';
+            document.getElementById(clId).innerHTML = htmlCl || '<div class="data-card" style="text-align:center;">Tidak ada data</div>';
+        }
+
+        // ==========================================
+        // DATA LOADING FLOW
+        // ==========================================
+        async function loadInitialData(forceRefresh = false) {
+            try {
+                showLoader('Memuat Dashboard...');
+                if (forceRefresh) invalidateCache();
+                const dashboardP = fetchAPI('getBKKDashboard', {}, !forceRefresh);
+                const bkListP = fetchAPI('getBKList', {}, !forceRefresh);
+                const [dashData, bkData] = await Promise.all([dashboardP, bkListP]);
+                appState.dashboardData = dashData;
+                appState.bkList = bkData;
+                renderDashboard(dashData);
+                populateBKDropdowns();
+                
+                // AUTO-FILL OPERATOR DENGAN CURRENT USER
+                fillOperatorFields();
+                
+                hideLoader();
+                // Update clock widget
+                updateClockWidget();
+            } catch (err) {
+                hideLoader();
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function loadHistoryData(tabId) {
+            try {
+                showLoader('Memuat Riwayat...');
+                const bkFilter = document.getElementById('hist_filter_bk').value;
+                const params = { limit: 50 };
+                if (bkFilter) params.bk_id = bkFilter;
+
+                let action = '';
+                if (tabId === 'tab-hist-bongkar') action = 'getBongkarHistory';
+                else if (tabId === 'tab-hist-kirim') action = 'getKirimHistory';
+                else if (tabId === 'tab-hist-opname') action = 'getOpnameHistory';
+
+                const data = await fetchAPI(action, params, false); // always fetch fresh for history to be safe
+                renderHistoryTable(tabId, data);
+                hideLoader();
+            } catch (err) {
+                hideLoader();
+                showToast(err.message, 'error');
+            }
+        }
+
+        // ==========================================
+        // CLOCK WIDGET UPDATE
+        // ==========================================
+        function updateClockWidget() {
+            const now = new Date();
+            
+            // Format time
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+            
+            // Format date
+            const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+            const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+            
+            const dayName = days[now.getDay()];
+            const monthName = months[now.getMonth()];
+            const date = now.getDate();
+            
+            // Update DOM
+            const timeEl = document.getElementById('clockTime');
+            const ampmEl = document.getElementById('clockAMPM');
+            const dayEl = document.getElementById('clockDay');
+            const dateEl = document.getElementById('clockDate');
+            const progressEl = document.getElementById('clockProgress');
+
+            if(timeEl) timeEl.textContent = `${hours}:${minutes}`;
+            if(ampmEl) ampmEl.textContent = ampm;
+            if(dayEl) dayEl.textContent = dayName;
+            if(dateEl) dateEl.textContent = `${monthName} ${date}`;
+            
+            // Update progress ring (rotate sesuai detik)
+            if(progressEl) {
+                const seconds = now.getSeconds();
+                const progress = (seconds / 60) * 360;
+                progressEl.style.transform = `rotate(${progress}deg)`;
+            }
+        }
+
+        // Update clock setiap detik
+        setInterval(updateClockWidget, 1000);
+
+        function fillOperatorFields() {
+            const user = appState.currentUser || localStorage.getItem('bkk_user');
+            if (!user) return;
+            
+            const bOp = document.getElementById('b_operator');
+            const kOp = document.getElementById('k_operator');
+            if (bOp) bOp.value = user;
+            if (kOp) kOp.value = user;
+        }
+
+        function switchPage(targetId, title) {
+            const pages = document.querySelectorAll('.page');
+            const navItems = document.querySelectorAll('.nav-item, .bottom-nav-item');
+            const headerTitle = document.getElementById('headerTitle');
+
+            pages.forEach(p => p.classList.remove('active'));
+            navItems.forEach(n => n.classList.remove('active'));
+            
+            const targetPage = document.getElementById(targetId);
+            if(targetPage) targetPage.classList.add('active');
+            
+            document.querySelectorAll(`[data-target="${targetId}"]`).forEach(n => n.classList.add('active'));
+            if(headerTitle) headerTitle.textContent = title;
+
+            // Close sidebar on mobile if open
+            if (window.innerWidth <= 1023) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if(sidebar) sidebar.classList.remove('open');
+                if(overlay) overlay.classList.remove('active');
+            }
+
+            if (targetId === 'page-history') {
+                const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab;
+                if(activeTab) loadHistoryData(activeTab);
+            }
+
+            // Pastikan operator terisi setiap kali pindah page
+            fillOperatorFields();
+        }
+
+        // ==========================================
+        // AUTHENTICATION FUNCTIONS
+        // ==========================================
+
+        function authenticateUser(username, password) {
+            // Cari user secara case-insensitive
+            const dbKey = Object.keys(USERS_DATABASE).find(
+                k => k.toLowerCase() === username.toLowerCase()
+            );
+            const user = dbKey ? USERS_DATABASE[dbKey] : null;
+            
+            if (!user) {
+                return { success: false, message: 'User tidak ditemukan' };
+            }
+            if (user.password !== password) {
+                return { success: false, message: 'PIN salah' };
+            }
+            return { success: true, username: dbKey, role: user.role };
+        }
+
+        function loginUser(username, role) {
+            appState.currentUser = username;
+            appState.currentRole = role;
+            
+            localStorage.setItem('bkk_user', username);
+            localStorage.setItem('bkk_role', role);
+            
+            // Hide login page, show dashboard
+            document.getElementById('page-login').classList.remove('active');
+            document.querySelector('.sidebar').style.display = 'flex';
+            document.querySelector('.main-content').style.display = 'flex';
+            
+            // Update header username
+            document.getElementById('headerUsername').textContent = username;
+            
+            // Reset form
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginError').style.display = 'none';
+            
+            // Load data
+            loadInitialData();
+            updateClockWidget();
+            
+            // AUTO-FILL OPERATOR FIELDS
+            setTimeout(fillOperatorFields, 500);
+            
+            showToast(`Selamat datang, ${username}! 👋`, 'success');
+        }
+
+        function logoutUser() {
+            appState.currentUser = null;
+            appState.currentRole = null;
+            localStorage.removeItem('bkk_user');
+            localStorage.removeItem('bkk_role');
+            
+            // Reset UI
+            document.getElementById('headerUsername').textContent = '-';
+            
+            // Show login, hide layout
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-login').classList.add('active');
+            
+            const sidebar = document.querySelector('.sidebar');
+            if(sidebar) sidebar.style.display = 'none';
+            
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        function checkPageAccess(pageId) {
+            if (!appState.currentRole) {
+                return false;
+            }
+            const allowedPages = ROLE_PERMISSIONS[appState.currentRole];
+            return allowedPages.includes(pageId);
+        }
+
+        function restrictedPageHandler(pageId) {
+            showToast('❌ Anda tidak memiliki otorisasi untuk mengakses halaman ini', 'error');
+            // Jangan redirect, cukup tampilkan toast
+        }
+
+        // ==========================================
+        // EVENT LISTENERS & LOGIC
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // ========== LOGIN FORM HANDLER ==========
+            document.getElementById('loginForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const username = document.getElementById('loginUsername').value.trim();
+                const password = document.getElementById('loginPassword').value;
+                
+                if (!username || !password) {
+                    document.getElementById('loginError').textContent = 'Username dan PIN harus diisi';
+                    document.getElementById('loginError').style.display = 'block';
+                    return;
+                }
+                
+                const result = authenticateUser(username, password);
+                
+                if (!result.success) {
+                    document.getElementById('loginError').textContent = result.message;
+                    document.getElementById('loginError').style.display = 'block';
+                    document.getElementById('loginPassword').value = '';
+                    document.getElementById('loginPassword').focus();
+                    return;
+                }
+                
+                loginUser(result.username, result.role);
+            });
+            
+            // ========== INITIAL PAGE STATE ==========
+            const pages = document.querySelectorAll('.page');
+            const navItems = document.querySelectorAll('[data-target]');
+            const headerTitle = document.querySelector('.page-title');
+
+            // Initial state: hide semua page
+            pages.forEach(p => p.classList.remove('active'));
+
+            // Cek apakah user sudah login
+            const savedUser = localStorage.getItem('bkk_user');
+            const savedRole = localStorage.getItem('bkk_role');
+
+            if (savedUser && savedRole && USERS_DATABASE[savedUser]) {
+                // Auto-login dari localStorage
+                appState.currentUser = savedUser;
+                appState.currentRole = savedRole;
+                
+                // Show dashboard, hide login
+                document.getElementById('page-login').classList.remove('active');
+                document.getElementById('page-dashboard').classList.add('active');
+                document.querySelector('.sidebar').style.display = 'flex';
+                document.querySelector('.main-content').style.display = 'flex';
+                
+                // Update header
+                document.getElementById('headerUsername').textContent = savedUser;
+                if(headerTitle) headerTitle.textContent = 'DASHBOARD';
+                
+                // Load data
+                loadInitialData();
+                updateClockWidget();
+            } else {
+                // Show login page
+                document.getElementById('page-login').classList.add('active');
+                document.querySelector('.sidebar').style.display = 'none';
+                document.querySelector('.main-content').style.display = 'none';
+            }
+            
+            // Logout button
+            document.getElementById('btnLogout').addEventListener('click', () => {
+                if(confirm('Apakah Anda yakin ingin logout?')) {
+                    // Clear state
+                    appState.currentUser = null;
+                    appState.currentRole = null;
+                    localStorage.removeItem('bkk_user');
+                    localStorage.removeItem('bkk_role');
+                    
+                    // Show login, hide dashboard
+                    document.getElementById('page-login').classList.add('active');
+                    document.querySelector('.sidebar').style.display = 'none';
+                    document.querySelector('.main-content').style.display = 'none';
+                    
+                    // Reset form
+                    document.getElementById('loginForm').reset();
+                    document.getElementById('loginError').style.display = 'none';
+                    
+                    showToast('Anda telah logout', 'success');
+                }
+            });
+            
+            // ========== END LOGIN HANDLER ==========
+            
+            // Set Default Dates
+            document.getElementById('b_tanggal').value = getTodayDate();
+            document.getElementById('k_tanggal').value = getTodayDate();
+            document.getElementById('o_tanggal').value = getTodayDate();
+
+            // Navigation Logic - Handled by delegation or direct loop
+            const navElements = document.querySelectorAll('.nav-item, .bottom-nav-item');
+
+            // Navigation dengan Access Control
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const target = item.dataset.target;
+                    
+                    // CHECK AKSES HALAMAN
+                    if (!checkPageAccess(target)) {
+                        restrictedPageHandler(target);
+                        return;
+                    }
+                    
+                    const titleMap = {
+                        'page-dashboard': 'DASHBOARD',
+                        'page-bongkar': 'ENTRY BONGKARAN',
+                        'page-kirim': 'ENTRY KIRIM PRODUKSI',
+                        'page-opname': 'STOCK OPNAME',
+                        'page-history': 'RIWAYAT TRANSAKSI'
+                    };
+                    
+                    if (target === 'page-opname') {
+                        document.getElementById('passwordModal').classList.add('active');
+                        document.getElementById('opnamePasswordInput').value = '';
+                        document.getElementById('opnamePasswordInput').focus();
+                    } else {
+                        switchPage(target, titleMap[target]);
+                    }
+                });
+            });
+
+            // Mobile menu toggle
+            document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.add('open');
+                document.getElementById('sidebarOverlay').classList.add('active');
+            });
+            document.getElementById('sidebarOverlay').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebarOverlay').classList.remove('active');
+            });
+
+            // Refresh Btn
+            document.getElementById('btnRefresh').addEventListener('click', () => {
+                loadInitialData(true);
+            });
+
+            // Tabs History Logic
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    btn.classList.add('active');
+                    const target = btn.dataset.tab;
+                    document.getElementById(target).classList.add('active');
+                    loadHistoryData(target);
+                });
+            });
+
+            document.getElementById('btnLoadHistory').addEventListener('click', () => {
+                const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+                loadHistoryData(activeTab);
+            });
+
+            // Password Modal Logic
+            document.getElementById('btnCancelPassword').addEventListener('click', () => {
+                document.getElementById('passwordModal').classList.remove('active');
+            });
+
+            document.getElementById('btnSubmitPassword').addEventListener('click', () => {
+                const pwd = document.getElementById('opnamePasswordInput').value;
+                if (pwd === CONFIG.KOORDINATOR_PASSWORD) {
+                    document.getElementById('passwordModal').classList.remove('active');
+                    switchPage('page-opname', 'STOCK OPNAME');
+                    document.getElementById('opnameFormContainer').style.display = 'block';
+                } else {
+                    showToast('Password salah!', 'error');
+                }
+            });
+
+            // Dynamic Form Behaviors
+            document.getElementById('b_bk').addEventListener('change', (e) => {
+                const bkId = e.target.value;
+                if(bkId && appState.bkList) {
+                    const bk = appState.bkList.find(b => b.BK_ID === bkId);
+                    if(bk) {
+                        document.getElementById('b_material').value = bk.MATERIAL_DEFAULT || '';
+                        // b_supplier tidak ada di HTML, baris ini dihapus untuk mencegah error
+                    }
+                }
+            });
+
+            document.getElementById('k_bk').addEventListener('change', (e) => {
+                const bkId = e.target.value;
+                const infoSpan = document.getElementById('k_stok_info');
+                if(bkId && appState.bkList) {
+                    // Cari material dari bkList (master data) - WAJIB ADA
+                    const bk = appState.bkList.find(b => b.BK_ID === bkId);
+                    if(bk) {
+                        document.getElementById('k_material').value = bk.MATERIAL_DEFAULT || '';
+                    }
+                    // Cari stok dari dashboardData (optional, untuk info saja)
+                    if(appState.dashboardData) {
+                        const bkDash = appState.dashboardData.find(b => b.BK_ID === bkId);
+                        if(bkDash) {
+                            infoSpan.textContent = `Stok Aktif: ${formatNumber(bkDash.STOK_AKTIF)} KG`;
+                        }
+                    }
+                } else {
+                    document.getElementById('k_material').value = '';
+                    infoSpan.textContent = '';
+                }
+            });
+
+            document.getElementById('o_bk').addEventListener('change', (e) => {
+                const bkId = e.target.value;
+                if(bkId && appState.dashboardData) {
+                    const bk = appState.dashboardData.find(b => b.BK_ID === bkId);
+                    if(bk) {
+                        document.getElementById('o_material').value = bk.MATERIAL_DEFAULT || '';
+                    }
+                }
+            });
+
+            // Form Submit: Bongkar
+            document.getElementById('formBongkar').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = e.target.querySelector('button');
+                btn.disabled = true;
+                showLoader('Menyimpan data...');
+                try {
+                    const operator = appState.currentUser;  // ← Auto dari login
+                    const shift = document.getElementById('b_shift').value;
+                    
+                    await postAPI('addBongkar', {
+                        TANGGAL: document.getElementById('b_tanggal').value,
+                        BK_ID: document.getElementById('b_bk').value,
+                        MATERIAL: document.getElementById('b_material').value,
+                        SUPPLIER: "", // Removed from form
+                        NETTO_KG: document.getElementById('b_netto').value,
+                        NO_POLISI: "", // Removed from form
+                        INPUT_BY: `${operator} (Shift ${shift})`,
+                        KETERANGAN: "" // Removed from form
+                    });
+                    showToast('Bongkaran berhasil dicatat!');
+                    e.target.reset();
+                    document.getElementById('b_tanggal').value = getTodayDate();
+                    invalidateCache();
+                    loadInitialData(true); // reload in background
+                } catch(err) {
+                    showToast(err.message, 'error');
+                } finally {
+                    btn.disabled = false;
+                    hideLoader();
+                }
+            });
+
+            // Form Submit: Kirim
+            document.getElementById('formKirim').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Valdiasi Stok
+                const bkId = document.getElementById('k_bk').value;
+                const netto = parseFloat(document.getElementById('k_netto').value);
+                const bkData = appState.dashboardData.find(b => b.BK_ID === bkId);
+                
+                if (bkData && netto > bkData.STOK_AKTIF) {
+                    if(!confirm(`WARNING: Netto kirim (${formatNumber(netto)} KG) melebihi stok aktif (${formatNumber(bkData.STOK_AKTIF)} KG). Lanjutkan?`)) {
+                        return;
+                    }
+                }
+
+                const btn = e.target.querySelector('button');
+                btn.disabled = true;
+                showLoader('Menyimpan data...');
+                try {
+                    await postAPI('addKirim', {
+                        TANGGAL: document.getElementById('k_tanggal').value,
+                        BK_ID: document.getElementById('k_bk').value,
+                        MATERIAL: document.getElementById('k_material').value,
+                        NETTO_KG: netto,
+                        SHIFT: document.getElementById('k_shift').value,
+                        GRINDING: document.getElementById('k_grinding').value,
+                        OPERATOR: appState.currentUser, // ← Auto dari login
+                        INPUT_BY: appState.currentUser + " (Shift " + document.getElementById('k_shift').value + ")"
+                    });
+                    showToast('Pengiriman berhasil dicatat!');
+                    e.target.reset();
+                    document.getElementById('k_tanggal').value = getTodayDate();
+                    document.getElementById('k_stok_info').textContent = '';
+                    invalidateCache();
+                    loadInitialData(true);
+                } catch(err) {
+                    showToast(err.message, 'error');
+                } finally {
+                    btn.disabled = false;
+                    hideLoader();
+                }
+            });
+
+            // Form Submit: Opname
+            document.getElementById('btnTriggerOpname').addEventListener('click', () => {
+                const form = document.getElementById('formOpname');
+                if(!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+                
+                const bkId = document.getElementById('o_bk').value;
+                const fisik = document.getElementById('o_stok').value;
+                
+                document.getElementById('confirmOpnameText').innerHTML = `
+                    Dengan menyimpan stock opname ini, sistem akan menggunakan nilai fisik 
+                    <strong>[${formatNumber(fisik)} KG]</strong> sebagai titik acuan stok baru untuk <strong>[${bkId}]</strong>.<br>
+                    Semua transaksi sebelum tanggal ini tidak akan dihitung lagi. Lanjutkan?
+                `;
+                document.getElementById('confirmOpnameModal').classList.add('active');
+            });
+
+            document.getElementById('btnCancelConfirmOpname').addEventListener('click', () => {
+                document.getElementById('confirmOpnameModal').classList.remove('active');
+            });
+
+            document.getElementById('btnSubmitConfirmOpname').addEventListener('click', async () => {
+                document.getElementById('confirmOpnameModal').classList.remove('active');
+                showLoader('Menyimpan opname...');
+                try {
+                    await postAPI('addOpname', {
+                        TANGGAL: document.getElementById('o_tanggal').value,
+                        BK_ID: document.getElementById('o_bk').value,
+                        MATERIAL: document.getElementById('o_material').value,
+                        STOK_FISIK_KG: document.getElementById('o_stok').value,
+                        INPUT_BY: document.getElementById('o_inputby').value,
+                        KETERANGAN: document.getElementById('o_ket').value
+                    });
+                    showToast('Stock Opname berhasil disimpan!');
+                    document.getElementById('formOpname').reset();
+                    document.getElementById('o_tanggal').value = getTodayDate();
+                    invalidateCache();
+                    loadInitialData(true);
+                } catch(err) {
+                    showToast(err.message, 'error');
+                } finally {
+                    hideLoader();
+                }
+            });
+
+            // Initial load
+            loadInitialData();
+        });
+    </script>
+    <svg width="0" height="0" style="position: absolute;">
+        <filter id="fire-distort">
+            <feTurbulence type="fractalNoise" baseFrequency="0.03 0.15" numOctaves="1" seed="1">
+                <animate attributeName="baseFrequency" dur="0.15s" values="0.03 0.15; 0.04 0.18; 0.03 0.15" repeatCount="indefinite" />
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" scale="1.5" />
+        </filter>
+    </svg>
+</body>
 </html>
