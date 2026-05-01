@@ -134,6 +134,7 @@
             width: 100px;
             height: 100px;
             background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.1), transparent);
+            pointer-events: none;
         }
 
         .panel-header {
@@ -681,7 +682,9 @@
         }
 
         function changeMonth(delta) {
-            state.viewDate.setMonth(state.viewDate.getMonth() + delta);
+            const currentYear = state.viewDate.getFullYear();
+            const currentMonth = state.viewDate.getMonth();
+            state.viewDate = new Date(currentYear, currentMonth + delta, 1);
             renderCalendar();
         }
 

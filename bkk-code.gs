@@ -166,6 +166,9 @@ function handleGet(e) {
       return { status: 'success', data: getHistory(SHEET_KIRIM, e.parameter.bk_id, e.parameter.limit) };
     } else if (action === 'getOpnameHistory') {
       return { status: 'success', data: getHistory(SHEET_OPNAME, e.parameter.bk_id, e.parameter.limit) };
+    } else if (action === 'getIntakeConfig') {
+      var config = PropertiesService.getScriptProperties().getProperty('INTAKE_CONFIG');
+      return { status: 'success', data: config ? JSON.parse(config) : null };
     } else {
       return { status: 'error', message: 'Invalid action' };
     }
@@ -259,6 +262,12 @@ function handlePost(e) {
       }
       insertRow(SHEET_OPNAME, rowData);
       return { status: 'success', data: rowData };
+      
+    } else if (action === 'saveIntakeConfig') {
+      var configStr = data.config || data.CONFIG;
+      if (!configStr) throw new Error('Config data is missing');
+      PropertiesService.getScriptProperties().setProperty('INTAKE_CONFIG', configStr);
+      return { status: 'success', message: 'Config saved' };
       
     } else {
       return { status: 'error', message: 'Invalid action' };
