@@ -132,6 +132,72 @@ function generateId(prefix) {
   return prefix + '-' + dateStr + '-' + rand;
 }
 
+function getSAPData(tanggal) {
+  var data = getSheetData('BKK_SAP');
+  if (tanggal) {
+    data = data.filter(function(r) {
+      var d = r.TANGGAL;
+      if (d instanceof Date) d = Utilities.formatDate(d, 'Asia/Jakarta', 'yyyy-MM-dd');
+      return d === tanggal;
+    });
+  }
+  data.sort(function(a, b) {
+    var dateA = a.TIMESTAMP ? new Date(a.TIMESTAMP).getTime() : 0;
+    var dateB = b.TIMESTAMP ? new Date(b.TIMESTAMP).getTime() : 0;
+    return dateB - dateA;
+  });
+  return data;
+}
+
+function getKirimByTanggal(tanggal, bkId) {
+  var data = getSheetData(SHEET_KIRIM);
+  if (tanggal) {
+    data = data.filter(function(r) {
+      var d = r.TANGGAL;
+      if (d instanceof Date) d = Utilities.formatDate(d, 'Asia/Jakarta', 'yyyy-MM-dd');
+      return d === tanggal;
+    });
+  }
+  if (bkId) {
+    data = data.filter(function(r) { return r.BK_ID == bkId; });
+  }
+  data.sort(function(a, b) {
+    var dateA = a.TIMESTAMP ? new Date(a.TIMESTAMP).getTime() : 0;
+    var dateB = b.TIMESTAMP ? new Date(b.TIMESTAMP).getTime() : 0;
+    return dateB - dateA;
+  });
+  return data;
+}
+
+function getDailyStockTable(bulan) {
+  var master = getSheetData(SHEET_MASTER).filter(function(r) { return r.STATUS === 'ACTIVE'; });
+  var bongkar = getSheetData(SHEET_BONGKAR);
+  var kirim = getSheetData(SHEET_KIRIM);
+  var opname = getSheetData(SHEET_OPNAME);
+
+  var bkIds = master.map(function(r) { return r.BK_ID; });
+  var startDate, endDate = new Date();
+
+  if (bulan && bulan !== 'all') {
+    var parts = bulan.split('-');
+    startDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+    endDate = new Date(parseInt(parts[0]), parseInt(parts[1]), 0);
+  } else {
+    startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+  }
+
+  var rows = [];
+  for (var d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    var tanggalStr = Utilities.formatDate(new Date(d), 'Asia/Jakarta', 'yyyy-MM-dd');
+    var row = { tanggal: tanggalStr };
+    for (var i = 0; i < bkIds.length; i++) {
+      row['bk' + (i + 1) + '_stock'] = calculateStock(bkIds[i], opname, bongkar, kirim);
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
 function doGet(e) {
   var callback = e.parameter.callback;
   var action = e.parameter.action;
@@ -166,6 +232,12 @@ function handleGet(e) {
       return { status: 'success', data: getHistory(SHEET_KIRIM, e.parameter.bk_id, e.parameter.limit) };
     } else if (action === 'getOpnameHistory') {
       return { status: 'success', data: getHistory(SHEET_OPNAME, e.parameter.bk_id, e.parameter.limit) };
+    } else if (action === 'getSAPData') {
+      return { status: 'success', data: getSAPData(e.parameter.tanggal) };
+    } else if (action === 'getKirimByTanggal') {
+      return { status: 'success', data: getKirimByTanggal(e.parameter.tanggal, e.parameter.bk_id) };
+    } else if (action === 'getDailyStockTable') {
+      return { status: 'success', data: getDailyStockTable(e.parameter.bulan) };
     } else if (action === 'getIntakeConfig') {
       var config = PropertiesService.getScriptProperties().getProperty('INTAKE_CONFIG');
       return { status: 'success', data: config ? JSON.parse(config) : null };
@@ -268,7 +340,12 @@ function handlePost(e) {
       if (!configStr) throw new Error('Config data is missing');
       PropertiesService.getScriptProperties().setProperty('INTAKE_CONFIG', configStr);
       return { status: 'success', message: 'Config saved' };
-      
+
+    } else if (action === 'addSAP') {
+      return addSAP(data);
+    } else if (action === 'addSAPCeklis') {
+      return addSAPCeklis(data);
+
     } else {
       return { status: 'error', message: 'Invalid action' };
     }
@@ -277,16 +354,48 @@ function handlePost(e) {
   }
 }
 
+function addSAP(data) {
+  var rowData = {
+    ID: generateId('SAP'),
+    TIMESTAMP: Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss'),
+    TANGGAL: data.TANGGAL || data.tanggal,
+    BK_ID: data.BK_ID || data.bk_id,
+    QTY_SAP_KG: Number(data.QTY_SAP_KG || data.qty_sap_kg || 0),
+    INPUT_BY: data.INPUT_BY || data.input_by || ''
+  };
+  insertRow('BKK_SAP', rowData);
+  return { status: 'success', data: rowData };
+}
+
+function addSAPCeklis(data) {
+  var rowData = {
+    ID: generateId('CEK'),
+    TIMESTAMP: Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss'),
+    TANGGAL: data.TANGGAL || data.tanggal,
+    REF_KIRIM_ID: data.REF_KIRIM_ID || data.ref_kirim_id || '',
+    BK_ID: data.BK_ID || data.bk_id,
+    MATERIAL: data.MATERIAL || data.material || '',
+    NETTO_KG: Number(data.NETTO_KG || data.netto_kg || 0),
+    STATUS_CEKLIS: data.STATUS_CEKLIS || data.status_ceklis || 'BELUM_MOTONG',
+    CEKLIS_BY: data.CEKLIS_BY || data.ceklis_by || '',
+    KETERANGAN: data.KETERANGAN || data.keterangan || ''
+  };
+  insertRow('BKK_SAP_Ceklis', rowData);
+  return { status: 'success', data: rowData };
+}
+
 function setupSheets() {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  
+
   var sheets = {
-    'BKK_Master':  ['BK_ID','NAMA_BK','KAPASITAS_KG','MATERIAL_DEFAULT','SUPPLIER_DEFAULT','STATUS'],
-    'BKK_Bongkar': ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','SUPPLIER','NETTO_KG','NO_POLISI','KETERANGAN','INPUT_BY'],
-    'BKK_Kirim':   ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','NETTO_KG','SHIFT','GRINDING','OPERATOR','INPUT_BY'],
-    'BKK_Opname':  ['ID','TIMESTAMP','TANGGAL','BK_ID','STOK_FISIK_KG','MATERIAL','INPUT_BY','KETERANGAN']
+    'BKK_Master':     ['BK_ID','NAMA_BK','KAPASITAS_KG','MATERIAL_DEFAULT','SUPPLIER_DEFAULT','STATUS'],
+    'BKK_Bongkar':    ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','SUPPLIER','NETTO_KG','NO_POLISI','KETERANGAN','INPUT_BY'],
+    'BKK_Kirim':      ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','NETTO_KG','SHIFT','GRINDING','OPERATOR','INPUT_BY'],
+    'BKK_Opname':     ['ID','TIMESTAMP','TANGGAL','BK_ID','STOK_FISIK_KG','MATERIAL','INPUT_BY','KETERANGAN'],
+    'BKK_SAP':        ['ID','TIMESTAMP','TANGGAL','BK_ID','QTY_SAP_KG','INPUT_BY'],
+    'BKK_SAP_Ceklis': ['ID','TIMESTAMP','TANGGAL','REF_KIRIM_ID','BK_ID','MATERIAL','NETTO_KG','STATUS_CEKLIS','CEKLIS_BY','KETERANGAN']
   };
-  
+
   for (var name in sheets) {
     var sheet = ss.getSheetByName(name);
     if (!sheet) sheet = ss.insertSheet(name);
@@ -295,6 +404,6 @@ function setupSheets() {
       sheet.getRange(1, 1, 1, sheets[name].length).setValues([sheets[name]]);
     }
   }
-  
+
   Logger.log('Setup selesai.');
 }
