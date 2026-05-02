@@ -5,7 +5,7 @@
 (function (global) {
   var BK_IDS = ['BK-1', 'BK-2', 'BK-3', 'BK-4', 'BK-5', 'BK-6'];
   /** Samakan query ?v= di bkk-dashboard.html + link CSS di tab cetak (hindari cache lama). */
-  var LE_EXPORT_ASSET_V = '6';
+  var LE_EXPORT_ASSET_V = '8';
 
   function normBK(id) {
     return String(id || '').trim().replace(/^BK-?(\d)$/i, 'BK-$1');
@@ -216,6 +216,7 @@
     }).join('');
   }
 
+  /** HTML lengkap untuk tab pratinjau / cetak browser (tampilan sama dengan dialog Cetak → Simpan sebagai PDF). */
   function buildPdfHtml(data) {
     var cssHref = 'laporan-export.css?v=' + LE_EXPORT_ASSET_V;
     try {
@@ -255,6 +256,7 @@
 
     return (
       '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8">' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1">' +
       '<title>Laporan Stock Harian — BK Storage</title>' +
       '<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">' +
       '<link rel="stylesheet" href="' + escHtml(cssHref) + '">' +
@@ -371,11 +373,17 @@
     return '\uFEFF' + lines.join('\r\n');
   }
 
+  /**
+   * Tab baru (about:blank) + CSS asli — tampilan sama dengan pratinjau cetak browser.
+   * Simpan sebagai PDF: di dialog Cetak pilih "Simpan sebagai PDF" / "Microsoft Print to PDF".
+   */
   function openPdf(data) {
     var html = buildPdfHtml(data);
     var w = global.open('', '_blank');
     if (!w) {
-      toast('Popup diblokir — izinkan tab baru untuk cetak PDF.', 'w');
+      if (typeof toast === 'function') {
+        toast('Popup diblokir — izinkan tab baru untuk laporan & cetak PDF.', 'w');
+      }
       return;
     }
     w.document.open();
@@ -396,7 +404,7 @@
         w.focus();
         w.print();
       } catch (e) {}
-    }, 280);
+    }, 480);
   }
 
   function run(format) {
