@@ -8,8 +8,9 @@ var appState = {
   sidebarOpen: false,
   currentPage: 'dashboard',
   modalResolve: null,
-  refreshTimer: null,
-  opnameData: null
+  opnameData: null,
+  /** Total bongkar / kirim hari ini (WIB) untuk KPI dashboard — diisi loadDashboard */
+  dashKpiToday: { masuk: 0, keluar: 0 }
 };
 
 // ── UTILITIES ──────────────────────────────────────────────────────────────
@@ -17,6 +18,17 @@ function $ (id) { return document.getElementById(id); }
 
 function getBKById(id) {
   return appState.dashData.find(function(bk) { return bk.BK_ID === id; }) || {};
+}
+
+/** Isi Material & Supplier form Bongkar dari kolom master BK (sama sumbernya seperti MATERIAL_DEFAULT). */
+function applyBongkarMasterDefaults(bkId) {
+  if (!bkId) return;
+  var bk = getBKById(bkId);
+  if (!bk.BK_ID) return;
+  var mEl = $('b_material');
+  var sEl = $('b_supplier');
+  if (mEl && bk.MATERIAL_DEFAULT) mEl.value = bk.MATERIAL_DEFAULT;
+  if (sEl && bk.SUPPLIER_DEFAULT) sEl.value = bk.SUPPLIER_DEFAULT;
 }
 
 function toast(msg, type) {
@@ -204,7 +216,7 @@ function postAPI(action, data, cb) {
 function navigateTo(page) {
   if (!appState.user) return;
   var perms = ROLE_PERMISSIONS[appState.user.role] || {};
-  var menuNames = { bongkar:'Bongkar', kirim:'Kirim', opname:'Stock Opname', ceksap:'Cek SAP', history:'Riwayat', dashboard:'Dashboard', kartustock:'Kartu Stock' };
+  var menuNames = { bongkar:'Bongkar', kirim:'Kirim', opname:'Stock Opname', ceksap:'Cek SAP', history:'Riwayat', dashboard:'Dashboard', kartustock:'Kartu Stock', outstanding:'Outstanding' };
   if (!perms[page]) {
     if (typeof Swal !== 'undefined') {
       Swal.fire({ icon:'error', title:'Akses Ditolak 🔒', html:'<div style="font-size:0.95rem;color:#64748b;">Anda tidak memiliki otorisasi untuk mengakses menu <b style="color:#ef4444;">' + (menuNames[page]||page) + '</b></div>', confirmButtonText:'Mengerti', confirmButtonColor:'#0284c7', background:'#fff', customClass:{ popup:'swal-premium' } });
@@ -213,33 +225,52 @@ function navigateTo(page) {
   }
   document.querySelectorAll('.page').forEach(function(el) { el.classList.remove('active'); });
   document.querySelectorAll('.nav-item').forEach(function(el) { el.classList.remove('active'); });
-  document.querySelectorAll('.bnav-item').forEach(function(el) { el.classList.remove('active'); });
   var pg = $('page-' + page);
   if (pg) pg.classList.add('active');
-  document.querySelectorAll('.nav-item[data-page="' + page + '"]').forEach(function(el) { el.classList.add('active'); });
-  document.querySelectorAll('.bnav-item[data-page="' + page + '"]').forEach(function(el) { el.classList.add('active'); });
+  /* Kartu Stock & Outstanding termasuk area Dashboard — sorot menu Dashboard di sidebar */
+  var sidebarNavPage = page === 'kartustock' || page === 'outstanding' ? 'dashboard' : page;
+  document.querySelectorAll('.nav-item[data-page="' + sidebarNavPage + '"]').forEach(function(el) { el.classList.add('active'); });
   document.querySelectorAll('.header-tab').forEach(function(el) { el.classList.remove('active'); });
   document.querySelectorAll('.header-tab[data-page="' + page + '"]').forEach(function(el) { el.classList.add('active'); });
   appState.currentPage = page;
   if (appState.sidebarOpen) closeSidebar();
-  if (page === 'dashboard') loadDashboard();
+  if (page === 'dashboard') {
+    loadDashboard();
+  }
   if (page === 'ceksap') {
     loadSAPData(); // load history dulu
     initSAP();
   }
   if (page === 'history') initHistory();
   if (page === 'kartustock') { loadKartuStockData(); initKartuStock(); }
+  if (page === 'outstanding') {
+    var ifr = $('iframeOutstanding');
+    if (ifr) ifr.src = 'outstanding-bkk.html?from=bkk&embed=1';
+  }
+  if (page === 'bongkar' || page === 'kirim' || page === 'opname') prefillFormOperatorNames();
+  if (page === 'bongkar') {
+    var bb = $('b_bk_id');
+    if (bb && bb.value) applyBongkarMasterDefaults(bb.value);
+  }
   updateSubnavDashKartu(page);
 }
 
 function updateSubnavDashKartu(page) {
   var bar = $('subnavDashStock');
   if (!bar) return;
-  var show = page === 'dashboard' || page === 'kartustock';
-  bar.hidden = !show;
+  /* Subnav Dashboard | Kartu Stock | Outstanding — hanya di ketiga halaman ini */
+  var show = page === 'dashboard' || page === 'kartustock' || page === 'outstanding';
+  if (show) {
+    bar.removeAttribute('hidden');
+    bar.style.display = 'flex';
+  } else {
+    bar.setAttribute('hidden', '');
+    bar.style.display = 'none';
+  }
   if (!show) return;
   bar.querySelectorAll('.view-tab').forEach(function(t) { t.classList.remove('active'); });
-  var sel = page === 'dashboard' ? '.tab-dashboard' : '.tab-kartustock';
+  var tabSel = { dashboard: '.tab-dashboard', kartustock: '.tab-kartustock', outstanding: '.tab-outstanding' };
+  var sel = tabSel[page] || '.tab-dashboard';
   var btn = bar.querySelector(sel);
   if (btn) btn.classList.add('active');
 }
@@ -284,6 +315,7 @@ function doLogin() {
 function doLogout() {
   appState.user = null;
   sessionStorage.removeItem('bkk_user');
+  clearFormOperatorNames();
   document.querySelectorAll('.page').forEach(function(el) { el.classList.remove('active'); });
   $('page-login').classList.add('active');
   var nm = $('headerUserName');
@@ -291,8 +323,32 @@ function doLogout() {
   var av = $('headerUserAvatar');
   if (av) av.textContent = '?';
   var sn = $('subnavDashStock');
-  if (sn) sn.hidden = true;
+  if (sn) {
+    sn.setAttribute('hidden', '');
+    sn.style.display = 'none';
+  }
   toast('Sesi berakhir', 'i');
+}
+
+/** Isi field Operator di form Bongkar / Kirim / Opname dari nama user yang login (readonly). */
+function prefillFormOperatorNames() {
+  if (!appState.user) return;
+  var n = (appState.user.nama || '').trim();
+  var bo = $('b_operator');
+  var ko = $('k_operator');
+  var oo = $('o_operator');
+  if (bo) bo.value = n;
+  if (ko) ko.value = n;
+  if (oo) oo.value = n;
+}
+
+function clearFormOperatorNames() {
+  var bo = $('b_operator');
+  var ko = $('k_operator');
+  var oo = $('o_operator');
+  if (bo) bo.value = '';
+  if (ko) ko.value = '';
+  if (oo) oo.value = '';
 }
 
 function updateUserChrome(user) {
@@ -304,6 +360,7 @@ function updateUserChrome(user) {
     var ch = (user.nama || '').trim().charAt(0);
     av.textContent = ch ? ch.toUpperCase() : '?';
   }
+  prefillFormOperatorNames();
 }
 
 function checkAuth() {

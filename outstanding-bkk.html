@@ -45,10 +45,18 @@
             min-height: 100vh;
         }
 
-        /* LOCKED STATE FOR FULLSCREEN */
+        /* Full screen: izinkan scroll halaman (monitor panjang / konten banyak) */
+        html:fullscreen,
+        :fullscreen {
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
         :fullscreen body,
         body:fullscreen {
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 100%;
         }
 
         /* HEADER & UTILS */
@@ -202,8 +210,9 @@
 
         :fullscreen .control-container {
             padding: 50px 30px 10px 30px;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
+            height: auto;
+            overflow: visible;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -788,13 +797,14 @@
             gap: 20px;
         }
 
-        /* FULLSCREEN OPTIMIZATION (MATCHING RM STYLE) */
+        /* FULLSCREEN — konten boleh lebih tinggi dari layar; scroll vertikal di halaman */
         :fullscreen .control-container,
         body:fullscreen .control-container {
             padding: 50px 40px 10px 40px;
             gap: 8px;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
+            height: auto;
+            overflow: visible;
             display: flex;
             flex-direction: column;
         }
@@ -847,13 +857,14 @@
         }
 
         :fullscreen .table-deck {
-            flex: 1;
+            flex: 0 1 auto;
             margin-top: 5px;
-            min-height: 0;
+            min-height: auto;
+            max-height: none;
         }
 
         :fullscreen tbody {
-            overflow-y: auto !important;
+            overflow-y: visible;
         }
 
         :fullscreen td,
@@ -861,11 +872,86 @@
             padding: 6px 12px;
             font-size: 0.75rem;
         }
+
+        /* Dibuka dari Smart Warehouse (BKK): toolbar fullscreen + viewport desktop di HP */
+        html.bkk-os-from-bkk .fullscreen-btn-nav-fixed {
+            display: none !important;
+        }
+
+        .bkk-os-back-strip {
+            position: sticky;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: linear-gradient(90deg, rgba(2, 4, 8, 0.98), rgba(15, 23, 42, 0.98));
+            border-bottom: 1px solid rgba(0, 243, 255, 0.35);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+        }
+
+        .bkk-os-back-btn {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 800;
+            font-size: 0.95rem;
+            padding: 10px 18px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 243, 255, 0.5);
+            background: rgba(0, 243, 255, 0.12);
+            color: var(--neon-cyan);
+            cursor: pointer;
+            letter-spacing: 0.03em;
+        }
+
+        .bkk-os-back-btn:hover {
+            background: rgba(0, 243, 255, 0.25);
+            color: #fff;
+        }
+
+        html.bkk-os-from-bkk .control-container {
+            padding-top: 56px;
+        }
     </style>
 </head>
 
 <body>
-
+<script>
+(function () {
+    try {
+        var qs = window.location.search || '';
+        var fromBkk = qs.indexOf('from=bkk') !== -1 || qs.indexOf('embed=1') !== -1;
+        if (!fromBkk && window.frameElement && window.parent !== window) fromBkk = true;
+        if (!fromBkk) return;
+        document.documentElement.classList.add('bkk-os-from-bkk');
+        var mv = document.querySelector('meta[name="viewport"]');
+        if (mv) mv.setAttribute('content', 'width=1440, initial-scale=1, minimum-scale=0.2, maximum-scale=5, viewport-fit=cover, user-scalable=yes');
+        var strip = document.createElement('div');
+        strip.className = 'bkk-os-back-strip';
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'bkk-os-back-btn';
+        function syncFsLabel() {
+            btn.innerHTML = document.fullscreenElement
+                ? '<i class="fas fa-compress"></i> Keluar fullscreen'
+                : '<i class="fas fa-expand"></i> Full screen';
+        }
+        btn.onclick = function () {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(function () {});
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        };
+        document.addEventListener('fullscreenchange', syncFsLabel);
+        syncFsLabel();
+        strip.appendChild(btn);
+        document.body.insertBefore(strip, document.body.firstChild);
+    } catch (e) {}
+})();
+</script>
 
     <div id="loading" class="loading">
         <h2 style="font-family:'Orbitron'; color:var(--neon-cyan);">LOADING BKK SYSTEM...</h2>

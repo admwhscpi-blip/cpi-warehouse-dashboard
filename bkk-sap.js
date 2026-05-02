@@ -1,12 +1,55 @@
 // ── CEK SAP ──────────────────────────────────────────────────────────────────
 function loadSAPData() {
-  // load history so kirim/bongkar data available for diff detail
-  fetchAPI('getBongkarHistory', { limit: 500 }, function(resp) {
+  // Cache global (tanpa bk_id): dipakai halaman lain; limit besar agar tidak menimpa subset BK saat user buka Riwayat.
+  fetchAPI('getBongkarHistory', { limit: 2500 }, function(resp) {
     if (resp.status !== 'error') appState.history.bongkar = resp.data || [];
   });
-  fetchAPI('getKirimHistory', { limit: 500 }, function(resp) {
+  fetchAPI('getKirimHistory', { limit: 2500 }, function(resp) {
     if (resp.status !== 'error') appState.history.kirim = resp.data || [];
   });
+}
+
+/** Samakan format BK_ID dari sheet (BK-3 / BK3) dengan chip UI */
+function sapNormalizeBkId(id) {
+  if (id == null || id === '') return '';
+  var s = String(id).trim();
+  var m = s.match(/^BK\s*-?\s*(\d)$/i);
+  if (m) return 'BK-' + m[1];
+  return s;
+}
+
+function sapBkRowMatches(rowBk, targetBk) {
+  return sapNormalizeBkId(rowBk) === sapNormalizeBkId(targetBk);
+}
+
+/** Ambil 10 transaksi terakhir untuk BK ini dari server (semua bulan). Tanpa bk_id, limit global sering membuang BK yang jarang aktif. */
+function loadSAPHistoryForBK(bkId, cb) {
+  var lim = 15;
+  var bong = [];
+  var kir = [];
+  var pending = 2;
+  function doneOne() {
+    pending--;
+    if (pending === 0) cb(bong, kir);
+  }
+  fetchAPI('getBongkarHistory', { bk_id: bkId, limit: lim }, function(resp) {
+    if (resp.status !== 'error') bong = resp.data || [];
+    doneOne();
+  });
+  fetchAPI('getKirimHistory', { bk_id: bkId, limit: lim }, function(resp) {
+    if (resp.status !== 'error') kir = resp.data || [];
+    doneOne();
+  });
+}
+
+function sapSortRowsByTanggalDesc(rows) {
+  var copy = (rows || []).slice();
+  copy.sort(function(a, b) {
+    var ta = a.TANGGAL ? new Date(a.TANGGAL).getTime() : 0;
+    var tb = b.TANGGAL ? new Date(b.TANGGAL).getTime() : 0;
+    return (isNaN(tb) ? 0 : tb) - (isNaN(ta) ? 0 : ta);
+  });
+  return copy.slice(0, 10);
 }
 
 var sapState = {
@@ -14,29 +57,133 @@ var sapState = {
   inputs: {}, // { 'BK-1': { stock: 1000, material: '...', kapal: '...' } }
   compareResult: [], // [{ bkId, material, kapal, sistem, sap, selisih, status }]
   detailBK: null,
-  activeDiffResult: null
+  activeDiffResult: null,
+  /** per BK: { kirimBelumTp, bongkarBelumSap } dari tombol Terapkan Step 3 */
+  adjustPending: {},
+  lastUiStep: 1
 };
 
 var BK_LIST_SAP = ['BK-1','BK-2','BK-3','BK-4','BK-5','BK-6'];
+
+var sapDraftTimer = null;
+
+function sapSerializeDraft() {
+  return JSON.stringify({
+    v: 2,
+    inputs: sapState.inputs,
+    adjustPending: sapState.adjustPending,
+    detailBK: sapState.detailBK,
+    currentIdx: sapState.currentIdx,
+    uiStep: sapState.lastUiStep || 1
+  });
+}
+
+function sapAutoSaveDraft() {
+  if (!appState.user || !appState.user.username) return;
+  clearTimeout(sapDraftTimer);
+  sapDraftTimer = setTimeout(function() {
+    postAPI('saveCekSAPDraft', {
+      username: appState.user.username,
+      nama: appState.user.nama || '',
+      payload: sapSerializeDraft()
+    }, function() {});
+  }, 1200);
+}
+
+function sapApplyDraftPayload(pl) {
+  if (!pl || typeof pl !== 'object') return;
+  if (pl.inputs) {
+    BK_LIST_SAP.forEach(function(bid) {
+      if (pl.inputs[bid]) sapState.inputs[bid] = pl.inputs[bid];
+    });
+  }
+  sapState.adjustPending = pl.adjustPending && typeof pl.adjustPending === 'object' ? pl.adjustPending : {};
+  sapState.detailBK = pl.detailBK || null;
+  if (typeof pl.currentIdx === 'number' && pl.currentIdx >= 0 && pl.currentIdx < BK_LIST_SAP.length) {
+    sapState.currentIdx = pl.currentIdx;
+  }
+  sapState.lastUiStep = typeof pl.uiStep === 'number' ? pl.uiStep : 1;
+}
+
+function renderSAPAfterDraftOrInit() {
+  var allFilled = BK_LIST_SAP.every(function(b) {
+    return sapState.inputs[b] && sapState.inputs[b].stock != null;
+  });
+  if (allFilled) {
+    sapBuildCompare();
+    var step = sapState.lastUiStep || 1;
+    if (step === 4) {
+      renderSAPStep4();
+      return;
+    }
+    if (step === 3 && sapState.detailBK) {
+      sapShowDiff(sapState.detailBK);
+      return;
+    }
+    if (step === 2) {
+      renderSAPStep2();
+      return;
+    }
+  }
+  renderSAPStep1();
+}
 
 function initSAP() {
   sapState.currentIdx = 0;
   sapState.inputs = {};
   sapState.compareResult = [];
   sapState.detailBK = null;
+  sapState.adjustPending = {};
+  sapState.lastUiStep = 1;
   appState.dashData.forEach(function(bk) {
     sapState.inputs[bk.BK_ID] = {
       material: bk.MATERIAL_DEFAULT || '',
       stock: null
     };
   });
-  renderSAPStep1();
+
+  var uname = appState.user && appState.user.username;
+  if (!uname) {
+    renderSAPStep1();
+    return;
+  }
+  fetchAPI('getCekSAPDraft', { username: uname }, function(resp) {
+    var hasPayload = resp.status !== 'error' && resp.data && resp.data.payload &&
+      typeof resp.data.payload === 'object' && Object.keys(resp.data.payload).length > 0;
+    if (!hasPayload) {
+      renderSAPStep1();
+      return;
+    }
+    var d = resp.data;
+    var namaShow = sapEsc(d.nama || '—');
+    var when = sapEsc(d.updatedAt || '');
+    var runAfter = function(useDraft) {
+      if (useDraft) sapApplyDraftPayload(d.payload);
+      renderSAPAfterDraftOrInit();
+    };
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: 'Draft Cek SAP',
+        html: 'Ditemukan penyimpanan terakhir.<br><strong>' + namaShow + '</strong><br><small style="color:#64748b">' + when + '</small><br><br>Lanjutkan draft atau mulai input baru?',
+        showDenyButton: true,
+        confirmButtonText: 'Lanjutkan draft',
+        denyButtonText: 'Input baru'
+      }).then(function(r) {
+        runAfter(r.isConfirmed);
+      });
+    } else {
+      runAfter(confirm('Lanjutkan draft Cek SAP?'));
+    }
+  });
 }
 
 function renderSAPStep1() {
   $('sap_step1').style.display = 'block';
   $('sap_step2').style.display = 'none';
   $('sap_step3').style.display = 'none';
+  var s4 = $('sap_step4');
+  if (s4) s4.style.display = 'none';
+  sapState.lastUiStep = 1;
   updateStepIndicator(1);
 
   var bkId = BK_LIST_SAP[sapState.currentIdx];
@@ -59,6 +206,7 @@ function renderSAPStep1() {
   });
   $('sap_next_btn').textContent = allFilled ? 'Review ✓' : 'Next';
   renderSAPStep1Preview();
+  sapAutoSaveDraft();
 }
 
 /** Preview tabel di Step 1 — per BK: nilai tersimpan (setelah Next) + BK aktif dari field input (live). */
@@ -132,7 +280,9 @@ function sapNext() {
   } else {
     // all filled → go to review
     sapBuildCompare();
+    sapState.lastUiStep = 2;
     renderSAPStep2();
+    sapAutoSaveDraft();
   }
 }
 
@@ -147,6 +297,7 @@ function sapPrev() {
     }
     sapState.currentIdx--;
     renderSAPStep1();
+    sapAutoSaveDraft();
   }
 }
 
@@ -200,6 +351,9 @@ function renderSAPStep2() {
   $('sap_step1').style.display = 'none';
   $('sap_step2').style.display = 'block';
   $('sap_step3').style.display = 'none';
+  var s4 = $('sap_step4');
+  if (s4) s4.style.display = 'none';
+  sapState.lastUiStep = 2;
   updateStepIndicator(2);
 
   var tb = $('sap_compare_tbl');
@@ -223,7 +377,9 @@ function renderSAPStep2() {
     tb.appendChild(tr);
 
     if (r.selisih !== 0) {
-      var arah = r.selisih > 0 ? 'SAP lebih ' + fmtNum(Math.abs(r.selisih)) + ' kg dari sistem' : 'Sistem lebih ' + fmtNum(Math.abs(r.selisih)) + ' kg dari SAP';
+      var arah = r.selisih > 0
+        ? 'Stok sistem lebih besar daripada Stock SAP (input) sebesar ' + fmtNum(Math.abs(r.selisih)) + ' kg — potensi pengiriman sudah jalan tapi SAP belum tarik (belum TP), double input SAP, atau penyebab lain.'
+        : 'Stock SAP (input) lebih tinggi daripada stok sistem sebesar ' + fmtNum(Math.abs(r.selisih)) + ' kg — potensi bongkaran/penerimaan belum ter-input di sistem, pengiriman ter-record berbeda, atau penyebab lain.';
       details.push({ bk: r.bkId, material: r.material, selisih: r.selisih, arah: arah });
     }
   });
@@ -231,22 +387,41 @@ function renderSAPStep2() {
   var ketBox = $('sap_keterangan_box');
   var ketText = $('sap_keterangan_text');
 
+  var caraBaca =
+    '<p style="margin-top:12px;padding:12px 14px;background:rgba(59,130,246,0.06);border-radius:10px;font-size:0.8rem;line-height:1.55;color:var(--tp);border:1px solid rgba(59,130,246,0.18);">' +
+    '<strong>Logika terbaru (Step 3):</strong> Bandingan di tabel memakai Stock SAP mentah dari Step 1. Untuk menjelaskan selisih, hitung <strong>SAP efektif</strong> = Stock SAP input − pengiriman yang menurut Anda belum motong SAP (belum TP) + bongkar yang menurut Anda belum tercermin di SAP. ' +
+    'Audit <strong>dua arah</strong>: centang kirim <em>dan</em> bongkar bila perlu — selisih bisa berasal dari salah satu sisi atau kombinasi. Jika masih tidak cocok, telusuri input salah BK, transaksi dobel, atau koreksi manual.</p>';
+
   if (!adaSelisih) {
-    ketText.innerHTML = '<span style="color:var(--cm);font-weight:700;"><i class="fas fa-check-circle"></i> SEMUA SESUAI —</span> Tidak ada perbedaan stock antara sistem dan SAP. Lanjut ekspor laporan atau done.';
+    ketText.innerHTML = '<span style="color:var(--cm);font-weight:700;"><i class="fas fa-check-circle"></i> SEMUA SESUAI —</span> Tidak ada perbedaan stock mentah antara sistem dan SAP (Step 1). Lanjut ke Step 4 untuk ekspor laporan.' + caraBaca;
     $('sap_done_all_btn').style.display = '';
     $('sap_lihat_detail_btn').style.display = 'none';
     ketBox.style.display = 'block';
   } else {
     var detailLines = details.map(function(d) {
-      return '<div style="margin-bottom:6px;padding:8px 10px;background:#fef2f2;border-radius:6px;border-left:3px solid var(--ck);">' +
-        '<strong>' + d.bk + '</strong> (' + d.material + '): <strong style="color:var(--ck);">' + d.arah + '</strong></div>';
+      return '<div style="margin-bottom:8px;padding:10px 12px;background:#fef2f2;border-radius:6px;border-left:3px solid var(--ck);font-size:0.84rem;line-height:1.5;">' +
+        '<strong>' + d.bk + '</strong> (' + sapEsc(d.material) + ')<br>' + d.arah + '</div>';
     }).join('');
-    ketText.innerHTML = '<div style="margin-bottom:8px;font-weight:700;color:var(--ck);"><i class="fas fa-exclamation-triangle"></i> DITEMUKAN ' + details.length + ' BK DENGAN SELISIH:</div>' + detailLines;
+    ketText.innerHTML =
+      '<div style="margin-bottom:8px;font-weight:700;color:var(--ck);"><i class="fas fa-exclamation-triangle"></i> Ada ' + details.length + ' BK dengan selisih (perbandingan SAP mentah vs sistem)</div>' +
+      detailLines + caraBaca;
     $('sap_done_all_btn').style.display = 'none';
     $('sap_lihat_detail_btn').style.display = '';
     ketBox.style.display = 'block';
   }
   $('sap_export_btn').style.display = '';
+  sapAutoSaveDraft();
+}
+
+function renderSAPStep4() {
+  $('sap_step1').style.display = 'none';
+  $('sap_step2').style.display = 'none';
+  $('sap_step3').style.display = 'none';
+  var s4 = $('sap_step4');
+  if (s4) s4.style.display = 'block';
+  sapState.lastUiStep = 4;
+  updateStepIndicator(4);
+  sapAutoSaveDraft();
 }
 
 function updateStepIndicator(step) {
@@ -262,18 +437,20 @@ function sapEsc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function renderSAPHistorySplitTables(bkId) {
+function renderSAPHistorySplitTables(bkId, bongPreload, kirPreload) {
   var tbB = $('sap_last_bongkar_tb');
   var tbK = $('sap_last_kirim_tb');
   if (!tbB || !tbK) return;
 
-  var bong = (appState.history.bongkar || []).filter(function(r) { return r.BK_ID === bkId; });
-  bong.sort(function(a, b) { return new Date(b.TANGGAL) - new Date(a.TANGGAL); });
-  bong = bong.slice(0, 10);
-
-  var kir = (appState.history.kirim || []).filter(function(r) { return r.BK_ID === bkId; });
-  kir.sort(function(a, b) { return new Date(b.TANGGAL) - new Date(a.TANGGAL); });
-  kir = kir.slice(0, 10);
+  var bong;
+  var kir;
+  if (Array.isArray(bongPreload) && Array.isArray(kirPreload)) {
+    bong = sapSortRowsByTanggalDesc(bongPreload);
+    kir = sapSortRowsByTanggalDesc(kirPreload);
+  } else {
+    bong = sapSortRowsByTanggalDesc((appState.history.bongkar || []).filter(function(r) { return sapBkRowMatches(r.BK_ID, bkId); }));
+    kir = sapSortRowsByTanggalDesc((appState.history.kirim || []).filter(function(r) { return sapBkRowMatches(r.BK_ID, bkId); }));
+  }
 
   tbB.innerHTML = '';
   if (!bong.length) {
@@ -320,6 +497,109 @@ function renderSAPHistorySplitTables(bkId) {
   if (ckB) ckB.checked = false;
 }
 
+/** Selisih stok sistem − SAP efektif (kg). Positif = sistem lebih besar. */
+var SAP_GAP_TOL_KG = 0.01;
+
+function sapEffectiveGapKg(bkId) {
+  var r = sapState.compareResult.find(function(x) { return x.bkId === bkId; });
+  if (!r) return 0;
+  var adj = sapState.adjustPending[bkId] || {};
+  var k = Number(adj.kirimBelumTp) || 0;
+  var b = Number(adj.bongkarBelumSap) || 0;
+  var sapEff = Number(r.sap) - k + b;
+  return Number(r.sistem) - sapEff;
+}
+
+function sapBkStillNeedsInvestigation(bkId) {
+  return Math.abs(sapEffectiveGapKg(bkId)) > SAP_GAP_TOL_KG;
+}
+
+/** BK yang masih punya selisih efektif vs sistem — untuk chip Step 3. */
+function sapListBkIdsStillNeedingInvestigation() {
+  var out = [];
+  BK_LIST_SAP.forEach(function(bid) {
+    if (sapBkStillNeedsInvestigation(bid)) out.push(bid);
+  });
+  return out;
+}
+
+function sapRefreshEffectiveStrip(bkId) {
+  var result = sapState.compareResult.find(function(r) { return r.bkId === bkId; });
+  if (!result) return;
+  var adj = sapState.adjustPending[bkId] || {};
+  var k = Number(adj.kirimBelumTp) || 0;
+  var b = Number(adj.bongkarBelumSap) || 0;
+  var sapIn = Number(result.sap) || 0;
+  var sapEff = sapIn - k + b;
+  var gapEff = Number(result.sistem) - sapEff;
+
+  var elIn = $('sap_eff_sap_input');
+  if (elIn) elIn.textContent = fmtNum(sapIn);
+  var elK = $('sap_eff_k');
+  if (elK) elK.textContent = fmtNum(k);
+  var elB = $('sap_eff_b');
+  if (elB) elB.textContent = fmtNum(b);
+  var elT = $('sap_eff_total');
+  if (elT) elT.textContent = fmtNum(sapEff);
+  var elG = $('sap_eff_gap_vs_sys');
+  if (elG) {
+    elG.textContent = (gapEff >= 0 ? '+' : '−') + fmtNum(Math.abs(gapEff));
+    elG.style.color = Math.abs(gapEff) < 1e-6 ? 'var(--cm)' : gapEff > 0 ? 'var(--ck)' : 'var(--cw)';
+  }
+
+  var rowM = $('sap_eff_row_minus');
+  if (rowM) rowM.style.display = k > 0 ? 'flex' : 'none';
+  var rowP = $('sap_eff_row_plus');
+  if (rowP) rowP.style.display = b > 0 ? 'flex' : 'none';
+  var panel = $('sap_effective_panel');
+  if (panel) panel.style.display = 'block';
+
+  var ss = $('sap_strip_sistem');
+  if (ss) ss.textContent = fmtNum(result.sistem);
+  var sp = $('sap_strip_sap');
+  if (sp) sp.textContent = fmtNum(sapEff);
+  var sg = $('sap_strip_gap');
+  if (sg) sg.textContent = fmtNum(Math.abs(gapEff));
+  var sgl = $('sap_strip_gap_lbl');
+  if (sgl) {
+    sgl.textContent = gapEff >= 0 ? 'Selisih sistem − SAP efektif (kg)' : 'Selisih SAP efektif − sistem (kg)';
+  }
+  var hdrSap = $('sap_strip_sap_hdr');
+  if (hdrSap) hdrSap.textContent = 'SAP efektif (kg)';
+}
+
+function sapApplyKirimTerap() {
+  var bkId = sapState.detailBK;
+  if (!bkId) return;
+  var sumK = 0;
+  document.querySelectorAll('.sap-cb-kirim:checked').forEach(function(cb) {
+    sumK += parseFloat(cb.getAttribute('data-netto')) || 0;
+  });
+  if (!sapState.adjustPending[bkId]) sapState.adjustPending[bkId] = {};
+  sapState.adjustPending[bkId].kirimBelumTp = sumK;
+  toast('Pengurangan SAP (kirim belum TP): ' + fmtNum(sumK) + ' kg', 's');
+  sapRefreshEffectiveStrip(bkId);
+  updateSapReconcileTotals();
+  sapAutoSaveDraft();
+  if (!sapBkStillNeedsInvestigation(bkId)) sapShowDiff(bkId);
+}
+
+function sapApplyBongkarTerap() {
+  var bkId = sapState.detailBK;
+  if (!bkId) return;
+  var sumB = 0;
+  document.querySelectorAll('.sap-cb-bongkar:checked').forEach(function(cb) {
+    sumB += parseFloat(cb.getAttribute('data-netto')) || 0;
+  });
+  if (!sapState.adjustPending[bkId]) sapState.adjustPending[bkId] = {};
+  sapState.adjustPending[bkId].bongkarBelumSap = sumB;
+  toast('Penambahan SAP (bongkar belum di SAP): ' + fmtNum(sumB) + ' kg', 's');
+  sapRefreshEffectiveStrip(bkId);
+  updateSapReconcileTotals();
+  sapAutoSaveDraft();
+  if (!sapBkStillNeedsInvestigation(bkId)) sapShowDiff(bkId);
+}
+
 function updateSapReconcileTotals() {
   var result = sapState.activeDiffResult;
   var sumK = 0;
@@ -337,18 +617,10 @@ function updateSapReconcileTotals() {
 
   var note = $('sap_reconcile_note');
   if (!note || !result) return;
-  if (result.selisih <= 0) {
-    note.textContent = '';
-    return;
-  }
-  var gap = Math.abs(result.selisih);
-  var parts = [];
-  parts.push('Selisih yang perlu dijelaskan vs SAP: ' + fmtNum(gap) + ' kg.');
-  parts.push(' Total terpilih kirim: ' + fmtNum(sumK) + ' kg, bongkar: ' + fmtNum(sumB) + ' kg.');
-  if (gap > 0 && Math.abs(sumK - gap) <= Math.max(gap * 0.02, 1)) {
-    parts.push(' Nilai kirim terpilih mendekati selisih — kemungkinan delay penarikan stok di SAP.');
-  }
-  note.textContent = parts.join('');
+  note.textContent =
+    'Centang transaksi yang relevan di kedua tabel, lalu klik Terapkan pada kolom kirim dan/atau bongkar. ' +
+    'Selisih bisa muncul dari pengiriman saja, bongkar saja, atau keduanya — audit dua sisi. ' +
+    'Terpilih (belum Terapkan): kirim ' + fmtNum(sumK) + ' kg, bongkar ' + fmtNum(sumB) + ' kg.';
 }
 
 function sapPrefillSAPInlineForms(bkId, result) {
@@ -356,8 +628,9 @@ function sapPrefillSAPInlineForms(bkId, result) {
   $('sap_b_bk_id').value = bkId;
   $('sap_b_operator').value = appState.user ? appState.user.nama : '';
   $('sap_b_shift').value = '1';
-  $('sap_b_material').value = result.material || '';
-  $('sap_b_supplier').value = '';
+  var bkMaster = getBKById(bkId);
+  $('sap_b_material').value = (result && result.material) || bkMaster.MATERIAL_DEFAULT || '';
+  $('sap_b_supplier').value = (bkMaster.SUPPLIER_DEFAULT || '').trim();
   $('sap_bongkar_input').value = '';
 
   $('sap_ik_tanggal').value = todayStr();
@@ -384,6 +657,16 @@ function sapPrefillSAPInlineForms(bkId, result) {
 }
 
 function sapShowDiff(bkId) {
+  var needs = sapListBkIdsStillNeedingInvestigation();
+  if (needs.length === 0) {
+    toast('Investigasi selesai — SAP efektif sudah selaras dengan sistem. Silakan ekspor laporan.', 's');
+    renderSAPStep4();
+    return;
+  }
+  if (needs.indexOf(bkId) === -1) {
+    bkId = needs[0];
+  }
+
   sapState.detailBK = bkId;
   var result = sapState.compareResult.find(function(r) { return r.bkId === bkId; });
   if (!result) return;
@@ -392,79 +675,79 @@ function sapShowDiff(bkId) {
   $('sap_step1').style.display = 'none';
   $('sap_step2').style.display = 'none';
   $('sap_step3').style.display = 'block';
+  var s4 = $('sap_step4');
+  if (s4) s4.style.display = 'none';
+  sapState.lastUiStep = 3;
   updateStepIndicator(3);
 
   var chipList = $('sap_bk_diff_list');
   chipList.innerHTML = '';
-  sapState.compareResult.forEach(function(r) {
+  needs.forEach(function(bid) {
     var chip = document.createElement('button');
-    chip.className = 'btn' + (r.bkId === bkId ? '' : ' no');
+    chip.className = 'btn' + (bid === bkId ? '' : ' no');
     chip.style.padding = '6px 14px';
     chip.style.fontSize = '0.8rem';
-    chip.textContent = r.bkId + (r.selisih !== 0 ? ' ⚠' : ' ✓');
-    chip.style.borderColor = r.selisih !== 0 ? 'var(--ck)' : 'var(--cm)';
-    chip.style.color = r.selisih !== 0 ? 'var(--ck)' : 'var(--cm)';
-    chip.addEventListener('click', function() { sapShowDiff(r.bkId); });
+    chip.textContent = bid + ' ⚠';
+    chip.style.borderColor = 'var(--ck)';
+    chip.style.color = 'var(--ck)';
+    chip.addEventListener('click', function() { sapShowDiff(bid); });
     chipList.appendChild(chip);
   });
 
-  var sesuai = result.selisih === 0;
-  var sistemLebih = result.selisih > 0;
-  var sapLebih = result.selisih < 0;
+  var gapEff = sapEffectiveGapKg(bkId);
+  var sesuai = Math.abs(gapEff) <= SAP_GAP_TOL_KG;
+  var sistemLebih = gapEff > SAP_GAP_TOL_KG;
+  var sapLebih = gapEff < -SAP_GAP_TOL_KG;
 
   $('sap_diff_sesuai_box').style.display = sesuai ? 'block' : 'none';
   var mismatch = $('sap_diff_mismatch_wrap');
   if (mismatch) mismatch.style.display = sesuai ? 'none' : 'block';
 
-  if (sesuai) return;
-
-  $('sap_strip_sistem').textContent = fmtNum(result.sistem);
-  $('sap_strip_sap').textContent = fmtNum(result.sap);
-  $('sap_strip_gap').textContent = fmtNum(Math.abs(result.selisih));
+  var panelEff = $('sap_effective_panel');
+  if (sesuai) {
+    if (panelEff) panelEff.style.display = 'none';
+    sapAutoSaveDraft();
+    return;
+  }
 
   var hint = $('sap_strip_hint');
-  var gapLbl = $('sap_strip_gap_lbl');
-
   var panelB = $('sap_panel_bongkar_inline');
   var panelK = $('sap_panel_kirim_inline');
   var btnMb = $('sap_btn_miss_bongkar');
   var btnMk = $('sap_btn_miss_kirim');
   var recK = $('sap_reconcile_kirim_block');
-  var sumBline = $('sap_sum_line_bongkar');
   var manualW = $('sap_manual_kirim_wrap');
 
-  if (sistemLebih) {
-    if (gapLbl) gapLbl.textContent = 'Gap sistem vs SAP (kg)';
-    if (hint) {
-      hint.textContent =
-        'Stok sistem lebih besar daripada SAP. Centang baris kirim/bongkar yang menurut Anda sudah motong SAP — jika total kirim terpilih mendekati gap, selisih bisa hanya delay SAP.';
-    }
-    if (recK) recK.style.display = 'block';
-    if (sumBline) sumBline.style.display = 'block';
-    if (btnMb) btnMb.style.display = 'none';
-    if (btnMk) btnMk.style.display = 'none';
-    if (manualW) manualW.style.display = 'block';
-    if (panelB) panelB.style.display = 'none';
-    if (panelK) panelK.style.display = 'none';
-    $('sap_kirim_manual_input').value = '';
-  } else if (sapLebih) {
-    if (gapLbl) gapLbl.textContent = 'SAP lebih tinggi dari sistem (kg)';
-    if (hint) {
-      hint.textContent =
-        'SAP lebih tinggi dari stok sistem. Gunakan tabel untuk audit; jika ada transaksi yang belum masuk aplikasi, buka form melalui tautan di bawah.';
-    }
-    if (recK) recK.style.display = 'none';
-    if (sumBline) sumBline.style.display = 'none';
-    if (btnMb) btnMb.style.display = 'block';
-    if (btnMk) btnMk.style.display = 'block';
-    if (manualW) manualW.style.display = 'none';
-    if (panelB) panelB.style.display = 'none';
-    if (panelK) panelK.style.display = 'none';
+  if (hint) {
+    hint.innerHTML =
+      '<strong>Audit dua arah (kirim &amp; bongkar)</strong><br>' +
+      (sapLebih
+        ? '<span style="color:var(--tp);">Stock SAP (input Step 1) lebih tinggi daripada stok sistem. Potensi: bongkaran/penerimaan di gudang yang belum ter-input di aplikasi, pengiriman yang sudah ter-record di sistem dengan pola berbeda, kesalahan input SAP, atau kombinasi. ' +
+          'Cek tabel <strong>bongkar</strong> (baris yang belum tercermin di SAP → Terapkan +) dan tabel <strong>kirim</strong> (yang sudah jalan tapi SAP belum tarik → Terapkan −). Urutkan penyebab lain satu per satu.</span>'
+        : '<span style="color:var(--tp);">Stok sistem lebih besar daripada Stock SAP (input). Potensi: pengiriman sudah berjalan tetapi SAP belum memotong stok (belum TP / delay tarik), saldo SAP ter-input lebih kecil dari fisik, atau ada mutasi yang belum tercatat konsisten. ' +
+          'Cek tabel <strong>kirim</strong> dan <strong>bongkar</strong> — selisih bisa dari satu sisi saja atau keduanya.</span>') +
+      '<br><br><strong>SAP efektif</strong> = input Step 1 − total kirim belum TP (setelah Terapkan) + total bongkar belum di SAP (setelah Terapkan). Angka di strip kanan memakai SAP efektif.';
   }
 
-  renderSAPHistorySplitTables(bkId);
-  sapPrefillSAPInlineForms(bkId, result);
-  updateSapReconcileTotals();
+  if (recK) recK.style.display = 'block';
+  if (btnMb) btnMb.style.display = 'block';
+  if (btnMk) btnMk.style.display = 'block';
+  if (manualW) {
+    manualW.style.display = sistemLebih ? 'block' : 'none';
+    if (sistemLebih && $('sap_kirim_manual_input')) $('sap_kirim_manual_input').value = '';
+  }
+  if (panelB) panelB.style.display = 'none';
+  if (panelK) panelK.style.display = 'none';
+
+  showLoader(true);
+  loadSAPHistoryForBK(bkId, function(bong, kir) {
+    showLoader(false);
+    renderSAPHistorySplitTables(bkId, bong, kir);
+    sapPrefillSAPInlineForms(bkId, result);
+    sapRefreshEffectiveStrip(bkId);
+    updateSapReconcileTotals();
+    sapAutoSaveDraft();
+  });
 }
 
 function sapInlineKirimSave() {
@@ -502,6 +785,8 @@ function sapInlineKirimSave() {
 }
 
 function sapBackToReview() {
+  var s4 = $('sap_step4');
+  if (s4) s4.style.display = 'none';
   renderSAPStep2();
 }
 
@@ -511,10 +796,8 @@ function sapBackToInput() {
 }
 
 function sapDoneAll() {
-  modal('Konfirmasi Export', 'Semua data sesuai. Ekspor laporan sekarang?', 'Ya', 'Batal').then(function(ok) {
-    if (!ok) return;
-    showExportOptions();
-  });
+  renderSAPStep4();
+  toast('Ringkasan Step 4 — silakan ekspor laporan.', 's');
 }
 
 function sapExportReport() {
@@ -541,22 +824,12 @@ function showExportOptions() {
 
 function sapExport(format) {
   $('modal').classList.remove('active');
-  var rows = [['BK','Material','Stock Sistem (kg)','Stock SAP (kg)','Selisih (kg)','Status']];
-  sapState.compareResult.forEach(function(r) {
-    var status = r.selisih === 0 ? 'SESUAI' : r.selisih > 0 ? 'KURANG_SISTEM' : 'LEBIH_SISTEM';
-    rows.push([r.bkId, r.material, r.sistem, r.sap, r.selisih, status]);
-  });
-  if (format === 'csv') {
-    var csv = rows.map(function(r) { return r.join(','); }).join('\n');
-    downloadFile('cek_sap_report.csv', 'text/csv', csv);
-  } else if (format === 'pdf') {
-    var html = '<html><head><meta charset="UTF-8"><title>Laporan Cek SAP</title><style>body{font-family:Arial,sans-serif;padding:20px;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #333;padding:8px;}th{background:#0f172a;color:#fff;}tr:nth-child(even){background:#f8fafc;}</style></head><body><h2>Laporan Cek SAP</h2><p>Tanggal: ' + todayStr() + '</p><table>' + rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';}).join('') + '</table></body></html>';
-    var w = window.open('');
-    w.document.write(html);
-    w.document.close();
-    w.print();
+  if (typeof LaporanExport !== 'undefined' && LaporanExport.run) {
+    var ok = LaporanExport.run(format);
+    if (ok) toast('Export ' + format.toUpperCase() + ' berhasil', 's');
+    return;
   }
-  toast('Export ' + format.toUpperCase() + ' berhasil', 's');
+  toast('Modul ekspor laporan tidak dimuat.', 'e');
 }
 
 function downloadFile(filename, mime, content) {
@@ -568,9 +841,9 @@ function downloadFile(filename, mime, content) {
 }
 
 function sapLihatDetail() {
-  // auto-select first BK with diff
-  var diffBK = sapState.compareResult.find(function(r) { return r.selisih !== 0; });
-  if (diffBK) sapShowDiff(diffBK.bkId);
+  var needs = sapListBkIdsStillNeedingInvestigation();
+  if (needs.length) sapShowDiff(needs[0]);
+  else toast('Tidak ada BK dengan selisih efektif — semua sudah selaras.', 'i');
 }
 
 function sapBongkarSave() {
@@ -665,7 +938,7 @@ function saveBongkar() {
     if (resp.status === 'error') { toast('Gagal: ' + resp.message, 'e'); return; }
     toast('Bongkar berhasil disimpan!', 's');
     $('b_netto').value = '';
-    $('b_supplier').value = '';
+    applyBongkarMasterDefaults(bkId);
     setTimeout(function() { loadDashboard(); }, 800);
   });
 }
@@ -865,9 +1138,6 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.nav-item').forEach(function(el) {
     el.addEventListener('click', function() { navigateTo(this.dataset.page); });
   });
-  document.querySelectorAll('.bnav-item').forEach(function(el) {
-    el.addEventListener('click', function() { navigateTo(this.dataset.page); });
-  });
 
   // Header tab navigation
   document.querySelectorAll('.header-tab').forEach(function(tab) {
@@ -883,11 +1153,9 @@ document.addEventListener('DOMContentLoaded', function() {
   $('btnKirim').addEventListener('click', saveKirim);
   $('btnOpname').addEventListener('click', saveOpname);
 
-  // Auto-fill Bongkar BK
+  // Auto-fill Bongkar BK — material & supplier dari BKK_Master
   $('b_bk_id').addEventListener('change', function() {
-    var bk = getBKById(this.value);
-    if (bk.MATERIAL_DEFAULT) $('b_material').value = bk.MATERIAL_DEFAULT;
-    if (bk.SUPPLIER_DEFAULT) $('b_supplier').value = bk.SUPPLIER_DEFAULT;
+    applyBongkarMasterDefaults(this.value);
   });
 
   // Auto-fill Kirim BK
@@ -928,6 +1196,16 @@ document.addEventListener('DOMContentLoaded', function() {
   $('sap_done_all_btn').addEventListener('click', sapDoneAll);
   $('sap_export_btn').addEventListener('click', sapExportReport);
   $('sap_lihat_detail_btn').addEventListener('click', sapLihatDetail);
+  var sTapK = $('sap_btn_terap_kirim');
+  if (sTapK) sTapK.addEventListener('click', sapApplyKirimTerap);
+  var sTapB = $('sap_btn_terap_bongkar');
+  if (sTapB) sTapB.addEventListener('click', sapApplyBongkarTerap);
+  var sGo4 = $('sap_go_step4_btn');
+  if (sGo4) sGo4.addEventListener('click', function() { renderSAPStep4(); });
+  var sEx4 = $('sap_step4_export_btn');
+  if (sEx4) sEx4.addEventListener('click', sapExportReport);
+  var sBk4 = $('sap_step4_back_review');
+  if (sBk4) sBk4.addEventListener('click', sapBackToReview);
   $('sap_bongkar_save').addEventListener('click', sapBongkarSave);
   $('sap_kirim_save').addEventListener('click', sapKirimSave);
   var ikSave = $('sap_ik_save');

@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="bkk-v2-theme.css">
 <link rel="stylesheet" href="bkk-brand-theme.css">
 <link rel="stylesheet" href="bkk-dashboard-page.css">
+<link rel="stylesheet" href="laporan-export.css?v=6">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -107,11 +108,12 @@
     <div class="content-area" id="contentArea">
       <div class="toast-c" id="toastContainer"></div>
 
-      <!-- Subnav Dashboard | Kartu Stock (tampil di kedua halaman) -->
+      <!-- Subnav: Dashboard | Kartu Stock | Outstanding (live) — hanya di area ini -->
       <div id="subnavDashStock" class="view-toggle-bar subnav-dash-kartu" hidden>
         <div class="view-toggle-group">
           <button type="button" class="view-tab tab-dashboard active" data-page="dashboard"><i class="fas fa-th-large"></i> Dashboard</button>
           <button type="button" class="view-tab tab-kartustock" data-page="kartustock"><i class="fas fa-chart-bar"></i> Kartu Stock</button>
+          <button type="button" class="view-tab tab-outstanding" data-page="outstanding"><i class="fas fa-broadcast-tower"></i> Outstanding (live)</button>
         </div>
       </div>
 
@@ -173,6 +175,13 @@
             </thead>
             <tbody id="tblInv"></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- PAGE: OUTSTANDING (LIVE) — embed outstanding-bkk.html -->
+      <div class="page page-outstanding-page" id="page-outstanding">
+        <div class="outstanding-iframe-shell">
+          <iframe id="iframeOutstanding" class="outstanding-iframe" title="Outstanding BKK Live" src="about:blank"></iframe>
         </div>
       </div>
 
@@ -334,12 +343,14 @@
         <div class="ftitle" style="margin-bottom:16px;"><i class="fas fa-file-invoice"></i> Cek &amp; Investigasi SAP</div>
 
         <!-- Step indicator -->
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;" id="sap_step_indicator">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;" id="sap_step_indicator">
           <div class="sap-step active" data-step="1"><span class="sap-step-num">1</span><span class="sap-step-label">Input Stock</span></div>
           <div class="sap-step-line"></div>
           <div class="sap-step" data-step="2"><span class="sap-step-num">2</span><span class="sap-step-label">Review</span></div>
           <div class="sap-step-line"></div>
-          <div class="sap-step" data-step="3"><span class="sap-step-label">Done</span></div>
+          <div class="sap-step" data-step="3"><span class="sap-step-num">3</span><span class="sap-step-label">Investigasi</span></div>
+          <div class="sap-step-line"></div>
+          <div class="sap-step" data-step="4"><span class="sap-step-num">4</span><span class="sap-step-label">Selesai</span></div>
         </div>
 
         <!-- STEP 1: Input stock per BK -->
@@ -400,11 +411,14 @@
           <div class="fcard" id="sap_keterangan_box">
             <div class="ftitle" style="margin-bottom:12px;"><i class="fas fa-exclamation-circle"></i> Keterangan</div>
             <div id="sap_keterangan_text" style="font-size:0.85rem;color:var(--ts);padding:0;line-height:1.6;"></div>
+            <p id="sap_step2_nav_hint" style="margin-top:14px;padding:12px 14px;background:rgba(59,130,246,0.08);border-radius:10px;font-size:0.82rem;line-height:1.55;color:var(--tp);border:1px solid rgba(59,130,246,0.2);">
+              <strong>Alur:</strong> Jika ada selisih → lanjut <strong>Step 3 Investigasi</strong> untuk cocokkan bongkar/kirim dengan SAP. Jika semua BK sesuai → bisa langsung ke <strong>Step 4 Selesai</strong> &amp; ekspor laporan.
+            </p>
           </div>
-          <div style="display:flex;gap:10px;margin-top:14px;">
+          <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
             <button class="btn" id="sap_export_btn"><i class="fas fa-download"></i> Ekspor Laporan</button>
-            <button class="btn ok" id="sap_done_all_btn" style="display:none;"><i class="fas fa-check-circle"></i> Done — Semua Sesuai</button>
-            <button class="btn" id="sap_lihat_detail_btn" style="display:none;"><i class="fas fa-search"></i> Lihat Detail Selisih</button>
+            <button class="btn ok" id="sap_done_all_btn" style="display:none;"><i class="fas fa-check-circle"></i> Selesai — Semua Sesuai (Step 4)</button>
+            <button class="btn" id="sap_lihat_detail_btn" style="display:none;"><i class="fas fa-search"></i> Investigasi selisih (Step 3)</button>
           </div>
         </div>
 
@@ -428,7 +442,7 @@
                     <strong class="sap-strip-val" id="sap_strip_sistem">0</strong>
                   </div>
                   <div class="sap-strip-cell">
-                    <span class="sap-strip-label">Stok SAP (kg)</span>
+                    <span class="sap-strip-label" id="sap_strip_sap_hdr">SAP efektif (kg)</span>
                     <strong class="sap-strip-val" id="sap_strip_sap">0</strong>
                   </div>
                   <div class="sap-strip-cell sap-strip-gap-cell">
@@ -437,6 +451,18 @@
                   </div>
                 </div>
                 <p class="sap-strip-hint" id="sap_strip_hint"></p>
+              </div>
+
+              <div class="fcard sap-effective-card" id="sap_effective_panel" style="display:none;margin-bottom:16px;">
+                <div class="ftitle" style="font-size:0.9rem;margin-bottom:10px;"><i class="fas fa-calculator"></i> SAP efektif (untuk pembanding &amp; laporan)</div>
+                <p style="font-size:0.78rem;color:var(--ts);margin:0 0 12px;line-height:1.45;">Angka di bawah hanya untuk menjelaskan selisih sebelum laporan — tidak menulis ke sistem SAP.</p>
+                <div class="sap-eff-rows">
+                  <div class="sap-eff-line"><span>Stock SAP (input Step 1)</span><strong id="sap_eff_sap_input">0</strong><span class="sap-eff-unit">kg</span></div>
+                  <div class="sap-eff-line" id="sap_eff_row_minus"><span>− Pengiriman belum tarik SAP (belum TP)</span><strong id="sap_eff_k">0</strong><span class="sap-eff-unit">kg</span></div>
+                  <div class="sap-eff-line" id="sap_eff_row_plus"><span>+ Bongkar belum tercermin di SAP</span><strong id="sap_eff_b">0</strong><span class="sap-eff-unit">kg</span></div>
+                  <div class="sap-eff-line sap-eff-line-total"><span>= SAP efektif</span><strong id="sap_eff_total">0</strong><span class="sap-eff-unit">kg</span></div>
+                  <div class="sap-eff-line sap-eff-line-gap"><span>Selisih vs stok sistem</span><strong id="sap_eff_gap_vs_sys">0</strong><span class="sap-eff-unit">kg</span></div>
+                </div>
               </div>
 
               <div class="sap-diff-split-grid">
@@ -453,7 +479,8 @@
                       <tbody id="sap_last_bongkar_tb"></tbody>
                     </table>
                   </div>
-                  <p class="sap-mini-sum" id="sap_sum_line_bongkar" style="display:none;">Terpilih bongkar: <strong id="sap_sum_bongkar_checked">0</strong> kg</p>
+                  <p class="sap-mini-sum">Terpilih bongkar (saat ini): <strong id="sap_sum_bongkar_checked">0</strong> kg</p>
+                  <button type="button" class="btn" id="sap_btn_terap_bongkar" style="width:100%;margin-top:10px;"><i class="fas fa-check-double"></i> Terapkan: bongkar belum di SAP (+)</button>
 
                   <button type="button" class="sap-miss-link-btn" id="sap_btn_miss_bongkar" style="display:none;">
                     Ada transaksi <strong>bongkar</strong> yang belum ter-input? <span class="sap-link-action">Klik di sini</span>
@@ -488,10 +515,11 @@
                       <tbody id="sap_last_kirim_tb"></tbody>
                     </table>
                   </div>
-                  <div id="sap_reconcile_kirim_block" class="sap-reconcile-box" style="display:none;">
-                    <p class="sap-reconcile-line">Terpilih pengiriman (dianggap sudah motong SAP): <strong id="sap_sum_kirim_checked">0</strong> kg</p>
+                  <div id="sap_reconcile_kirim_block" class="sap-reconcile-box">
+                    <p class="sap-reconcile-line">Terpilih pengiriman (saat ini): <strong id="sap_sum_kirim_checked">0</strong> kg</p>
                     <p class="sap-reconcile-note" id="sap_reconcile_note"></p>
                   </div>
+                  <button type="button" class="btn" id="sap_btn_terap_kirim" style="width:100%;margin-top:10px;"><i class="fas fa-check-double"></i> Terapkan: kirim belum tarik SAP (−)</button>
 
                   <button type="button" class="sap-miss-link-btn" id="sap_btn_miss_kirim" style="display:none;">
                     Ada transaksi <strong>kirim</strong> yang belum ter-input? <span class="sap-link-action">Klik di sini</span>
@@ -528,6 +556,22 @@
                   </div>
                 </div>
               </div>
+              <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;">
+                <button type="button" class="btn ok" id="sap_go_step4_btn"><i class="fas fa-flag-checkered"></i> Lanjut ke Step 4 — Ringkasan &amp; ekspor</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: Selesai -->
+        <div id="sap_step4" style="display:none;">
+          <div class="fcard" style="text-align:center;padding:28px 20px;">
+            <div style="font-size:2.5rem;color:var(--cm);margin-bottom:12px;"><i class="fas fa-clipboard-check"></i></div>
+            <div style="font-family:var(--fs);font-weight:800;font-size:1.15rem;margin-bottom:8px;">Ringkasan Cek SAP</div>
+            <p style="color:var(--ts);font-size:0.9rem;line-height:1.55;max-width:520px;margin:0 auto 20px;">Silakan ekspor laporan untuk email atau arsip. Anda dapat kembali ke Review jika perlu mengoreksi input SAP atau audit Step 3.</p>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+              <button type="button" class="btn ok" id="sap_step4_export_btn"><i class="fas fa-download"></i> Ekspor laporan</button>
+              <button type="button" class="btn no" id="sap_step4_back_review"><i class="fas fa-arrow-left"></i> Kembali ke Review</button>
             </div>
           </div>
         </div>
@@ -648,15 +692,6 @@
   <div class="loader-text">Memuat data...</div>
 </div>
 
-<!-- BOTTOM NAV MOBILE -->
-<nav class="bnav" id="bnav">
-  <div class="bnav-item" data-page="dashboard"><i class="fas fa-th-large bniv"></i><span>Dashboard</span></div>
-  <div class="bnav-item" data-page="bongkar"><i class="fas fa-truck-loading bniv"></i><span>Bongkar</span></div>
-  <div class="bnav-item" data-page="kirim"><i class="fas fa-paper-plane bniv"></i><span>Kirim</span></div>
-  <div class="bnav-item" data-page="opname"><i class="fas fa-boxes-stacked bniv"></i><span>Opname</span></div>
-  <div class="bnav-item" data-page="history"><i class="fas fa-history bniv"></i><span>Riwayat</span></div>
-</nav>
-
 <script src="bkk-config.js"></script>
 <script src="bkk-core.js"></script>
 <script src="bkk-dashboard-bk-gauges.js"></script>
@@ -664,6 +699,7 @@
 <script src="bkk-dashboard-charts.js"></script>
 <script src="bkk-dashboard.js"></script>
 <script src="bkk-history.js"></script>
+<script src="laporan-export.js?v=6"></script>
 <script src="bkk-sap.js"></script>
 <script src="bkk-kartustock.js"></script>
 

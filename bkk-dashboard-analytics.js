@@ -34,10 +34,11 @@ function renderKPIs() {
   data.forEach(function(bk) {
     totalStok += Number(bk.STOK_AKTIF) || 0;
   });
+  var todayMv = appState.dashKpiToday || { masuk: 0, keluar: 0 };
   var kpis = [
     { label: 'Total Stok', value: totalStok, sub: 'kg di seluruh BK', type: 'stok', icon: 'fa-cubes' },
-    { label: 'Total Masuk', value: 0, sub: 'kg Bongkar hari ini', type: 'masuk', icon: 'fa-truck-loading' },
-    { label: 'Total Keluar', value: 0, sub: 'kg Kirim hari ini', type: 'keluar', icon: 'fa-paper-plane' }
+    { label: 'Total Masuk', value: Number(todayMv.masuk) || 0, sub: 'kg Bongkar hari ini (WIB)', type: 'masuk', icon: 'fa-truck-loading' },
+    { label: 'Total Keluar', value: Number(todayMv.keluar) || 0, sub: 'kg Kirim hari ini (WIB)', type: 'keluar', icon: 'fa-paper-plane' }
   ];
   var grid = $('kpiGrid');
   if (!grid) return;

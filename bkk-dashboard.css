@@ -1059,41 +1059,6 @@ html, body {
   cursor: not-allowed;
 }
 
-/* Bottom Nav Mobile */
-.bnav {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #fff;
-  border-top: 1px solid var(--bd);
-  z-index: 199;
-  padding: 6px 0;
-  justify-content: space-around;
-}
-
-.bnav .bnav-item {
-  flex: 1;
-  text-align: center;
-  padding: 6px 4px;
-  cursor: pointer;
-  font-size: 0.65rem;
-  color: var(--ts);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.bnav .bnav-item.active {
-  color: var(--ac);
-}
-
-.bnav .bniv {
-  font-size: 1.2rem;
-}
-
 /* Sidebar Overlay */
 .sovl {
   display: none;
@@ -1533,16 +1498,12 @@ html, body {
     grid-template-columns: 1fr;
   }
 
-  .bnav {
-    display: flex;
-  }
-
   .content-area {
-    padding: 14px 12px 80px;
+    padding: 14px 12px 20px;
   }
 
   .content-area.pb80 {
-    padding-bottom: 80px;
+    padding-bottom: 20px;
   }
 
   .header {
@@ -1775,10 +1736,42 @@ html, body {
   background: var(--bg);
 }
 
+.sap-effective-card {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--bd);
+  background: rgba(59, 130, 246, 0.06);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.sap-eff-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 4px 0;
+  flex-wrap: wrap;
+}
+
+.sap-eff-total {
+  font-weight: 700;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--bd);
+}
+
+.sap-step4-card {
+  padding: 18px;
+  border-radius: var(--r);
+  border: 1px solid var(--bd);
+  background: var(--bg);
+  margin-bottom: 16px;
+}
+
 @media print {
   .sidebar,
   .header,
-  .bnav,
   .toast-c,
   .hdr-btn,
   .modal-o,
@@ -1799,5 +1792,26 @@ html, body {
   .page {
     display: block !important;
   }
+}
+
+/* Outstanding (live) — iframe dari outstanding-bkk.html */
+.page-outstanding-page {
+  flex: 1;
+  min-height: 0;
+}
+.outstanding-iframe-shell {
+  border-radius: var(--r);
+  overflow: hidden;
+  border: 1px solid var(--bd);
+  background: #020408;
+  box-shadow: var(--sh);
+}
+iframe.outstanding-iframe {
+  width: 100%;
+  height: calc(100vh - 200px);
+  min-height: 520px;
+  border: 0;
+  display: block;
+  vertical-align: top;
 }
 

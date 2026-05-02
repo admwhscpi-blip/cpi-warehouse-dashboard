@@ -28,6 +28,14 @@
     );
   }
 
+  function escMini(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
   function runPctCounter(el, target) {
     if (!el) return;
     var dur = 1100;
@@ -52,6 +60,7 @@
       var pctClamped = Math.min(Math.max(pct, 0), 100);
       var ageDays = bk.AGE_DAYS != null && !isNaN(Number(bk.AGE_DAYS)) ? Number(bk.AGE_DAYS) : 0;
       var ageCls = ageClass(ageDays) || 'cm';
+      var matLabel = escMini((bk.MATERIAL_DEFAULT || bk.MATERIAL || '').trim()) || '—';
       var div = document.createElement('div');
       div.className = 'bk-card bk-card--3d';
       div.setAttribute('data-bk-id', bk.BK_ID);
@@ -59,7 +68,10 @@
       div.innerHTML =
         '<div class="bk-card-glare"></div>' +
         '<div class="bk-card-head">' +
+        '<div class="bk-head-main">' +
         '<span class="bk-id">' + bk.BK_ID + '</span>' +
+        '<span class="bk-material" title="' + matLabel + '">' + matLabel + '</span>' +
+        '</div>' +
         '<span class="bk-age ' + ageCls + '" title="Umur material">' +
         '<i class="fas fa-clock"></i> ' + ageDays + ' <span class="bk-age-unit">hr</span></span>' +
         '</div>' +

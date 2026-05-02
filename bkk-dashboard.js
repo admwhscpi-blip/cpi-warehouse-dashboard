@@ -1,9 +1,44 @@
 // Dashboard orchestration — detail KPI/Kartu/Tabel/Chart di file terpisah.
+
+/** Samakan logika tanggal dengan Kartu Stock / sheet GAS (ISO UTC → kalender WIB). */
+function dashDateToYMD(d) {
+  if (d == null || d === '') return '';
+  if (typeof d === 'object' && d instanceof Date) {
+    var wib = new Date(d.getTime() + 7 * 3600000);
+    return wib.getUTCFullYear() + '-' + pad2(wib.getUTCMonth() + 1) + '-' + pad2(wib.getUTCDate());
+  }
+  if (typeof d === 'string') {
+    if (d.indexOf('T') !== -1) {
+      var parsed = new Date(d);
+      var wib2 = new Date(parsed.getTime() + 7 * 3600000);
+      return wib2.getUTCFullYear() + '-' + pad2(wib2.getUTCMonth() + 1) + '-' + pad2(wib2.getUTCDate());
+    }
+    if (d.indexOf('/') !== -1) {
+      var parts = d.split('/');
+      return parts[2] + '-' + pad2(parts[0]) + '-' + pad2(parts[1]);
+    }
+    return d.substring(0, 10);
+  }
+  return String(d).substring(0, 10);
+}
+
+function todayYMD_WIB() {
+  try {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+  } catch (e) {
+    return todayStr();
+  }
+}
+
 function loadDashboard(doneCb) {
   showLoader(true);
   fetchAPI('getBKKDashboard', {}, function(resp) {
-    showLoader(false);
-    if (resp.status === 'error') { toast('Gagal load dashboard: ' + resp.message, 'e'); if (doneCb) doneCb(false); return; }
+    if (resp.status === 'error') {
+      showLoader(false);
+      toast('Gagal load dashboard: ' + resp.message, 'e');
+      if (doneCb) doneCb(false);
+      return;
+    }
     var raw = resp.data || [];
     appState.dashData = raw.map(function(bk) {
       var id = bk.BK_ID || '';
@@ -13,9 +48,55 @@ function loadDashboard(doneCb) {
       }
       return bk;
     });
-    renderDashboard();
-    populateBKDropdowns();
-    if (doneCb) doneCb(true);
+
+    var rowsB = [];
+    var rowsK = [];
+    var rowsO = [];
+    var pending = 3;
+    var masuk = 0;
+    var keluar = 0;
+    var day = todayYMD_WIB();
+
+    function finishHistory() {
+      pending--;
+      if (pending > 0) return;
+      appState.dashKpiToday = { masuk: masuk, keluar: keluar };
+      if (typeof dashApplyLedgerStockFromHistory === 'function') {
+        dashApplyLedgerStockFromHistory(rowsB, rowsK, rowsO);
+      }
+      showLoader(false);
+      renderDashboard();
+      populateBKDropdowns();
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          if (typeof resizeDashboardCharts === 'function') resizeDashboardCharts();
+        });
+      });
+      if (doneCb) doneCb(true);
+    }
+
+    fetchAPI('getBongkarHistory', { limit: 4000 }, function(r1) {
+      if (r1.status !== 'error') {
+        rowsB = r1.data || [];
+        rowsB.forEach(function(row) {
+          if (dashDateToYMD(row.TANGGAL) === day) masuk += Number(row.NETTO_KG) || 0;
+        });
+      }
+      finishHistory();
+    });
+    fetchAPI('getKirimHistory', { limit: 4000 }, function(r2) {
+      if (r2.status !== 'error') {
+        rowsK = r2.data || [];
+        rowsK.forEach(function(row) {
+          if (dashDateToYMD(row.TANGGAL) === day) keluar += Number(row.NETTO_KG) || 0;
+        });
+      }
+      finishHistory();
+    });
+    fetchAPI('getOpnameHistory', { limit: 800 }, function(r3) {
+      if (r3.status !== 'error') rowsO = r3.data || [];
+      finishHistory();
+    });
   });
 }
 
@@ -32,26 +113,20 @@ function animateCounter(el, target) {
   if (!el) return;
   var dur = 1200;
   var start = Date.now();
+  var tgt = Number(target) || 0;
   function tick() {
     var elapsed = Date.now() - start;
     var progress = Math.min(elapsed / dur, 1);
     var e = 1 - Math.pow(1 - progress, 4);
-    var val = e * target;
-    el.textContent = fmtNum(Math.floor(val));
-    if (progress < 1) requestAnimationFrame(tick);
+    var val = e * tgt;
+    el.textContent = fmtNum(val);
+    if (progress < 1) {
+      requestAnimationFrame(tick);
+    } else {
+      el.textContent = fmtNum(tgt);
+    }
   }
   requestAnimationFrame(tick);
-}
-
-function startRefresh() {
-  stopRefresh();
-  appState.refreshTimer = setInterval(function() {
-    if (appState.currentPage === 'dashboard') loadDashboard();
-  }, CONFIG.REFRESH_MS);
-}
-
-function stopRefresh() {
-  if (appState.refreshTimer) { clearInterval(appState.refreshTimer); appState.refreshTimer = null; }
 }
 
 function initClockWidget() {
@@ -128,6 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('.view-toggle-bar .view-tab').forEach(function(t) { t.classList.remove('active'); });
       this.classList.add('active');
       if (page === 'kartustock') navigateTo('kartustock');
+      else if (page === 'outstanding') navigateTo('outstanding');
       else if (page === 'dashboard') navigateTo('dashboard');
     });
   });

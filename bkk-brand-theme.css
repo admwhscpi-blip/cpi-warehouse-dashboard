@@ -1,12 +1,15 @@
-/* CPI Smart Warehouse — sidebar ungu + header gradasi + footer brand */
+/* CPI Smart Warehouse — sidebar brand + header hijau zamrud lembut */
 
 :root {
   --brand-purple-deep: #1e1b4b;
   --brand-purple-mid: #4338ca;
   --brand-violet: #7c3aed;
-  --brand-header-bg1: #f5f3ff;
-  --brand-header-bg2: #ede9fe;
-  --brand-header-bg3: #faf5ff;
+  /* Header: hijau zamrud lembut (bukan ungu) */
+  --brand-emerald: #059669;
+  --brand-emerald-deep: #047857;
+  --brand-header-bg1: #f8faf9;
+  --brand-header-bg2: #ecfdf5;
+  --brand-header-bg3: #f0fdf9;
 }
 
 /* ── Sidebar: gradasi ungu ───────────────────────────────────────── */
@@ -84,7 +87,7 @@
   text-align: center;
   background: #eef1f5;
   border-radius: 12px;
-  padding: 14px 10px 16px;
+  padding: 14px 8px 12px;
   box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
 }
 
@@ -107,27 +110,30 @@
 }
 
 .sidebar-brand-values {
-  margin: 22px 0 0;
-  padding-top: 18px;
-  border-top: 1px solid rgba(15, 23, 42, 0.14);
+  margin: 12px 0 0;
+  padding: 10px 4px 4px;
+  border-top: 1px solid rgba(15, 23, 42, 0.1);
   font-family: var(--fb, 'Inter', sans-serif);
-  font-size: 0.54rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: clamp(0.42rem, 0.45vw + 0.33rem, 0.5rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
   text-transform: uppercase;
-  color: #0a0a0a;
+  color: #334155;
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-wrap: nowrap;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 3px 5px;
+  max-width: 100%;
 }
 
 .sidebar-values-sep {
-  color: #475569;
-  font-weight: 800;
-  opacity: 0.85;
+  color: #94a3b8;
+  font-weight: 600;
+  opacity: 0.9;
   flex-shrink: 0;
+  font-size: 0.85em;
 }
 
 /* Sidebar layout: footer tetap di bawah */
@@ -141,45 +147,59 @@
   min-height: 0;
 }
 
-/* ── Header: gradasi lembut + blok kanan user ───────────────────── */
+/* ── Header: blok kiri arsiran hijau + blok kanan arsiran abu — font kontras ── */
 .header.header-premium-v3 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
   flex-wrap: wrap;
   height: auto !important;
   min-height: 72px;
-  padding: 16px clamp(14px, 3vw, 32px) !important;
-  background: linear-gradient(
-    125deg,
-    var(--brand-header-bg1) 0%,
-    var(--brand-header-bg2) 42%,
-    var(--brand-header-bg3) 100%
-  ) !important;
-  border-bottom: 1px solid rgba(124, 58, 237, 0.14) !important;
-  box-shadow: 0 4px 24px rgba(91, 33, 182, 0.09), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  padding: 14px clamp(14px, 3vw, 28px) !important;
+  background: #eef2f6 !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35) !important;
+  box-shadow: 0 2px 16px rgba(15, 23, 42, 0.06);
 }
 
 .header-premium-v3 .header-left {
   flex: 1;
-  min-width: min(100%, 280px);
+  min-width: min(100%, 260px);
+  display: flex;
+  align-items: center;
 }
 
 .header-premium-v3 .header-left-inner {
   align-items: flex-start;
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(16, 185, 129, 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 2px 12px rgba(5, 150, 105, 0.08);
+  background-color: #ecfdf5;
+  background-image:
+    repeating-linear-gradient(
+      -36deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0) 8px,
+      rgba(5, 150, 105, 0.11) 8px,
+      rgba(5, 150, 105, 0.11) 9px
+    ),
+    linear-gradient(165deg, #d1fae5 0%, #ecfdf5 55%, #f0fdf4 100%);
 }
 
 .mobile-toggle-v2 {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border-color: rgba(124, 58, 237, 0.25) !important;
-  color: var(--brand-violet) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(6, 95, 70, 0.25) !important;
+  color: #064e3b !important;
+  box-shadow: 0 1px 4px rgba(6, 78, 59, 0.12);
 }
 
 .header-title-v3 {
   min-width: 0;
 }
 
+/* Judul: warna solid kontras di atas arsiran (bukan clip gradient) */
 .header-logo-title {
   font-family: var(--fs, 'Rajdhani', sans-serif);
   font-size: clamp(1.35rem, 3vw, 2rem);
@@ -188,11 +208,8 @@
   letter-spacing: 3px;
   margin: 0;
   line-height: 1.1;
-  background: linear-gradient(to top, #5b21b6 0%, #a855f7 45%, #faf5ff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 12px rgba(124, 58, 237, 0.25));
+  color: #022c22;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .header-meta-row {
@@ -205,9 +222,9 @@
 
 .header-tagline {
   font-family: var(--fb, 'Inter', sans-serif);
-  font-weight: 700;
+  font-weight: 800;
   font-size: clamp(0.72rem, 1.4vw, 0.84rem);
-  color: #6d28d9;
+  color: #14532d;
   letter-spacing: 0.02em;
   max-width: 200px;
   line-height: 1.35;
@@ -220,8 +237,8 @@
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(124, 58, 237, 0.35) 20%,
-    rgba(124, 58, 237, 0.35) 80%,
+    rgba(6, 95, 70, 0.28) 15%,
+    rgba(6, 95, 70, 0.28) 85%,
     transparent 100%
   );
   flex-shrink: 0;
@@ -239,24 +256,38 @@
   font-weight: 900;
   font-size: clamp(0.78rem, 1.6vw, 0.95rem);
   letter-spacing: 0.14em;
-  color: #5b21b6;
+  color: #064e3b;
 }
 
 .header-site-address {
   font-family: var(--fb, 'Inter', sans-serif);
   font-size: 0.62rem;
-  font-weight: 600;
-  color: #64748b;
+  font-weight: 700;
+  color: #166534;
   line-height: 1.45;
   max-width: 300px;
 }
 
-/* Header kanan */
+/* Header kanan — arsiran abu + teks gelap */
 .header-user-actions {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(100, 116, 139, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 2px 10px rgba(15, 23, 42, 0.06);
+  background-color: #f1f5f9;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0) 7px,
+      rgba(71, 85, 105, 0.09) 7px,
+      rgba(71, 85, 105, 0.09) 8px
+    ),
+    linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
 .header-user-chip {
@@ -264,10 +295,10 @@
   align-items: center;
   gap: 10px;
   padding: 8px 14px 8px 10px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(167, 139, 250, 0.35);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(71, 85, 105, 0.22);
   border-radius: 999px;
-  box-shadow: 0 2px 14px rgba(91, 33, 182, 0.1);
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.06);
 }
 
 .header-user-avatar {
@@ -281,8 +312,8 @@
   font-weight: 800;
   font-size: 0.95rem;
   color: #fff;
-  background: linear-gradient(145deg, #8b5cf6, #6d28d9);
-  box-shadow: 0 3px 12px rgba(91, 33, 182, 0.35);
+  background: linear-gradient(145deg, #475569, #334155);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25);
 }
 
 .header-user-name {
@@ -290,7 +321,7 @@
   font-weight: 800;
   font-size: 0.92rem;
   letter-spacing: 0.04em;
-  color: #4c1d95;
+  color: #0f172a;
   max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -311,17 +342,17 @@
   font-size: 0.76rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #b91c1c;
-  background: rgba(254, 226, 226, 0.75);
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #7f1d1d;
+  background: rgba(254, 226, 226, 0.95);
+  border: 1px solid rgba(185, 28, 28, 0.35);
   transition: background 0.2s, border-color 0.2s, transform 0.15s, box-shadow 0.2s;
 }
 
 .header-logout-btn:hover {
-  background: rgba(254, 202, 202, 0.95);
-  border-color: rgba(239, 68, 68, 0.55);
-  color: #991b1b;
-  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.15);
+  background: #fecaca;
+  border-color: rgba(185, 28, 28, 0.55);
+  color: #450a0a;
+  box-shadow: 0 4px 14px rgba(127, 29, 29, 0.18);
 }
 
 .header-logout-btn:active {
@@ -332,11 +363,11 @@
   font-size: 0.9rem;
 }
 
-/* Area konten — nuansa lembut */
+/* Area konten — aksen hijau sangat lembut (selaras header) */
 body {
   background-image:
-    radial-gradient(ellipse 90% 60% at 100% 0%, rgba(237, 233, 254, 0.7) 0%, transparent 55%),
-    radial-gradient(ellipse 70% 50% at 0% 100%, rgba(221, 214, 254, 0.45) 0%, transparent 50%),
+    radial-gradient(ellipse 90% 60% at 100% 0%, rgba(209, 250, 229, 0.5) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 0% 100%, rgba(167, 243, 208, 0.28) 0%, transparent 50%),
     linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
 }
 
@@ -357,6 +388,10 @@ body {
 }
 
 @media (max-width: 640px) {
+  .header-premium-v3 .header-left-inner {
+    padding: 12px 14px;
+  }
+
   .header-user-actions {
     width: 100%;
     justify-content: flex-end;

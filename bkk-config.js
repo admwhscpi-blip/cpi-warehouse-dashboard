@@ -1,6 +1,5 @@
 var CONFIG = {
   SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzKPJQLzRGqFXlg7UbeYG3E67l5WBGIejRHBAStzhSkhzQ8SAXuVwRTFzg2CnAI4buJ/exec',
-  REFRESH_MS: 30000,
   PAGE_SIZES: { default: 20, sap: 20 }
 };
 
@@ -24,8 +23,8 @@ var USERS_DATABASE = [
 ];
 
 var ROLE_PERMISSIONS = {
-  admin:   { dashboard: true, bongkar: true, kirim: true, opname: true, ceksap: true, history: true, kartustock: true },
-  kirim:   { dashboard: true, bongkar: false, kirim: true, opname: false, ceksap: true, history: true, kartustock: true },
-  bongkar: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: true, history: true, kartustock: true },
-  opname:  { dashboard: true, bongkar: false, kirim: false, opname: true, ceksap: true, history: true, kartustock: true }
+  admin:   { dashboard: true, bongkar: true, kirim: true, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true },
+  kirim:   { dashboard: true, bongkar: false, kirim: true, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true },
+  bongkar: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true },
+  opname:  { dashboard: true, bongkar: false, kirim: false, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true }
 };

@@ -198,6 +198,10 @@ body { background-image: radial-gradient(circle at 100% 0%, #ffffff 0%, transpar
   position: relative;
   z-index: 2;
 }
+/* Kalahkan .view-toggle-bar { display:flex } agar [hidden] benar-benar menyembunyikan */
+#subnavDashStock[hidden] {
+  display: none !important;
+}
 .view-toggle-group {
   display: flex; background: rgba(241,245,249,0.5); padding: 4px;
   border-radius: 20px; border: 1px solid var(--bd);
@@ -217,6 +221,11 @@ body { background-image: radial-gradient(circle at 100% 0%, #ffffff 0%, transpar
   background: linear-gradient(135deg, #10b981, #059669); color: #fff;
   border: 1px solid #059669; font-weight: 800;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+.view-tab.tab-outstanding.active {
+  background: linear-gradient(135deg, #ec4899, #a855f7); color: #fff;
+  border: 1px solid #c026d3; font-weight: 800;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35);
 }
 @keyframes pulseLead {
   0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }

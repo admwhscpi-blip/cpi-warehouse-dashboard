@@ -109,21 +109,24 @@ function loadKartuStockData() {
     if (done === 3) {
       ksState.loaded = true;
       showLoader(false);
+      if (appState.dashData && appState.dashData.length) {
+        dashApplyLedgerStockFromHistory(ksState.raw.bongkar, ksState.raw.kirim, ksState.raw.opname);
+      }
       renderKSKPIs();
       renderKartuStock();
     }
   }
-  fetchAPI('getBongkarHistory', { limit: 2000 }, function(resp) {
+  fetchAPI('getBongkarHistory', { limit: 4000 }, function(resp) {
     var raw = (resp.status !== 'error') ? (resp.data || []) : [];
     ksState.raw.bongkar = raw.map(ksNormalizeDate);
     check();
   });
-  fetchAPI('getKirimHistory', { limit: 2000 }, function(resp) {
+  fetchAPI('getKirimHistory', { limit: 4000 }, function(resp) {
     var raw = (resp.status !== 'error') ? (resp.data || []) : [];
     ksState.raw.kirim = raw.map(ksNormalizeDate);
     check();
   });
-  fetchAPI('getOpnameHistory', { limit: 500 }, function(resp) {
+  fetchAPI('getOpnameHistory', { limit: 800 }, function(resp) {
     var raw = (resp.status !== 'error') ? (resp.data || []) : [];
     ksState.raw.opname = raw.map(ksNormalizeDate);
     check();
@@ -333,24 +336,103 @@ function renderKSBreakdown() {
   });
 }
 
+/** Tanggal baris acuan KPI = baris atas tabel (hari ini jika bulan berjalan dipilih), atau tanggal terakhir bulan jika bukan. */
+function ksKpiReferenceDateKey() {
+  var dates = ksGetDates();
+  if (!dates.length) return '';
+  var parts = (ksState.bulan || '').split('-');
+  if (parts.length < 2) return dates[0];
+  var yr = parseInt(parts[0], 10);
+  var mo = parseInt(parts[1], 10);
+  var refWib = typeof todayYMD_WIB === 'function' ? todayYMD_WIB() : todayStr();
+  var rw = refWib.split('-');
+  var rY = parseInt(rw[0], 10);
+  var rM = parseInt(rw[1], 10);
+  var isSelectedCurrentMonth = rY === yr && rM === mo;
+  if (isSelectedCurrentMonth) return dates[0];
+  return dates[dates.length - 1];
+}
+
+/** Stok ledger di tanggal acuan — sama dengan kolom Stock Akhir pada baris acuan tabel Kartu Stock. */
+function ksLedgerStockAtKpiDate(bkId) {
+  var dates = ksGetDates();
+  if (!dates.length) return null;
+  var ascDates = dates.slice().sort();
+  var refKey = ksKpiReferenceDateKey();
+  if (!refKey) return null;
+  var map = ksComputeStock(bkId, ascDates);
+  var cell = map[refKey];
+  if (!cell || cell.stock == null || isNaN(Number(cell.stock))) return null;
+  return Number(cell.stock);
+}
+
+// ── SAMA DENGAN TABEL (ledger) — override STOK_AKTIF agar selaras ksComputeStock ──
+/**
+ * Pakai stok dari ksComputeStock untuk appState.dashData. Tanggal acuan = ksKpiReferenceDateKey (WIB).
+ */
+function dashApplyLedgerStockFromHistory(bongkarRows, kirimRows, opnameRows) {
+  if (!appState.dashData || !appState.dashData.length) return;
+  function normRows(rows) {
+    return (rows || []).map(function(r) {
+      return ksNormalizeDate(Object.assign({}, r));
+    });
+  }
+  var savedB = ksState.raw.bongkar;
+  var savedK = ksState.raw.kirim;
+  var savedO = ksState.raw.opname;
+  var savedBulan = ksState.bulan;
+
+  ksState.raw.bongkar = normRows(bongkarRows);
+  ksState.raw.kirim = normRows(kirimRows);
+  ksState.raw.opname = normRows(opnameRows);
+
+  var now = new Date();
+  ksState.bulan = now.getFullYear() + '-' + pad2(now.getMonth() + 1);
+
+  var dates = ksGetDates();
+  var ascDates = dates.length ? dates.slice().sort() : [];
+  var refKey = ksKpiReferenceDateKey();
+
+  if (ascDates.length && refKey) {
+    appState.dashData.forEach(function(bk) {
+      var map = ksComputeStock(bk.BK_ID, ascDates);
+      var cell = map[refKey];
+      if (cell && cell.stock != null && !isNaN(Number(cell.stock))) {
+        bk.STOK_AKTIF = cell.stock;
+      }
+    });
+  }
+
+  ksState.raw.bongkar = savedB;
+  ksState.raw.kirim = savedK;
+  ksState.raw.opname = savedO;
+  ksState.bulan = savedBulan;
+}
+
 // ── KPIs ──────────────────────────────────────────────────────────────
 function renderKSKPIs() {
   var kpiRow = $('ks_kpi_row');
   if (!kpiRow) return;
+  var rows = appState.dashData || [];
   var totalStock = 0;
-  (appState.dashData || []).forEach(function(bk) { totalStock += Number(bk.STOK_AKTIF) || 0; });
+  rows.forEach(function(bk) {
+    var led = ksLedgerStockAtKpiDate(bk.BK_ID);
+    totalStock += led != null ? led : Number(bk.STOK_AKTIF) || 0;
+  });
   var heroEl = $('ks_total_stock');
   if (heroEl) heroEl.textContent = fmtNum(totalStock);
 
   kpiRow.innerHTML = '';
-  (appState.dashData || []).forEach(function(bk) {
-    var pct = bk.KAPASITAS_KG ? Math.min((Number(bk.STOK_AKTIF) / Number(bk.KAPASITAS_KG)) * 100, 100) : 0;
+  rows.forEach(function(bk) {
+    var led = ksLedgerStockAtKpiDate(bk.BK_ID);
+    var stok = led != null ? led : Number(bk.STOK_AKTIF) || 0;
+    var pct = bk.KAPASITAS_KG ? Math.min((stok / Number(bk.KAPASITAS_KG)) * 100, 100) : 0;
     var hi = pct > 85 ? 'hi' : pct > 60 ? 'mi' : 'lo';
     var c = document.createElement('div');
     c.className = 'ks-kpi-card ks-kpi-' + hi;
     c.innerHTML =
       '<div class="ks-kpi-label">' + bk.BK_ID + '</div>' +
-      '<div class="ks-kpi-val">' + fmtNum(bk.STOK_AKTIF) + '</div>' +
+      '<div class="ks-kpi-val">' + fmtNum(stok) + '</div>' +
       '<div class="ks-kpi-unit">kg</div>' +
       '<div class="ks-kpi-bar"><div class="ks-kpi-fill" style="width:' + pct.toFixed(1) + '%"></div></div>' +
       '<div class="ks-kpi-pct">' + pct.toFixed(1) + '%</div>';

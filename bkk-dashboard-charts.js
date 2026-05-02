@@ -80,3 +80,11 @@ function destroyCharts() {
     }
   });
 }
+
+/** Panggil setelah layout dashboard terlihat (mis. dari subnav Kartu Stock → Dashboard) agar doughnut tidak ukuran 0 */
+function resizeDashboardCharts() {
+  Object.keys(chartInstances).forEach(function(k) {
+    var ch = chartInstances[k];
+    if (ch && typeof ch.resize === 'function') ch.resize();
+  });
+}

@@ -241,6 +241,8 @@ function handleGet(e) {
     } else if (action === 'getIntakeConfig') {
       var config = PropertiesService.getScriptProperties().getProperty('INTAKE_CONFIG');
       return { status: 'success', data: config ? JSON.parse(config) : null };
+    } else if (action === 'getCekSAPDraft') {
+      return getCekSAPDraft(e.parameter.username || '');
     } else {
       return { status: 'error', message: 'Invalid action' };
     }
@@ -341,6 +343,14 @@ function handlePost(e) {
       PropertiesService.getScriptProperties().setProperty('INTAKE_CONFIG', configStr);
       return { status: 'success', message: 'Config saved' };
 
+    } else if (action === 'saveCekSAPDraft') {
+      var uname = data.username || data.USERNAME || '';
+      var nama = data.nama || data.NAMA || '';
+      var payload = data.payload || data.PAYLOAD || '{}';
+      if (!uname) throw new Error('username wajib');
+      saveCekSAPDraft(uname, nama, payload);
+      return { status: 'success', message: 'Draft tersimpan' };
+
     } else if (action === 'addSAP') {
       return addSAP(data);
     } else if (action === 'addSAPCeklis') {
@@ -384,6 +394,59 @@ function addSAPCeklis(data) {
   return { status: 'success', data: rowData };
 }
 
+var SHEET_CEK_SAP_DRAFT = 'BKK_CekSAP_Draft';
+
+function saveCekSAPDraft(username, nama, payloadJson) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_CEK_SAP_DRAFT);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_CEK_SAP_DRAFT);
+    sheet.appendRow(['USERNAME', 'NAMA', 'UPDATED_AT', 'PAYLOAD_JSON']);
+  }
+  var data = sheet.getDataRange().getValues();
+  var ts = Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss');
+  var rowIdx = -1;
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(username)) {
+      rowIdx = i + 1;
+      break;
+    }
+  }
+  if (rowIdx > 0) {
+    sheet.getRange(rowIdx, 2, rowIdx, 4).setValues([[nama, ts, payloadJson]]);
+  } else {
+    sheet.appendRow([username, nama, ts, payloadJson]);
+  }
+}
+
+function getCekSAPDraft(username) {
+  if (!username) return { status: 'success', data: null };
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_CEK_SAP_DRAFT);
+  if (!sheet) return { status: 'success', data: null };
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(username)) {
+      var payloadStr = data[i][3];
+      var parsed = {};
+      try {
+        parsed = payloadStr ? JSON.parse(payloadStr) : {};
+      } catch (e) {
+        parsed = {};
+      }
+      return {
+        status: 'success',
+        data: {
+          nama: data[i][1],
+          updatedAt: data[i][2],
+          payload: parsed
+        }
+      };
+    }
+  }
+  return { status: 'success', data: null };
+}
+
 function setupSheets() {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
@@ -393,7 +456,8 @@ function setupSheets() {
     'BKK_Kirim':      ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','NETTO_KG','SHIFT','GRINDING','OPERATOR','INPUT_BY'],
     'BKK_Opname':     ['ID','TIMESTAMP','TANGGAL','BK_ID','STOK_FISIK_KG','MATERIAL','INPUT_BY','KETERANGAN'],
     'BKK_SAP':        ['ID','TIMESTAMP','TANGGAL','BK_ID','QTY_SAP_KG','INPUT_BY'],
-    'BKK_SAP_Ceklis': ['ID','TIMESTAMP','TANGGAL','REF_KIRIM_ID','BK_ID','MATERIAL','NETTO_KG','STATUS_CEKLIS','CEKLIS_BY','KETERANGAN']
+    'BKK_SAP_Ceklis': ['ID','TIMESTAMP','TANGGAL','REF_KIRIM_ID','BK_ID','MATERIAL','NETTO_KG','STATUS_CEKLIS','CEKLIS_BY','KETERANGAN'],
+    'BKK_CekSAP_Draft': ['USERNAME','NAMA','UPDATED_AT','PAYLOAD_JSON']
   };
 
   for (var name in sheets) {
