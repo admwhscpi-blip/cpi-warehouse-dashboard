@@ -48,7 +48,8 @@ function toast(msg, type) {
 function modal(title, body, yesLabel, noLabel) {
   return new Promise(function(resolve) {
     $('modalTitle').textContent = title;
-    $('modalBody').textContent = body;
+    var mb = $('modalBody');
+    if (mb) mb.innerHTML = body;
     $('modalYes').textContent = yesLabel || 'Ya';
     $('modalNo').textContent = noLabel || 'Batal';
     $('modal').classList.add('active');
@@ -86,6 +87,12 @@ function showLoader(on) {
 function fmtNum(n) {
   if (n == null || isNaN(n)) return '0';
   return Number(n).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+}
+
+/** Persentase opname: dua desimal + % (contoh: 10.05%) */
+function fmtPct2(n) {
+  if (n == null || isNaN(n)) return '0.00%';
+  return Number(n).toFixed(2) + '%';
 }
 
 function fmtDate(d) {
@@ -248,6 +255,7 @@ function navigateTo(page) {
     if (ifr) ifr.src = 'outstanding-bkk.html?from=bkk&embed=1';
   }
   if (page === 'bongkar' || page === 'kirim' || page === 'opname') prefillFormOperatorNames();
+  if (page === 'opname' && typeof loadOpnamePageData === 'function') loadOpnamePageData();
   if (page === 'bongkar') {
     var bb = $('b_bk_id');
     if (bb && bb.value) applyBongkarMasterDefaults(bb.value);

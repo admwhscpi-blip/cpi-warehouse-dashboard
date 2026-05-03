@@ -235,6 +235,17 @@
 .ks-row-today .ks-sticky-col { background: #fefce8 !important; border-right: 3px solid #f59e0b !important; }
 .ks-row-opname td { background: #f0f9ff !important; }
 .ks-row-opname .ks-sticky-col { background: #e0f2fe !important; }
+.ks-row-post-so td { background: #f8fafc !important; }
+.ks-row-post-so .ks-sticky-col { background: #f1f5f9 !important; }
+
+.ks-date-sub {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-top: 4px;
+  line-height: 1.2;
+}
 
 /* Cell types */
 .ks-td-date {

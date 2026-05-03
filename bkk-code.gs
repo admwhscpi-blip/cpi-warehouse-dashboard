@@ -38,27 +38,37 @@ function getSheetData(sheetName) {
   return rows;
 }
 
+/** Waktu kejadian baris: TIMESTAMP (jam simpan) lebih tepat daripada kolom TANGGAL saja. */
+function gsRowInstantMs_(r) {
+  if (!r) return 0;
+  if (r.TIMESTAMP != null && r.TIMESTAMP !== '') {
+    var t = r.TIMESTAMP;
+    var ms = t instanceof Date ? t.getTime() : new Date(t).getTime();
+    if (!isNaN(ms)) return ms;
+  }
+  var tg = r.TANGGAL;
+  if (tg == null || tg === '') return 0;
+  return tg instanceof Date ? tg.getTime() : new Date(tg).getTime();
+}
+
 function calculateStock(bkId, allOpname, allBongkar, allKirim) {
   var bkOpname = allOpname.filter(function(r) { return r.BK_ID == bkId; });
-  bkOpname.sort(function(a, b) { return new Date(b.TANGGAL).getTime() - new Date(a.TANGGAL).getTime(); });
-  
-  // Terakhir opname (karena disort ascending, yang paling akhir di index terakhir, tapi mari kita pastikan descending)
-  bkOpname.sort(function(a, b) { return new Date(b.TANGGAL).getTime() - new Date(a.TANGGAL).getTime(); });
+  bkOpname.sort(function(a, b) { return gsRowInstantMs_(b) - gsRowInstantMs_(a); });
   var lastOpname = bkOpname.length > 0 ? bkOpname[0] : null;
   var baseline = lastOpname ? Number(lastOpname.STOK_FISIK_KG) : 0;
   
-  var cutoffTime = lastOpname ? new Date(lastOpname.TANGGAL).getTime() : 0;
+  var cutoffTime = lastOpname ? gsRowInstantMs_(lastOpname) : 0;
   
   var totalBongkar = 0;
   for (var i=0; i<allBongkar.length; i++) {
-    if (allBongkar[i].BK_ID == bkId && new Date(allBongkar[i].TANGGAL).getTime() > cutoffTime) {
+    if (allBongkar[i].BK_ID == bkId && gsRowInstantMs_(allBongkar[i]) > cutoffTime) {
       totalBongkar += Number(allBongkar[i].NETTO_KG);
     }
   }
   
   var totalKirim = 0;
   for (var j=0; j<allKirim.length; j++) {
-    if (allKirim[j].BK_ID == bkId && new Date(allKirim[j].TANGGAL).getTime() > cutoffTime) {
+    if (allKirim[j].BK_ID == bkId && gsRowInstantMs_(allKirim[j]) > cutoffTime) {
       totalKirim += Number(allKirim[j].NETTO_KG);
     }
   }

@@ -296,8 +296,12 @@
                 <select id="o_material"><option value="">— Pilih —</option></select>
               </div>
               <div class="fg full">
-                <label>Stok Saat Ini (kg)</label>
+                <label>Stok sistem (kg)</label>
                 <div id="o_stok_sistem" style="padding:10px 12px;background:#f8fafc;border:2px solid var(--bd);border-radius:8px;color:var(--ts);font-family:var(--fs);font-weight:700;font-size:1.1rem;">—</div>
+              </div>
+              <div class="fg full">
+                <label>Stok fisik hasil timbang (kg) <span style="color:var(--ck)">*</span></label>
+                <input type="number" id="o_stok_fisik" placeholder="0" min="0" step="0.01" style="font-size:1.05rem;font-family:var(--fs);font-weight:700;">
               </div>
               <div class="fg full">
                 <label>Penerimaan (dari periode SO terakhir)</label>
@@ -308,7 +312,7 @@
                 <div id="o_selisih" style="padding:10px 12px;background:#f8fafc;border:2px solid var(--bd);border-radius:8px;font-family:var(--fs);font-weight:700;font-size:1rem;">—</div>
               </div>
               <div class="fg full">
-                <label>Persentase (Fisik / Penerimaan)</label>
+                <label>Persentase (stok dimusnahkan / Penerimaan)</label>
                 <div id="o_persentase" style="padding:10px 12px;background:#f8fafc;border:2px solid var(--bd);border-radius:8px;color:var(--ts);font-family:var(--fs);font-weight:700;">—</div>
               </div>
               <div class="fg full">
@@ -329,7 +333,8 @@
               <tr><td style="padding:4px 6px;color:var(--ts);">BK</td><td style="padding:4px 6px;font-weight:600;" id="rs_bk">—</td></tr>
               <tr style="background:#f8fafc"><td style="padding:4px 6px;color:var(--ts);">Material</td><td style="padding:4px 6px;font-weight:600;" id="rs_material">—</td></tr>
               <tr><td style="padding:4px 6px;color:var(--ts);">Stok Sistem</td><td style="padding:4px 6px;font-weight:700;color:var(--cs);" id="rs_stok_sistem">—</td></tr>
-              <tr style="background:#f8fafc"><td style="padding:4px 6px;color:var(--ts);">Penerimaan</td><td style="padding:4px 6px;font-weight:700;color:var(--cm);" id="rs_penerimaan">—</td></tr>
+              <tr style="background:#f8fafc"><td style="padding:4px 6px;color:var(--ts);">Stok Fisik</td><td style="padding:4px 6px;font-weight:700;color:var(--cs);" id="rs_stok_fisik">—</td></tr>
+              <tr><td style="padding:4px 6px;color:var(--ts);">Penerimaan</td><td style="padding:4px 6px;font-weight:700;color:var(--cm);" id="rs_penerimaan">—</td></tr>
               <tr><td style="padding:4px 6px;color:var(--ts);">Pengiriman</td><td style="padding:4px 6px;font-weight:700;color:var(--ck);" id="rs_pengiriman">—</td></tr>
               <tr style="background:#f8fafc"><td style="padding:4px 6px;color:var(--ts);">Selisih</td><td style="padding:4px 6px;font-weight:700;" id="rs_selisih">—</td></tr>
               <tr><td style="padding:4px 6px;color:var(--ts);">Persentase</td><td style="padding:4px 6px;font-weight:700;" id="rs_persentase">—</td></tr>

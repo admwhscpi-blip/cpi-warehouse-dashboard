@@ -100,6 +100,72 @@ function ksNormalizeDate(r) {
   return r;
 }
 
+/** TIMESTAMP sheet / API → ms (WIB jika string tanpa zona) */
+function ksRowTsMs(r) {
+  if (!r || r.TIMESTAMP == null || r.TIMESTAMP === '') return NaN;
+  var s = String(r.TIMESTAMP).trim();
+  var hasZone = /[zZ]$|[+-]\d{2}:\d{2}$|[+-]\d{4}$/.test(s);
+  if (!hasZone) {
+    var m = s.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (m) {
+      var sec = m[4] !== undefined && m[4] !== '' ? (+m[4]) : 0;
+      return new Date(m[1] + 'T' + m[2] + ':' + m[3] + ':' + pad2(sec) + '+07:00').getTime();
+    }
+  }
+  var d = new Date(s);
+  return isNaN(d.getTime()) ? NaN : d.getTime();
+}
+
+function ksNoonMs(ds) {
+  return new Date(ds + 'T12:00:00+07:00').getTime();
+}
+
+/**
+ * Replay bongkar/kirim/opname same day (urut TIMESTAMP) untuk beberapa SO di tanggal sama.
+ */
+function ksReplayMultiSoDay(ds, bkTarget, prevStockStart, opRecsSorted) {
+  var events = [];
+  ksState.raw.bongkar.forEach(function(r) {
+    if (ksNormBK(r.BK_ID) !== bkTarget || r.TANGGAL !== ds) return;
+    var t = ksRowTsMs(r);
+    if (isNaN(t)) t = ksNoonMs(ds);
+    events.push({ t: t, k: 'B', net: Number(r.NETTO_KG) || 0, row: r });
+  });
+  ksState.raw.kirim.forEach(function(r) {
+    if (ksNormBK(r.BK_ID) !== bkTarget || r.TANGGAL !== ds) return;
+    var t = ksRowTsMs(r);
+    if (isNaN(t)) t = ksNoonMs(ds);
+    events.push({ t: t, k: 'K', net: Number(r.NETTO_KG) || 0, row: r });
+  });
+  opRecsSorted.forEach(function(op) {
+    var t = ksRowTsMs(op);
+    if (isNaN(t)) t = ksNoonMs(ds);
+    events.push({ t: t, k: 'O', op: op });
+  });
+  events.sort(function(a, b) {
+    if (a.t !== b.t) return a.t - b.t;
+    var ord = { B: 0, K: 1, O: 2 };
+    return ord[a.k] - ord[b.k];
+  });
+
+  var run = prevStockStart;
+  var soSegments = [];
+  var i;
+  for (i = 0; i < events.length; i++) {
+    var ev = events[i];
+    if (ev.k === 'B') run += ev.net;
+    else if (ev.k === 'K') run -= ev.net;
+    else if (ev.k === 'O') {
+      var opPhys = Number(ev.op.STOK_FISIK_KG) || 0;
+      var sel = opPhys - run;
+      var pct = run > 0 ? (opPhys / run) * 100 : 0;
+      soSegments.push({ opRec: ev.op, opPhys: opPhys, selisih: sel, persen: pct });
+      run = opPhys;
+    }
+  }
+  return { dayFinal: run, soSegments: soSegments };
+}
+
 // ── DATA LOADING ──────────────────────────────────────────────────────
 function loadKartuStockData() {
   showLoader(true);
@@ -153,16 +219,19 @@ function ksGetDates() {
 
 // ── STOCK COMPUTATION ─────────────────────────────────────────────────
 // ascDates: YYYY-MM-DD strings sorted ascending (oldest first)
-// Returns map: { 'YYYY-MM-DD': { b1,b2,b3,u1,u2,u3,tb,tu,hasOpname,opnameQty,selisih,persen,userSO,stock } }
+// Per tanggal: { stock: stok akhir hari, rows: [ baris tabel… ] }.
+// Jika ada SO + bongkar/kirim hari yang sama: baris 1 = SO saja (selisih vs saldo awal hari);
+// baris 2 = transaksi setelah baseline SO → stock akhir benar (tanpa memecah selisih SO).
 function ksComputeStock(bkId, ascDates) {
   if (!ascDates.length) return {};
 
   var firstDate = ascDates[0];
+  var bkTarget = ksNormBK(bkId);
 
   // Find last opname BEFORE the start of this period → initial stock baseline
   var lastOp = null;
   ksState.raw.opname.forEach(function(r) {
-    if (r.BK_ID !== bkId) return;
+    if (ksNormBK(r.BK_ID) !== bkTarget) return;
     if (r.TANGGAL < firstDate) {
       if (!lastOp || r.TANGGAL > lastOp.TANGGAL) lastOp = r;
     }
@@ -173,17 +242,27 @@ function ksComputeStock(bkId, ascDates) {
     prevStock = Number(lastOp.STOK_FISIK_KG) || 0;
     // Forward-compute from lastOp.TANGGAL up to (but not including) firstDate
     ksState.raw.bongkar.forEach(function(r) {
-      if (r.BK_ID === bkId && r.TANGGAL > lastOp.TANGGAL && r.TANGGAL < firstDate)
+      if (ksNormBK(r.BK_ID) !== bkTarget) return;
+      if (r.TANGGAL > lastOp.TANGGAL && r.TANGGAL < firstDate)
         prevStock += r.NETTO_KG;
     });
     ksState.raw.kirim.forEach(function(r) {
-      if (r.BK_ID === bkId && r.TANGGAL > lastOp.TANGGAL && r.TANGGAL < firstDate)
+      if (ksNormBK(r.BK_ID) !== bkTarget) return;
+      if (r.TANGGAL > lastOp.TANGGAL && r.TANGGAL < firstDate)
         prevStock -= r.NETTO_KG;
     });
   } else {
-    // No opname ever — fall back to current live stock
-    var live = (appState.dashData || []).find(function(b) { return b.BK_ID === bkId; });
-    prevStock = live ? (Number(live.STOK_AKTIF) || 0) : 0;
+    // Tidak ada SO sebelum awal rentang: jangan pakai STOK_AKTIF live (sudah ter-adjust SO bulan ini).
+    // Saldo awal = netto kumulatif transaksi sebelum firstDate — selaras basis dashboard tanpa opening SO.
+    prevStock = 0;
+    ksState.raw.bongkar.forEach(function(r) {
+      if (ksNormBK(r.BK_ID) !== bkTarget) return;
+      if (r.TANGGAL < firstDate) prevStock += r.NETTO_KG;
+    });
+    ksState.raw.kirim.forEach(function(r) {
+      if (ksNormBK(r.BK_ID) !== bkTarget) return;
+      if (r.TANGGAL < firstDate) prevStock -= r.NETTO_KG;
+    });
   }
 
   var result = {};
@@ -191,7 +270,7 @@ function ksComputeStock(bkId, ascDates) {
     // Bongkar per shift (BKK_Bongkar may or may not have SHIFT column)
     var b1=0, b2=0, b3=0;
     ksState.raw.bongkar.forEach(function(r) {
-      if (r.BK_ID !== bkId || r.TANGGAL !== ds) return;
+      if (ksNormBK(r.BK_ID) !== bkTarget || r.TANGGAL !== ds) return;
       var s = String(r.SHIFT || '').trim();
       if (s === '2') b2 += r.NETTO_KG;
       else if (s === '3') b3 += r.NETTO_KG;
@@ -201,7 +280,7 @@ function ksComputeStock(bkId, ascDates) {
     // Usage per shift
     var u1=0, u2=0, u3=0;
     ksState.raw.kirim.forEach(function(r) {
-      if (r.BK_ID !== bkId || r.TANGGAL !== ds) return;
+      if (ksNormBK(r.BK_ID) !== bkTarget || r.TANGGAL !== ds) return;
       var s = String(r.SHIFT || '').trim();
       if (s === '2') u2 += r.NETTO_KG;
       else if (s === '3') u3 += r.NETTO_KG;
@@ -210,24 +289,100 @@ function ksComputeStock(bkId, ascDates) {
 
     var tb = b1+b2+b3, tu = u1+u2+u3;
 
-    var opRec = ksState.raw.opname.find(function(r) {
-      return r.BK_ID === bkId && r.TANGGAL === ds;
+    var opRecs = ksState.raw.opname.filter(function(r) {
+      return ksNormBK(r.BK_ID) === bkTarget && r.TANGGAL === ds;
+    }).sort(function(a, b) {
+      var ta = ksRowTsMs(a); if (isNaN(ta)) ta = ksNoonMs(ds);
+      var tb = ksRowTsMs(b); if (isNaN(tb)) tb = ksNoonMs(ds);
+      return ta - tb;
     });
 
-    var stock;
-    if (opRec) {
-      stock = Number(opRec.STOK_FISIK_KG) || 0;
-      var sel = stock - (prevStock + tb - tu);
-      var pct = (prevStock + tb) > 0 ? (stock / (prevStock + tb)) * 100 : 0;
-      result[ds] = { b1:b1,b2:b2,b3:b3,u1:u1,u2:u2,u3:u3,tb:tb,tu:tu,
-        hasOpname:true,opnameQty:stock,selisih:sel,persen:pct,
-        userSO:opRec.INPUT_BY||'—',stock:stock };
-      prevStock = stock;
+    var dayFinal;
+    if (opRecs.length > 1) {
+      var rp = ksReplayMultiSoDay(ds, bkTarget, prevStock, opRecs);
+      dayFinal = rp.dayFinal;
+      var rowsMulti = [];
+      if (tb > 0 || tu > 0) {
+        rowsMulti.push({
+          segment: 'txn',
+          b1: b1, b2: b2, b3: b3, u1: u1, u2: u2, u3: u3, tb: tb, tu: tu,
+          hasOpname: false, opnameQty: null, selisih: null, persen: null, userSO: null,
+          stock: dayFinal
+        });
+      }
+      rp.soSegments.forEach(function(seg, idx) {
+        rowsMulti.push({
+          segment: 'so',
+          soIndex: idx + 1,
+          soTotal: rp.soSegments.length,
+          b1: 0, b2: 0, b3: 0, u1: 0, u2: 0, u3: 0, tb: 0, tu: 0,
+          hasOpname: true,
+          opnameQty: seg.opPhys,
+          selisih: seg.selisih,
+          persen: seg.persen,
+          userSO: seg.opRec.INPUT_BY || '—',
+          stock: seg.opPhys
+        });
+      });
+      result[ds] = { rows: rowsMulti, stock: dayFinal };
+      prevStock = dayFinal;
+    } else if (opRecs.length === 1) {
+      var opRec = opRecs[0];
+      var opPhys = Number(opRec.STOK_FISIK_KG) || 0;
+      var userLab = opRec.INPUT_BY || '—';
+      var splitTxn = tb > 0 || tu > 0;
+
+      if (splitTxn) {
+        var selSO = opPhys - prevStock;
+        var pctSO = prevStock > 0 ? (opPhys / prevStock) * 100 : 0;
+        dayFinal = opPhys + tb - tu;
+        result[ds] = {
+          rows: [
+            {
+              segment: 'txn',
+              b1: b1, b2: b2, b3: b3, u1: u1, u2: u2, u3: u3, tb: tb, tu: tu,
+              hasOpname: false, opnameQty: null, selisih: null, persen: null, userSO: null,
+              stock: dayFinal
+            },
+            {
+              segment: 'so',
+              b1: 0, b2: 0, b3: 0, u1: 0, u2: 0, u3: 0, tb: 0, tu: 0,
+              hasOpname: true, opnameQty: opPhys, selisih: selSO, persen: pctSO,
+              userSO: userLab,
+              stock: opPhys
+            }
+          ],
+          stock: dayFinal
+        };
+        prevStock = dayFinal;
+      } else {
+        var selOne = opPhys - prevStock;
+        var pctOne = prevStock > 0 ? (opPhys / prevStock) * 100 : 0;
+        dayFinal = opPhys + tb - tu;
+        prevStock = dayFinal;
+        result[ds] = {
+          rows: [{
+            segment: 'day',
+            b1: b1, b2: b2, b3: b3, u1: u1, u2: u2, u3: u3, tb: tb, tu: tu,
+            hasOpname: true, opnameQty: opPhys, selisih: selOne, persen: pctOne,
+            userSO: userLab,
+            stock: dayFinal
+          }],
+          stock: dayFinal
+        };
+      }
     } else {
-      stock = prevStock + tb - tu;
-      result[ds] = { b1:b1,b2:b2,b3:b3,u1:u1,u2:u2,u3:u3,tb:tb,tu:tu,
-        hasOpname:false,opnameQty:null,selisih:null,persen:null,userSO:null,stock:stock };
-      prevStock = stock;
+      dayFinal = prevStock + tb - tu;
+      prevStock = dayFinal;
+      result[ds] = {
+        rows: [{
+          segment: 'day',
+          b1: b1, b2: b2, b3: b3, u1: u1, u2: u2, u3: u3, tb: tb, tu: tu,
+          hasOpname: false, opnameQty: null, selisih: null, persen: null, userSO: null,
+          stock: dayFinal
+        }],
+        stock: dayFinal
+      };
     }
   });
   return result;
@@ -250,7 +405,7 @@ function renderKSSummary() {
 
   var ascDates = dates.slice().sort();
   var allData = {};
-  KS_BKS.forEach(function(bk) { allData[bk] = ksComputeStock(bk, ascDates); });
+  KS_BKS.forEach(function(bk) { allData[bk] = ksComputeStock(ksNormBK(bk), ascDates); });
 
   $('ks_thead').innerHTML = '<tr>' +
     '<th class="ks-th-date ks-sticky-col">Tanggal</th>' +
@@ -268,10 +423,11 @@ function renderKSSummary() {
       (d === today ? '<span class="ks-today-badge">HARI INI</span>' : '') +
       '<span class="ks-date-txt">' + fmtDate(d) + '</span></td>';
     KS_BKS.forEach(function(bk) {
-      var day = allData[bk][d] || {};
-      var s = day.stock;
+      var bundle = allData[bk][d] || {};
+      var s = bundle.stock;
       var cls = s == null ? 'ks-empty' : s < 0 ? 'ks-neg' : s === 0 ? 'ks-zero' : '';
-      var badge = day.hasOpname ? '<span class="ks-so-dot">SO</span>' : '';
+      var hasSo = bundle.rows && bundle.rows.some(function(r) { return r.hasOpname; });
+      var badge = hasSo ? '<span class="ks-so-dot">SO</span>' : '';
       cells += '<td class="ks-td-stock ' + cls + '">' + (s != null ? fmtNum(s) : '—') + badge + '</td>';
     });
     tr.innerHTML = cells;
@@ -281,7 +437,7 @@ function renderKSSummary() {
 
 // ── RENDER BREAKDOWN ─────────────────────────────────────────────────
 function renderKSBreakdown() {
-  var bkId = ksState.bk;
+  var bkId = ksNormBK(ksState.bk);
   var dates = ksGetDates();
   if (!dates.length) return;
 
@@ -307,32 +463,54 @@ function renderKSBreakdown() {
   tbody.innerHTML = '';
 
   dates.forEach(function(d) {
-    var day = data[d] || {};
+    var bundle = data[d];
+    var rows = bundle && bundle.rows ? bundle.rows : [];
+    if (!rows.length) return;
+
     var isToday = d === today;
-    var tr = document.createElement('tr');
-    tr.className = isToday ? 'ks-row-today' : day.hasOpname ? 'ks-row-opname' : '';
+    var n = function(v) {
+      var x = Number(v);
+      if (v === '' || v === undefined || v === null || isNaN(x)) return '<span class="ks-dash">—</span>';
+      return fmtNum(x);
+    };
 
-    var selCls = day.selisih == null ? '' : day.selisih < 0 ? 'ks-neg' : day.selisih > 0 ? 'ks-warn' : 'ks-pos';
-    var n = function(v) { return v ? fmtNum(v) : '<span class="ks-dash">—</span>'; };
+    rows.forEach(function(day, idx) {
+      var tr = document.createElement('tr');
+      var seg = day.segment || 'day';
+      if (isToday) tr.classList.add('ks-row-today');
+      if (seg === 'so') tr.classList.add('ks-row-opname');
+      else if (seg === 'txn') tr.classList.add('ks-row-post-so');
+      else if (day.hasOpname) tr.classList.add('ks-row-opname');
 
-    tr.innerHTML =
-      '<td class="ks-td-date ks-sticky-col">' +
-        (isToday ? '<span class="ks-today-badge">TODAY</span>' : '') +
-        '<span class="ks-date-txt">' + fmtDate(d) + '</span></td>' +
-      '<td class="ks-td-num ks-c-b">' + n(day.b1) + '</td>' +
-      '<td class="ks-td-num ks-c-b">' + n(day.b2) + '</td>' +
-      '<td class="ks-td-num ks-c-b">' + n(day.b3) + '</td>' +
-      '<td class="ks-td-num ks-c-u">' + n(day.u1) + '</td>' +
-      '<td class="ks-td-num ks-c-u">' + n(day.u2) + '</td>' +
-      '<td class="ks-td-num ks-c-u">' + n(day.u3) + '</td>' +
-      '<td class="ks-td-center">' + (day.hasOpname ? '<span class="ks-so-yes">✓</span>' : '<span class="ks-dash">—</span>') + '</td>' +
-      '<td class="ks-td-num ks-c-so">' + (day.opnameQty != null ? fmtNum(day.opnameQty) : '<span class="ks-dash">—</span>') + '</td>' +
-      '<td class="ks-td-num ' + selCls + '">' + (day.selisih != null ? fmtNum(Math.abs(day.selisih)) : '<span class="ks-dash">—</span>') + '</td>' +
-      '<td class="ks-td-num ' + selCls + '">' + (day.persen != null ? fmtNum(day.persen) + '%' : '<span class="ks-dash">—</span>') + '</td>' +
-      '<td class="ks-td-user">' + (day.userSO || '<span class="ks-dash">—</span>') + '</td>' +
-      '<td class="ks-td-stock-end ' + (day.stock < 0 ? 'ks-neg' : '') + '">' + fmtNum(day.stock) + '</td>';
+      var selCls = day.selisih == null ? '' : day.selisih < 0 ? 'ks-neg' : day.selisih > 0 ? 'ks-warn' : 'ks-pos';
+      var sub =
+        seg === 'so'
+          ? '<span class="ks-date-sub">Stock Opname' +
+            (day.soTotal > 1 ? ' (ke-' + day.soIndex + ')' : '') +
+            '</span>'
+          : seg === 'txn'
+            ? '<span class="ks-date-sub">Saldo setelah transaksi</span>'
+            : '';
 
-    tbody.appendChild(tr);
+      tr.innerHTML =
+        '<td class="ks-td-date ks-sticky-col">' +
+          (isToday && idx === 0 ? '<span class="ks-today-badge">TODAY</span>' : '') +
+          '<span class="ks-date-txt">' + fmtDate(d) + '</span>' + sub + '</td>' +
+        '<td class="ks-td-num ks-c-b">' + n(day.b1) + '</td>' +
+        '<td class="ks-td-num ks-c-b">' + n(day.b2) + '</td>' +
+        '<td class="ks-td-num ks-c-b">' + n(day.b3) + '</td>' +
+        '<td class="ks-td-num ks-c-u">' + n(day.u1) + '</td>' +
+        '<td class="ks-td-num ks-c-u">' + n(day.u2) + '</td>' +
+        '<td class="ks-td-num ks-c-u">' + n(day.u3) + '</td>' +
+        '<td class="ks-td-center">' + (day.hasOpname ? '<span class="ks-so-yes">✓</span>' : '<span class="ks-dash">—</span>') + '</td>' +
+        '<td class="ks-td-num ks-c-so">' + (day.opnameQty != null ? fmtNum(day.opnameQty) : '<span class="ks-dash">—</span>') + '</td>' +
+        '<td class="ks-td-num ' + selCls + '">' + (day.selisih != null ? fmtNum(Math.abs(day.selisih)) : '<span class="ks-dash">—</span>') + '</td>' +
+        '<td class="ks-td-num ' + selCls + '">' + (day.persen != null ? fmtNum(day.persen) + '%' : '<span class="ks-dash">—</span>') + '</td>' +
+        '<td class="ks-td-user">' + (day.userSO || '<span class="ks-dash">—</span>') + '</td>' +
+        '<td class="ks-td-stock-end ' + (day.stock < 0 ? 'ks-neg' : '') + '">' + fmtNum(day.stock) + '</td>';
+
+      tbody.appendChild(tr);
+    });
   });
 }
 
@@ -360,7 +538,7 @@ function ksLedgerStockAtKpiDate(bkId) {
   var ascDates = dates.slice().sort();
   var refKey = ksKpiReferenceDateKey();
   if (!refKey) return null;
-  var map = ksComputeStock(bkId, ascDates);
+  var map = ksComputeStock(ksNormBK(bkId), ascDates);
   var cell = map[refKey];
   if (!cell || cell.stock == null || isNaN(Number(cell.stock))) return null;
   return Number(cell.stock);
@@ -395,7 +573,7 @@ function dashApplyLedgerStockFromHistory(bongkarRows, kirimRows, opnameRows) {
 
   if (ascDates.length && refKey) {
     appState.dashData.forEach(function(bk) {
-      var map = ksComputeStock(bk.BK_ID, ascDates);
+      var map = ksComputeStock(ksNormBK(bk.BK_ID), ascDates);
       var cell = map[refKey];
       if (cell && cell.stock != null && !isNaN(Number(cell.stock))) {
         bk.STOK_AKTIF = cell.stock;

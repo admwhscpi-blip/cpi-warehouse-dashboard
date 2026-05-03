@@ -9,6 +9,28 @@ function loadSAPData() {
   });
 }
 
+/** Muat riwayat bongkar/kirim/opname untuk perhitungan Stock Opname (penerimaan periode SO). */
+function loadOpnamePageData() {
+  var pending = 3;
+  function done() {
+    pending--;
+    if (pending > 0) return;
+    updateOpnameInfo();
+  }
+  fetchAPI('getBongkarHistory', { limit: 4000 }, function(resp) {
+    if (resp.status !== 'error') appState.history.bongkar = resp.data || [];
+    done();
+  });
+  fetchAPI('getKirimHistory', { limit: 4000 }, function(resp) {
+    if (resp.status !== 'error') appState.history.kirim = resp.data || [];
+    done();
+  });
+  fetchAPI('getOpnameHistory', { limit: 800 }, function(resp) {
+    if (resp.status !== 'error') appState.history.opname = resp.data || [];
+    done();
+  });
+}
+
 /** Samakan format BK_ID dari sheet (BK-3 / BK3) dengan chip UI */
 function sapNormalizeBkId(id) {
   if (id == null || id === '') return '';
@@ -20,6 +42,58 @@ function sapNormalizeBkId(id) {
 
 function sapBkRowMatches(rowBk, targetBk) {
   return sapNormalizeBkId(rowBk) === sapNormalizeBkId(targetBk);
+}
+
+// ── Waktu periode penerimaan opname (tanggal + jam) ─────────────────────────
+function bkkTodayYmdWIB() {
+  try {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+  } catch (e) {
+    return typeof todayStr === 'function' ? todayStr() : '';
+  }
+}
+
+function bkkParseAnyDateTimeMs(v) {
+  if (v == null || v === '') return NaN;
+  if (typeof v === 'number' && isFinite(v)) return v;
+  var s = String(v).trim();
+  if (!s) return NaN;
+  var hasZone = /[zZ]$|[+-]\d{2}:\d{2}$|[+-]\d{4}$/.test(s);
+  if (!hasZone) {
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (m) {
+      var sec = m[6] !== undefined && m[6] !== '' ? (+m[6]) : 0;
+      return new Date(m[1] + '-' + m[2] + '-' + m[3] + 'T' + m[4] + ':' + m[5] + ':' + pad2(sec) + '+07:00').getTime();
+    }
+  }
+  var d = new Date(s);
+  return isNaN(d.getTime()) ? NaN : d.getTime();
+}
+
+function bkkStartOfJakartaDayMs(tanggalVal) {
+  var ymd = typeof dashDateToYMD === 'function' ? dashDateToYMD(tanggalVal) : String(tanggalVal || '').substring(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return NaN;
+  return new Date(ymd + 'T00:00:00+07:00').getTime();
+}
+
+/** Momen kejadian baris: prioritas TIMESTAMP (jam simpan), fallback awal hari TANGGAL. */
+function bkkRowEventTimeMs(row) {
+  if (!row) return NaN;
+  if (row.TIMESTAMP != null && row.TIMESTAMP !== '') {
+    var ms = bkkParseAnyDateTimeMs(row.TIMESTAMP);
+    if (!isNaN(ms)) return ms;
+  }
+  if (row.TANGGAL == null || row.TANGGAL === '') return NaN;
+  return bkkStartOfJakartaDayMs(row.TANGGAL);
+}
+
+/** Batas akhir penerimaan: s/d akhir hari opname (WIB); jika hari ini = min(akhir hari, sekarang). */
+function bkkOpnamePeriodEndMs(endYmd) {
+  if (!endYmd || !/^\d{4}-\d{2}-\d{2}$/.test(endYmd)) return NaN;
+  var endDay = new Date(endYmd + 'T23:59:59.999+07:00').getTime();
+  if (isNaN(endDay)) return NaN;
+  if (endYmd === bkkTodayYmdWIB()) return Math.min(endDay, Date.now());
+  return endDay;
 }
 
 /** Ambil 10 transaksi terakhir untuk BK ini dari server (semua bulan). Tanpa bk_id, limit global sering membuang BK yang jarang aktif. */
@@ -916,31 +990,94 @@ function sapKirimSave() {
 }
 
 // ── FORMS ─────────────────────────────────────────────────────────────────────
+function bkkEnsureOpnameHistory(callback) {
+  if (appState.history && appState.history.opname && appState.history.opname.length) {
+    callback();
+    return;
+  }
+  fetchAPI('getOpnameHistory', { limit: 800 }, function(resp) {
+    if (resp.status !== 'error') appState.history.opname = resp.data || [];
+    callback();
+  });
+}
+
+function bkkLatestOpnameYmdLeToday(bkId) {
+  var todayWib = typeof todayYMD_WIB === 'function' ? todayYMD_WIB() : (typeof todayStr === 'function' ? todayStr() : '');
+  var rows = appState.history.opname || [];
+  var maxY = '';
+  rows.forEach(function(r) {
+    if (!sapBkRowMatches(r.BK_ID, bkId)) return;
+    var y = typeof dashDateToYMD === 'function' ? dashDateToYMD(r.TANGGAL) : String(r.TANGGAL || '').substring(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(y)) return;
+    if (y > todayWib) return;
+    if (!maxY || y > maxY) maxY = y;
+  });
+  return maxY;
+}
+
+function bkkValidateTanggalBongkarKirim(bkId, tanggalYmd) {
+  var todayWib = typeof todayYMD_WIB === 'function' ? todayYMD_WIB() : (typeof todayStr === 'function' ? todayStr() : '');
+  if (!tanggalYmd || String(tanggalYmd).length < 10)
+    return { ok: false, msg: 'Pilih tanggal transaksi.' };
+  var ymd = String(tanggalYmd).substring(0, 10);
+  if (ymd > todayWib)
+    return { ok: false, msg: 'Tanggal tidak boleh lebih maju dari hari ini (zona WIB).' };
+  var lastOp = bkkLatestOpnameYmdLeToday(bkId);
+  if (lastOp && ymd < lastOp)
+    return {
+      ok: false,
+      msg: 'Transaksi tanggal sebelum ' + lastOp + ' ditolak — periode tersebut sudah ditutup oleh Stock Opname untuk BK ini. Minimal tanggal ' + lastOp + '.'
+    };
+  return { ok: true };
+}
+
+function bkkShowReject(msg) {
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Tanggal tidak boleh',
+      html: '<div style="text-align:left;font-size:0.95rem;color:#475569;">' + msg + '</div>',
+      confirmButtonText: 'Mengerti',
+      confirmButtonColor: '#0284c7'
+    });
+  } else {
+    toast(msg, 'w');
+  }
+}
+
 function saveBongkar() {
   var bkId = $('b_bk_id').value;
   var netto = parseFloat($('b_netto').value);
   if (!bkId) { toast('Pilih BK terlebih dahulu', 'w'); return; }
   if (!netto || netto <= 0) { toast('Netto harus lebih dari 0', 'w'); return; }
   var shift = $('b_shift').value;
-  var data = {
-    action: 'addBongkar',
-    TANGGAL: $('b_tanggal').value,
-    BK_ID: bkId,
-    MATERIAL: $('b_material').value,
-    SUPPLIER: $('b_supplier').value,
-    NETTO_KG: netto,
-    SHIFT: shift,
-    INPUT_BY: (appState.user ? appState.user.nama + ' (Shift ' + shift + ')' : '')
-  };
-  showLoader(true);
-  postAPI('addBongkar', data, function(resp) {
-    showLoader(false);
-    if (resp.status === 'error') { toast('Gagal: ' + resp.message, 'e'); return; }
-    toast('Bongkar berhasil disimpan!', 's');
-    $('b_netto').value = '';
-    applyBongkarMasterDefaults(bkId);
-    setTimeout(function() { loadDashboard(); }, 800);
-  });
+  var tgl = $('b_tanggal').value;
+
+  function doPost() {
+    var v = bkkValidateTanggalBongkarKirim(bkId, tgl);
+    if (!v.ok) { bkkShowReject(v.msg); return; }
+    var data = {
+      action: 'addBongkar',
+      TANGGAL: tgl,
+      BK_ID: bkId,
+      MATERIAL: $('b_material').value,
+      SUPPLIER: $('b_supplier').value,
+      NETTO_KG: netto,
+      SHIFT: shift,
+      INPUT_BY: (appState.user ? appState.user.nama + ' (Shift ' + shift + ')' : '')
+    };
+    showLoader(true);
+    postAPI('addBongkar', data, function(resp) {
+      showLoader(false);
+      if (resp.status === 'error') { toast('Gagal: ' + resp.message, 'e'); return; }
+      toast('Bongkar berhasil disimpan!', 's');
+      $('b_netto').value = '';
+      applyBongkarMasterDefaults(bkId);
+      setTimeout(function() { loadDashboard(); }, 800);
+    });
+  }
+
+  bkkEnsureOpnameHistory(doPost);
 }
 
 function saveKirim() {
@@ -961,23 +1098,27 @@ function saveKirim() {
 function doSaveKirim() {
   var bkId = $('k_bk_id').value;
   var netto = parseFloat($('k_netto').value);
-  var data = {
-    action: 'addKirim',
-    TANGGAL: $('k_tanggal').value,
-    BK_ID: bkId,
-    MATERIAL: $('k_material').value,
-    NETTO_KG: netto,
-    SHIFT: $('k_shift').value,
-    GRINDING: $('k_grinding').value,
-    INPUT_BY: (appState.user ? appState.user.nama : '')
-  };
-  showLoader(true);
-  postAPI('addKirim', data, function(resp) {
-    showLoader(false);
-    if (resp.status === 'error') { toast('Gagal: ' + resp.message, 'e'); return; }
-    toast('Kirim berhasil! ' + fmtNum(netto) + ' kg', 's');
-    $('k_netto').value = '';
-    setTimeout(function() { loadDashboard(); }, 800);
+  bkkEnsureOpnameHistory(function() {
+    var kv = bkkValidateTanggalBongkarKirim(bkId, $('k_tanggal').value);
+    if (!kv.ok) { bkkShowReject(kv.msg); return; }
+    var data = {
+      action: 'addKirim',
+      TANGGAL: $('k_tanggal').value,
+      BK_ID: bkId,
+      MATERIAL: $('k_material').value,
+      NETTO_KG: netto,
+      SHIFT: $('k_shift').value,
+      GRINDING: $('k_grinding').value,
+      INPUT_BY: (appState.user ? appState.user.nama : '')
+    };
+    showLoader(true);
+    postAPI('addKirim', data, function(resp) {
+      showLoader(false);
+      if (resp.status === 'error') { toast('Gagal: ' + resp.message, 'e'); return; }
+      toast('Kirim berhasil! ' + fmtNum(netto) + ' kg', 's');
+      $('k_netto').value = '';
+      setTimeout(function() { loadDashboard(); }, 800);
+    });
   });
 }
 
@@ -985,27 +1126,33 @@ function saveOpname() {
   var bkId = $('o_bk_id').value;
   var ket = $('o_ket').value;
   if (!bkId) { toast('Pilih BK terlebih dahulu', 'w'); return; }
+  var fisikRaw = $('o_stok_fisik') ? $('o_stok_fisik').value : '';
+  if (fisikRaw === '' || fisikRaw == null) { toast('Isi stok fisik hasil timbang', 'w'); return; }
   var bk = getBKById(bkId);
   var sistem = bk.STOK_AKTIF ? Number(bk.STOK_AKTIF) : 0;
+  var fisik = Number(fisikRaw);
+  if (isNaN(fisik) || fisik < 0) { toast('Stok fisik tidak valid', 'w'); return; }
   var selisih = appState.opnameData ? appState.opnameData.selisih : 0;
   var penerimaan = appState.opnameData ? appState.opnameData.penerimaan : 0;
   var pengiriman = appState.opnameData ? appState.opnameData.pengiriman : 0;
 
   // Build ringkasan in modal body
-  var selisihLabel = selisih < 0 ? 'Over Fisik' : selisih > 0 ? 'Susut' : 'Sesuai';
+  var selisihLabel = selisih > 0 ? 'Susut' : selisih < 0 ? 'Overfisik' : 'Sesuai';
   var selColor = selisih < 0 ? 'var(--ck)' : selisih > 0 ? 'var(--cw)' : 'var(--cm)';
-  var pct = appState.opnameData ? appState.opnameData.persentase : 0;
-  var pctColor = pct < 85 ? 'var(--ck)' : pct < 95 ? 'var(--cw)' : 'var(--cm)';
+  var pct = appState.opnameData ? appState.opnameData.persentase : null;
+  var pctDisp = pct != null && !isNaN(pct) ? fmtPct2(pct) : '—';
+  var pctColor = pct == null || isNaN(pct) ? 'var(--ts)' : pct < 85 ? 'var(--ck)' : pct < 95 ? 'var(--cw)' : 'var(--cm)';
 
   var tblHtml = '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:12px;">' +
     '<tr><td style="padding:5px;color:var(--ts);">Operator</td><td style="padding:5px;font-weight:600;">' + (appState.user ? appState.user.nama : '—') + '</td></tr>' +
     '<tr style="background:#f8fafc"><td style="padding:5px;color:var(--ts);">BK</td><td style="padding:5px;font-weight:600;">' + bkId + '</td></tr>' +
     '<tr><td style="padding:5px;color:var(--ts);">Material</td><td style="padding:5px;font-weight:600;">' + ($('o_material').value || '—') + '</td></tr>' +
     '<tr style="background:#f8fafc"><td style="padding:5px;color:var(--ts);">Stok Sistem</td><td style="padding:5px;font-weight:700;color:var(--cs);">' + fmtNum(sistem) + ' kg</td></tr>' +
-    '<tr><td style="padding:5px;color:var(--ts);">Penerimaan</td><td style="padding:5px;font-weight:700;color:var(--cm);">' + fmtNum(penerimaan) + ' kg</td></tr>' +
-    '<tr style="background:#f8fafc"><td style="padding:5px;color:var(--ts);">Pengiriman</td><td style="padding:5px;font-weight:700;color:var(--ck);">' + fmtNum(pengiriman) + ' kg</td></tr>' +
-    '<tr><td style="padding:5px;color:var(--ts);">Selisih (' + selisihLabel + ')</td><td style="padding:5px;font-weight:700;color:' + selColor + ';">' + fmtNum(Math.abs(selisih)) + ' kg</td></tr>' +
-    '<tr style="background:#f8fafc"><td style="padding:5px;color:var(--ts);">Persentase</td><td style="padding:5px;font-weight:700;color:' + pctColor + ';">' + fmtNum(pct) + '%</td></tr>' +
+    '<tr><td style="padding:5px;color:var(--ts);">Stok Fisik</td><td style="padding:5px;font-weight:700;color:var(--cs);">' + fmtNum(fisik) + ' kg</td></tr>' +
+    '<tr style="background:#f8fafc"><td style="padding:5px;color:var(--ts);">Penerimaan</td><td style="padding:5px;font-weight:700;color:var(--cm);">' + fmtNum(penerimaan) + ' kg</td></tr>' +
+    '<tr><td style="padding:5px;color:var(--ts);">Pengiriman</td><td style="padding:5px;font-weight:700;color:var(--ck);">' + fmtNum(pengiriman) + ' kg</td></tr>' +
+    '<tr style="background:#f8fafc"><td style="padding:5px;color:var(--ts);">Selisih (' + selisihLabel + ')</td><td style="padding:5px;font-weight:700;color:' + selColor + ';">' + fmtNum(Math.abs(selisih)) + ' kg</td></tr>' +
+    '<tr><td style="padding:5px;color:var(--ts);">Persentase</td><td style="padding:5px;font-weight:700;color:' + pctColor + ';">' + pctDisp + '</td></tr>' +
     '</table><div style="font-size:0.85rem;color:var(--ts);padding:8px 12px;background:#fff3cd;border-radius:6px;border:1px solid var(--cw);"><i class="fas fa-exclamation-triangle" style="color:var(--cw);"></i> Stock BK ' + bkId + ' akan di-reset sesuai hasil opname.</div>';
 
   modal('Konfirmasi Stock Opname', tblHtml, 'Simpan', 'Batal').then(function(ok) {
@@ -1014,7 +1161,7 @@ function saveOpname() {
       action: 'addOpname',
       TANGGAL: $('o_tanggal').value,
       BK_ID: bkId,
-      STOK_FISIK_KG: sistem,
+      STOK_FISIK_KG: fisik,
       MATERIAL: $('o_material').value,
       KETERANGAN: ket,
       INPUT_BY: (appState.user ? appState.user.nama : '')
@@ -1025,6 +1172,7 @@ function saveOpname() {
       if (resp.status === 'error') { toast('Gagal: ' + resp.message, 'e'); return; }
       toast('Opname berhasil disimpan!', 's');
       $('o_stok_sistem').textContent = '—';
+      if ($('o_stok_fisik')) $('o_stok_fisik').value = '';
       $('o_selisih').textContent = '—';
       $('o_penerimaan').textContent = '— kg';
       $('o_persentase').textContent = '—';
@@ -1052,40 +1200,83 @@ function updateOpnameInfo() {
   $('o_stok_sistem').textContent = fmtNum(sistem) + ' kg';
   $('o_stok_sistem').style.color = sistem < 0 ? 'var(--ck)' : 'var(--ts)';
 
-  // Hitung penerimaan dari periode SO terakhir
-  var bongkarData = appState.history.bongkar.filter(function(r) { return r.BK_ID === bkId; });
-  var kirimData = appState.history.kirim.filter(function(r) { return r.BK_ID === bkId; });
-  var lastSO = null;
+  var fisikInp = $('o_stok_fisik');
+  var fisik = fisikInp && fisikInp.value !== '' && fisikInp.value != null ? Number(fisikInp.value) : null;
+  if (fisik != null && isNaN(fisik)) fisik = null;
+
+  // Hitung penerimaan = total bongkar setelah tanggal SO terakhir untuk BK ini, sampai tanggal opname (inklusif)
+  var bongkarData = appState.history.bongkar || [];
+  var kirimData = appState.history.kirim || [];
   var allOpname = appState.history.opname || [];
-  allOpname.filter(function(r) { return r.BK_ID === bkId; }).forEach(function(r) {
-    if (!lastSO || new Date(r.TANGGAL) > new Date(lastSO.TANGGAL)) lastSO = r;
+  var opRows = allOpname.filter(function(r) { return sapBkRowMatches(r.BK_ID, bkId); });
+  opRows.sort(function(a, b) {
+    var ma = bkkRowEventTimeMs(a);
+    var mb = bkkRowEventTimeMs(b);
+    if (isNaN(ma)) ma = 0;
+    if (isNaN(mb)) mb = 0;
+    return mb - ma;
   });
-  var startDate = lastSO ? new Date(lastSO.TANGGAL) : new Date('2020-01-01');
-  var endDate = new Date();
+  var lastSO = opRows[0] || null;
+  var lastSOMs = lastSO ? bkkRowEventTimeMs(lastSO) : NaN;
+  var endYmd = $('o_tanggal').value || (typeof todayStr === 'function' ? todayStr() : '');
+  var endCapMs = bkkOpnamePeriodEndMs(endYmd);
+
   var totalBongkar = 0, totalKirim = 0;
   bongkarData.forEach(function(r) {
-    var d = new Date(r.TANGGAL);
-    if (d >= startDate && d <= endDate) totalBongkar += Number(r.NETTO_KG) || 0;
+    if (!sapBkRowMatches(r.BK_ID, bkId)) return;
+    var evMs = bkkRowEventTimeMs(r);
+    if (isNaN(evMs)) return;
+    if (!isNaN(lastSOMs) && evMs <= lastSOMs) return;
+    if (!isNaN(endCapMs) && evMs > endCapMs) return;
+    totalBongkar += Number(r.NETTO_KG) || 0;
   });
   kirimData.forEach(function(r) {
-    var d = new Date(r.TANGGAL);
-    if (d >= startDate && d <= endDate) totalKirim += Number(r.NETTO_KG) || 0;
+    if (!sapBkRowMatches(r.BK_ID, bkId)) return;
+    var evMs = bkkRowEventTimeMs(r);
+    if (isNaN(evMs)) return;
+    if (!isNaN(lastSOMs) && evMs <= lastSOMs) return;
+    if (!isNaN(endCapMs) && evMs > endCapMs) return;
+    totalKirim += Number(r.NETTO_KG) || 0;
   });
   var penerimaan = totalBongkar;
-  var selisih = sistem; // sistem = fisik karena reset
-  var pct = penerimaan > 0 ? (Math.abs(sistem) / penerimaan) * 100 : 0;
+
+  var selisih = fisik != null ? sistem - fisik : null;
+  var qtyMusnah = selisih != null ? Math.abs(selisih) : 0;
+  var pct = null;
+  if (penerimaan > 0 && selisih != null) pct = (qtyMusnah / penerimaan) * 100;
+  else if (penerimaan === 0 && selisih != null && qtyMusnah === 0) pct = 0;
 
   $('o_penerimaan').textContent = fmtNum(penerimaan) + ' kg';
-  $('o_selisih').textContent = fmtNum(Math.abs(selisih)) + ' kg';
-  $('o_selisih').style.color = selisih < 0 ? 'var(--ck)' : selisih > 0 ? 'var(--cw)' : 'var(--cm)';
-  $('o_persentase').textContent = fmtNum(pct) + '%';
-  $('o_persentase').style.color = pct < 85 ? 'var(--ck)' : pct < 95 ? 'var(--cw)' : 'var(--cm)';
+  if (selisih != null) {
+    $('o_selisih').textContent = fmtNum(Math.abs(selisih)) + ' kg';
+    $('o_selisih').style.color = selisih < 0 ? 'var(--ck)' : selisih > 0 ? 'var(--cw)' : 'var(--cm)';
+  } else {
+    $('o_selisih').textContent = '—';
+    $('o_selisih').style.color = 'var(--ts)';
+  }
+  if (pct != null && !isNaN(pct)) {
+    $('o_persentase').textContent = fmtPct2(pct);
+    $('o_persentase').style.color = pct < 85 ? 'var(--ck)' : pct < 95 ? 'var(--cw)' : 'var(--cm)';
+  } else if (selisih == null) {
+    $('o_persentase').textContent = '—';
+    $('o_persentase').style.color = 'var(--ts)';
+  } else {
+    $('o_persentase').textContent = penerimaan === 0 && qtyMusnah > 0 ? '—' : fmtPct2(0);
+    $('o_persentase').style.color = 'var(--ts)';
+  }
 
-  var ketLabel = selisih < 0 ? 'Over Fisik' : selisih > 0 ? 'Susut' : 'Sesuai';
+  var ketLabel = selisih == null ? '' : selisih > 0 ? 'Susut' : selisih < 0 ? 'Overfisik' : 'Sesuai';
   $('o_ket').value = ketLabel;
 
   // Ringkasan box
-  appState.opnameData = { sistem: sistem, penerimaan: penerimaan, pengiriman: totalKirim, selisih: selisih, persentase: pct };
+  appState.opnameData = {
+    sistem: sistem,
+    fisik: fisik,
+    penerimaan: penerimaan,
+    pengiriman: totalKirim,
+    selisih: selisih != null ? selisih : 0,
+    persentase: pct != null && !isNaN(pct) ? pct : null
+  };
   var ringkasan = $('o_ringkasan_box');
   ringkasan.style.display = 'block';
   $('rs_operator').textContent = appState.user ? appState.user.nama : '—';
@@ -1093,12 +1284,19 @@ function updateOpnameInfo() {
   $('rs_bk').textContent = bkId;
   $('rs_material').textContent = $('o_material').value || '—';
   $('rs_stok_sistem').textContent = fmtNum(sistem) + ' kg';
+  var rsF = $('rs_stok_fisik');
+  if (rsF) rsF.textContent = fisik != null ? fmtNum(fisik) + ' kg' : '—';
   $('rs_penerimaan').textContent = fmtNum(penerimaan) + ' kg';
   $('rs_pengiriman').textContent = fmtNum(totalKirim) + ' kg';
   var selEl = $('rs_selisih');
-  selEl.textContent = fmtNum(Math.abs(selisih)) + ' kg (' + ketLabel + ')';
-  selEl.style.color = selisih < 0 ? 'var(--ck)' : selisih > 0 ? 'var(--cw)' : 'var(--cm)';
-  $('rs_persentase').textContent = fmtNum(pct) + '%';
+  if (selisih != null) {
+    selEl.textContent = fmtNum(Math.abs(selisih)) + ' kg (' + ketLabel + ')';
+    selEl.style.color = selisih < 0 ? 'var(--ck)' : selisih > 0 ? 'var(--cw)' : 'var(--cm)';
+  } else {
+    selEl.textContent = '—';
+    selEl.style.color = 'var(--ts)';
+  }
+  $('rs_persentase').textContent = pct != null && !isNaN(pct) ? fmtPct2(pct) : (selisih == null ? '—' : penerimaan === 0 && qtyMusnah > 0 ? '—' : fmtPct2(0));
 }
 
 function stokHint(stok, kapasitas) {
@@ -1173,6 +1371,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Opname BK change
   $('o_bk_id').addEventListener('change', updateOpnameInfo);
   $('o_tanggal').addEventListener('change', updateOpnameInfo);
+  var oFisik = $('o_stok_fisik');
+  if (oFisik) oFisik.addEventListener('input', updateOpnameInfo);
 
   // Cek SAP tabs
   document.querySelectorAll('#page-ceksap .tab-btn').forEach(function(btn) {
