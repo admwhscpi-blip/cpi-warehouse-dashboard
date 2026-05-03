@@ -847,7 +847,7 @@ function bwStep3CollectFilledRows() {
     }
     ok.push({ id: id, netto: netto, arrD: arrD, arrT: arrT, nopol: (tr.cells[0] && tr.cells[0].textContent) || '' });
   });
-  return { ok: ok, skipEmpty: skipEmpty, skipIncomplete: skipIncomplete };
+  return { ok: ok, skipIncomplete: skipIncomplete };
 }
 
 /** Simpan beberapa finalize beruntun (JSONP), lalu refresh Step 3 + dashboard. */
