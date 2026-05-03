@@ -81,16 +81,35 @@ function calculateStock(bkId, allOpname, allBongkar, allKirim) {
   return activeStock;
 }
 
-function calculateAgeDays(bkId, allBongkar) {
-  var bkBongkar = allBongkar.filter(function(r) { return r.BK_ID == bkId; });
-  bkBongkar.sort(function(a, b) { return new Date(b.TANGGAL).getTime() - new Date(a.TANGGAL).getTime(); });
-  if (bkBongkar.length === 0) return 0;
-  
-  var lastDate = new Date(bkBongkar[0].TANGGAL);
-  var now = new Date();
-  var diffTime = now.getTime() - lastDate.getTime();
-  var diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays < 0 ? 0 : diffDays;
+/** Kolom G / AWAL ISI — untuk umur absolut dihitung di web (hari ini − awal isi). */
+function getAwalIsiRawFromMasterRow_(bk) {
+  if (!bk) return null;
+  var v = bk.AWAL_ISI;
+  if (v != null && String(v).trim() !== '') return v;
+  v = bk['AWAL ISI'];
+  if (v != null && String(v).trim() !== '') return v;
+  return null;
+}
+
+function formatAwalIsiYmdForApi_(v) {
+  if (v == null || v === '') return '';
+  if (v instanceof Date) {
+    if (isNaN(v.getTime())) return '';
+    return Utilities.formatDate(v, 'Asia/Jakarta', 'yyyy-MM-dd');
+  }
+  var s = String(v).trim();
+  var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    var dd = ('0' + m[1]).slice(-2);
+    var mm = ('0' + m[2]).slice(-2);
+    return m[3] + '-' + mm + '-' + dd;
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+  var d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return Utilities.formatDate(d, 'Asia/Jakarta', 'yyyy-MM-dd');
+  }
+  return '';
 }
 
 function getBKKDashboard() {
@@ -103,7 +122,7 @@ function getBKKDashboard() {
   for (var i=0; i<master.length; i++) {
     var bk = master[i];
     var stock = calculateStock(bk.BK_ID, opname, bongkar, kirim);
-    var age = calculateAgeDays(bk.BK_ID, bongkar);
+    var awalYmd = formatAwalIsiYmdForApi_(getAwalIsiRawFromMasterRow_(bk));
     result.push({
       BK_ID: bk.BK_ID,
       NAMA_BK: bk.NAMA_BK,
@@ -111,7 +130,7 @@ function getBKKDashboard() {
       MATERIAL_DEFAULT: bk.MATERIAL_DEFAULT,
       SUPPLIER_DEFAULT: bk.SUPPLIER_DEFAULT,
       STOK_AKTIF: stock,
-      AGE_DAYS: age
+      AWAL_ISI_YMD: awalYmd
     });
   }
   return result;
@@ -452,11 +471,17 @@ function handlePost(e) {
     } else if (action === 'finalizeBongkar') {
       var fid = data.ID || data.id;
       if (!fid) throw new Error('ID wajib');
+      var abTgl = data.AB_TANGGAL || data.ab_tanggal || '';
+      var abArr = data.AB_ARRIVAL || data.ab_arrival || '';
+      var abQc = data.AB_QC || data.ab_qc || '';
       var upd = {
         NETTO_KG: Number(data.NETTO_KG || data.netto_kg || 0),
         STATUS_ROW: 'complete',
-        ARRIVAL_DATE: data.ARRIVAL_DATE || data.arrival_date || '',
-        ARRIVAL_TIME: data.ARRIVAL_TIME || data.arrival_time || ''
+        ARRIVAL_DATE: data.ARRIVAL_DATE || data.arrival_date || abTgl || '',
+        ARRIVAL_TIME: data.ARRIVAL_TIME || data.arrival_time || abArr || '',
+        AB_TANGGAL: abTgl,
+        AB_ARRIVAL: abArr,
+        AB_QC: abQc
       };
       if (!updateBongkarById(fid, upd)) throw new Error('Baris bongkar tidak ditemukan');
       return { status: 'success', message: 'Data dilengkapi' };
@@ -620,7 +645,7 @@ function setupSheets() {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
   var sheets = {
-    'BKK_Master':     ['BK_ID','NAMA_BK','KAPASITAS_KG','MATERIAL_DEFAULT','SUPPLIER_DEFAULT','STATUS'],
+    'BKK_Master':     ['BK_ID','NAMA_BK','KAPASITAS_KG','MATERIAL_DEFAULT','SUPPLIER_DEFAULT','STATUS','AWAL_ISI'],
     'BKK_Bongkar':    ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','SUPPLIER','NETTO_KG','NO_POLISI','KETERANGAN','INPUT_BY','SHIFT','TYPE_BONGKARAN','STATUS_ROW','ARRIVAL_DATE','ARRIVAL_TIME','AB_TANGGAL','PB_TANGGAL','AB_ARRIVAL','AB_QC','PB_SAMPAI','PB_START','PB_HOLD','PB_RESTART','PB_FINISH','DURASI_JSON'],
     'BKK_Bongkar_Setup': ['USERNAME','DATE_KEY','NAMA','UPDATED_AT','PAYLOAD_JSON'],
     'BKK_Kirim':      ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','NETTO_KG','SHIFT','GRINDING','OPERATOR','INPUT_BY'],

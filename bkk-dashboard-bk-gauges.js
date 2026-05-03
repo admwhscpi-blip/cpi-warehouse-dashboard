@@ -58,7 +58,7 @@
     appState.dashData.forEach(function(bk) {
       var pct = bk.KAPASITAS_KG ? (Number(bk.STOK_AKTIF) / Number(bk.KAPASITAS_KG)) * 100 : 0;
       var pctClamped = Math.min(Math.max(pct, 0), 100);
-      var ageDays = bk.AGE_DAYS != null && !isNaN(Number(bk.AGE_DAYS)) ? Number(bk.AGE_DAYS) : 0;
+      var ageDays = typeof bkUmurAbsolutHari === 'function' ? bkUmurAbsolutHari(bk.AWAL_ISI_YMD) : 0;
       var ageCls = ageClass(ageDays) || 'cm';
       var matLabel = escMini((bk.MATERIAL_DEFAULT || bk.MATERIAL || '').trim()) || '—';
       var div = document.createElement('div');
@@ -72,7 +72,7 @@
         '<span class="bk-id">' + bk.BK_ID + '</span>' +
         '<span class="bk-material" title="' + matLabel + '">' + matLabel + '</span>' +
         '</div>' +
-        '<span class="bk-age ' + ageCls + '" title="Umur material">' +
+        '<span class="bk-age ' + ageCls + '" title="Umur absolut (hari ini − AWAL ISI)">' +
         '<i class="fas fa-clock"></i> ' + ageDays + ' <span class="bk-age-unit">hr</span></span>' +
         '</div>' +
         '<div class="bk-gauge-wrap">' + buildGaugeSvg(pctClamped) + '</div>' +

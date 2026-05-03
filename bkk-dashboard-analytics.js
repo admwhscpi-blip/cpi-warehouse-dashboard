@@ -98,7 +98,8 @@ function renderInventoryTable() {
   tbl.innerHTML = '';
   appState.dashData.forEach(function(bk) {
     var pct = bk.KAPASITAS_KG ? (Number(bk.STOK_AKTIF) / Number(bk.KAPASITAS_KG)) * 100 : 0;
-    var ac = ageClass(bk.AGE_DAYS);
+    var umur = typeof bkUmurAbsolutHari === 'function' ? bkUmurAbsolutHari(bk.AWAL_ISI_YMD) : 0;
+    var ac = ageClass(umur);
     var pcls = pbarClass(pct);
     var tr = document.createElement('tr');
     tr.className = 'dinv-row';
@@ -109,7 +110,7 @@ function renderInventoryTable() {
       '<td class="num cm">' + fmtNum(bk.STOK_AKTIF) + '</td>' +
       '<td class="num">' + fmtNum(bk.KAPASITAS_KG) + '</td>' +
       '<td class="dinv-util"><div class="dinv-pbar"><div class="dinv-pbar-fill ' + pcls + '" style="width:' + Math.min(pct, 100) + '%"></div></div><span class="dinv-pct">' + fmtNum(pct) + '%</span></td>' +
-      '<td class="dinv-age"><span class="dinv-age-badge ' + ac + '">' + (bk.AGE_DAYS || 0) + ' h</span></td>';
+      '<td class="dinv-age"><span class="dinv-age-badge ' + ac + '" title="Umur absolut (hari ini − AWAL ISI)">' + umur + ' h</span></td>';
     tbl.appendChild(tr);
   });
 }

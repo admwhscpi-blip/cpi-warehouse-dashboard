@@ -30,6 +30,21 @@ function todayYMD_WIB() {
   }
 }
 
+/** Umur absolut (hari): kalender WIB hari ini − tanggal AWAL ISI (YYYY-MM-DD dari API). */
+function bkUmurAbsolutHari(awalYmd) {
+  if (!awalYmd || typeof awalYmd !== 'string') return 0;
+  var ymd = awalYmd.trim().substring(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return 0;
+  var aw = ymd.split('-');
+  var awMs = Date.UTC(Number(aw[0]), Number(aw[1]) - 1, Number(aw[2]));
+  var todayStr = typeof todayYMD_WIB === 'function' ? todayYMD_WIB() : '';
+  if (!todayStr || !/^\d{4}-\d{2}-\d{2}/.test(todayStr)) return 0;
+  var th = todayStr.substring(0, 10).split('-');
+  var thMs = Date.UTC(Number(th[0]), Number(th[1]) - 1, Number(th[2]));
+  var diff = Math.floor((thMs - awMs) / 86400000);
+  return diff < 0 ? 0 : diff;
+}
+
 function loadDashboard(doneCb) {
   showLoader(true);
   fetchAPI('getBKKDashboard', {}, function(resp) {
@@ -205,6 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
       this.classList.add('active');
       if (page === 'kartustock') navigateTo('kartustock');
       else if (page === 'outstanding') navigateTo('outstanding');
+      else if (page === 'durbreakdown') navigateTo('durbreakdown');
       else if (page === 'dashboard') navigateTo('dashboard');
     });
   });

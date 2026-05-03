@@ -6,7 +6,23 @@
 
 var BW_BREAKDOWN_CATS = ['ISTIRAHAT', 'PINDAH HOPPER', 'JALUR OVERLOAD', 'TUNGGU KULI', 'TUNGGU TRUCK', 'OTHER'];
 
-var bwWiz = { step: 1, bdPending: null, bdTargetMin: 0 };
+/** Material non-SBM: modal breakdown durasi urutan hanya bila gap > ini (menit). SBM tetap memakai 5 menit di bwSubmitStep2. */
+var BW_NON_SBM_BREAKDOWN_MIN = 60;
+
+var bwWiz = { step: 1, bdPending: null, bdTargetMin: 0, saving: false };
+
+/** Overlay loading + cegah double-submit antar Step 1–3. */
+function bwWizardSaveStart() {
+  if (bwWiz.saving) return false;
+  bwWiz.saving = true;
+  if (typeof showLoader === 'function') showLoader(true);
+  return true;
+}
+
+function bwWizardSaveEnd() {
+  bwWiz.saving = false;
+  if (typeof showLoader === 'function') showLoader(false);
+}
 
 function bwEsc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -185,7 +201,7 @@ function bwClearStep2Form() {
   var s2 = $('bw_sbm_pb_finish');
   if (s1) s1.value = '';
   if (s2) s2.value = '';
-  ['bw_ab_arrival', 'bw_ab_qc', 'bw_pb_sampai', 'bw_pb_start', 'bw_pb_hold', 'bw_pb_restart', 'bw_pb_finish'].forEach(function(id) {
+  ['bw_pb_sampai', 'bw_pb_start', 'bw_pb_hold', 'bw_pb_restart', 'bw_pb_finish'].forEach(function(id) {
     var x = $(id);
     if (x) x.value = '';
   });
@@ -413,11 +429,9 @@ function bwValidateIntakeOverlap(pbStartMs, pbFinishMs) {
   return null;
 }
 
-/** Urutan tetap (RM-style): hanya pasangan berurutan yang keduanya terisi. */
-function bwBuildSegmentQueueNonSBM(abT, pbT) {
+/** Urutan PB saja (AB di Step 3). Pasangan berurutan yang keduanya terisi. */
+function bwBuildSegmentQueueNonSBM(pbT) {
   var steps = [
-    { y: abT, hmId: 'bw_ab_arrival', lab: 'AB Arrival → AB QC' },
-    { y: abT, hmId: 'bw_ab_qc', lab: 'AB QC (akhir segmen AB)' },
     { y: pbT, hmId: 'bw_pb_sampai', lab: 'PB Sampai Gudang' },
     { y: pbT, hmId: 'bw_pb_start', lab: 'PB Start Bongkar' },
     { y: pbT, hmId: 'bw_pb_hold', lab: 'PB Hold QC' },
@@ -438,7 +452,7 @@ function bwBuildSegmentQueueNonSBM(abT, pbT) {
     var gap = bwDiffMin(points[j - 1].ms, points[j].ms);
     var lab = points[j - 1].lab.split(' → ')[0] + ' → ' + points[j].lab;
     if (gap < 0) return { error: 'Urutan jam tidak kronologis (' + lab + ')' };
-    if (gap > 0) q.push({ key: 'seg_' + points[j - 1].idx + '_' + points[j].idx, targetMin: gap, title: 'Breakdown: ' + lab + ' (' + gap + ' m)' });
+    if (gap > BW_NON_SBM_BREAKDOWN_MIN) q.push({ key: 'seg_' + points[j - 1].idx + '_' + points[j].idx, targetMin: gap, title: 'Breakdown: ' + lab + ' (' + gap + ' m)' });
   }
   return { queue: q };
 }
@@ -552,6 +566,7 @@ function bwRunBreakdownQueue(queue, idx, acc, done) {
   host.innerHTML = '';
   bwBdAddRow(host);
   bwBdUpdateSisa();
+  if (typeof showLoader === 'function') showLoader(false);
   $('bw_bd_modal').classList.add('open');
   bwWiz.bdPending = { queue: queue, idx: idx, acc: acc, targetMin: item.targetMin, key: item.key, done: done };
   var addBtn = $('bw_bd_add');
@@ -575,6 +590,7 @@ function bwBdConfirmCancel() {
   $('bw_bd_modal').classList.remove('open');
   bwWiz.bdPending = null;
   bwWiz.bdTargetMin = 0;
+  bwWizardSaveEnd();
 }
 
 function bwSubmitStep2() {
@@ -589,6 +605,7 @@ function bwSubmitStep2() {
     toast('Lengkapi BK, tanggal operasi, dan nopol', 'w');
     return;
   }
+  if (!bwWizardSaveStart()) return;
 
   var isSbm = bwMaterialIsSBM();
   var dj = { v: 1, is_sbm: isSbm, type_bongkaran: typ, pb_tanggal: tgl };
@@ -597,6 +614,7 @@ function bwSubmitStep2() {
     var v = bkkValidateTanggalBongkarKirim(bkId, tgl);
     if (!v.ok) {
       bkkShowReject(v.msg);
+      bwWizardSaveEnd();
       return;
     }
 
@@ -613,20 +631,24 @@ function bwSubmitStep2() {
       var msF = bwConcatMs(pbt, pf);
       if (isNaN(msS) || isNaN(msF)) {
         toast('Isi PB Start & PB Finish', 'w');
+        bwWizardSaveEnd();
         return;
       }
       if (msF < msS) {
         toast('PB Finish harus setelah PB Start', 'w');
+        bwWizardSaveEnd();
         return;
       }
       var strictS = bwValidatePbStrictAfterPrevious(msS, msF);
       if (strictS) {
         toast(strictS, 'w');
+        bwWizardSaveEnd();
         return;
       }
       var ovS = bwValidateIntakeOverlap(msS, msF);
       if (ovS) {
         toast(ovS, 'w');
+        bwWizardSaveEnd();
         return;
       }
 
@@ -645,34 +667,34 @@ function bwSubmitStep2() {
         }
       }
     } else {
-      var need = ['bw_ab_arrival', 'bw_ab_qc', 'bw_pb_sampai', 'bw_pb_start', 'bw_pb_finish'];
+      var need = ['bw_pb_sampai', 'bw_pb_start', 'bw_pb_finish'];
       for (var ni = 0; ni < need.length; ni++) {
         if (!$(need[ni]).value) {
           toast('Lengkapi timeline: AB Arrival, AB QC, PB Sampai, PB Start, PB Finish', 'w');
+          bwWizardSaveEnd();
           return;
         }
       }
       var hh = $('bw_pb_hold').value, rr = $('bw_pb_restart').value;
-      if (hh && !rr) { toast('Isi PB Restart bila PB Hold diisi', 'w'); return; }
-      if (rr && !hh) { toast('Isi PB Hold bila PB Restart diisi', 'w'); return; }
+      if (hh && !rr) { toast('Isi PB Restart bila PB Hold diisi', 'w'); bwWizardSaveEnd(); return; }
+      if (rr && !hh) { toast('Isi PB Hold bila PB Restart diisi', 'w'); bwWizardSaveEnd(); return; }
 
-      var abT = $('bw_ab_tgl').value || tgl;
       var pbT = $('bw_pb_tgl').value || tgl;
-      $('bw_ab_tgl').value = abT;
       $('bw_pb_tgl').value = pbT;
-      dj.ab_tanggal = abT;
       dj.pb_tanggal = pbT;
-      dj.ab_arrival = $('bw_ab_arrival').value;
-      dj.ab_qc = $('bw_ab_qc').value;
+      dj.ab_tanggal = '';
+      dj.ab_arrival = '';
+      dj.ab_qc = '';
       dj.pb_sampai = $('bw_pb_sampai').value;
       dj.pb_start = $('bw_pb_start').value;
       dj.pb_hold = $('bw_pb_hold').value;
       dj.pb_restart = $('bw_pb_restart').value;
       dj.pb_finish = $('bw_pb_finish').value;
 
-      var seg = bwBuildSegmentQueueNonSBM(abT, pbT);
+      var seg = bwBuildSegmentQueueNonSBM(pbT);
       if (seg.error) {
         toast(seg.error, 'w');
+        bwWizardSaveEnd();
         return;
       }
       seg.queue.forEach(function(s) { queue.push(s); });
@@ -683,15 +705,17 @@ function bwSubmitStep2() {
         var strictN = bwValidatePbStrictAfterPrevious(pbMsS, pbMsF);
         if (strictN) {
           toast(strictN, 'w');
+          bwWizardSaveEnd();
           return;
         }
         var ov2 = bwValidateIntakeOverlap(pbMsS, pbMsF);
         if (ov2) {
           toast(ov2, 'w');
+          bwWizardSaveEnd();
           return;
         }
         var g2 = bwGapPrevIntakePB(pbMsS);
-        if (!isNaN(g2) && g2 > 5) {
+        if (!isNaN(g2) && g2 > BW_NON_SBM_BREAKDOWN_MIN) {
           queue.push({
             key: 'gap_truck_ns',
             targetMin: g2,
@@ -718,9 +742,11 @@ function bwSubmitStep2() {
         INPUT_BY: inpBy,
         DURASI_JSON: JSON.stringify(dj)
       };
-      showLoader(true);
-      postAPI('addBongkar', payload, function(resp) {
-        showLoader(false);
+      if (typeof showLoader === 'function') showLoader(true);
+      /** POST body — hindari potong URL JSONP; breakdown wizard hilang jika DURASI_JSON terlalu panjang di query string. */
+      var sendAdd = typeof postJSONAPI === 'function' ? postJSONAPI : postAPI;
+      sendAdd('addBongkar', payload, function(resp) {
+        bwWizardSaveEnd();
         if (resp.status === 'error') {
           toast('Gagal: ' + resp.message, 'e');
           return;
@@ -778,8 +804,24 @@ function bwToggleDurasiMode() {
   sbm.style.display = isSbm ? 'block' : 'none';
   var t = $('bw_tanggal').value;
   if ($('bw_sbm_pb_tgl')) $('bw_sbm_pb_tgl').value = t;
-  if ($('bw_ab_tgl')) $('bw_ab_tgl').value = t;
   if ($('bw_pb_tgl')) $('bw_pb_tgl').value = t;
+}
+
+/** Nilai awal AB untuk baris Step 3 dari sheet / DURASI_JSON. */
+function bwStep3AbDefaults(r) {
+  var dj = bwGetDurasiFields(r);
+  var abTgl = '';
+  var abArr = '';
+  var abQc = '';
+  if (dj) {
+    abTgl = dj.ab_tanggal || '';
+    abArr = dj.ab_arrival || '';
+    abQc = dj.ab_qc || '';
+  }
+  if (r.AB_TANGGAL != null && String(r.AB_TANGGAL).trim() !== '') abTgl = abTgl || bwSheetYMD(r.AB_TANGGAL);
+  if (r.AB_ARRIVAL != null && String(r.AB_ARRIVAL).trim() !== '') abArr = abArr || bwNormalizeSheetTime(r.AB_ARRIVAL);
+  if (r.AB_QC != null && String(r.AB_QC).trim() !== '') abQc = abQc || bwNormalizeSheetTime(r.AB_QC);
+  return { abTgl: abTgl, abArr: abArr, abQc: abQc };
 }
 
 function bwRefreshStep3() {
@@ -804,19 +846,27 @@ function bwRefreshStep3() {
     if (!bwInputByMatchesUser(r)) return;
 
     var isSbm = String(r.MATERIAL || '').toLowerCase().indexOf('sbm') >= 0;
+    var ab = bwStep3AbDefaults(r);
     var tr = document.createElement('tr');
     tr.setAttribute('data-id', r.ID);
     tr.setAttribute('data-bw-sbm', isSbm ? '1' : '0');
     tr.innerHTML =
       '<td>' + bwEsc(r.NO_POLISI || '') + '</td>' +
-      '<td>' +
-      (isSbm ? '<span class="bw-cell-x">X (tidak diisi)</span>' : '<input type="date" class="bw-arrival-d">') +
-      '</td>' +
-      '<td>' +
-      (isSbm ? '<span class="bw-cell-x">X</span>' : '<input type="time" class="bw-arrival-t">') +
-      '</td>' +
+      (isSbm
+        ? '<td><span class="bw-cell-x">—</span></td><td><span class="bw-cell-x">—</span></td><td><span class="bw-cell-x">—</span></td>'
+        : '<td><input type="date" class="bw-ab-tgl"></td>' +
+          '<td><input type="time" class="bw-ab-arr"></td>' +
+          '<td><input type="time" class="bw-ab-qc"></td>') +
       '<td><input type="number" class="bw-netto" min="0" step="0.01" placeholder="kg"></td>';
     tb.appendChild(tr);
+    if (!isSbm) {
+      var it = tr.querySelector('.bw-ab-tgl');
+      var ia = tr.querySelector('.bw-ab-arr');
+      var iq = tr.querySelector('.bw-ab-qc');
+      if (it && ab.abTgl) it.value = ab.abTgl.length >= 10 ? ab.abTgl.substring(0, 10) : ab.abTgl;
+      if (ia && ab.abArr) ia.value = ab.abArr;
+      if (iq && ab.abQc) iq.value = ab.abQc;
+    }
     shown++;
   });
   if (sum && shown === 0) {
@@ -824,7 +874,7 @@ function bwRefreshStep3() {
   }
 }
 
-/** Kumpulkan baris yang siap disimpan (netto valid; non-SBM wajib arrival). */
+/** Kumpulkan baris yang siap disimpan (SBM: netto saja; non-SBM: AB + netto). */
 function bwStep3CollectFilledRows() {
   var tb = $('bw_step3_tb');
   if (!tb) return { ok: [], skipIncomplete: 0 };
@@ -837,15 +887,32 @@ function bwStep3CollectFilledRows() {
     var netEl = tr.querySelector('.bw-netto');
     var netto = parseFloat(netEl && netEl.value);
     if (!netto || netto <= 0) return;
-    var ad = tr.querySelector('.bw-arrival-d');
-    var at = tr.querySelector('.bw-arrival-t');
-    var arrD = isSbm ? '' : (ad ? ad.value : '');
-    var arrT = isSbm ? '' : (at ? at.value : '');
-    if (!isSbm && (!arrD || !arrT)) {
+    if (isSbm) {
+      ok.push({
+        id: id,
+        netto: netto,
+        abTgl: '',
+        abArr: '',
+        abQc: '',
+        nopol: (tr.cells[0] && tr.cells[0].textContent) || ''
+      });
+      return;
+    }
+    var abTgl = (tr.querySelector('.bw-ab-tgl') && tr.querySelector('.bw-ab-tgl').value) || '';
+    var abArr = (tr.querySelector('.bw-ab-arr') && tr.querySelector('.bw-ab-arr').value) || '';
+    var abQc = (tr.querySelector('.bw-ab-qc') && tr.querySelector('.bw-ab-qc').value) || '';
+    if (!abTgl || !abArr || !abQc) {
       skipIncomplete++;
       return;
     }
-    ok.push({ id: id, netto: netto, arrD: arrD, arrT: arrT, nopol: (tr.cells[0] && tr.cells[0].textContent) || '' });
+    ok.push({
+      id: id,
+      netto: netto,
+      abTgl: abTgl,
+      abArr: abArr,
+      abQc: abQc,
+      nopol: (tr.cells[0] && tr.cells[0].textContent) || ''
+    });
   });
   return { ok: ok, skipIncomplete: skipIncomplete };
 }
@@ -854,21 +921,21 @@ function bwStep3CollectFilledRows() {
 function bwFinalizeStep3Bulk() {
   var pack = bwStep3CollectFilledRows();
   if (pack.skipIncomplete > 0) {
-    toast(pack.skipIncomplete + ' baris punya netto tapi arrival belum lengkap — tidak ikut disimpan.', 'w');
+    toast(pack.skipIncomplete + ' baris: netto ada tapi AB tanggal / AB arrival / AB QC belum lengkap — tidak ikut disimpan.', 'w');
   }
   if (!pack.ok.length) {
     toast('Isi netto pada baris yang ingin disimpan (baris kosong tidak diproses).', 'w');
     return;
   }
+  if (!bwWizardSaveStart()) return;
 
   var idx = 0;
   var okCount = 0;
   var failMsg = [];
-  showLoader(true);
 
   function step() {
     if (idx >= pack.ok.length) {
-      showLoader(false);
+      bwWizardSaveEnd();
       if (pack.ok.length && okCount === pack.ok.length) {
         toast('Semua ' + okCount + ' baris tersimpan.', 's');
       } else if (okCount > 0) {
@@ -890,8 +957,11 @@ function bwFinalizeStep3Bulk() {
     postAPI('finalizeBongkar', {
       ID: p.id,
       NETTO_KG: p.netto,
-      ARRIVAL_DATE: p.arrD,
-      ARRIVAL_TIME: p.arrT
+      AB_TANGGAL: p.abTgl || '',
+      AB_ARRIVAL: p.abArr || '',
+      AB_QC: p.abQc || '',
+      ARRIVAL_DATE: p.abTgl || '',
+      ARRIVAL_TIME: p.abArr || ''
     }, function(resp) {
       if (resp.status === 'error') {
         failMsg.push((p.nopol || p.id) + ': ' + resp.message);
@@ -906,6 +976,7 @@ function bwFinalizeStep3Bulk() {
 
 function bwSaveStep1() {
   if (!appState.user || !appState.user.username) return;
+  if (!bwWizardSaveStart()) return;
   var dk = $('bw_tanggal').value;
   var payload = {
     tanggal: dk,
@@ -921,6 +992,7 @@ function bwSaveStep1() {
     nama: appState.user.nama || '',
     payload: JSON.stringify(payload)
   }, function(resp) {
+    bwWizardSaveEnd();
     if (resp.status === 'error') toast('Gagal simpan setup: ' + resp.message, 'e');
     else toast('Setup tersimpan', 's');
   });

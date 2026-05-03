@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="bkk-dashboard-page.css">
 <link rel="stylesheet" href="laporan-export.css?v=8">
 <link rel="stylesheet" href="bkk-bongkar-wizard.css">
+<link rel="stylesheet" href="bkk-duration-breakdown.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -115,6 +116,7 @@
           <button type="button" class="view-tab tab-dashboard active" data-page="dashboard"><i class="fas fa-th-large"></i> Dashboard</button>
           <button type="button" class="view-tab tab-kartustock" data-page="kartustock"><i class="fas fa-chart-bar"></i> Kartu Stock</button>
           <button type="button" class="view-tab tab-outstanding" data-page="outstanding"><i class="fas fa-broadcast-tower"></i> Outstanding (live)</button>
+          <button type="button" class="view-tab tab-durbreakdown" data-page="durbreakdown"><i class="fas fa-stopwatch"></i> Breakdown Durasi</button>
         </div>
       </div>
 
@@ -186,6 +188,108 @@
         </div>
       </div>
 
+      <!-- PAGE: BREAKDOWN DURASI (DTV2-style; SBM vs Non-SBM) -->
+      <div class="page dash-page-shell" id="page-durbreakdown">
+        <div class="section-title-bar" style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+          <h3 style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:var(--text-primary);margin:0;"><i class="fas fa-stopwatch" style="color:#8b5cf6;"></i> BREAKDOWN DURASI</h3>
+          <span style="padding:3px 12px;border-radius:6px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;background:linear-gradient(135deg,#ede9fe,#ddd6fe);color:#7c3aed;">ANALISIS</span>
+        </div>
+
+        <div class="pivot-filter-panel" id="bkkdb-filter-panel" style="margin-bottom:0;border-radius:16px 16px 0 0;border-bottom:none;position:relative;z-index:10;">
+          <div class="pivot-group">
+            <label>Dari Tanggal</label>
+            <input type="date" id="bkkdb_start_date" class="pivot-input" onchange="bkkDbRender()">
+          </div>
+          <div class="pivot-group">
+            <label>Sampai Tanggal</label>
+            <input type="date" id="bkkdb_end_date" class="pivot-input" onchange="bkkDbRender()">
+          </div>
+          <div class="pivot-group">
+            <label>Material</label>
+            <div class="pivot-multi-select" id="bkkdb-ms-material">
+              <div class="ms-trigger" onclick="bkkDbToggleMs('bkkdb-ms-material');">
+                <span class="ms-label">SEMUA MATERIAL</span>
+                <i class="fas fa-chevron-down"></i>
+              </div>
+              <div class="ms-dropdown">
+                <div class="ms-actions">
+                  <button type="button" class="ms-btn" onclick="bkkDbMsAll('bkkdb-ms-material');">Pilih Semua</button>
+                  <button type="button" class="ms-btn" onclick="bkkDbMsNone('bkkdb-ms-material');">Hapus Semua</button>
+                </div>
+                <input type="text" class="ms-search" placeholder="Cari material..." onkeyup="bkkDbFilterMsList(this)">
+                <div class="ms-list"></div>
+              </div>
+            </div>
+          </div>
+          <div class="pivot-group">
+            <label>BK</label>
+            <div class="pivot-multi-select" id="bkkdb-ms-bk">
+              <div class="ms-trigger" onclick="bkkDbToggleMs('bkkdb-ms-bk');">
+                <span class="ms-label">SEMUA BK</span>
+                <i class="fas fa-chevron-down"></i>
+              </div>
+              <div class="ms-dropdown">
+                <div class="ms-actions">
+                  <button type="button" class="ms-btn" onclick="bkkDbMsAll('bkkdb-ms-bk');">Pilih Semua</button>
+                  <button type="button" class="ms-btn" onclick="bkkDbMsNone('bkkdb-ms-bk');">Hapus Semua</button>
+                </div>
+                <input type="text" class="ms-search" placeholder="Cari BK..." onkeyup="bkkDbFilterMsList(this)">
+                <div class="ms-list"></div>
+              </div>
+            </div>
+          </div>
+          <div class="pivot-group">
+            <label>Shift</label>
+            <div class="pivot-multi-select" id="bkkdb-ms-shift">
+              <div class="ms-trigger" onclick="bkkDbToggleMs('bkkdb-ms-shift');">
+                <span class="ms-label">SEMUA SHIFT</span>
+                <i class="fas fa-chevron-down"></i>
+              </div>
+              <div class="ms-dropdown">
+                <div class="ms-actions">
+                  <button type="button" class="ms-btn" onclick="bkkDbMsAll('bkkdb-ms-shift');">Pilih Semua</button>
+                  <button type="button" class="ms-btn" onclick="bkkDbMsNone('bkkdb-ms-shift');">Hapus Semua</button>
+                </div>
+                <input type="text" class="ms-search" placeholder="Cari..." onkeyup="bkkDbFilterMsList(this)">
+                <div class="ms-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pivot-filter-panel" style="border-radius:0 0 16px 16px;border-top:1px dashed #e2e8f0;padding-top:16px;margin-bottom:24px;position:relative;z-index:1;">
+          <div class="pivot-group" style="flex:1;min-width:100%;">
+            <label style="font-size:0.7rem;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:block;">Tipe durasi <span style="font-weight:400;font-style:italic;color:#94a3b8;">(pilih satu atau lebih — SBM &amp; non-SBM tidak bisa bersamaan)</span></label>
+            <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;">
+              <div style="flex:1;min-width:280px;">
+                <div style="font-size:0.7rem;font-weight:800;color:#059669;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;"><i class="fas fa-seedling"></i> SBM</div>
+                <div class="db-chip-group" id="bkkdb-chips-sbm"></div>
+              </div>
+              <div style="flex:1;min-width:280px;">
+                <div style="font-size:0.7rem;font-weight:800;color:#ea580c;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;"><i class="fas fa-industry"></i> Non-SBM</div>
+                <div class="db-chip-group" id="bkkdb-chips-nonsbm"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="db-top-summary-grid" id="bkkdb-top-summary-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px;"></div>
+        <div class="db-bottom-summary-grid" id="bkkdb-bottom-summary-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:24px;margin-bottom:24px;"></div>
+        <div class="db-mini-grid" id="bkkdb-mini-grid"></div>
+
+        <div class="db-table-wrap" style="width:100%;overflow:hidden;">
+          <div class="db-table-header" style="display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--bd,#e2e8f0);">
+            <h4 style="font-family:'Rajdhani',sans-serif;font-size:1.05rem;font-weight:700;margin:0;"><i class="fas fa-list-alt" style="color:#8b5cf6;"></i> DATA DETAIL PER TRUCK</h4>
+          </div>
+          <div class="db-table-inner" style="width:100%;overflow-x:auto;">
+            <table class="db-detail-table" id="bkkdb-detail-table" style="min-width:1000px;">
+              <thead id="bkkdb-thead"><tr></tr></thead>
+              <tbody id="bkkdb-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- PAGE: BONGKAR (wizard 3 langkah) -->
       <div class="page" id="page-bongkar">
         <div class="fcard bw-wizard">
@@ -219,7 +323,7 @@
           </div>
 
           <div id="bw-panel-2" class="bw-panel">
-            <p class="fhint" style="font-size:0.85rem;color:var(--ts);">Material mengandung <strong>sbm</strong>: hanya PB Start &amp; Finish. Selain itu: timeline penuh seperti RM DT. Intake 71: patokan jam truck sebelumnya muncul di bawah PB Start.</p>
+            <p class="fhint" style="font-size:0.85rem;color:var(--ts);">Material <strong>SBM</strong>: hanya PB Start &amp; Finish. <strong>Selain SBM</strong>: isi PB di langkah ini; <strong>AB tanggal / AB arrival / AB QC</strong> diisi di Step 3 bersama netto. Intake 71: patokan di bawah PB Start.</p>
             <div class="fgrid">
               <div class="fg full">
                 <div id="bw_truck_badge" class="bw-truck-badge" aria-live="polite">Truck ke-1 — sesi tanggal &amp; shift ini</div>
@@ -227,11 +331,8 @@
               </div>
             </div>
             <div id="bw_durasi_full">
-              <div class="ftitle" style="font-size:0.95rem;margin:16px 0 8px;"><i class="fas fa-clock"></i> Arrival &amp; PB (isi urut)</div>
+              <div class="ftitle" style="font-size:0.95rem;margin:16px 0 8px;"><i class="fas fa-clock"></i> PB — draft durasi (isi urut)</div>
               <div class="fgrid">
-                <div class="fg"><label>AB Tanggal</label><input type="date" id="bw_ab_tgl"></div>
-                <div class="fg"><label>AB-Arrival</label><input type="time" id="bw_ab_arrival"></div>
-                <div class="fg"><label>AB-QC</label><input type="time" id="bw_ab_qc"></div>
                 <div class="fg"><label>PB Tanggal</label><input type="date" id="bw_pb_tgl"></div>
                 <div class="fg"><label>PB-Sampai Gudang</label><input type="time" id="bw_pb_sampai"></div>
                 <div class="fg"><label>PB-Start</label><input type="time" id="bw_pb_start"></div>
@@ -255,15 +356,15 @@
 
           <div id="bw-panel-3" class="bw-panel">
             <div id="bw_step3_summary" class="bw-step3-head"></div>
-            <p class="fhint" style="font-size:0.85rem;">Hanya baris kamu yang belum ada netto. SBM: isi netto saja; arrival bertanda X.</p>
+            <p class="fhint" style="font-size:0.85rem;">Non-SBM: isi <strong>AB tanggal, AB arrival, AB QC</strong> + netto. SBM: isi netto saja (AB bertanda —).</p>
             <div class="twrap" style="overflow-x:auto;">
               <table class="bw-step3-table dtable">
-                <thead><tr><th>Nopol</th><th>Arrival date</th><th>Arrival time</th><th>Netto (kg)</th></tr></thead>
+                <thead><tr><th>Nopol</th><th>AB Tanggal</th><th>AB Arrival</th><th>AB QC</th><th>Netto (kg)</th></tr></thead>
                 <tbody id="bw_step3_tb"></tbody>
               </table>
             </div>
             <button type="button" class="btn blk" id="bw_btn_save_step3" style="margin-top:14px;"><i class="fas fa-save"></i> Simpan baris terisi</button>
-            <p class="fhint" style="font-size:0.8rem;margin-top:8px;">Hanya baris dengan netto (&amp; arrival bila non-SBM) yang disimpan. Yang kosong tetap tampil untuk pengisian berikutnya.</p>
+            <p class="fhint" style="font-size:0.8rem;margin-top:8px;">Non-SBM: netto + ketiga AB harus lengkap per baris yang disimpan. Yang kosong tetap tampil.</p>
           </div>
         </div>
 
@@ -763,6 +864,7 @@
 <script src="laporan-export.js?v=8"></script>
 <script src="bkk-sap.js"></script>
 <script src="bkk-bongkar-wizard.js"></script>
+<script src="bkk-duration-breakdown.js"></script>
 <script src="bkk-kartustock.js"></script>
 
 </body>

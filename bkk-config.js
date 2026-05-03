@@ -1,5 +1,5 @@
 var CONFIG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyPjJqS4GUneYNwBTWRe-gb2SOBv6TWT3EcT3-IHWJYgwieS_DNjPqizcmDcXV0l7sP/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx98kWGcRHHIvAMl_jovMoeKxaFs8SDv0FozmT2HAOUICPnLpijGynswnzf0BZUdqaL/exec',
   PAGE_SIZES: { default: 20, sap: 20 }
 };
 
@@ -23,8 +23,8 @@ var USERS_DATABASE = [
 ];
 
 var ROLE_PERMISSIONS = {
-  admin:   { dashboard: true, bongkar: true, kirim: true, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true },
-  kirim:   { dashboard: true, bongkar: false, kirim: true, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true },
-  bongkar: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true },
-  opname:  { dashboard: true, bongkar: false, kirim: false, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true }
+  admin:   { dashboard: true, bongkar: true, kirim: true, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true },
+  kirim:   { dashboard: true, bongkar: false, kirim: true, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true },
+  bongkar: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true },
+  opname:  { dashboard: true, bongkar: false, kirim: false, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true }
 };

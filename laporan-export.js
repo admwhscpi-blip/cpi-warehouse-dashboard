@@ -103,7 +103,7 @@
       var kap = Number(bk.KAPASITAS_KG) || 0;
       var util = kap > 0 ? Math.min((stokH / kap) * 100, 999.99) : 0;
       var sap = sapStatusForBk(id);
-      var ageDays = bk.AGE_DAYS != null && !isNaN(Number(bk.AGE_DAYS)) ? Number(bk.AGE_DAYS) : 0;
+      var ageDays = typeof bkUmurAbsolutHari === 'function' ? bkUmurAbsolutHari(bk.AWAL_ISI_YMD) : 0;
       totalStok += stokH;
       return {
         bkId: id,
