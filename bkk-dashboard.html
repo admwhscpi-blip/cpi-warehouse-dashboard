@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="bkk-brand-theme.css">
 <link rel="stylesheet" href="bkk-dashboard-page.css">
 <link rel="stylesheet" href="laporan-export.css?v=8">
+<link rel="stylesheet" href="bkk-bongkar-wizard.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -185,45 +186,100 @@
         </div>
       </div>
 
-      <!-- PAGE: BONGKAR -->
+      <!-- PAGE: BONGKAR (wizard 3 langkah) -->
       <div class="page" id="page-bongkar">
-        <div class="fcard">
-          <div class="ftitle"><i class="fas fa-truck-loading"></i> Form Bongkar (Inbound)</div>
-          <div class="fgrid">
-            <div class="fg">
-              <label>Tanggal</label>
-              <input type="date" id="b_tanggal">
+        <div class="fcard bw-wizard">
+          <div class="ftitle"><i class="fas fa-truck-loading"></i> Bongkar — 3 langkah</div>
+          <div class="bw-step-nav">
+            <button type="button" class="bw-step-btn active" data-bw-step="1">1 · Setup</button>
+            <button type="button" class="bw-step-btn" data-bw-step="2">2 · Durasi</button>
+            <button type="button" class="bw-step-btn" data-bw-step="3">3 · Data akhir</button>
+          </div>
+
+          <div id="bw-panel-1" class="bw-panel active">
+            <p class="fhint" style="margin-top:0;font-size:0.85rem;color:var(--ts);">Disimpan di server per user &amp; tanggal. Netto diisi di langkah akhir.</p>
+            <div class="fgrid">
+              <div class="fg"><label>Tanggal operasi</label><input type="date" id="bw_tanggal"></div>
+              <div class="fg"><label>BK</label><select id="bw_bk_id"><option value="">— Pilih BK —</option></select></div>
+              <div class="fg"><label>Operator</label><input type="text" id="bw_operator" readonly></div>
+              <div class="fg"><label>Shift</label>
+                <select id="bw_shift"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+              </div>
+              <div class="fg full"><label>Type bongkaran</label>
+                <select id="bw_type_bongkaran">
+                  <option value="direct_gudang">Direct Gudang</option>
+                  <option value="intake71_manual">Intake 71 Manual</option>
+                  <option value="intake71_tilting">Intake 71 Tilting</option>
+                </select>
+              </div>
+              <div class="fg"><label>Material</label><select id="bw_material"><option value="">— Pilih —</option></select></div>
+              <div class="fg"><label>Supplier</label><input type="text" id="bw_supplier" placeholder="Supplier"></div>
             </div>
-            <div class="fg">
-              <label>BK ID</label>
-              <select id="b_bk_id"><option value="">— Pilih BK —</option></select>
+            <button type="button" class="btn blk" id="bw_btn_save_step1" style="margin-top:12px;"><i class="fas fa-save"></i> Simpan setup</button>
+          </div>
+
+          <div id="bw-panel-2" class="bw-panel">
+            <p class="fhint" style="font-size:0.85rem;color:var(--ts);">Material mengandung <strong>sbm</strong>: hanya PB Start &amp; Finish. Selain itu: timeline penuh seperti RM DT. Intake 71: patokan jam truck sebelumnya muncul di bawah PB Start.</p>
+            <div class="fgrid">
+              <div class="fg full">
+                <div id="bw_truck_badge" class="bw-truck-badge" aria-live="polite">Truck ke-1 — sesi tanggal &amp; shift ini</div>
+                <label>No. Polisi</label><input type="text" id="bw_nopol" placeholder="B 1234 XX" style="text-transform:uppercase;">
+              </div>
             </div>
-            <div class="fg">
-              <label>Operator</label>
-              <input type="text" id="b_operator" readonly>
+            <div id="bw_durasi_full">
+              <div class="ftitle" style="font-size:0.95rem;margin:16px 0 8px;"><i class="fas fa-clock"></i> Arrival &amp; PB (isi urut)</div>
+              <div class="fgrid">
+                <div class="fg"><label>AB Tanggal</label><input type="date" id="bw_ab_tgl"></div>
+                <div class="fg"><label>AB-Arrival</label><input type="time" id="bw_ab_arrival"></div>
+                <div class="fg"><label>AB-QC</label><input type="time" id="bw_ab_qc"></div>
+                <div class="fg"><label>PB Tanggal</label><input type="date" id="bw_pb_tgl"></div>
+                <div class="fg"><label>PB-Sampai Gudang</label><input type="time" id="bw_pb_sampai"></div>
+                <div class="fg"><label>PB-Start</label><input type="time" id="bw_pb_start"></div>
+                <div class="fg full"><div id="bw_pb_start_ghost" class="bw-ghost-time"></div></div>
+                <div class="fg"><label>PB-Hold QC</label><input type="time" id="bw_pb_hold"></div>
+                <div class="fg"><label>PB-Restart</label><input type="time" id="bw_pb_restart"></div>
+                <div class="fg"><label>PB-Finish</label><input type="time" id="bw_pb_finish"></div>
+              </div>
             </div>
-            <div class="fg">
-              <label>Shift</label>
-              <select id="b_shift">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-              </select>
+            <div id="bw_durasi_sbm" style="display:none;">
+              <div class="ftitle" style="font-size:0.95rem;margin:16px 0 8px;"><i class="fas fa-stopwatch"></i> SBM — PB saja</div>
+              <div class="fgrid">
+                <div class="fg"><label>PB Tanggal</label><input type="date" id="bw_sbm_pb_tgl"></div>
+                <div class="fg full"><label>PB-Start</label><input type="time" id="bw_sbm_pb_start"></div>
+                <div class="fg full bw-sbm-ghost-row"><div id="bw_sbm_pb_ghost" class="bw-ghost-time" aria-live="polite"></div></div>
+                <div class="fg"><label>PB-Finish</label><input type="time" id="bw_sbm_pb_finish"></div>
+              </div>
             </div>
-            <div class="fg">
-              <label>Material</label>
-              <select id="b_material"><option value="">— Pilih —</option></select>
+            <button type="button" class="btn blk" id="bw_btn_save_step2" style="margin-top:14px;"><i class="fas fa-cloud-upload-alt"></i> Simpan durasi (draft)</button>
+          </div>
+
+          <div id="bw-panel-3" class="bw-panel">
+            <div id="bw_step3_summary" class="bw-step3-head"></div>
+            <p class="fhint" style="font-size:0.85rem;">Hanya baris kamu yang belum ada netto. SBM: isi netto saja; arrival bertanda X.</p>
+            <div class="twrap" style="overflow-x:auto;">
+              <table class="bw-step3-table dtable">
+                <thead><tr><th>Nopol</th><th>Arrival date</th><th>Arrival time</th><th>Netto (kg)</th></tr></thead>
+                <tbody id="bw_step3_tb"></tbody>
+              </table>
             </div>
-            <div class="fg">
-              <label>Supplier</label>
-              <input type="text" id="b_supplier" placeholder="Nama supplier">
-            </div>
-            <div class="fg">
-              <label>Netto (kg) <span style="color:var(--ck)">*</span></label>
-              <input type="number" id="b_netto" placeholder="0" min="0" step="0.01">
+            <button type="button" class="btn blk" id="bw_btn_save_step3" style="margin-top:14px;"><i class="fas fa-save"></i> Simpan baris terisi</button>
+            <p class="fhint" style="font-size:0.8rem;margin-top:8px;">Hanya baris dengan netto (&amp; arrival bila non-SBM) yang disimpan. Yang kosong tetap tampil untuk pengisian berikutnya.</p>
+          </div>
+        </div>
+
+        <div id="bw_bd_modal" class="bw-breakdown-modal" aria-hidden="true">
+          <div class="bw-bd-box">
+            <h3 style="margin:0 0 8px;font-family:var(--fs);color:#0f172a;" id="bw_bd_title">Breakdown durasi</h3>
+            <p id="bw_bd_ctx" style="display:none;margin:0 0 10px;padding:10px 12px;font-size:0.86rem;color:#0f172a;line-height:1.45;background:#f1f5f9;border-radius:10px;border:1px solid #e2e8f0;"></p>
+            <p style="margin:0 0 6px;font-size:0.85rem;color:#64748b;">Total downtime wajib dirinci: <strong id="bw_bd_total">0 menit</strong></p>
+            <p style="margin:0 0 14px;font-size:0.95rem;font-weight:700;" id="bw_bd_sisa">—</p>
+            <div id="bw_bd_rows"></div>
+            <button type="button" id="bw_bd_add" style="width:100%;margin:10px 0;padding:10px;border:1px dashed #0284c7;background:#f0f9ff;color:#0284c7;border-radius:10px;font-weight:600;">+ Tambah baris</button>
+            <div style="display:flex;gap:10px;margin-top:12px;">
+              <button type="button" id="bw_bd_cancel" style="flex:1;padding:12px;border:none;border-radius:10px;background:#f1f5f9;font-weight:700;">Batal</button>
+              <button type="button" id="bw_bd_ok" disabled style="flex:1;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;font-weight:700;opacity:0.5;cursor:not-allowed;">OK</button>
             </div>
           </div>
-          <button class="btn blk" id="btnBongkar" style="margin-top:4px;">SIMPAN BONGKAR</button>
         </div>
       </div>
 
@@ -706,6 +762,7 @@
 <script src="bkk-history.js"></script>
 <script src="laporan-export.js?v=8"></script>
 <script src="bkk-sap.js"></script>
+<script src="bkk-bongkar-wizard.js"></script>
 <script src="bkk-kartustock.js"></script>
 
 </body>

@@ -25,8 +25,8 @@ function applyBongkarMasterDefaults(bkId) {
   if (!bkId) return;
   var bk = getBKById(bkId);
   if (!bk.BK_ID) return;
-  var mEl = $('b_material');
-  var sEl = $('b_supplier');
+  var mEl = $('b_material') || $('bw_material');
+  var sEl = $('b_supplier') || $('bw_supplier');
   if (mEl && bk.MATERIAL_DEFAULT) mEl.value = bk.MATERIAL_DEFAULT;
   if (sEl && bk.SUPPLIER_DEFAULT) sEl.value = bk.SUPPLIER_DEFAULT;
 }
@@ -192,6 +192,23 @@ function fetchAPI(action, params, cb) {
   }, 15000);
 }
 
+/** POST JSON body — untuk payload besar (mis. DURASI_JSON). Memerlukan deploy Web App dengan doPost. */
+function postJSONAPI(action, payload, cb) {
+  payload = payload || {};
+  payload.action = action;
+  fetch(CONFIG.SCRIPT_URL, {
+    method: 'POST',
+    mode: 'cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+    .then(function(r) { return r.json(); })
+    .then(cb)
+    .catch(function() {
+      cb({ status: 'error', message: 'Gagal koneksi (POST). Pastikan Web App GAS aktif & CORS.' });
+    });
+}
+
 function postAPI(action, data, cb) {
   data = data || {};
   data.action = action;
@@ -257,8 +274,9 @@ function navigateTo(page) {
   if (page === 'bongkar' || page === 'kirim' || page === 'opname') prefillFormOperatorNames();
   if (page === 'opname' && typeof loadOpnamePageData === 'function') loadOpnamePageData();
   if (page === 'bongkar') {
-    var bb = $('b_bk_id');
+    var bb = $('b_bk_id') || $('bw_bk_id');
     if (bb && bb.value) applyBongkarMasterDefaults(bb.value);
+    if (typeof initBongkarWizard === 'function') initBongkarWizard();
   }
   updateSubnavDashKartu(page);
 }
@@ -342,7 +360,7 @@ function doLogout() {
 function prefillFormOperatorNames() {
   if (!appState.user) return;
   var n = (appState.user.nama || '').trim();
-  var bo = $('b_operator');
+  var bo = $('b_operator') || $('bw_operator');
   var ko = $('k_operator');
   var oo = $('o_operator');
   if (bo) bo.value = n;
@@ -351,7 +369,7 @@ function prefillFormOperatorNames() {
 }
 
 function clearFormOperatorNames() {
-  var bo = $('b_operator');
+  var bo = $('b_operator') || $('bw_operator');
   var ko = $('k_operator');
   var oo = $('o_operator');
   if (bo) bo.value = '';

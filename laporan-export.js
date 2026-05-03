@@ -69,6 +69,7 @@
     (rows || []).forEach(function (r) {
       if (normBK(r.BK_ID) !== nb) return;
       if (rowYMD(r.TANGGAL) !== ymd) return;
+      if (r.STATUS_ROW === 'pending_final') return;
       t += Number(r.NETTO_KG) || 0;
     });
     return t;

@@ -70,6 +70,13 @@ function ksNormBK(id) {
   return String(id || '').trim().replace(/^BK-?(\d)$/i, 'BK-$1');
 }
 
+/** Draft step 3 (pending_final) tidak memasuk netto ke stok sampai dilengkapi. */
+function ksEffectiveBongkarKg(r) {
+  if (!r) return 0;
+  if (r.STATUS_ROW === 'pending_final') return 0;
+  return Number(r.NETTO_KG) || 0;
+}
+
 // Normalize TANGGAL to 'YYYY-MM-DD' (WIB/UTC+7)
 // GAS serializes Sheet Date as ISO UTC: "2026-04-30T17:00:00.000Z" = 2026-05-01 00:00 WIB
 function ksNormalizeDate(r) {
@@ -129,7 +136,7 @@ function ksReplayMultiSoDay(ds, bkTarget, prevStockStart, opRecsSorted) {
     if (ksNormBK(r.BK_ID) !== bkTarget || r.TANGGAL !== ds) return;
     var t = ksRowTsMs(r);
     if (isNaN(t)) t = ksNoonMs(ds);
-    events.push({ t: t, k: 'B', net: Number(r.NETTO_KG) || 0, row: r });
+    events.push({ t: t, k: 'B', net: ksEffectiveBongkarKg(r), row: r });
   });
   ksState.raw.kirim.forEach(function(r) {
     if (ksNormBK(r.BK_ID) !== bkTarget || r.TANGGAL !== ds) return;
@@ -244,7 +251,7 @@ function ksComputeStock(bkId, ascDates) {
     ksState.raw.bongkar.forEach(function(r) {
       if (ksNormBK(r.BK_ID) !== bkTarget) return;
       if (r.TANGGAL > lastOp.TANGGAL && r.TANGGAL < firstDate)
-        prevStock += r.NETTO_KG;
+        prevStock += ksEffectiveBongkarKg(r);
     });
     ksState.raw.kirim.forEach(function(r) {
       if (ksNormBK(r.BK_ID) !== bkTarget) return;
@@ -257,7 +264,7 @@ function ksComputeStock(bkId, ascDates) {
     prevStock = 0;
     ksState.raw.bongkar.forEach(function(r) {
       if (ksNormBK(r.BK_ID) !== bkTarget) return;
-      if (r.TANGGAL < firstDate) prevStock += r.NETTO_KG;
+      if (r.TANGGAL < firstDate) prevStock += ksEffectiveBongkarKg(r);
     });
     ksState.raw.kirim.forEach(function(r) {
       if (ksNormBK(r.BK_ID) !== bkTarget) return;
@@ -272,9 +279,10 @@ function ksComputeStock(bkId, ascDates) {
     ksState.raw.bongkar.forEach(function(r) {
       if (ksNormBK(r.BK_ID) !== bkTarget || r.TANGGAL !== ds) return;
       var s = String(r.SHIFT || '').trim();
-      if (s === '2') b2 += r.NETTO_KG;
-      else if (s === '3') b3 += r.NETTO_KG;
-      else b1 += r.NETTO_KG; // shift 1 or no shift
+      var kg = ksEffectiveBongkarKg(r);
+      if (s === '2') b2 += kg;
+      else if (s === '3') b3 += kg;
+      else b1 += kg; // shift 1 or no shift
     });
 
     // Usage per shift

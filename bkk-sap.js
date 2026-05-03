@@ -1046,6 +1046,7 @@ function bkkShowReject(msg) {
 }
 
 function saveBongkar() {
+  if (!$('b_bk_id') || !$('b_netto')) return;
   var bkId = $('b_bk_id').value;
   var netto = parseFloat($('b_netto').value);
   if (!bkId) { toast('Pilih BK terlebih dahulu', 'w'); return; }
@@ -1309,7 +1310,10 @@ function stokHint(stok, kapasitas) {
 
 function initFormDefaults() {
   var t = todayStr();
-  $('b_tanggal').value = t;
+  var bdt = $('b_tanggal');
+  if (bdt) bdt.value = t;
+  var bwt = $('bw_tanggal');
+  if (bwt) bwt.value = t;
   $('k_tanggal').value = t;
   $('o_tanggal').value = t;
 }
@@ -1347,12 +1351,14 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Form buttons
-  $('btnBongkar').addEventListener('click', saveBongkar);
+  var btnB = $('btnBongkar');
+  if (btnB) btnB.addEventListener('click', saveBongkar);
   $('btnKirim').addEventListener('click', saveKirim);
   $('btnOpname').addEventListener('click', saveOpname);
 
   // Auto-fill Bongkar BK — material & supplier dari BKK_Master
-  $('b_bk_id').addEventListener('change', function() {
+  var bBk = $('b_bk_id');
+  if (bBk) bBk.addEventListener('change', function() {
     applyBongkarMasterDefaults(this.value);
   });
 

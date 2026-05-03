@@ -86,8 +86,10 @@
         '</div>';
 
       div.addEventListener('click', function() {
-        $('b_bk_id').value = bk.BK_ID;
-        $('b_bk_id').dispatchEvent(new Event('change'));
+        var leg = $('b_bk_id');
+        var bw = $('bw_bk_id');
+        if (leg) { leg.value = bk.BK_ID; leg.dispatchEvent(new Event('change')); }
+        if (bw) { bw.value = bk.BK_ID; bw.dispatchEvent(new Event('change')); }
         navigateTo('bongkar');
       });
       grid.appendChild(div);

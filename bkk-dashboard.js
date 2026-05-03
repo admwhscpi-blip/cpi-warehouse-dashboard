@@ -79,6 +79,7 @@ function loadDashboard(doneCb) {
       if (r1.status !== 'error') {
         rowsB = r1.data || [];
         rowsB.forEach(function(row) {
+          if (row.STATUS_ROW === 'pending_final') return;
           if (dashDateToYMD(row.TANGGAL) === day) masuk += Number(row.NETTO_KG) || 0;
         });
       }
@@ -155,8 +156,8 @@ function initClockWidget() {
 }
 
 function populateBKDropdowns() {
-  var ids = ['b_bk_id', 'k_bk_id', 'o_bk_id', 'h_bk_bongkar', 'h_bk_kirim', 'h_bk_opname'];
-  var mats = ['b_material', 'k_material', 'o_material'];
+  var ids = ['b_bk_id', 'bw_bk_id', 'k_bk_id', 'o_bk_id', 'h_bk_bongkar', 'h_bk_kirim', 'h_bk_opname'];
+  var mats = ['b_material', 'bw_material', 'k_material', 'o_material'];
 
   var bkOptions = '<option value="">— Pilih BK —</option>';
   appState.dashData.forEach(function(bk) {

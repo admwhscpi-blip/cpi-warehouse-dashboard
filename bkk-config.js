@@ -1,5 +1,5 @@
 var CONFIG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwnPjcBVked4qUZ2pitatpzVJ_dB8Zi7CxWTXAOcbXgy5dnBBYW7r05n-10sFGVq65R/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyPjJqS4GUneYNwBTWRe-gb2SOBv6TWT3EcT3-IHWJYgwieS_DNjPqizcmDcXV0l7sP/exec',
   PAGE_SIZES: { default: 20, sap: 20 }
 };
 

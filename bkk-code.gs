@@ -1,6 +1,7 @@
 const SPREADSHEET_ID = '1BsbFWFpI6FXQjN5Pgz18xIkalpB8S2BZc67l6PZUDGc';
 const SHEET_MASTER   = 'BKK_Master';
 const SHEET_BONGKAR  = 'BKK_Bongkar';
+const SHEET_BONGKAR_SETUP = 'BKK_Bongkar_Setup';
 const SHEET_KIRIM    = 'BKK_Kirim';
 const SHEET_OPNAME   = 'BKK_Opname';
 
@@ -61,9 +62,11 @@ function calculateStock(bkId, allOpname, allBongkar, allKirim) {
   
   var totalBongkar = 0;
   for (var i=0; i<allBongkar.length; i++) {
-    if (allBongkar[i].BK_ID == bkId && gsRowInstantMs_(allBongkar[i]) > cutoffTime) {
-      totalBongkar += Number(allBongkar[i].NETTO_KG);
-    }
+    var rowBg = allBongkar[i];
+    if (rowBg.BK_ID != bkId || gsRowInstantMs_(rowBg) <= cutoffTime) continue;
+    var st = rowBg.STATUS_ROW;
+    if (st === 'pending_final') continue;
+    totalBongkar += Number(rowBg.NETTO_KG);
   }
   
   var totalKirim = 0;
@@ -213,8 +216,9 @@ function doGet(e) {
   var action = e.parameter.action;
   var result;
   
-  // Jika action adalah tulis (add...), gunakan handlePost untuk memproses parameter URL
-  if (action && action.indexOf('add') === 0) {
+  // JSONP memakai GET: semua action baca diawali "get". Selain itu → tulis → handlePost
+  // (addBongkar, saveBongkarSetup, finalizeBongkar, saveCekSAPDraft, dll.)
+  if (action && action.indexOf('get') !== 0) {
     result = handlePost(e);
   } else {
     result = handleGet(e);
@@ -253,6 +257,9 @@ function handleGet(e) {
       return { status: 'success', data: config ? JSON.parse(config) : null };
     } else if (action === 'getCekSAPDraft') {
       return getCekSAPDraft(e.parameter.username || '');
+    } else if (action === 'getBongkarSetup') {
+      var g = getBongkarSetup(e.parameter.username || '', e.parameter.date_key || '');
+      return { status: 'success', data: g };
     } else {
       return { status: 'error', message: 'Invalid action' };
     }
@@ -261,16 +268,117 @@ function handleGet(e) {
   }
 }
 
+/** Tambah header kolom durasi di BKK_Bongkar bila belum ada (supaya insertRow bisa mengisi per kolom). */
+function ensureBongkarDurasiColumns_() {
+  var names = ['AB_TANGGAL', 'PB_TANGGAL', 'AB_ARRIVAL', 'AB_QC', 'PB_SAMPAI', 'PB_START', 'PB_HOLD', 'PB_RESTART', 'PB_FINISH'];
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_BONGKAR);
+  if (!sheet) return;
+  var lastCol = sheet.getLastColumn();
+  if (lastCol < 1) return;
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var miss = [];
+  for (var i = 0; i < names.length; i++) {
+    if (headers.indexOf(names[i]) < 0) miss.push(names[i]);
+  }
+  if (miss.length === 0) return;
+  var start = lastCol + 1;
+  for (var mi = 0; mi < miss.length; mi++) {
+    sheet.getRange(1, start + mi).setValue(miss[mi]);
+  }
+}
+
 function insertRow(sheetName, rowData) {
   var ss = getSpreadsheet();
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) throw new Error("Sheet " + sheetName + " not found");
-  var headers = sheet.getDataRange().getValues()[0];
+  var numCols = sheet.getLastColumn();
+  if (numCols < 1) throw new Error("Sheet " + sheetName + ": tidak ada header baris 1");
+  var headers = sheet.getRange(1, 1, 1, numCols).getValues()[0];
   var row = [];
   for (var i = 0; i < headers.length; i++) {
-    row.push(rowData[headers[i]] || "");
+    var key = headers[i] != null ? String(headers[i]).trim() : '';
+    if (!key) {
+      row.push("");
+      continue;
+    }
+    var val = rowData[key];
+    row.push(val != null && val !== "" ? val : "");
+  }
+  if (row.length !== headers.length) {
+    throw new Error("Sheet " + sheetName + ": jumlah sel tidak cocok header (" + row.length + " vs " + headers.length + ")");
   }
   sheet.appendRow(row);
+}
+
+/** Update kolom pada baris BKK_Bongkar yang ID-nya cocok. */
+function updateBongkarById(id, updates) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_BONGKAR);
+  if (!sheet) throw new Error('Sheet Bongkar not found');
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return false;
+  var headers = data[0];
+  var idCol = headers.indexOf('ID');
+  if (idCol < 0) throw new Error('Kolom ID tidak ada');
+  for (var r = 1; r < data.length; r++) {
+    if (String(data[r][idCol]) !== String(id)) continue;
+    for (var key in updates) {
+      var c = headers.indexOf(key);
+      if (c >= 0) sheet.getRange(r + 1, c + 1).setValue(updates[key]);
+    }
+    return true;
+  }
+  return false;
+}
+
+function saveBongkarSetup(username, dateKey, nama, payloadJson) {
+  if (!username) throw new Error('username wajib');
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_BONGKAR_SETUP);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_BONGKAR_SETUP);
+    sheet.appendRow(['USERNAME', 'DATE_KEY', 'NAMA', 'UPDATED_AT', 'PAYLOAD_JSON']);
+  }
+  var data = sheet.getDataRange().getValues();
+  var ts = Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss');
+  var rowIdx = -1;
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(username) && String(data[i][1]) === String(dateKey)) {
+      rowIdx = i + 1;
+      break;
+    }
+  }
+  if (rowIdx > 0) {
+    sheet.getRange(rowIdx, 3, rowIdx, 5).setValues([[nama || '', ts, payloadJson]]);
+  } else {
+    sheet.appendRow([username, dateKey, nama || '', ts, payloadJson]);
+  }
+}
+
+function getBongkarSetup(username, dateKey) {
+  if (!username || !dateKey) return null;
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_BONGKAR_SETUP);
+  if (!sheet) return null;
+  var data = sheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(username) && String(data[i][1]) === String(dateKey)) {
+      var payloadStr = data[i][4];
+      var parsed = {};
+      try {
+        parsed = payloadStr ? JSON.parse(payloadStr) : {};
+      } catch (e) {
+        parsed = {};
+      }
+      return {
+        nama: data[i][2],
+        updatedAt: data[i][3],
+        payload: parsed
+      };
+    }
+  }
+  return null;
 }
 
 function doPost(e) {
@@ -293,6 +401,21 @@ function handlePost(e) {
     var now = new Date();
     
     if (action === 'addBongkar') {
+      var durasiJson = data.DURASI_JSON || data.durasi_json || '';
+      if (typeof durasiJson === 'object') durasiJson = JSON.stringify(durasiJson);
+      var durObj = {};
+      try {
+        durObj = durasiJson ? JSON.parse(durasiJson) : {};
+      } catch (e) {
+        durObj = {};
+      }
+      var slim = {
+        v: durObj.v || 1,
+        is_sbm: durObj.is_sbm === true || durObj.is_sbm === 'true',
+        type_bongkaran: durObj.type_bongkaran || '',
+        breakdowns: durObj.breakdowns || {}
+      };
+      ensureBongkarDurasiColumns_();
       var rowData = {
         ID: generateId('BNGKR'),
         TIMESTAMP: Utilities.formatDate(now, 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss'),
@@ -303,13 +426,49 @@ function handlePost(e) {
         NETTO_KG: Number(data.NETTO_KG || data.netto_kg || 0),
         NO_POLISI: data.NO_POLISI || data.no_polisi || "",
         KETERANGAN: data.KETERANGAN || data.keterangan || "",
-        INPUT_BY: data.INPUT_BY || (data.operator ? data.operator + " (Shift " + (data.shift || "-") + ")" : data.input_by || "")
+        INPUT_BY: data.INPUT_BY || (data.operator ? data.operator + " (Shift " + (data.shift || "-") + ")" : data.input_by || ""),
+        SHIFT: data.SHIFT || data.shift || "",
+        TYPE_BONGKARAN: data.TYPE_BONGKARAN || data.type_bongkaran || "",
+        STATUS_ROW: data.STATUS_ROW || data.status_row || 'complete',
+        ARRIVAL_DATE: data.ARRIVAL_DATE || data.arrival_date || "",
+        ARRIVAL_TIME: data.ARRIVAL_TIME || data.arrival_time || "",
+        AB_TANGGAL: durObj.ab_tanggal || '',
+        PB_TANGGAL: durObj.pb_tanggal || '',
+        AB_ARRIVAL: durObj.ab_arrival || '',
+        AB_QC: durObj.ab_qc || '',
+        PB_SAMPAI: durObj.pb_sampai || '',
+        PB_START: durObj.pb_start || '',
+        PB_HOLD: durObj.pb_hold || '',
+        PB_RESTART: durObj.pb_restart || '',
+        PB_FINISH: durObj.pb_finish || '',
+        DURASI_JSON: JSON.stringify(slim)
       };
       if (!rowData.INPUT_BY || rowData.INPUT_BY === '') {
         throw new Error('INPUT_BY (Operator) tidak boleh kosong');
       }
       insertRow(SHEET_BONGKAR, rowData);
       return { status: 'success', data: rowData };
+
+    } else if (action === 'finalizeBongkar') {
+      var fid = data.ID || data.id;
+      if (!fid) throw new Error('ID wajib');
+      var upd = {
+        NETTO_KG: Number(data.NETTO_KG || data.netto_kg || 0),
+        STATUS_ROW: 'complete',
+        ARRIVAL_DATE: data.ARRIVAL_DATE || data.arrival_date || '',
+        ARRIVAL_TIME: data.ARRIVAL_TIME || data.arrival_time || ''
+      };
+      if (!updateBongkarById(fid, upd)) throw new Error('Baris bongkar tidak ditemukan');
+      return { status: 'success', message: 'Data dilengkapi' };
+
+    } else if (action === 'saveBongkarSetup') {
+      var un = data.username || data.USERNAME || '';
+      var dk = data.date_key || data.DATE_KEY || '';
+      var pay = data.payload;
+      if (typeof pay === 'object') pay = JSON.stringify(pay);
+      if (!un || !dk) throw new Error('username & date_key wajib');
+      saveBongkarSetup(un, dk, data.nama || data.NAMA || '', pay || '{}');
+      return { status: 'success', message: 'Setup tersimpan' };
       
     } else if (action === 'addKirim') {
       var rowData = {
@@ -462,7 +621,8 @@ function setupSheets() {
 
   var sheets = {
     'BKK_Master':     ['BK_ID','NAMA_BK','KAPASITAS_KG','MATERIAL_DEFAULT','SUPPLIER_DEFAULT','STATUS'],
-    'BKK_Bongkar':    ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','SUPPLIER','NETTO_KG','NO_POLISI','KETERANGAN','INPUT_BY'],
+    'BKK_Bongkar':    ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','SUPPLIER','NETTO_KG','NO_POLISI','KETERANGAN','INPUT_BY','SHIFT','TYPE_BONGKARAN','STATUS_ROW','ARRIVAL_DATE','ARRIVAL_TIME','AB_TANGGAL','PB_TANGGAL','AB_ARRIVAL','AB_QC','PB_SAMPAI','PB_START','PB_HOLD','PB_RESTART','PB_FINISH','DURASI_JSON'],
+    'BKK_Bongkar_Setup': ['USERNAME','DATE_KEY','NAMA','UPDATED_AT','PAYLOAD_JSON'],
     'BKK_Kirim':      ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','NETTO_KG','SHIFT','GRINDING','OPERATOR','INPUT_BY'],
     'BKK_Opname':     ['ID','TIMESTAMP','TANGGAL','BK_ID','STOK_FISIK_KG','MATERIAL','INPUT_BY','KETERANGAN'],
     'BKK_SAP':        ['ID','TIMESTAMP','TANGGAL','BK_ID','QTY_SAP_KG','INPUT_BY'],
