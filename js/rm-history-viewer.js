@@ -61,12 +61,35 @@
         const side = document.getElementById('sidebar');
         const ovl = document.getElementById('sidebarOvl');
         if (!btn || !side) return;
-        btn.addEventListener('click', () => side.classList.toggle('open'));
-        if (ovl) {
-            ovl.addEventListener('click', () => {
-                side.classList.remove('open');
-            });
+
+        function closeMobileSidebar() {
+            side.classList.remove('open');
+            if (ovl) ovl.classList.remove('active');
         }
+
+        function openMobileSidebar() {
+            side.classList.add('open');
+            if (ovl) ovl.classList.add('active');
+        }
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (side.classList.contains('open')) {
+                closeMobileSidebar();
+            } else {
+                openMobileSidebar();
+            }
+        });
+
+        if (ovl) {
+            ovl.addEventListener('click', closeMobileSidebar);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && side.classList.contains('open')) {
+                closeMobileSidebar();
+            }
+        });
     }
 
     function checkSession(expectedKey) {
@@ -88,6 +111,14 @@
         sessionStorage.removeItem('rm_hist_vw_key');
     }
 
+    function loadHistoryIframeAfterAuth() {
+        const fr = document.getElementById('rmHistoryFrame');
+        if (!fr || fr.dataset.rmHistoryLoaded === '1') return;
+        const rel = fr.getAttribute('data-history-src') || 'rm-history.html?v=1404&viewer=1';
+        fr.src = rel;
+        fr.dataset.rmHistoryLoaded = '1';
+    }
+
     function showApp() {
         const login = document.getElementById('viewerLoginShell');
         const app = document.getElementById('viewerAppShell');
@@ -97,6 +128,7 @@
         if (app) app.hidden = false;
         if (nameEl) nameEl.textContent = 'VIEWER';
         if (av) av.textContent = 'V';
+        loadHistoryIframeAfterAuth();
     }
 
     function showLoginForm(msg) {
