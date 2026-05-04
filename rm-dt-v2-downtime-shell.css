@@ -1,0 +1,223 @@
+/* RM DT V2 — tema kalem: sidebar lembut + header hijau warehouse */
+
+.app-container > .main-content {
+  padding: 0 !important;
+}
+
+/* ── Sidebar: warna kalem, kontras lembut ───────────────────────────── */
+.sidebar {
+  background: linear-gradient(170deg, #334155 0%, #475569 45%, #64748b 100%) !important;
+  box-shadow: 8px 0 26px rgba(51, 65, 85, 0.22);
+}
+
+.sidebar-logo {
+  border-bottom-color: rgba(226, 232, 240, 0.24);
+}
+
+.sidebar-logo h2 {
+  color: #f8fafc;
+  text-shadow: 0 1px 8px rgba(15, 23, 42, 0.18);
+}
+
+.sidebar-logo span.v-badge {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  box-shadow: 0 2px 10px rgba(51, 65, 85, 0.24);
+}
+
+.sidebar-logo p {
+  color: rgba(241, 245, 249, 0.78);
+}
+
+/* Perbaikan posisi jam/tanggal agar tidak offside */
+.mini-clock-wrapper {
+  width: 100% !important;
+  transform: none !important;
+  transform-origin: center !important;
+  margin-top: 12px !important;
+  margin-bottom: 0 !important;
+}
+
+/* Jam & tanggal: background hitam */
+.mini-clock-wrapper .clock-container {
+  background: #000000 !important;
+  border: 1px solid rgba(148, 163, 184, 0.42) !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 54px !important;
+  padding: 8px 12px !important;
+  gap: 10px !important;
+  overflow: hidden;
+}
+
+.clock-date-group {
+  min-width: 84px !important;
+}
+
+.clock-date {
+  font-size: 0.98rem !important;
+  line-height: 1 !important;
+  color: #f8fafc !important;
+}
+
+.clock-day {
+  font-size: 0.52rem !important;
+  letter-spacing: 1.2px !important;
+  color: #cbd5e1 !important;
+}
+
+.clock-ampm {
+  color: #93c5fd !important;
+}
+
+.clock-time {
+  font-size: 1rem !important;
+  color: #ffffff !important;
+}
+
+.clock-circle {
+  border-color: rgba(148, 163, 184, 0.25) !important;
+}
+
+.clock-progress {
+  border-top-color: #60a5fa !important;
+}
+
+.nav-item::before {
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    #93c5fd,
+    transparent,
+    #c4b5fd,
+    transparent,
+    #bfdbfe,
+    transparent
+  );
+}
+
+.nav-item::after {
+  background: rgba(51, 65, 85, 0.88);
+}
+
+.nav-item:hover::before,
+.nav-item.active::before {
+  opacity: 1;
+}
+
+.nav-item.active {
+  box-shadow: 0 12px 24px rgba(30, 41, 59, 0.28), 0 0 14px rgba(148, 163, 184, 0.24);
+}
+
+.nav-item.active::after {
+  background: linear-gradient(135deg, rgba(71, 85, 105, 0.95), rgba(51, 65, 85, 0.96));
+}
+
+.nav-item.active i {
+  color: #e0e7ff;
+}
+
+a.nav-item {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Footer: sengaja tidak di-override — tetap dari bkk-brand-theme.css */
+
+/* ── Header premium: hijau warehouse ─────────────────────────────────── */
+.header.header-premium-v3 {
+  background: #edf5ef !important;
+  border-bottom: 1px solid rgba(22, 163, 74, 0.22) !important;
+  box-shadow: 0 2px 16px rgba(21, 128, 61, 0.08);
+}
+
+.header-premium-v3 .header-left-inner {
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86), 0 2px 12px rgba(22, 163, 74, 0.12);
+  background-color: #f0fdf4;
+  background-image:
+    repeating-linear-gradient(
+      -36deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0) 8px,
+      rgba(22, 163, 74, 0.08) 8px,
+      rgba(22, 163, 74, 0.08) 9px
+    ),
+    linear-gradient(165deg, #dcfce7 0%, #ecfdf5 52%, #f0fdf4 100%);
+}
+
+.mobile-toggle-v2 {
+  border-color: rgba(34, 197, 94, 0.3) !important;
+  color: #166534 !important;
+}
+
+.header-logo-title {
+  color: #14532d;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.header-tagline {
+  color: #16a34a;
+  font-weight: 800;
+}
+
+.header-meta-divider {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(22, 163, 74, 0.35) 15%,
+    rgba(22, 163, 74, 0.35) 85%,
+    transparent 100%
+  );
+}
+
+.header-site-title {
+  color: #166534;
+}
+
+.header-site-address {
+  color: #3f6212;
+}
+
+/* Latar halaman: hijau-putih lembut */
+body {
+  background-image:
+    radial-gradient(ellipse 85% 55% at 100% 0%, rgba(187, 247, 208, 0.3) 0%, transparent 52%),
+    radial-gradient(ellipse 70% 45% at 0% 100%, rgba(220, 252, 231, 0.45) 0%, transparent 50%),
+    linear-gradient(180deg, #f8faf8 0%, #eef2ee 100%) !important;
+}
+
+#contentArea {
+  scroll-behavior: smooth;
+}
+
+/* Login card RM (timpa bkk-dashboard .login-card) */
+#login-overlay .login-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 20px;
+  padding: 45px 40px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 25px 50px -12px rgba(30, 27, 75, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.95);
+  text-align: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  margin: 0;
+  animation: modalPop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+#login-overlay .login-card h2 {
+  font-family: "Orbitron", sans-serif;
+  color: #4338ca;
+  margin-bottom: 5px;
+  font-size: 1.6rem;
+  letter-spacing: 1px;
+}
+
+#login-overlay .login-card > p {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-bottom: 35px;
+  font-weight: 500;
+}
