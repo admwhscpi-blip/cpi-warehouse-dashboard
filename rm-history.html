@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>SLICTHER // RM HISTORICAL ANALYTICS</title>
     <!-- PROJECT: SLICTHER V2.0 | UPDATED: 12 FEB 2026 -->
     <!-- FONTS -->
@@ -51,10 +51,12 @@
             background-color: #f8fafc !important;
         }
 
-        .header {
+        .header.rm-header-bar {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
             align-items: center;
+            justify-content: space-between;
+            gap: 12px;
             padding: 12px 30px;
             background: #ffffff;
             border-bottom: var(--border);
@@ -64,6 +66,24 @@
             left: 0;
             right: 0;
             z-index: 1000;
+        }
+
+        .rm-header-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rm-header-granularity {
+            flex-wrap: wrap;
+        }
+
+        .rm-period-select {
+            min-width: 160px;
+        }
+
+        .rm-header-actions {
+            flex-wrap: wrap;
         }
 
         .logo-text {
@@ -600,33 +620,206 @@
             margin-top: 10px;
             font-size: 0.75rem;
         }
+
+        .rm-panel-span-3 {
+            grid-column: span 3;
+        }
+
+        .rm-panel-span-2 {
+            grid-column: span 2;
+        }
+
+        /* —— Mobile / tablet: History + viewer iframe —— */
+        @media (max-width: 900px) {
+            body.rm-history-light .header.rm-header-bar {
+                position: sticky;
+                top: 0;
+                padding: 10px 14px;
+                gap: 10px;
+                align-items: stretch;
+                justify-content: flex-start;
+                flex-wrap: nowrap;
+                flex-direction: column;
+            }
+
+            .main-container {
+                padding: 14px 14px 28px;
+            }
+
+            .rm-header-bar {
+                flex-direction: column;
+            }
+
+            .rm-header-group {
+                width: 100%;
+                justify-content: stretch;
+            }
+
+            .rm-period-select,
+            .rm-header-bar .hud-select {
+                width: 100%;
+                max-width: none;
+                min-width: 0;
+                box-sizing: border-box;
+            }
+
+            .rm-header-granularity {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 8px;
+                width: 100%;
+            }
+
+            .rm-header-granularity .hud-btn {
+                min-height: 44px;
+                padding: 10px 6px;
+                font-size: 0.62rem;
+                letter-spacing: 0.5px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .rm-header-actions {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                width: 100%;
+            }
+
+            .rm-header-actions .hud-btn {
+                min-height: 44px;
+                justify-content: center;
+                font-size: 0.65rem;
+                padding: 10px 8px;
+            }
+
+            .hud-btn {
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            body.rm-history-light {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                min-height: auto;
+                gap: 12px;
+            }
+
+            .rm-panel-span-3,
+            .rm-panel-span-2 {
+                grid-column: 1 / -1;
+            }
+
+            .rm-bottom-strip {
+                flex-direction: column;
+            }
+
+            .rm-cal-section,
+            .rm-wh-section {
+                flex: 1 1 auto;
+                width: 100%;
+            }
+
+            .rm-cal-grid {
+                max-width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 4px;
+            }
+
+            .rm-mini-wh-card {
+                min-width: 72px;
+            }
+
+            .rm-chart-wrap.rm-chart-global {
+                min-height: 240px;
+            }
+
+            .rm-chart-wrap {
+                min-height: 220px;
+                height: 220px;
+            }
+
+            .rm-chart-wrap.rm-chart-trend {
+                height: 240px;
+                min-height: 240px;
+            }
+
+            .glass-panel {
+                padding: 12px;
+            }
+
+            .panel-header {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 8px;
+            }
+
+            .rm-wh-cal-hint {
+                font-size: 0.78rem;
+                padding: 8px 10px;
+            }
+
+            .rm-cal-month-row {
+                flex-direction: column;
+                align-items: stretch !important;
+            }
+
+            .rm-cal-month-row select.hud-select {
+                width: 100%;
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .rm-cal-cell {
+                max-height: 36px;
+                font-size: 0.68rem;
+            }
+
+            .rm-btn-label {
+                display: none;
+            }
+
+            .rm-header-actions .hud-btn i {
+                margin: 0;
+            }
+        }
     </style>
 </head>
 
 <body class="rm-history-light">
-    <div class="header">
-        <select id="periodFilter" class="hud-select">
-            <option value="all">ALL PERIODS</option>
-        </select>
-
-        <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <button type="button" class="hud-btn" id="btnDaily" onclick="HistoryApp.setGranularity('daily')">DAILY</button>
-            <button type="button" class="hud-btn" id="btnWeekly" onclick="HistoryApp.setGranularity('weekly')">WEEKLY</button>
-            <button type="button" class="hud-btn active" id="btnMonthly" onclick="HistoryApp.setGranularity('monthly')">MONTHLY</button>
+    <header class="header rm-header-bar" role="banner">
+        <div class="rm-header-group">
+            <select id="periodFilter" class="hud-select rm-period-select" aria-label="Filter periode">
+                <option value="all">ALL PERIODS</option>
+            </select>
         </div>
-
-        <button class="hud-btn" onclick="HistoryApp.toggleFullscreen()">
-            <i class="fas fa-expand"></i> FULLSCREEN
-        </button>
-
-        <a href="homepage-v1.html" class="hud-btn"
-            style="border-color:var(--danger); color:var(--danger); text-decoration: none;">EXIT</a>
-    </div>
+        <div class="rm-header-group rm-header-granularity" role="toolbar" aria-label="Granularity">
+            <button type="button" class="hud-btn rm-gran-btn" id="btnDaily" onclick="HistoryApp.setGranularity('daily')">DAILY</button>
+            <button type="button" class="hud-btn rm-gran-btn" id="btnWeekly" onclick="HistoryApp.setGranularity('weekly')">WEEKLY</button>
+            <button type="button" class="hud-btn rm-gran-btn active" id="btnMonthly" onclick="HistoryApp.setGranularity('monthly')">MONTHLY</button>
+        </div>
+        <div class="rm-header-group rm-header-actions">
+            <button type="button" class="hud-btn" onclick="HistoryApp.toggleFullscreen()" aria-label="Layar penuh">
+                <i class="fas fa-expand" aria-hidden="true"></i><span class="rm-btn-label"> FULLSCREEN</span>
+            </button>
+            <a href="homepage-v1.html" class="hud-btn"
+                style="border-color:var(--danger); color:var(--danger); text-decoration: none; display:inline-flex; align-items:center; justify-content:center;"
+                aria-label="Keluar">EXIT</a>
+        </div>
+    </header>
 
     <div class="main-container">
         <div class="dashboard-grid">
             <!-- 1. PERGERAKAN STOCK ALL MATERIAL (LANDSCAPE FULL) -->
-            <div class="glass-panel" style="grid-column: span 3;">
+            <div class="glass-panel rm-panel-span-3">
                 <div class="panel-header" style="align-items: center;">
                     <div style="display:flex; flex-direction:column;">
                         <span>01 // GLOBAL STOCK MOVEMENT</span>
@@ -665,7 +858,7 @@
             </div>
 
             <!-- 3. FITUR SEARCH / DETAIL MATERIAL (SPAN 2) -->
-            <div class="glass-panel" style="grid-column: span 2;">
+            <div class="glass-panel rm-panel-span-2">
                 <div class="panel-header">
                     <span id="detailTitle">03 // SPECIFIC MATERIAL INSIGHT</span>
                     <i class="fas fa-search-plus"></i>
@@ -763,7 +956,7 @@
     <!-- SCRIPTS -->
     <script src="js/app-config.js?v=1202"></script>
     <script src="js/app-data.js?v=1202"></script>
-    <script src="js/rm-history.js?v=1403"></script>
+    <script src="js/rm-history.js?v=1404"></script>
 </body>
 
 </html>

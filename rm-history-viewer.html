@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Smart Warehouse — History Viewer</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -112,6 +112,47 @@
             font-size: 0.75rem;
             opacity: 0.9;
         }
+
+        /* Viewer: area konten + iframe ramah mobile */
+        .rm-viewer-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            padding: 12px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 900px) {
+            #viewerAppShell {
+                height: auto !important;
+                min-height: min(85dvh, calc(100dvh - 170px));
+                flex: 1;
+            }
+
+            #rmHistoryFrame {
+                min-height: min(75dvh, calc(100dvh - 200px));
+                height: auto;
+                flex: 1;
+                border-radius: 10px;
+            }
+
+            .viewer-login-wrap {
+                margin: 16px 8px 24px;
+                padding: 22px 18px;
+                width: calc(100% - 16px);
+                box-sizing: border-box;
+            }
+
+            .header-premium-v3 .header-meta-row {
+                flex-wrap: wrap;
+            }
+
+            .header-site-address {
+                display: none;
+            }
+        }
     </style>
 </head>
 
@@ -202,7 +243,7 @@
                 </div>
             </header>
 
-            <div class="content-area" id="contentArea" style="display:flex;flex-direction:column;">
+            <div class="content-area rm-viewer-content" id="contentArea">
 
                 <div id="viewerLoginShell" class="viewer-login-wrap">
                     <h2><i class="fas fa-eye" style="color:#a78bfa;"></i> History Viewer</h2>
@@ -220,13 +261,13 @@
                 </div>
 
                 <div id="viewerAppShell" hidden>
-                    <iframe id="rmHistoryFrame" src="rm-history.html?v=1403&viewer=1" title="RM Historical Analytics"></iframe>
+                    <iframe id="rmHistoryFrame" src="rm-history.html?v=1404&viewer=1" title="RM Historical Analytics"></iframe>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="js/rm-history-viewer.js?v=1"></script>
+    <script src="js/rm-history-viewer.js?v=2"></script>
 </body>
 
 </html>
