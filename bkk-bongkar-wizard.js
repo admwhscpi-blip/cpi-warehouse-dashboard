@@ -9,7 +9,201 @@ var BW_BREAKDOWN_CATS = ['ISTIRAHAT', 'PINDAH HOPPER', 'JALUR OVERLOAD', 'TUNGGU
 /** Material non-SBM: modal breakdown durasi urutan hanya bila gap > ini (menit). SBM tetap memakai 5 menit di bwSubmitStep2. */
 var BW_NON_SBM_BREAKDOWN_MIN = 60;
 
-var bwWiz = { step: 1, bdPending: null, bdTargetMin: 0, saving: false };
+var bwWiz = { step: 1, bdPending: null, bdTargetMin: 0, saving: false, setupLocked: false, lockSnap: null };
+
+/** Snapshot setup untuk Step 2: filter antrian = type bongkaran (Intake 71 = manual+tilting gabung) + material persis (kode/value select). */
+function bwEffectiveSetup() {
+  if (bwWiz.setupLocked && bwWiz.lockSnap) return bwWiz.lockSnap;
+  var sel = $('bw_material');
+  var lbl = '';
+  if (sel && sel.selectedIndex >= 0 && sel.options[sel.selectedIndex]) {
+    lbl = String(sel.options[sel.selectedIndex].text || '').trim();
+  }
+  return {
+    tanggal: ($('bw_tanggal') && $('bw_tanggal').value) || '',
+    bk_id: ($('bw_bk_id') && $('bw_bk_id').value) || '',
+    shift: ($('bw_shift') && $('bw_shift').value) || '',
+    type_bongkaran: ($('bw_type_bongkaran') && $('bw_type_bongkaran').value) || '',
+    material: ($('bw_material') && $('bw_material').value) || '',
+    supplier: ($('bw_supplier') && $('bw_supplier').value) || '',
+    materialLabel: lbl
+  };
+}
+
+function bwEffectiveTypeBongkaran() {
+  var es = bwEffectiveSetup();
+  return String(es.type_bongkaran || '').trim();
+}
+
+function bwWizardTypeGroupFromType(typ) {
+  var t = String(typ || '').trim();
+  if (t === 'direct_gudang') return 'direct';
+  if (t === 'intake71_manual' || t === 'intake71_tilting') return 'intake71';
+  return '';
+}
+
+function bwRowMatchesTypeGroup(r, group) {
+  var t = String(r.TYPE_BONGKARAN || '').trim();
+  if (group === 'direct') return t === 'direct_gudang';
+  if (group === 'intake71') {
+    if (t === 'direct_gudang') return false;
+    if (!t) return true;
+    return t === 'intake71_manual' || t === 'intake71_tilting';
+  }
+  return false;
+}
+
+function bwRowMaterialExact(r, matVal) {
+  var a = String(r.MATERIAL != null ? r.MATERIAL : '').trim();
+  var b = String(matVal || '').trim();
+  return a === b && b !== '';
+}
+
+function bwCaptureLockSnapshot() {
+  var sel = $('bw_material');
+  var lbl = '';
+  if (sel && sel.selectedIndex >= 0 && sel.options[sel.selectedIndex]) {
+    lbl = String(sel.options[sel.selectedIndex].text || '').trim();
+  }
+  return {
+    tanggal: ($('bw_tanggal') && $('bw_tanggal').value) || '',
+    bk_id: ($('bw_bk_id') && $('bw_bk_id').value) || '',
+    shift: ($('bw_shift') && $('bw_shift').value) || '',
+    type_bongkaran: ($('bw_type_bongkaran') && $('bw_type_bongkaran').value) || '',
+    material: ($('bw_material') && $('bw_material').value) || '',
+    supplier: ($('bw_supplier') && $('bw_supplier').value) || '',
+    materialLabel: lbl
+  };
+}
+
+function bwValidateSetupFields() {
+  var s = bwCaptureLockSnapshot();
+  if (!s.tanggal || !s.bk_id || !s.type_bongkaran || !s.material) return false;
+  return true;
+}
+
+function bwApplySetupLock() {
+  if (!bwValidateSetupFields()) return false;
+  bwWiz.lockSnap = bwCaptureLockSnapshot();
+  bwWiz.setupLocked = true;
+  bwUpdateSetupLockUI();
+  bwPersistWizardLocal();
+  return true;
+}
+
+function bwUnlockSetup(silent) {
+  bwWiz.setupLocked = false;
+  bwWiz.lockSnap = null;
+  bwUpdateSetupLockUI();
+  if (!silent && typeof toast === 'function') {
+    toast('Setup dibuka — ubah BK / material / type lalu simpan atau buka Step 2 lagi untuk kunci baru.', 'w');
+  }
+  bwPersistWizardLocal();
+}
+
+function bwSetupStep1FieldsDisabled(dis) {
+  ['bw_tanggal', 'bw_bk_id', 'bw_shift', 'bw_type_bongkaran', 'bw_material', 'bw_supplier'].forEach(function(id) {
+    var el = $(id);
+    if (el) el.disabled = !!dis;
+  });
+}
+
+function bwUpdateSetupLockUI() {
+  var ban = $('bw_setup_lock_banner');
+  var tx = $('bw_setup_lock_text');
+  if (bwWiz.setupLocked && bwWiz.lockSnap) {
+    if (ban) ban.hidden = false;
+    if (tx) {
+      var g = bwWizardTypeGroupFromType(bwWiz.lockSnap.type_bongkaran) === 'direct' ? 'Direct Gudang' : 'Intake 71 (Manual & Tilting satu antrian)';
+      tx.textContent = 'Setup terkunci untuk Step 2: ' + g + ' · ' + (bwWiz.lockSnap.materialLabel || bwWiz.lockSnap.material) +
+        ' · BK ' + bwWiz.lockSnap.bk_id + ' · ' + bwWiz.lockSnap.tanggal + ' · Shift ' + bwWiz.lockSnap.shift;
+    }
+    bwSetupStep1FieldsDisabled(true);
+  } else {
+    if (ban) ban.hidden = true;
+    if (tx) tx.textContent = '';
+    bwSetupStep1FieldsDisabled(false);
+  }
+}
+
+function bwEnsureStep2Entry() {
+  if (!bwValidateSetupFields()) {
+    if (typeof toast === 'function') toast('Lengkapi Setup: BK, tanggal, type bongkaran, dan material (wajib sama persis dengan sheet).', 'w');
+    return false;
+  }
+  if (!bwWiz.setupLocked) bwApplySetupLock();
+  return !!bwWiz.setupLocked;
+}
+
+function bwListFrom0700(fullList) {
+  return (fullList || []).filter(function(x) {
+    var y = x.dayYmd || '';
+    var d0 = bwConcatMs(y, '07:00');
+    return !isNaN(d0) && !isNaN(x.msStart) && x.msStart >= d0;
+  });
+}
+
+/** Simpan wizard Bongkar di browser: tanggal operasi + setup + langkah + kunci (tetap dipakai setelah refresh sampai ganti tanggal / buka kunci). */
+var BW_WIZ_LS_VER = 2;
+var BW_WIZ_LS_PREFIX = 'bkk_bw_wizard_state';
+
+function bwWizardLocalKey() {
+  if (!appState.user || !appState.user.username) return '';
+  return BW_WIZ_LS_PREFIX + '|v' + BW_WIZ_LS_VER + '|' + String(appState.user.username).toLowerCase();
+}
+
+function bwPersistWizardLocal() {
+  var key = bwWizardLocalKey();
+  if (!key) return;
+  try {
+    var snap = bwWiz.lockSnap;
+    var o = {
+      u: appState.user.username,
+      tanggal: ($('bw_tanggal') && $('bw_tanggal').value) || '',
+      bk_id: ($('bw_bk_id') && $('bw_bk_id').value) || '',
+      shift: ($('bw_shift') && $('bw_shift').value) || '',
+      type_bongkaran: ($('bw_type_bongkaran') && $('bw_type_bongkaran').value) || '',
+      material: ($('bw_material') && $('bw_material').value) || '',
+      supplier: ($('bw_supplier') && $('bw_supplier').value) || '',
+      step: bwWiz.step || 1,
+      setupLocked: !!bwWiz.setupLocked,
+      lockSnap: snap ? JSON.parse(JSON.stringify(snap)) : null
+    };
+    localStorage.setItem(key, JSON.stringify(o));
+  } catch (e) {}
+}
+
+function bwRestoreWizardLocal() {
+  var key = bwWizardLocalKey();
+  if (!key || !appState.user || !appState.user.username) return false;
+  try {
+    var raw = localStorage.getItem(key);
+    if (!raw) return false;
+    var d = JSON.parse(raw);
+    if (String(d.u || '').toLowerCase() !== String(appState.user.username).toLowerCase()) return false;
+    if (!d.tanggal) return false;
+    if ($('bw_tanggal')) $('bw_tanggal').value = d.tanggal;
+    if (d.bk_id != null && $('bw_bk_id')) $('bw_bk_id').value = d.bk_id;
+    if (d.shift != null && $('bw_shift')) $('bw_shift').value = d.shift;
+    if (d.type_bongkaran != null && $('bw_type_bongkaran')) $('bw_type_bongkaran').value = d.type_bongkaran;
+    if (d.material != null && $('bw_material')) $('bw_material').value = d.material;
+    if (d.supplier != null && $('bw_supplier')) $('bw_supplier').value = d.supplier;
+    if (d.step >= 1 && d.step <= 3) bwWiz.step = d.step;
+    else bwWiz.step = 1;
+    if (d.setupLocked && d.lockSnap && typeof d.lockSnap === 'object') {
+      bwWiz.setupLocked = true;
+      bwWiz.lockSnap = d.lockSnap;
+    } else {
+      bwWiz.setupLocked = false;
+      bwWiz.lockSnap = null;
+    }
+    if (typeof applyBongkarMasterDefaults === 'function') applyBongkarMasterDefaults($('bw_bk_id').value);
+    bwUpdateSetupLockUI();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 /** Overlay loading + cegah double-submit antar Step 1–3. */
 function bwWizardSaveStart() {
@@ -31,8 +225,8 @@ function bwEsc(s) {
 /** Riwayat dari API harus selalu array (JSONP kadang mengirim bentuk lain). */
 function bwNormalizeBongkarHistory(data) {
   if (data == null) return [];
-  if (Array.isArray(data)) return data;
-  return [];
+  var arr = Array.isArray(data) ? data : [];
+  return typeof bwDedupeBongkarHistoryRows === 'function' ? bwDedupeBongkarHistoryRows(arr) : arr;
 }
 
 /** Cocokkan tanggal operasi wizard dengan baris sheet (TANGGAL ± TIMESTAMP). */
@@ -48,14 +242,19 @@ function bwRowMatchesWizardTanggal(r, tgl) {
 }
 
 function bwMaterialIsSBM() {
-  var sel = $('bw_material');
-  if (!sel) return false;
-  var t = (sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].text) || sel.value || '';
-  return t.toLowerCase().indexOf('sbm') >= 0;
+  var lab = '';
+  if (bwWiz.setupLocked && bwWiz.lockSnap && bwWiz.lockSnap.materialLabel) {
+    lab = String(bwWiz.lockSnap.materialLabel);
+  } else {
+    var sel = $('bw_material');
+    if (!sel) return false;
+    lab = (sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].text) || sel.value || '';
+  }
+  return String(lab).toLowerCase().indexOf('sbm') >= 0;
 }
 
 function bwTypeIsIntake71() {
-  var v = ($('bw_type_bongkaran') && $('bw_type_bongkaran').value) || '';
+  var v = bwEffectiveTypeBongkaran();
   return v === 'intake71_manual' || v === 'intake71_tilting';
 }
 
@@ -73,11 +272,29 @@ function bwDiffMin(msA, msB) {
 }
 
 function bwParseDurasiJson(row) {
-  if (!row || !row.DURASI_JSON) return null;
+  if (!row) return null;
+  var colBd = row.BREAKDOWN_DURASI;
+  if ((colBd == null || colBd === '') && row['BREAKDOWN DURASI'] != null) colBd = row['BREAKDOWN DURASI'];
+  var mergedBreakdowns = null;
+  if (colBd != null && String(colBd).trim() !== '' && String(colBd).trim() !== '{}') {
+    try {
+      var ext = typeof colBd === 'string' ? JSON.parse(colBd) : colBd;
+      if (ext && typeof ext === 'object' && !Array.isArray(ext)) mergedBreakdowns = ext;
+    } catch (e0) {}
+  }
+  if (!row.DURASI_JSON) {
+    return mergedBreakdowns ? { v: 1, breakdowns: mergedBreakdowns } : null;
+  }
   try {
-    return typeof row.DURASI_JSON === 'string' ? JSON.parse(row.DURASI_JSON) : row.DURASI_JSON;
+    var obj = typeof row.DURASI_JSON === 'string' ? JSON.parse(row.DURASI_JSON) : row.DURASI_JSON;
+    if (!obj || typeof obj !== 'object') {
+      return mergedBreakdowns ? { v: 1, breakdowns: mergedBreakdowns } : null;
+    }
+    if (mergedBreakdowns) obj.breakdowns = mergedBreakdowns;
+    else if (!obj.breakdowns) obj.breakdowns = {};
+    return obj;
   } catch (e) {
-    return null;
+    return mergedBreakdowns ? { v: 1, breakdowns: mergedBreakdowns } : null;
   }
 }
 
@@ -126,14 +343,6 @@ function bwGetDurasiFields(row) {
   return j;
 }
 
-/** Hanya baris Intake 71 (atau legacy tanpa type) dalam rantai — selain itu tidak ikut ghost/overlap. */
-function bwRowInIntake71Chain(r) {
-  if (bwRowExcludedFromIntakeChain(r)) return false;
-  var t = String(r.TYPE_BONGKARAN || '').trim();
-  if (!t) return true;
-  return t === 'intake71_manual' || t === 'intake71_tilting';
-}
-
 function bwInputByMatchesUser(row) {
   if (!appState.user) return false;
   var ib = String(row.INPUT_BY || '').trim().toLowerCase();
@@ -158,28 +367,6 @@ function bwIsPendingBongkarRow(r) {
   return false;
 }
 
-function bwTruckSessionKey() {
-  var u = (appState.user && appState.user.username) ? String(appState.user.username) : '';
-  var t = ($('bw_tanggal') && $('bw_tanggal').value) || '';
-  var s = ($('bw_shift') && $('bw_shift').value) || '';
-  return 'bkk_truckseq|' + u + '|' + t + '|' + s;
-}
-
-function bwGetTruckSavedCount() {
-  try {
-    var v = sessionStorage.getItem(bwTruckSessionKey());
-    return v ? Math.max(0, parseInt(v, 10) || 0) : 0;
-  } catch (e) {
-    return 0;
-  }
-}
-
-function bwSetTruckSavedCount(n) {
-  try {
-    sessionStorage.setItem(bwTruckSessionKey(), String(Math.max(0, n)));
-  } catch (e) {}
-}
-
 /** Jika sheet belum punya kolom SHIFT, jangan saring keluar. */
 function bwShiftMatchesRow(r, sh) {
   var rs = String(r.SHIFT == null ? '' : r.SHIFT).trim();
@@ -187,11 +374,197 @@ function bwShiftMatchesRow(r, sh) {
   return rs === String(sh || '').trim();
 }
 
+function bwWizardTypeDisplay() {
+  var v = bwEffectiveTypeBongkaran();
+  if (v === 'intake71_manual') return 'Intake 71 Manual';
+  if (v === 'intake71_tilting') return 'Intake 71 Tilting';
+  if (v === 'direct_gudang') return 'Direct Gudang';
+  return v ? v.replace(/_/g, ' ') : '—';
+}
+
+function bwWizardMaterialLabel() {
+  if (bwWiz.setupLocked && bwWiz.lockSnap && bwWiz.lockSnap.materialLabel) {
+    return String(bwWiz.lockSnap.materialLabel).trim();
+  }
+  var sel = $('bw_material');
+  if (!sel || sel.selectedIndex < 0) return '';
+  var o = sel.options[sel.selectedIndex];
+  return ((o && o.text) || sel.value || '').trim();
+}
+
+/** PB Start form saat ini (SBM pakai sbm fields) untuk pratinjau urutan jam. */
+function bwDraftPbStartMs() {
+  var ymd;
+  var hm;
+  if (bwMaterialIsSBM()) {
+    ymd = (($('bw_sbm_pb_tgl') && $('bw_sbm_pb_tgl').value) || ($('bw_tanggal') && $('bw_tanggal').value) || '').trim();
+    hm = ($('bw_sbm_pb_start') && $('bw_sbm_pb_start').value || '').trim();
+  } else {
+    ymd = (($('bw_pb_tgl') && $('bw_pb_tgl').value) || ($('bw_tanggal') && $('bw_tanggal').value) || '').trim();
+    hm = ($('bw_pb_start') && $('bw_pb_start').value || '').trim();
+  }
+  if (!ymd || !hm) return NaN;
+  return bwConcatMs(ymd, hm);
+}
+
+function bwRenderTruckBadge(el, mainText, subText) {
+  if (!el) return;
+  el.textContent = '';
+  var m = document.createElement('div');
+  m.className = 'bw-truck-badge-main';
+  m.textContent = mainText;
+  el.appendChild(m);
+  if (subText) {
+    var s = document.createElement('div');
+    s.className = 'bw-truck-badge-sub';
+    s.textContent = subText;
+    el.appendChild(s);
+  }
+}
+
+/**
+ * Badge Step 2: nomor urut dari jam PB Start (semua operator), filter setup = type + material persis.
+ * Urutan tampilan truck ke-N dari jam 07:00 (hari PB).
+ */
 function bwUpdateTruckBadge() {
   var el = $('bw_truck_badge');
   if (!el) return;
-  var next = bwGetTruckSavedCount() + 1;
-  el.textContent = 'Truck ke-' + next + ' — sesi tanggal & shift ini';
+  var es = bwEffectiveSetup();
+  var typeLab = bwWizardTypeDisplay();
+  var matLab = bwWizardMaterialLabel() || '—';
+  var grp = bwWizardTypeGroupFromType(es.type_bongkaran);
+  var fullList = grp === 'direct' ? bwListDirectGudangTrucksForDay() : (grp === 'intake71' ? bwListIntake71TrucksForDay() : []);
+  var list0700 = bwListFrom0700(fullList);
+  var draftMs = bwDraftPbStartMs();
+  var subBase = 'Filter: BK + tanggal + shift + type + material (sama persis). Intake 71 = Manual & Tilting satu antrian. Urutan dari jam PB Start; hitung truck ke-N dari ±07:00 WIB.';
+  if (!es.material) {
+    bwRenderTruckBadge(el, 'Lengkapi Setup (material wajib) lalu buka Step 2 — filter antrian mengikuti setup terkunci.', subBase);
+    return;
+  }
+  if (isNaN(draftMs)) {
+    var head = typeLab + ' — ' + matLab;
+    var extra = list0700.length
+      ? (' Dari 07:00: ' + list0700.length + ' truck di sheet. Isi PB Start untuk nomor urut pasti.')
+      : (fullList.length
+        ? (' Ada ' + fullList.length + ' truck sebelum 07:00 / di luar jendela tabel; isi PB Start.')
+        : (' Belum ada truck di sheet untuk filter ini.'));
+    bwRenderTruckBadge(el, head, subBase + extra);
+    return;
+  }
+  var rank = 1;
+  for (var i = 0; i < list0700.length; i++) {
+    if (list0700[i].msStart < draftMs) rank++;
+  }
+  bwRenderTruckBadge(el, 'Truck ke-' + rank + ' — ' + typeLab + ' — ' + matLab, subBase);
+}
+
+function bwIntakeDirectColumnLabel() {
+  var g = bwWizardTypeGroupFromType(bwEffectiveSetup().type_bongkaran);
+  return g === 'direct' ? 'Direct' : 'Intake 71';
+}
+
+/** Daftar truck antrian (PB ≥ 07:00) untuk filter setup saat ini. */
+function bwStep2QueueList0700() {
+  var es = bwEffectiveSetup();
+  var grp = bwWizardTypeGroupFromType(es.type_bongkaran);
+  if (!es.material || !es.bk_id || !es.tanggal) return [];
+  var fullList = grp === 'direct' ? bwListDirectGudangTrucksForDay() : (grp === 'intake71' ? bwListIntake71TrucksForDay() : []);
+  return bwListFrom0700(fullList);
+}
+
+/** Shadow di samping nopol: truck berikutnya (lanjutan urutan tabel). */
+function bwRefreshNopolShadow() {
+  var el = $('bw_nopol_next_shadow');
+  if (!el) return;
+  if ((bwWiz.step || 1) !== 2 || !bwWiz.setupLocked) {
+    el.hidden = true;
+    el.textContent = '';
+    return;
+  }
+  var es = bwEffectiveSetup();
+  if (!es.material || !es.bk_id || !es.tanggal) {
+    el.hidden = true;
+    el.textContent = '';
+    return;
+  }
+  var list0700 = bwStep2QueueList0700();
+  var nextN = list0700.length + 1;
+  el.hidden = false;
+  el.textContent = 'Truck ke-' + nextN + ' — pengisian form ini (lanjutan antrian). Isi nopol & durasi lalu simpan.';
+}
+
+function bwRefreshStep2MiniTable() {
+  var wrap = $('bw_step2_queue_wrap');
+  var tb = $('bw_step2_queue_tb');
+  var ctx = $('bw_step2_queue_ctx');
+  if (!wrap || !tb) {
+    bwRefreshNopolShadow();
+    return;
+  }
+  if ((bwWiz.step || 1) !== 2 || !bwWiz.setupLocked) {
+    wrap.hidden = true;
+    tb.innerHTML = '';
+    if (ctx) {
+      ctx.hidden = true;
+      ctx.textContent = '';
+    }
+    bwRefreshNopolShadow();
+    return;
+  }
+  var es = bwEffectiveSetup();
+  var grp = bwWizardTypeGroupFromType(es.type_bongkaran);
+  if (!es.material || !es.bk_id || !es.tanggal) {
+    wrap.hidden = true;
+    tb.innerHTML = '';
+    if (ctx) {
+      ctx.hidden = true;
+      ctx.textContent = '';
+    }
+    bwRefreshNopolShadow();
+    return;
+  }
+  wrap.hidden = false;
+  var list0700 = bwStep2QueueList0700();
+  var matLine = es.materialLabel || es.material || '—';
+  var routeCol = bwIntakeDirectColumnLabel();
+  var userName = (appState.user && appState.user.nama) ? String(appState.user.nama).trim() : '—';
+  if (ctx) {
+    ctx.hidden = false;
+    ctx.textContent = matLine + ' — ' + routeCol + ' — ' + userName;
+  }
+  tb.innerHTML = '';
+  if (!list0700.length) {
+    var tr0 = document.createElement('tr');
+    var td0 = document.createElement('td');
+    td0.colSpan = 5;
+    td0.style.cssText = 'padding:12px;font-size:0.82rem;color:#64748b;';
+    td0.textContent = 'Belum ada truck dengan PB Start ≥ 07:00 untuk filter setup ini (material + type).';
+    tr0.appendChild(td0);
+    tb.appendChild(tr0);
+    bwRefreshNopolShadow();
+    return;
+  }
+  list0700.forEach(function(x, idx) {
+    var tr = document.createElement('tr');
+    var net = x.nettoKg;
+    var pending = !net || net <= 0;
+    var note = pending ? 'Lanjut Step 3: isi netto untuk nopol ini.' : '—';
+    function td(txt) {
+      var c = document.createElement('td');
+      c.textContent = txt;
+      return c;
+    }
+    tr.appendChild(td('Truck ke-' + (idx + 1)));
+    tr.appendChild(td(x.pbStartHM || '—'));
+    tr.appendChild(td(x.nopol || '—'));
+    tr.appendChild(td(pending ? '—' : String(net)));
+    var tn = document.createElement('td');
+    tn.className = 'bw-q-note';
+    tn.textContent = note;
+    tr.appendChild(tn);
+    tb.appendChild(tr);
+  });
+  bwRefreshNopolShadow();
 }
 
 function bwClearStep2Form() {
@@ -206,20 +579,16 @@ function bwClearStep2Form() {
     if (x) x.value = '';
   });
   bwSyncGhostHint();
+  bwUpdateTruckBadge();
+  bwRefreshStep2MiniTable();
 }
 
-/** Direct Gudang diabaikan dalam rantai Intake 71; kosong = ikut rantai (kompatibel sheet tanpa kolom). */
-function bwRowExcludedFromIntakeChain(r) {
-  return String(r.TYPE_BONGKARAN || '').trim() === 'direct_gudang';
-}
-
-/** Patokan PB Finish terakhir di sesi (tetap ada walau GET riwayat belum selesai). */
+/** Patokan PB Finish — BK + tanggal + shift + material + grup type (Intake vs Direct) agar antrian tidak tercampur. */
 function bwSessionPbFinishKey() {
-  var u = (appState.user && appState.user.username) ? String(appState.user.username) : '';
-  var t = ($('bw_tanggal') && $('bw_tanggal').value) || '';
-  var s = ($('bw_shift') && $('bw_shift').value) || '';
-  var bk = ($('bw_bk_id') && $('bw_bk_id').value) || '';
-  return 'bkk_pb_finish|' + u + '|' + t + '|' + s + '|' + bk;
+  var es = bwEffectiveSetup();
+  var grp = bwWizardTypeGroupFromType(es.type_bongkaran) || 'x';
+  var mat = String(es.material || '').trim();
+  return 'bkk_pb_finish|' + es.tanggal + '|' + es.shift + '|' + es.bk_id + '|' + mat + '|' + grp;
 }
 
 function bwSetSessionPbFinishHint(hm, optNopol) {
@@ -265,14 +634,16 @@ function bwGetSessionPrevNopol() {
 }
 
 /**
- * Truck lain di BK+tanggal+shift+user dengan PB — kolom sheet + JSON (breakdown).
- * optionalRows: hasil fetch khusus BK (tanpa mengandalkan cache global).
+ * Core: BK + tanggal + shift + material (persis) + grup type (intake71 = manual+tilting gabung; direct terpisah).
+ * Baris logis dobel (sheet / cache) disaring satu per kombinasi nopol + PB start/finish + hari PB.
  */
-function bwListIntake71TrucksForDay(optionalRows) {
-  var tgl = $('bw_tanggal') && $('bw_tanggal').value;
-  var sh = $('bw_shift') && $('bw_shift').value;
-  var bk = $('bw_bk_id') && $('bw_bk_id').value;
-  if (!tgl || !bk) return [];
+function bwListChainTrucksCore(optionalRows, chainKind) {
+  var es = bwEffectiveSetup();
+  var tgl = es.tanggal;
+  var sh = es.shift;
+  var bk = es.bk_id;
+  var mat = es.material;
+  if (!tgl || !bk || !mat) return [];
   var rows;
   if (optionalRows != null) {
     rows = Array.isArray(optionalRows) ? optionalRows.slice() : [];
@@ -280,33 +651,54 @@ function bwListIntake71TrucksForDay(optionalRows) {
     rows = (appState.history && appState.history.bongkar) ? appState.history.bongkar.slice() : [];
   }
   var out = [];
+  var seenLog = {};
   rows.forEach(function(r) {
     if (String(r.BK_ID) !== String(bk)) return;
     if (dashDateToYMD(r.TANGGAL) !== tgl) return;
     if (!bwShiftMatchesRow(r, sh)) return;
-    if (!bwInputByMatchesUser(r)) return;
-    if (!bwRowInIntake71Chain(r)) return;
+    if (!bwRowMaterialExact(r, mat)) return;
+    if (chainKind === 'intake71' && !bwRowMatchesTypeGroup(r, 'intake71')) return;
+    if (chainKind === 'direct' && !bwRowMatchesTypeGroup(r, 'direct')) return;
     var dj = bwGetDurasiFields(r);
     if (!dj) return;
     var ymd = dj.pb_tanggal || bwSheetYMD(r.PB_TANGGAL) || dashDateToYMD(r.TANGGAL) || tgl;
     var msS = bwConcatMs(ymd, dj.pb_start || '');
     var msF = bwConcatMs(ymd, dj.pb_finish || '');
     if (isNaN(msS) || isNaN(msF)) return;
+    var logKey = [chainKind, bk, tgl, mat, String(r.NO_POLISI || '').trim().toUpperCase(), ymd, dj.pb_start || '', dj.pb_finish || '', String(msS)].join('|');
+    if (seenLog[logKey]) return;
+    seenLog[logKey] = true;
+    var net = Number(r.NETTO_KG);
+    if (isNaN(net)) net = 0;
     out.push({
       msStart: msS,
       msFinish: msF,
       pbFinishHM: dj.pb_finish,
       pbStartHM: dj.pb_start,
-      nopol: String(r.NO_POLISI || '').trim().toUpperCase()
+      nopol: String(r.NO_POLISI || '').trim().toUpperCase(),
+      dayYmd: ymd,
+      nettoKg: net,
+      rowId: r.ID
     });
   });
   out.sort(function(a, b) { return a.msStart - b.msStart; });
   return out;
 }
 
+/** Intake 71 Manual + Tilting satu antrian; filter material persis. */
+function bwListIntake71TrucksForDay(optionalRows) {
+  return bwListChainTrucksCore(optionalRows, 'intake71');
+}
+
+/** Direct Gudang — antrian terpisah vs Intake 71; filter material persis. */
+function bwListDirectGudangTrucksForDay(optionalRows) {
+  return bwListChainTrucksCore(optionalRows, 'direct');
+}
+
 /** Max PB Finish (ms), jam, nopol truk patokan — sheet + session. */
 function bwPrevFinishPatokanDetail(optionalRows) {
-  var tgl = $('bw_tanggal') && $('bw_tanggal').value;
+  var es = bwEffectiveSetup();
+  var tgl = es.tanggal;
   var list = bwListIntake71TrucksForDay(optionalRows);
   var bestMs = 0;
   var bestHm = '';
@@ -356,7 +748,7 @@ function bwGhostPrevFinishHM(optionalRows) {
 /** Intake 71 Manual/Tilting: PB Start harus STRICT setelah PB Finish truck lain (tidak boleh sama). */
 function bwValidatePbStrictAfterPrevious(pbStartMs, pbFinishMs) {
   if (!bwTypeIsIntake71()) return null;
-  if (($('bw_type_bongkaran') && $('bw_type_bongkaran').value) === 'direct_gudang') return null;
+  if (bwEffectiveTypeBongkaran() === 'direct_gudang') return null;
   var p = bwPrevFinishPatokan();
   if (!p.ms && !p.hm) return null;
   if (pbStartMs <= p.ms) {
@@ -387,10 +779,12 @@ function bwSyncGhostHint(optionalRows) {
 
 /** Ambil riwayat bongkar untuk BK aktif lalu isi bayangan (panggil saat buka Step 2). */
 function bwRefreshGhostFromServer() {
-  var bk = $('bw_bk_id') && $('bw_bk_id').value;
-  var tgl = $('bw_tanggal') && $('bw_tanggal').value;
+  var es = bwEffectiveSetup();
+  var bk = es.bk_id;
+  var tgl = es.tanggal;
   if (!bk || !tgl) {
     bwSyncGhostHint();
+    bwRefreshStep2MiniTable();
     return;
   }
   fetchAPI('getBongkarHistory', { bk_id: bk, limit: 800 }, function(resp) {
@@ -398,7 +792,47 @@ function bwRefreshGhostFromServer() {
     if (!Array.isArray(pack)) pack = [];
     syncBongkarHistoryMergeBK(bk, pack);
     bwSyncGhostHint(pack);
+    bwUpdateTruckBadge();
+    bwRefreshStep2MiniTable();
   });
+}
+
+/** Kunci logis untuk menyaring baris bongkar duplikat di cache (ID beda, isi sama). */
+function bwBongkarLogicalMergeKey_(r) {
+  var dj = bwGetDurasiFields(r);
+  if (!dj || !dj.pb_start || !dj.pb_finish) {
+    return 'raw|' + String(r.BK_ID || '') + '|' + dashDateToYMD(r.TANGGAL) + '|' + String(r.MATERIAL || '') + '|' +
+      String(r.NO_POLISI || '').trim().toUpperCase().replace(/\s+/g, '') + '|' + String(r.ID || '') + '|' + String(r.TIMESTAMP || '');
+  }
+  var ps = String(dj.pb_start);
+  var pf = String(dj.pb_finish);
+  var py = String(dj.pb_tanggal || (r.PB_TANGGAL != null ? bwSheetYMD(r.PB_TANGGAL) : ''));
+  return [
+    String(r.BK_ID || ''),
+    dashDateToYMD(r.TANGGAL),
+    String(r.MATERIAL || ''),
+    String(r.NO_POLISI || '').trim().toUpperCase().replace(/\s+/g, ''),
+    py, ps, pf
+  ].join('\u001f');
+}
+
+function bwDedupeBongkarHistoryRows(rows) {
+  if (!Array.isArray(rows) || !rows.length) return [];
+  var seenId = {};
+  var seenLog = {};
+  var out = [];
+  rows.forEach(function(r) {
+    var id = String(r.ID != null ? r.ID : '').trim();
+    if (id) {
+      if (seenId[id]) return;
+      seenId[id] = true;
+    }
+    var lk = bwBongkarLogicalMergeKey_(r);
+    if (seenLog[lk]) return;
+    seenLog[lk] = true;
+    out.push(r);
+  });
+  return out;
 }
 
 /** Gabungkan baris BK ini ke cache global tanpa membuang BK lain. */
@@ -407,7 +841,7 @@ function syncBongkarHistoryMergeBK(bkId, bkRows) {
   var norm = String(bkId || '');
   var rest = all.filter(function(r) { return String(r.BK_ID || '') !== norm; });
   var add = Array.isArray(bkRows) ? bkRows : [];
-  appState.history.bongkar = rest.concat(add);
+  appState.history.bongkar = bwDedupeBongkarHistoryRows(rest.concat(add));
 }
 
 function bwGapPrevIntakePB(pbStartMs) {
@@ -418,7 +852,7 @@ function bwGapPrevIntakePB(pbStartMs) {
 
 function bwValidateIntakeOverlap(pbStartMs, pbFinishMs) {
   if (!bwTypeIsIntake71()) return null;
-  if (($('bw_type_bongkaran') && $('bw_type_bongkaran').value) === 'direct_gudang') return null;
+  if (bwEffectiveTypeBongkaran() === 'direct_gudang') return null;
   var list = bwListIntake71TrucksForDay();
   for (var i = 0; i < list.length; i++) {
     var p = list[i];
@@ -753,7 +1187,6 @@ function bwSubmitStep2() {
         }
         toast('Durasi truck tersimpan. Lanjut isi truck berikutnya, atau buka Step 3 untuk netto & arrival.', 's');
         if (dj.pb_finish) bwSetSessionPbFinishHint(dj.pb_finish, nopol);
-        bwSetTruckSavedCount(bwGetTruckSavedCount() + 1);
         bwUpdateTruckBadge();
         bwClearStep2Form();
         // Hanya refresh riwayat bongkar (untuk Step 3 & validasi truck berikutnya). Dashboard full dipanggil di background supaya tidak terasa lama.
@@ -761,6 +1194,8 @@ function bwSubmitStep2() {
           appState.history.bongkar = bwNormalizeBongkarHistory(r2.status !== 'error' ? r2.data : []);
           bwRefreshStep3();
           bwSyncGhostHint();
+          bwRefreshStep2MiniTable();
+          bwPersistWizardLocal();
         });
         if (typeof loadDashboard === 'function') {
           setTimeout(function() { loadDashboard(function() {}); }, 80);
@@ -779,20 +1214,37 @@ function bwGoStep(n) {
   document.querySelectorAll('.bw-panel').forEach(function(p) {
     p.classList.toggle('active', p.id === 'bw-panel-' + n);
   });
+  if (n === 1) {
+    bwUpdateSetupLockUI();
+    var qw = $('bw_step2_queue_wrap');
+    if (qw) qw.hidden = true;
+    var tbc = $('bw_step2_queue_tb');
+    if (tbc) tbc.innerHTML = '';
+    var qctx = $('bw_step2_queue_ctx');
+    if (qctx) {
+      qctx.hidden = true;
+      qctx.textContent = '';
+    }
+    bwRefreshNopolShadow();
+  }
   if (n === 3) {
     showLoader(true);
     fetchAPI('getBongkarHistory', { limit: 4000 }, function(resp) {
       showLoader(false);
       appState.history.bongkar = bwNormalizeBongkarHistory(resp.status !== 'error' ? resp.data : []);
       bwRefreshStep3();
+      bwPersistWizardLocal();
     });
+    bwPersistWizardLocal();
     return;
   }
   if (n === 2) {
     bwToggleDurasiMode();
     bwUpdateTruckBadge();
     bwRefreshGhostFromServer();
+    bwRefreshStep2MiniTable();
   }
+  bwPersistWizardLocal();
 }
 
 function bwToggleDurasiMode() {
@@ -949,6 +1401,7 @@ function bwFinalizeStep3Bulk() {
         appState.history.bongkar = bwNormalizeBongkarHistory(r2.status !== 'error' ? r2.data : []);
         bwRefreshStep3();
         if (typeof loadDashboard === 'function') loadDashboard(function() {});
+        bwPersistWizardLocal();
       });
       return;
     }
@@ -994,7 +1447,10 @@ function bwSaveStep1() {
   }, function(resp) {
     bwWizardSaveEnd();
     if (resp.status === 'error') toast('Gagal simpan setup: ' + resp.message, 'e');
-    else toast('Setup tersimpan', 's');
+    else {
+      toast('Setup tersimpan', 's');
+      bwPersistWizardLocal();
+    }
   });
 }
 
@@ -1017,24 +1473,41 @@ function bwLoadSetupFromServer() {
 
 function initBongkarWizard() {
   if (!$('bw-panel-1')) return;
+  var restored = false;
+  if (appState.user && appState.user.username) {
+    restored = bwRestoreWizardLocal();
+  }
+  if (!restored) {
+    bwWiz.setupLocked = false;
+    bwWiz.lockSnap = null;
+    bwUpdateSetupLockUI();
+  }
   fetchAPI('getBongkarHistory', { limit: 4000 }, function(resp) {
     appState.history.bongkar = bwNormalizeBongkarHistory(resp.status !== 'error' ? resp.data : []);
     bwSyncGhostHint();
     if ((bwWiz.step || 1) === 2) bwRefreshGhostFromServer();
     if ((bwWiz.step || 1) === 3) bwRefreshStep3();
+    bwRefreshStep2MiniTable();
+    bwPersistWizardLocal();
   });
   bwLoadSetupFromServer();
   bwGoStep(bwWiz.step || 1);
   bwToggleDurasiMode();
   bwUpdateTruckBadge();
+  bwUpdateSetupLockUI();
+  bwPersistWizardLocal();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.bw-step-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      bwGoStep(parseInt(btn.getAttribute('data-bw-step'), 10));
+      var n = parseInt(btn.getAttribute('data-bw-step'), 10);
+      if (n === 2 && !bwEnsureStep2Entry()) return;
+      bwGoStep(n);
     });
   });
+  var un = $('bw_btn_unlock_setup');
+  if (un) un.addEventListener('click', bwUnlockSetup);
   var bs1 = $('bw_btn_save_step1');
   if (bs1) bs1.addEventListener('click', bwSaveStep1);
   var bs2 = $('bw_btn_save_step2');
@@ -1050,27 +1523,55 @@ document.addEventListener('DOMContentLoaded', function() {
   if (mat) mat.addEventListener('change', function() {
     bwToggleDurasiMode();
     bwRefreshGhostFromServer();
+    bwUpdateTruckBadge();
   });
   var bwt = $('bw_tanggal');
   var bws = $('bw_shift');
-  if (bwt) bwt.addEventListener('change', function() { bwUpdateTruckBadge(); bwRefreshGhostFromServer(); });
+  if (bwt) bwt.addEventListener('change', function() {
+    if (bwWiz.setupLocked) bwUnlockSetup(true);
+    bwLoadSetupFromServer();
+    bwUpdateTruckBadge();
+    bwRefreshGhostFromServer();
+    bwPersistWizardLocal();
+  });
   if (bws) bws.addEventListener('change', function() { bwUpdateTruckBadge(); bwRefreshGhostFromServer(); });
   var bk = $('bw_bk_id');
   if (bk) bk.addEventListener('change', function() {
     applyBongkarMasterDefaults(this.value);
     bwRefreshGhostFromServer();
+    bwUpdateTruckBadge();
   });
   var pbStart = $('bw_pb_start');
-  if (pbStart) pbStart.addEventListener('input', bwSyncGhostHint);
+  if (pbStart) {
+    pbStart.addEventListener('input', function() {
+      bwSyncGhostHint();
+      bwUpdateTruckBadge();
+    });
+  }
+  var pbTgl = $('bw_pb_tgl');
+  if (pbTgl) {
+    pbTgl.addEventListener('change', bwUpdateTruckBadge);
+    pbTgl.addEventListener('input', bwUpdateTruckBadge);
+  }
   var sbmTgl = $('bw_sbm_pb_tgl');
-  if (sbmTgl) sbmTgl.addEventListener('change', function() { bwRefreshGhostFromServer(); });
+  if (sbmTgl) sbmTgl.addEventListener('change', function() {
+    bwRefreshGhostFromServer();
+    bwUpdateTruckBadge();
+  });
   var sbmPs = $('bw_sbm_pb_start');
   if (sbmPs) {
     sbmPs.addEventListener('focus', function() { bwRefreshGhostFromServer(); });
-    sbmPs.addEventListener('input', bwSyncGhostHint);
+    sbmPs.addEventListener('input', function() {
+      bwSyncGhostHint();
+      bwUpdateTruckBadge();
+    });
   }
   var typEl = $('bw_type_bongkaran');
-  if (typEl) typEl.addEventListener('change', function() { bwRefreshGhostFromServer(); });
+  if (typEl) typEl.addEventListener('change', function() {
+    bwRefreshGhostFromServer();
+    bwUpdateTruckBadge();
+    bwRefreshStep2MiniTable();
+  });
 
   var bdm = $('bw_bd_modal');
   if (bdm) {

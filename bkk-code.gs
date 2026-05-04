@@ -124,11 +124,11 @@ function getBKKDashboard() {
     var stock = calculateStock(bk.BK_ID, opname, bongkar, kirim);
     var awalYmd = formatAwalIsiYmdForApi_(getAwalIsiRawFromMasterRow_(bk));
     result.push({
-      BK_ID: bk.BK_ID,
+      BK_ID: String(bk.BK_ID != null ? bk.BK_ID : '').trim(),
       NAMA_BK: bk.NAMA_BK,
       KAPASITAS_KG: bk.KAPASITAS_KG,
-      MATERIAL_DEFAULT: bk.MATERIAL_DEFAULT,
-      SUPPLIER_DEFAULT: bk.SUPPLIER_DEFAULT,
+      MATERIAL_DEFAULT: bk.MATERIAL_DEFAULT || bk.MATERIAL || '',
+      SUPPLIER_DEFAULT: bk.SUPPLIER_DEFAULT || bk.SUPPLIER_DEF || bk.SUPPLIER || '',
       STOK_AKTIF: stock,
       AWAL_ISI_YMD: awalYmd
     });
@@ -162,6 +162,23 @@ function generateId(prefix) {
   var dateStr = Utilities.formatDate(now, tz, 'yyyyMMdd');
   var rand = Math.floor(Math.random() * 900) + 100;
   return prefix + '-' + dateStr + '-' + rand;
+}
+
+/** Cegah addBongkar dobel (klik ganda / fetch + fallback) dalam beberapa menit — kunci dari isi operasi. */
+function bongkarAddDedupeCacheKey_(data, durObj) {
+  var sig = [
+    String(data.BK_ID || data.bk_id || ''),
+    String(data.TANGGAL || data.tanggal || ''),
+    String(data.NO_POLISI || data.no_polisi || '').toUpperCase().replace(/\s+/g, ''),
+    String(data.SHIFT || data.shift || ''),
+    String(data.MATERIAL || data.material || ''),
+    String(data.TYPE_BONGKARAN || data.type_bongkaran || ''),
+    String(durObj.pb_tanggal || ''),
+    String(durObj.pb_start || ''),
+    String(durObj.pb_finish || '')
+  ].join('\u001e');
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, sig, Utilities.Charset.UTF_8);
+  return 'bokAddDup_' + Utilities.base64EncodeWebSafe(digest);
 }
 
 function getSAPData(tanggal) {
@@ -307,6 +324,49 @@ function ensureBongkarDurasiColumns_() {
   }
 }
 
+/** Ringkasan human-readable untuk kolom sheet (baca cepat tanpa parse JSON). */
+function formatBreakdownTxt_(bd) {
+  if (!bd || typeof bd !== 'object') return '';
+  var parts = [];
+  var keys = Object.keys(bd);
+  for (var ki = 0; ki < keys.length; ki++) {
+    var arr = bd[keys[ki]];
+    if (!arr || !arr.length) continue;
+    for (var ai = 0; ai < arr.length; ai++) {
+      var row = arr[ai];
+      if (!row) continue;
+      var cat = String(row.cat != null ? row.cat : '').trim();
+      var oth = String(row.other != null ? row.other : '').trim();
+      var mn = row.min != null ? Number(row.min) : 0;
+      var lab = cat;
+      if (String(cat).toUpperCase() === 'OTHER' && oth) lab = oth;
+      else if (oth) lab = cat + ' (' + oth + ')';
+      parts.push(lab + ': ' + mn + ' mnt');
+    }
+  }
+  return parts.join(' | ');
+}
+
+/** Kolom cadangan rincian breakdown (wizard); tidak bergantung pada DURASI_JSON utuh di URL. */
+function ensureBongkarBreakdownColumns_() {
+  var names = ['BREAKDOWN_DURASI', 'BREAKDOWN_TXT'];
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_BONGKAR);
+  if (!sheet) return;
+  var lastCol = sheet.getLastColumn();
+  if (lastCol < 1) return;
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var miss = [];
+  for (var i = 0; i < names.length; i++) {
+    if (headers.indexOf(names[i]) < 0) miss.push(names[i]);
+  }
+  if (miss.length === 0) return;
+  var start = lastCol + 1;
+  for (var mi = 0; mi < miss.length; mi++) {
+    sheet.getRange(1, start + mi).setValue(miss[mi]);
+  }
+}
+
 function insertRow(sheetName, rowData) {
   var ss = getSpreadsheet();
   var sheet = ss.getSheetByName(sheetName);
@@ -403,7 +463,10 @@ function getBongkarSetup(username, dateKey) {
 function doPost(e) {
   var result = handlePost(e);
   return ContentService.createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON);
+    .setMimeType(ContentService.MimeType.JSON)
+    .setHeader('Access-Control-Allow-Origin', '*')
+    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With');
 }
 
 function handlePost(e) {
@@ -428,13 +491,29 @@ function handlePost(e) {
       } catch (e) {
         durObj = {};
       }
+      var dupKey = bongkarAddDedupeCacheKey_(data, durObj);
+      var dupCache = CacheService.getScriptCache();
+      var dupHit = dupCache.get(dupKey);
+      if (dupHit) {
+        try {
+          return { status: 'success', data: JSON.parse(dupHit), duplicate_suppressed: true };
+        } catch (eDup) {}
+      }
       var slim = {
         v: durObj.v || 1,
         is_sbm: durObj.is_sbm === true || durObj.is_sbm === 'true',
         type_bongkaran: durObj.type_bongkaran || '',
         breakdowns: durObj.breakdowns || {}
       };
+      var bdRaw = durObj.breakdowns || {};
+      var bdJson = '';
+      try {
+        bdJson = Object.keys(bdRaw).length ? JSON.stringify(bdRaw) : '';
+      } catch (eBd) {
+        bdJson = '';
+      }
       ensureBongkarDurasiColumns_();
+      ensureBongkarBreakdownColumns_();
       var rowData = {
         ID: generateId('BNGKR'),
         TIMESTAMP: Utilities.formatDate(now, 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss'),
@@ -460,12 +539,17 @@ function handlePost(e) {
         PB_HOLD: durObj.pb_hold || '',
         PB_RESTART: durObj.pb_restart || '',
         PB_FINISH: durObj.pb_finish || '',
-        DURASI_JSON: JSON.stringify(slim)
+        DURASI_JSON: JSON.stringify(slim),
+        BREAKDOWN_DURASI: bdJson,
+        BREAKDOWN_TXT: formatBreakdownTxt_(bdRaw)
       };
       if (!rowData.INPUT_BY || rowData.INPUT_BY === '') {
         throw new Error('INPUT_BY (Operator) tidak boleh kosong');
       }
       insertRow(SHEET_BONGKAR, rowData);
+      try {
+        dupCache.put(dupKey, JSON.stringify(rowData), 300);
+      } catch (ePut) {}
       return { status: 'success', data: rowData };
 
     } else if (action === 'finalizeBongkar') {
@@ -646,7 +730,7 @@ function setupSheets() {
 
   var sheets = {
     'BKK_Master':     ['BK_ID','NAMA_BK','KAPASITAS_KG','MATERIAL_DEFAULT','SUPPLIER_DEFAULT','STATUS','AWAL_ISI'],
-    'BKK_Bongkar':    ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','SUPPLIER','NETTO_KG','NO_POLISI','KETERANGAN','INPUT_BY','SHIFT','TYPE_BONGKARAN','STATUS_ROW','ARRIVAL_DATE','ARRIVAL_TIME','AB_TANGGAL','PB_TANGGAL','AB_ARRIVAL','AB_QC','PB_SAMPAI','PB_START','PB_HOLD','PB_RESTART','PB_FINISH','DURASI_JSON'],
+    'BKK_Bongkar':    ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','SUPPLIER','NETTO_KG','NO_POLISI','KETERANGAN','INPUT_BY','SHIFT','TYPE_BONGKARAN','STATUS_ROW','ARRIVAL_DATE','ARRIVAL_TIME','AB_TANGGAL','PB_TANGGAL','AB_ARRIVAL','AB_QC','PB_SAMPAI','PB_START','PB_HOLD','PB_RESTART','PB_FINISH','DURASI_JSON','BREAKDOWN_DURASI','BREAKDOWN_TXT'],
     'BKK_Bongkar_Setup': ['USERNAME','DATE_KEY','NAMA','UPDATED_AT','PAYLOAD_JSON'],
     'BKK_Kirim':      ['ID','TIMESTAMP','TANGGAL','BK_ID','MATERIAL','NETTO_KG','SHIFT','GRINDING','OPERATOR','INPUT_BY'],
     'BKK_Opname':     ['ID','TIMESTAMP','TANGGAL','BK_ID','STOK_FISIK_KG','MATERIAL','INPUT_BY','KETERANGAN'],

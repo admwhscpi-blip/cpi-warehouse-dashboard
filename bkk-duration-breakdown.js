@@ -57,24 +57,47 @@
     return String(n).padStart(2, '0');
   }
 
-  /** Ambil JSON durasi dari berbagai nama kolom / encoding yang mungkin dari sheet/API. */
+  /** Ambil JSON durasi; breakdown kategori diambil dari kolom BREAKDOWN_DURASI bila DURASI_JSON ringkas/kosong. */
   function bkkDbParseDj(r) {
     if (!r) return null;
+    var colBd = r.BREAKDOWN_DURASI;
+    if ((colBd == null || colBd === '') && r.breakdown_durasi != null) colBd = r.breakdown_durasi;
+    if ((colBd == null || colBd === '') && r['BREAKDOWN DURASI'] != null) colBd = r['BREAKDOWN DURASI'];
+    var mergedBreakdowns = null;
+    var cs = colBd != null ? String(colBd).trim() : '';
+    if (cs !== '' && cs !== '{}') {
+      try {
+        var ext = typeof colBd === 'string' ? JSON.parse(colBd) : colBd;
+        if (ext && typeof ext === 'object' && !Array.isArray(ext)) mergedBreakdowns = ext;
+      } catch (e0) {}
+    }
+
     var raw = r.DURASI_JSON;
     if ((raw == null || raw === '') && r.durasi_json != null) raw = r.durasi_json;
     if ((raw == null || raw === '') && r['DURASI JSON'] != null) raw = r['DURASI JSON'];
-    if (raw == null || raw === '') return null;
+    if (raw == null || raw === '') {
+      if (mergedBreakdowns) return { v: 1, breakdowns: mergedBreakdowns };
+      return null;
+    }
     try {
       var obj = typeof raw === 'string' ? JSON.parse(raw) : raw;
       if (typeof obj === 'string') {
         try {
           obj = JSON.parse(obj);
         } catch (e2) {
+          if (mergedBreakdowns) return { v: 1, breakdowns: mergedBreakdowns };
           return null;
         }
       }
-      return obj && typeof obj === 'object' ? obj : null;
+      if (!obj || typeof obj !== 'object') {
+        if (mergedBreakdowns) return { v: 1, breakdowns: mergedBreakdowns };
+        return null;
+      }
+      if (mergedBreakdowns) obj.breakdowns = mergedBreakdowns;
+      else if (!obj.breakdowns) obj.breakdowns = {};
+      return obj;
     } catch (e) {
+      if (mergedBreakdowns) return { v: 1, breakdowns: mergedBreakdowns };
       return null;
     }
   }

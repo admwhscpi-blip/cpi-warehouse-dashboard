@@ -56,10 +56,10 @@ function loadDashboard(doneCb) {
     }
     var raw = resp.data || [];
     appState.dashData = raw.map(function(bk) {
-      var id = bk.BK_ID || '';
-      if (!/^BK-\d$/.test(id)) {
-        var m = id.match(/^BK(\d)$/i);
-        if (m) bk.BK_ID = 'BK-' + m[1];
+      var id = String(bk.BK_ID == null ? '' : bk.BK_ID).trim();
+      // Hanya alias legacy satu digit: BK1 / bk-1 → BK-1. Jangan ubah BK1b, BK-10, BK1B, dll.
+      if (/^BK-?\d$/i.test(id)) {
+        bk.BK_ID = 'BK-' + id.replace(/^BK-?/i, '');
       }
       return bk;
     });

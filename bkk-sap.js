@@ -703,8 +703,11 @@ function sapPrefillSAPInlineForms(bkId, result) {
   $('sap_b_operator').value = appState.user ? appState.user.nama : '';
   $('sap_b_shift').value = '1';
   var bkMaster = getBKById(bkId);
-  $('sap_b_material').value = (result && result.material) || bkMaster.MATERIAL_DEFAULT || '';
-  $('sap_b_supplier').value = (bkMaster.SUPPLIER_DEFAULT || '').trim();
+  $('sap_b_material').value =
+    (result && result.material) ||
+    (typeof bkMasterMaterial_ === 'function' ? bkMasterMaterial_(bkMaster) : (bkMaster.MATERIAL_DEFAULT || ''));
+  $('sap_b_supplier').value =
+    typeof bkMasterSupplier_ === 'function' ? bkMasterSupplier_(bkMaster) : String(bkMaster.SUPPLIER_DEFAULT || '').trim();
   $('sap_bongkar_input').value = '';
 
   $('sap_ik_tanggal').value = todayStr();
@@ -717,7 +720,7 @@ function sapPrefillSAPInlineForms(bkId, result) {
     sel.innerHTML = '<option value="">— Pilih —</option>';
     var seen = {};
     (appState.dashData || []).forEach(function(bk) {
-      var m = bk.MATERIAL_DEFAULT;
+      var m = typeof bkMasterMaterial_ === 'function' ? bkMasterMaterial_(bk) : (bk.MATERIAL_DEFAULT || '').trim();
       if (m && !seen[m]) {
         seen[m] = 1;
         var o = document.createElement('option');
@@ -1196,7 +1199,12 @@ function updateOpnameInfo() {
     return;
   }
   var bk = getBKById(bkId);
-  if (bk.MATERIAL_DEFAULT) $('o_material').value = bk.MATERIAL_DEFAULT;
+  var om = $('o_material');
+  var matO = typeof bkMasterMaterial_ === 'function' ? bkMasterMaterial_(bk) : (bk.MATERIAL_DEFAULT || '').trim();
+  if (om) {
+    if (matO && typeof ensureSelectOptionValue_ === 'function') ensureSelectOptionValue_(om, matO, matO);
+    else if (om) om.value = '';
+  }
   var sistem = bk.STOK_AKTIF ? Number(bk.STOK_AKTIF) : 0;
   $('o_stok_sistem').textContent = fmtNum(sistem) + ' kg';
   $('o_stok_sistem').style.color = sistem < 0 ? 'var(--ck)' : 'var(--ts)';
@@ -1365,7 +1373,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // Auto-fill Kirim BK
   $('k_bk_id').addEventListener('change', function() {
     var bk = getBKById(this.value);
-    if (bk.MATERIAL_DEFAULT) $('k_material').value = bk.MATERIAL_DEFAULT;
+    var km = $('k_material');
+    var mat = typeof bkMasterMaterial_ === 'function' ? bkMasterMaterial_(bk) : (bk.MATERIAL_DEFAULT || '').trim();
+    if (km) {
+      if (mat && typeof ensureSelectOptionValue_ === 'function') ensureSelectOptionValue_(km, mat, mat);
+      else if (km) km.value = '';
+    }
     var hint = $('k_hint');
     if (hint) {
       var h = stokHint(bk.STOK_AKTIF, bk.KAPASITAS_KG);

@@ -11,6 +11,102 @@
   background: rgba(56, 189, 248, 0.12);
   border: 1px solid rgba(56, 189, 248, 0.35);
 }
+.bw-truck-badge-main { line-height: 1.35; }
+.bw-truck-badge-sub {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.bw-setup-lock-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(99, 102, 241, 0.1));
+  border: 1px solid rgba(2, 132, 199, 0.35);
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #0c4a6e;
+}
+.bw-setup-lock-banner[hidden] { display: none !important; }
+.bw-unlock-btn {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(2, 132, 199, 0.45);
+  background: #fff;
+  color: #0369a1;
+  cursor: pointer;
+  font-weight: 700;
+}
+.bw-unlock-btn:hover { background: #f0f9ff; }
+
+.bw-step2-queue-wrap { margin-bottom: 12px; }
+.bw-step2-queue-wrap[hidden] { display: none !important; }
+.bw-step2-queue-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--tp, #0f172a);
+  margin-bottom: 8px;
+  font-family: var(--fs, 'Rajdhani', sans-serif);
+}
+.bw-step2-queue-ctx {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  line-height: 1.4;
+}
+.bw-step2-queue-ctx[hidden] { display: none !important; }
+
+.bw-nopol-fields {
+  flex: 1;
+  min-width: min(100%, 160px);
+}
+.bw-nopol-fields label {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.bw-nopol-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+  margin-top: 4px;
+}
+.bw-nopol-next-shadow {
+  flex: 1;
+  min-width: min(100%, 200px);
+  max-width: 340px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(100, 116, 139, 0.65);
+  background: rgba(248, 250, 252, 0.85);
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+  font-family: var(--fs, 'Rajdhani', sans-serif);
+}
+.bw-nopol-next-shadow[hidden] { display: none !important; }
+
+.bw-step2-queue-table { font-size: 0.8rem; margin: 0; }
+.bw-step2-queue-table th,
+.bw-step2-queue-table td { padding: 8px 10px; white-space: nowrap; }
+.bw-step2-queue-table td.bw-q-note { white-space: normal; max-width: 220px; font-size: 0.76rem; color: #b45309; }
 .bw-step-nav {
   display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
   position: sticky; top: 0; z-index: 20; padding: 8px 0;

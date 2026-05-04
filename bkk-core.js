@@ -16,19 +16,82 @@ var appState = {
 // ── UTILITIES ──────────────────────────────────────────────────────────────
 function $ (id) { return document.getElementById(id); }
 
+/** Master BK dari appState.dashData — cocokkan persis, lalu case-insensitive (tanpa menggabungkan BK1b → BK-1). */
 function getBKById(id) {
-  return appState.dashData.find(function(bk) { return bk.BK_ID === id; }) || {};
+  var rows = appState.dashData;
+  if (!rows || !rows.length || id == null || id === '') return {};
+  var raw = String(id).trim();
+  if (!raw) return {};
+  for (var i = 0; i < rows.length; i++) {
+    var rid = rows[i].BK_ID;
+    if (rid != null && String(rid).trim() === raw) return rows[i];
+  }
+  var low = raw.toLowerCase();
+  for (var j = 0; j < rows.length; j++) {
+    var rj = rows[j].BK_ID;
+    if (rj != null && String(rj).trim().toLowerCase() === low) return rows[j];
+  }
+  return {};
+}
+
+function bkMasterMaterial_(bk) {
+  if (!bk || typeof bk !== 'object') return '';
+  var v =
+    bk.MATERIAL_DEFAULT != null && String(bk.MATERIAL_DEFAULT).trim() !== ''
+      ? bk.MATERIAL_DEFAULT
+      : bk.MATERIAL || bk.material_default || '';
+  return String(v == null ? '' : v).trim();
+}
+
+function bkMasterSupplier_(bk) {
+  if (!bk || typeof bk !== 'object') return '';
+  var v =
+    bk.SUPPLIER_DEFAULT != null && String(bk.SUPPLIER_DEFAULT).trim() !== ''
+      ? bk.SUPPLIER_DEFAULT
+      : bk.SUPPLIER_DEF || bk.SUPPLIER || '';
+  return String(v == null ? '' : v).trim();
+}
+
+/** Pastikan <select> punya <option> dengan value ini (populateBKDropdowns kadang tidak memuat material yang hanya dipakai satu BK). */
+function ensureSelectOptionValue_(sel, value, label) {
+  if (!sel || sel.tagName !== 'SELECT' || value == null || value === '') return;
+  var v = String(value);
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === v) {
+      sel.value = v;
+      return;
+    }
+  }
+  var o = document.createElement('option');
+  o.value = v;
+  o.textContent = label != null && String(label).trim() !== '' ? String(label) : v;
+  sel.appendChild(o);
+  sel.value = v;
 }
 
 /** Isi Material & Supplier form Bongkar dari kolom master BK (sama sumbernya seperti MATERIAL_DEFAULT). */
 function applyBongkarMasterDefaults(bkId) {
-  if (!bkId) return;
-  var bk = getBKById(bkId);
-  if (!bk.BK_ID) return;
   var mEl = $('b_material') || $('bw_material');
   var sEl = $('b_supplier') || $('bw_supplier');
-  if (mEl && bk.MATERIAL_DEFAULT) mEl.value = bk.MATERIAL_DEFAULT;
-  if (sEl && bk.SUPPLIER_DEFAULT) sEl.value = bk.SUPPLIER_DEFAULT;
+  if (!bkId) {
+    if (mEl) mEl.value = '';
+    if (sEl) sEl.value = '';
+    return;
+  }
+  var bk = getBKById(bkId);
+  var hasRow = bk && bk.BK_ID != null && String(bk.BK_ID).trim() !== '';
+  if (!hasRow) {
+    if (mEl) mEl.value = '';
+    if (sEl) sEl.value = '';
+    return;
+  }
+  var mat = bkMasterMaterial_(bk);
+  var sup = bkMasterSupplier_(bk);
+  if (mEl) {
+    if (mat) ensureSelectOptionValue_(mEl, mat, mat);
+    else mEl.value = '';
+  }
+  if (sEl) sEl.value = sup || '';
 }
 
 function toast(msg, type) {
@@ -192,20 +255,71 @@ function fetchAPI(action, params, cb) {
   }, 15000);
 }
 
-/** POST JSON body — untuk payload besar (mis. DURASI_JSON). Memerlukan deploy Web App dengan doPost. */
+/** Origin yang fetch-nya ke GAS web app sering gagal CORS (respons tanpa ACAO); JSONP GET aman & satu kali kirim. */
+function postJSONAPIPreferJsonp_() {
+  if (typeof location === 'undefined') return false;
+  if (location.protocol === 'file:') return true;
+  var h = String(location.hostname || '').toLowerCase();
+  if (h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '[::1]') return true;
+  return false;
+}
+
+/** POST JSON — untuk payload besar (DURASI_JSON). GAS doPost + fetch; di localhost/file langsung JSONP (hindari CORS). */
 function postJSONAPI(action, payload, cb) {
   payload = payload || {};
-  payload.action = action;
+  var send = Object.assign({}, payload);
+  send.action = action;
+  var bodyStr = JSON.stringify(send);
+
+  function tryJsonpFallback() {
+    var flat = Object.assign({}, send);
+    Object.keys(flat).forEach(function(k) {
+      var v = flat[k];
+      if (v != null && typeof v === 'object') flat[k] = JSON.stringify(v);
+      else if (v === undefined) flat[k] = '';
+    });
+    var qs = Object.keys(flat).map(function(k) {
+      return k + '=' + encodeURIComponent(flat[k] == null ? '' : String(flat[k]));
+    }).join('&');
+    if ((CONFIG.SCRIPT_URL + '?' + qs).length > 7200) {
+      cb({
+        status: 'error',
+        message: 'Payload terlalu panjang lewat file lokal. Buka halaman lewat Live Server (http://127.0.0.1) atau ringkas data.'
+      });
+      return;
+    }
+    postAPI(action, flat, cb);
+  }
+
+  /* localhost / file → fetch ke script.google.com sering kena CORS; JSONP dari awal = satu request (bukan retry setelah fetch). */
+  if (postJSONAPIPreferJsonp_()) {
+    tryJsonpFallback();
+    return;
+  }
+
   fetch(CONFIG.SCRIPT_URL, {
     method: 'POST',
     mode: 'cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+    body: bodyStr
   })
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
     .then(cb)
-    .catch(function() {
-      cb({ status: 'error', message: 'Gagal koneksi (POST). Pastikan Web App GAS aktif & CORS.' });
+    .catch(function(err) {
+      /**
+       * Jangan fallback JSONP otomatis: bila POST fetch sudah diproses server tapi response gagal di klien,
+       * JSONP kedua menyebabkan baris dobel di sheet (addBongkar dua kali).
+       * JSONP hanya dipakai untuk file:// (cabang di atas).
+       */
+      if (typeof cb === 'function') {
+        cb({
+          status: 'error',
+          message: (err && err.message) ? err.message : 'Gagal mengirim (jaringan/CORS). Cek apakah data sudah masuk sebelum kirim ulang.'
+        });
+      }
     });
 }
 

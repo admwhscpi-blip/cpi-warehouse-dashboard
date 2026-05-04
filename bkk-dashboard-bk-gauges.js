@@ -8,12 +8,13 @@
     return pct > 85 ? 'hi' : pct > 60 ? 'mi' : 'lo';
   }
 
-  function buildGaugeSvg(pctDisplay) {
+  function buildGaugeSvg(pctDisplay, gradId) {
+    var gid = gradId || 'def';
     var z = gaugeZone(pctDisplay);
     return (
       '<svg class="bk-gauge-svg" viewBox="0 0 200 108" aria-hidden="true">' +
       '<defs>' +
-      '<linearGradient id="bkGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">' +
+      '<linearGradient id="bkGaugeGrad-' + gid + '" x1="0%" y1="0%" x2="100%" y2="0%">' +
       '<stop offset="0%" stop-color="#0ea5e9"/><stop offset="100%" stop-color="#6366f1"/>' +
       '</linearGradient></defs>' +
       '<path class="bk-gauge-track" d="M 32 88 A ' + GAUGE_R + ' ' + GAUGE_R + ' 0 0 1 168 88" fill="none" stroke="rgba(148,163,184,0.25)" stroke-width="12" stroke-linecap="round"/>' +
@@ -49,47 +50,128 @@
     requestAnimationFrame(tick);
   }
 
+  function dashNormalizeBkId_(raw) {
+    var id = String(raw == null ? '' : raw).trim();
+    if (!id) return '';
+    if (/^BK-\d+$/i.test(id)) return 'BK-' + id.replace(/^BK-/i, '').replace(/^BK/i, '');
+    var m = id.match(/^BK(\d+)$/i);
+    if (m) return 'BK-' + m[1];
+    return id;
+  }
+
+  function dashBkRowValidForCard_(bk) {
+    var id = dashNormalizeBkId_(bk.BK_ID);
+    if (!/^BK-\d+$/.test(id)) return false;
+    if (/^BK_ID$/i.test(String(bk.BK_ID || '').trim())) return false;
+    return true;
+  }
+
+  function dashBkNumKey_(bkId) {
+    var m = String(bkId).match(/^BK-(\d+)$/);
+    return m ? parseInt(m[1], 10) : 9999;
+  }
+
+  /** Satu kartu per BK_ID; beberapa baris master (material ke-2) → beberapa slot vertikal. */
+  function groupDashBkSlots_(rows) {
+    rows = rows || [];
+    var order = [];
+    var seen = {};
+    for (var i = 0; i < rows.length; i++) {
+      var bk = rows[i];
+      if (!dashBkRowValidForCard_(bk)) continue;
+      var id = dashNormalizeBkId_(bk.BK_ID);
+      if (!seen[id]) {
+        seen[id] = [];
+        order.push(id);
+      }
+      seen[id].push(bk);
+    }
+    order.sort(function(a, b) {
+      return dashBkNumKey_(a) - dashBkNumKey_(b);
+    });
+    return order.map(function(id) {
+      return { bkId: id, slots: seen[id] };
+    });
+  }
+
+  function buildSlotBodyHtml_(bk, titleLine, gradId, showSupplier) {
+    var pct = bk.KAPASITAS_KG ? (Number(bk.STOK_AKTIF) / Number(bk.KAPASITAS_KG)) * 100 : 0;
+    var pctClamped = Math.min(Math.max(pct, 0), 100);
+    var ageDays = typeof bkUmurAbsolutHari === 'function' ? bkUmurAbsolutHari(bk.AWAL_ISI_YMD) : 0;
+    var ageCls = ageClass(ageDays) || 'cm';
+    var matLabel = escMini((bk.MATERIAL_DEFAULT || bk.MATERIAL || '').trim()) || '—';
+    var sup = escMini((bk.SUPPLIER_DEFAULT || bk.SUPPLIER_DEF || '').trim());
+    var subMat = showSupplier && sup ? '<span class="bk-supplier" title="' + sup + '">' + sup + '</span>' : '';
+    return (
+      '<div class="bk-card-head">' +
+      '<div class="bk-head-main">' +
+      '<span class="bk-id">' + escMini(titleLine) + '</span>' +
+      '<span class="bk-material" title="' + matLabel + '">' + matLabel + '</span>' +
+      subMat +
+      '</div>' +
+      '<span class="bk-age ' + ageCls + '" title="Umur absolut (hari ini − AWAL ISI)">' +
+      '<i class="fas fa-clock"></i> ' + ageDays + ' <span class="bk-age-unit">hr</span></span>' +
+      '</div>' +
+      '<div class="bk-gauge-wrap">' + buildGaugeSvg(pctClamped, gradId) + '</div>' +
+      '<div class="bk-card-foot">' +
+      '<div class="bk-stat-row">' +
+      '<span class="bk-val">' + fmtNum(bk.STOK_AKTIF) + '</span><span class="bk-stat-unit">kg</span>' +
+      '<span class="bk-stat-sep">/</span>' +
+      '<span class="bk-cap">' + fmtNum(bk.KAPASITAS_KG) + '</span><span class="bk-stat-unit">kg</span>' +
+      '</div>' +
+      '<div class="bk-card-meta">' + fmtNum(pct) + '% slot terpakai</div>' +
+      '</div>'
+    );
+  }
+
   window.renderBKCards = function() {
     var grid = $('bkGrid');
     if (!grid) return;
     grid.innerHTML = '';
     grid.classList.add('bk-grid--dash');
 
-    appState.dashData.forEach(function(bk) {
-      var pct = bk.KAPASITAS_KG ? (Number(bk.STOK_AKTIF) / Number(bk.KAPASITAS_KG)) * 100 : 0;
-      var pctClamped = Math.min(Math.max(pct, 0), 100);
-      var ageDays = typeof bkUmurAbsolutHari === 'function' ? bkUmurAbsolutHari(bk.AWAL_ISI_YMD) : 0;
-      var ageCls = ageClass(ageDays) || 'cm';
-      var matLabel = escMini((bk.MATERIAL_DEFAULT || bk.MATERIAL || '').trim()) || '—';
-      var div = document.createElement('div');
-      div.className = 'bk-card bk-card--3d';
-      div.setAttribute('data-bk-id', bk.BK_ID);
+    var groups = groupDashBkSlots_(appState.dashData || []);
+    var uid = 0;
 
-      div.innerHTML =
-        '<div class="bk-card-glare"></div>' +
-        '<div class="bk-card-head">' +
-        '<div class="bk-head-main">' +
-        '<span class="bk-id">' + bk.BK_ID + '</span>' +
-        '<span class="bk-material" title="' + matLabel + '">' + matLabel + '</span>' +
-        '</div>' +
-        '<span class="bk-age ' + ageCls + '" title="Umur absolut (hari ini − AWAL ISI)">' +
-        '<i class="fas fa-clock"></i> ' + ageDays + ' <span class="bk-age-unit">hr</span></span>' +
-        '</div>' +
-        '<div class="bk-gauge-wrap">' + buildGaugeSvg(pctClamped) + '</div>' +
-        '<div class="bk-card-foot">' +
-        '<div class="bk-stat-row">' +
-        '<span class="bk-val">' + fmtNum(bk.STOK_AKTIF) + '</span><span class="bk-stat-unit">kg</span>' +
-        '<span class="bk-stat-sep">/</span>' +
-        '<span class="bk-cap">' + fmtNum(bk.KAPASITAS_KG) + '</span><span class="bk-stat-unit">kg</span>' +
-        '</div>' +
-        '<div class="bk-card-meta">' + fmtNum(pct) + '% slot terpakai</div>' +
-        '</div>';
+    groups.forEach(function(group) {
+      var slots = group.slots;
+      var div = document.createElement('div');
+      var isSplit = slots.length > 1;
+      div.className = 'bk-card bk-card--3d' + (isSplit ? ' bk-card--split' : '');
+      div.setAttribute('data-bk-id', group.bkId);
+
+      var glare = '<div class="bk-card-glare"></div>';
+      var body;
+      if (!isSplit) {
+        body = buildSlotBodyHtml_(slots[0], group.bkId, 's' + uid++, false);
+      } else {
+        var parts = [];
+        for (var si = 0; si < slots.length; si++) {
+          var letter = String.fromCharCode(65 + si);
+          var title = group.bkId + ' (' + letter + ')';
+          if (si > 0) parts.push('<div class="bk-card-slot-split" aria-hidden="true"></div>');
+          parts.push(
+            '<div class="bk-card-slot">' +
+            buildSlotBodyHtml_(slots[si], title, 's' + uid++ + '_' + si, true) +
+            '</div>'
+          );
+        }
+        body = parts.join('');
+      }
+
+      div.innerHTML = glare + body;
 
       div.addEventListener('click', function() {
         var leg = $('b_bk_id');
         var bw = $('bw_bk_id');
-        if (leg) { leg.value = bk.BK_ID; leg.dispatchEvent(new Event('change')); }
-        if (bw) { bw.value = bk.BK_ID; bw.dispatchEvent(new Event('change')); }
+        if (leg) {
+          leg.value = group.bkId;
+          leg.dispatchEvent(new Event('change'));
+        }
+        if (bw) {
+          bw.value = group.bkId;
+          bw.dispatchEvent(new Event('change'));
+        }
         navigateTo('bongkar');
       });
       grid.appendChild(div);

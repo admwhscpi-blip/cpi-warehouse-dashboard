@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="bkk-kartustock.css">
 <link rel="stylesheet" href="bkk-v2-theme.css">
 <link rel="stylesheet" href="bkk-brand-theme.css">
-<link rel="stylesheet" href="bkk-dashboard-page.css">
+<link rel="stylesheet" href="bkk-dashboard-page.css?v=20260504bksplit">
 <link rel="stylesheet" href="laporan-export.css?v=8">
 <link rel="stylesheet" href="bkk-bongkar-wizard.css">
 <link rel="stylesheet" href="bkk-duration-breakdown.css">
@@ -302,6 +302,10 @@
 
           <div id="bw-panel-1" class="bw-panel active">
             <p class="fhint" style="margin-top:0;font-size:0.85rem;color:var(--ts);">Disimpan di server per user &amp; tanggal. Netto diisi di langkah akhir.</p>
+            <div id="bw_setup_lock_banner" class="bw-setup-lock-banner" hidden>
+              <span id="bw_setup_lock_text"></span>
+              <button type="button" class="btn btn-sm bw-unlock-btn" id="bw_btn_unlock_setup"><i class="fas fa-unlock"></i> Buka kunci setup</button>
+            </div>
             <div class="fgrid">
               <div class="fg"><label>Tanggal operasi</label><input type="date" id="bw_tanggal"></div>
               <div class="fg"><label>BK</label><select id="bw_bk_id"><option value="">— Pilih BK —</option></select></div>
@@ -323,11 +327,35 @@
           </div>
 
           <div id="bw-panel-2" class="bw-panel">
-            <p class="fhint" style="font-size:0.85rem;color:var(--ts);">Material <strong>SBM</strong>: hanya PB Start &amp; Finish. <strong>Selain SBM</strong>: isi PB di langkah ini; <strong>AB tanggal / AB arrival / AB QC</strong> diisi di Step 3 bersama netto. Intake 71: patokan di bawah PB Start.</p>
+            <p class="fhint" style="font-size:0.85rem;color:var(--ts);">Material <strong>SBM</strong>: hanya PB Start &amp; Finish. <strong>Selain SBM</strong>: isi PB di langkah ini; <strong>AB tanggal / AB arrival / AB QC</strong> diisi di Step 3 bersama netto. Saat masuk Step 2, <strong>setup terkunci</strong> (BK, tanggal, shift, type, material) — antrian &amp; tabel mini memakai filter <strong>type + material persis</strong> (Intake 71 Manual &amp; Tilting digabung satu antrian; Direct terpisah). Buka kunci di Step 1 bila perlu ubah. Urutan truck dari <strong>jam PB Start</strong> (≥07:00 untuk tabel ringkas).</p>
             <div class="fgrid">
               <div class="fg full">
-                <div id="bw_truck_badge" class="bw-truck-badge" aria-live="polite">Truck ke-1 — sesi tanggal &amp; shift ini</div>
-                <label>No. Polisi</label><input type="text" id="bw_nopol" placeholder="B 1234 XX" style="text-transform:uppercase;">
+                <div id="bw_truck_badge" class="bw-truck-badge" aria-live="polite">—</div>
+                <div id="bw_step2_queue_wrap" class="bw-step2-queue-wrap" hidden>
+                  <div class="bw-step2-queue-title"><i class="fas fa-list-ol"></i> Antrian hari ini (dari jam 07:00, filter setup)</div>
+                  <div id="bw_step2_queue_ctx" class="bw-step2-queue-ctx" hidden></div>
+                  <div class="twrap" style="overflow-x:auto;margin-bottom:10px;">
+                    <table class="dtable bw-step2-queue-table" id="bw_step2_queue_table">
+                      <thead>
+                        <tr>
+                          <th>Urutan</th>
+                          <th>PB Start</th>
+                          <th>Nopol</th>
+                          <th>Netto (kg)</th>
+                          <th>Keterangan</th>
+                        </tr>
+                      </thead>
+                      <tbody id="bw_step2_queue_tb"></tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="bw-nopol-row">
+                  <div class="bw-nopol-fields">
+                    <label for="bw_nopol">No. Polisi</label>
+                    <input type="text" id="bw_nopol" placeholder="B 1234 XX" style="text-transform:uppercase;">
+                  </div>
+                  <div id="bw_nopol_next_shadow" class="bw-nopol-next-shadow" hidden aria-live="polite"></div>
+                </div>
               </div>
             </div>
             <div id="bw_durasi_full">
@@ -855,15 +883,15 @@
 </div>
 
 <script src="bkk-config.js"></script>
-<script src="bkk-core.js"></script>
-<script src="bkk-dashboard-bk-gauges.js"></script>
+<script src="bkk-core.js?v=20260504bkidmat"></script>
+<script src="bkk-dashboard-bk-gauges.js?v=20260504bksplit"></script>
 <script src="bkk-dashboard-analytics.js"></script>
 <script src="bkk-dashboard-charts.js"></script>
-<script src="bkk-dashboard.js"></script>
+<script src="bkk-dashboard.js?v=20260504bkidmat"></script>
 <script src="bkk-history.js"></script>
 <script src="laporan-export.js?v=8"></script>
-<script src="bkk-sap.js"></script>
-<script src="bkk-bongkar-wizard.js"></script>
+<script src="bkk-sap.js?v=20260504bkidmat"></script>
+<script src="bkk-bongkar-wizard.js?v=20260504e"></script>
 <script src="bkk-duration-breakdown.js"></script>
 <script src="bkk-kartustock.js"></script>
 
