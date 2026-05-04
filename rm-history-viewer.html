@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Warehouse — History Viewer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="bkk-dashboard.css">
+    <link rel="stylesheet" href="bkk-v2-theme.css">
+    <link rel="stylesheet" href="bkk-brand-theme.css">
+    <link rel="stylesheet" href="bkk-dashboard-page.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .viewer-login-wrap {
+            max-width: 420px;
+            margin: 40px auto;
+            padding: 28px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .viewer-login-wrap h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            margin: 0 0 8px 0;
+            color: var(--text-primary, #e2e8f0);
+        }
+
+        .viewer-login-wrap p {
+            font-size: 0.85rem;
+            color: var(--text-muted, #94a3b8);
+            margin: 0 0 18px 0;
+        }
+
+        .viewer-lg {
+            margin-bottom: 14px;
+        }
+
+        .viewer-lg label {
+            display: block;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            color: #94a3b8;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .viewer-lg input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            box-sizing: border-box;
+        }
+
+        .viewer-login-err {
+            display: none;
+            color: #f87171;
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+        }
+
+        .btn-viewer-login {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            margin-top: 8px;
+        }
+
+        .btn-viewer-login:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        #viewerAppShell {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 140px);
+        }
+
+        #rmHistoryFrame {
+            flex: 1;
+            width: 100%;
+            min-height: 560px;
+            border: none;
+            border-radius: 12px;
+            background: #f1f5f9;
+        }
+
+        .nav-item.nav-locked {
+            opacity: 0.85;
+            cursor: pointer;
+        }
+
+        .nav-item.nav-locked .nav-lock-icon {
+            margin-left: 8px;
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sovl" id="sidebarOvl"></div>
+    <div class="app-container">
+
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <h2>SMART<br>WAREHOUSE <span class="v-badge">V2.8</span></h2>
+                <div class="mini-clock-wrapper">
+                    <div class="clock-container" id="clock-widget">
+                        <div class="clock-date-group">
+                            <div class="clock-day" id="widget-day">DAY</div>
+                            <div class="clock-date" id="widget-date">DATE</div>
+                        </div>
+                        <div class="clock-visual">
+                            <div class="clock-circle"></div>
+                            <div class="clock-progress" id="widget-sec-progress"></div>
+                            <div class="clock-time-group">
+                                <div class="clock-ampm" id="widget-ampm"></div>
+                                <div class="clock-time" id="widget-time">00:00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p>BULK STORAGE INVENTORY</p>
+            </div>
+            <div class="sidebar-nav">
+                <div class="nav-item nav-locked">
+                    <i class="fas fa-th-large"></i> LOCKED <i class="fas fa-lock nav-lock-icon"></i>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-item nav-locked">
+                    <i class="fas fa-truck-loading"></i> LOCKED <i class="fas fa-lock nav-lock-icon"></i>
+                </div>
+                <div class="nav-item nav-locked">
+                    <i class="fas fa-paper-plane"></i> LOCKED <i class="fas fa-lock nav-lock-icon"></i>
+                </div>
+                <div class="nav-item nav-locked">
+                    <i class="fas fa-boxes-stacked"></i> LOCKED <i class="fas fa-lock nav-lock-icon"></i>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-item nav-locked">
+                    <i class="fas fa-file-invoice"></i> LOCKED <i class="fas fa-lock nav-lock-icon"></i>
+                </div>
+                <div class="nav-item active">
+                    <i class="fas fa-history"></i> Riwayat (viewer)
+                </div>
+            </div>
+            <div class="sidebar-footer sidebar-footer-brand">
+                <div class="sidebar-brand-lines">
+                    <p class="sidebar-brand-main">
+                        PT Charoen Pokphand Indonesia – Cirebon<br>
+                        <span class="sidebar-brand-tag">[Integrated Warehouse Information System]</span>
+                    </p>
+                    <p class="sidebar-brand-values">
+                        <span>Accuracy</span><span class="sidebar-values-sep">|</span><span>Transparency</span><span class="sidebar-values-sep">|</span><span>Accountability</span>
+                    </p>
+                </div>
+            </div>
+        </nav>
+
+        <div class="main-content">
+            <header class="header header-premium-v3">
+                <div class="header-left">
+                    <div class="header-left-inner">
+                        <button class="mobile-toggle-v2" id="mobileToggle" type="button" aria-label="Menu"><i class="fas fa-bars"></i></button>
+                        <div class="header-title-v3">
+                            <h2 class="header-logo-title">SMART WAREHOUSE</h2>
+                            <div class="header-meta-row">
+                                <span class="header-tagline">Bulk Storage Inventory System</span>
+                                <span class="header-meta-divider" aria-hidden="true"></span>
+                                <div class="header-site-block">
+                                    <span class="header-site-title">CPI FEEDMILL CIREBON</span>
+                                    <span class="header-site-address">Jl. Cirebon-Brebes No.Km. 11, Astanajapura</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-right header-user-actions">
+                    <div class="header-user-chip">
+                        <span class="header-user-avatar" id="headerUserAvatar" aria-hidden="true">?</span>
+                        <span class="header-user-name" id="headerUserName">—</span>
+                    </div>
+                    <button type="button" class="header-logout-btn" id="btnLogout"><i class="fas fa-sign-out-alt"></i><span>Keluar</span></button>
+                </div>
+            </header>
+
+            <div class="content-area" id="contentArea" style="display:flex;flex-direction:column;">
+
+                <div id="viewerLoginShell" class="viewer-login-wrap">
+                    <h2><i class="fas fa-eye" style="color:#a78bfa;"></i> History Viewer</h2>
+                    <p>Masuk dengan username <strong>VIEWER</strong> dan password yang dibuat pemilik link.</p>
+                    <div class="viewer-login-err" id="viewerLoginErr"></div>
+                    <div class="viewer-lg">
+                        <label for="viewerUser">Username</label>
+                        <input type="text" id="viewerUser" value="VIEWER" autocomplete="username">
+                    </div>
+                    <div class="viewer-lg">
+                        <label for="viewerPass">Password</label>
+                        <input type="password" id="viewerPass" placeholder="Password dari link" autocomplete="current-password">
+                    </div>
+                    <button type="button" class="btn-viewer-login" id="btnViewerLogin">MASUK</button>
+                </div>
+
+                <div id="viewerAppShell" hidden>
+                    <iframe id="rmHistoryFrame" src="rm-history.html?v=1403&viewer=1" title="RM Historical Analytics"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/rm-history-viewer.js?v=1"></script>
+</body>
+
+</html>

@@ -12,8 +12,6 @@ const HistoryApp = {
 
     init: async function () {
         console.log("Slicther RM Engine Booting...");
-        this.updateClock();
-        setInterval(() => this.updateClock(), 1000);
 
         this.data = await DataService.fetchData();
         if (!this.data) return;
@@ -101,12 +99,6 @@ const HistoryApp = {
         if (idx !== -1) this.history[idx] = snapshot;
         else this.history.push(snapshot);
         this.saveHistory();
-    },
-
-    updateClock: function () {
-        const now = new Date();
-        const clock = document.getElementById('hud-clock');
-        if (clock) clock.innerText = now.toLocaleTimeString('en-GB');
     },
 
     updateBranding: function () {
