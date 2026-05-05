@@ -50,16 +50,27 @@
   border-top-color: #a78bfa !important;
 }
 
-.nav-item::before {
-  background: conic-gradient(from 0deg, transparent, #a78bfa, transparent, #818cf8, transparent);
+.sidebar .nav-item::before {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(167, 139, 250, 0.95) 58deg,
+    transparent 120deg,
+    rgba(129, 140, 248, 0.92) 196deg,
+    transparent 260deg,
+    rgba(196, 181, 253, 0.9) 318deg,
+    transparent 360deg
+  ) !important;
+  animation: bkkNavRotatingGlow 2.6s linear infinite !important;
+  transform-origin: center center !important;
 }
 
 .nav-item::after {
   background: rgba(30, 27, 75, 0.92);
 }
 
-.nav-item:hover::before,
-.nav-item.active::before {
+.sidebar .nav-item:hover::before,
+.sidebar .nav-item.active::before {
   opacity: 1;
 }
 
@@ -73,6 +84,11 @@
 
 .nav-item.active i {
   color: #e9d5ff;
+}
+
+@keyframes bkkNavRotatingGlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Footer sidebar — PT: teks hitam, kartu di atas strip gelap */
@@ -186,6 +202,48 @@
       rgba(5, 150, 105, 0.11) 9px
     ),
     linear-gradient(165deg, #d1fae5 0%, #ecfdf5 55%, #f0fdf4 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Efek premium (tanpa ubah palet utama): sweep + pulse halus, non-rotating */
+.header-premium-v3 .header-left-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    linear-gradient(110deg, rgba(255,255,255,0) 0%, rgba(186,230,253,0.36) 42%, rgba(255,255,255,0) 74%),
+    radial-gradient(circle at 16% 28%, rgba(56,189,248,0.16), transparent 45%);
+  background-size: 220% 100%, auto;
+  animation: bkkHeaderSweepBlue 6.8s ease-in-out infinite;
+}
+
+.header-premium-v3 .header-left-inner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.45), inset 0 0 28px rgba(14, 165, 233, 0.08);
+  animation: bkkHeaderPulseBlue 3.4s ease-in-out infinite;
+}
+
+.header-premium-v3 .header-left-inner > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes bkkHeaderSweepBlue {
+  0% { background-position: 200% 0, 0 0; }
+  100% { background-position: -40% 0, 0 0; }
+}
+
+@keyframes bkkHeaderPulseBlue {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.95; }
 }
 
 .mobile-toggle-v2 {
