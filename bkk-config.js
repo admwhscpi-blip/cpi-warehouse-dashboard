@@ -13,6 +13,9 @@ var USERS_DATABASE = [
   { username: 'yadi',  password: '1891', nama: 'Yadi',   role: 'bongkar', bk: [] },
   { username: 'antu',  password: '1891', nama: 'Antu',   role: 'bongkar', bk: [] },
   { username: 'kotim', password: '1891', nama: 'Kotim',  role: 'bongkar', bk: [] },
+  { username: 'harun', password: '1891', nama: 'Harun',  role: 'bongkar_only', bk: [] },
+  { username: 'jefry', password: '1891', nama: 'Jefry',  role: 'bongkar_only', bk: [] },
+  { username: 'basit', password: '1891', nama: 'Basit',  role: 'bongkar_only', bk: [] },
   // Input Data Stock Opname
   { username: 'hadi',  password: '1891', nama: 'Hadi',  role: 'opname',  bk: [] },
   { username: 'safii', password: '1891', nama: 'Safii', role: 'opname',  bk: [] },
@@ -26,5 +29,6 @@ var ROLE_PERMISSIONS = {
   admin:   { dashboard: true, bongkar: true, kirim: true, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true },
   kirim:   { dashboard: true, bongkar: false, kirim: true, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true },
   bongkar: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true },
-  opname:  { dashboard: true, bongkar: false, kirim: false, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true }
+  opname:  { dashboard: true, bongkar: false, kirim: false, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true },
+  bongkar_only: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: false, history: false, kartustock: false, outstanding: false, durbreakdown: false }
 };

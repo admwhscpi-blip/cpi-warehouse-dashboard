@@ -8,8 +8,12 @@ var BW_BREAKDOWN_CATS = ['ISTIRAHAT', 'PINDAH HOPPER', 'JALUR OVERLOAD', 'TUNGGU
 
 /** Material non-SBM: modal breakdown durasi urutan hanya bila gap > ini (menit). SBM tetap memakai 5 menit di bwSubmitStep2. */
 var BW_NON_SBM_BREAKDOWN_MIN = 60;
+var BW_SBM_INTAKE_PROCESS_MIN = 25;
+var BW_SBM_INTAKE_GAP_TRUCK_MIN = 5;
+var BW_ABQC_TO_PBSAMPAI_MIN = 180;
 
-var bwWiz = { step: 1, bdPending: null, bdTargetMin: 0, saving: false, setupLocked: false, lockSnap: null };
+var bwWiz = { step: 1, bdPending: null, bdTargetMin: 0, saving: false, setupLocked: false, lockSnap: null, nopolBatch: [] };
+bwWiz.liveBreakdowns = {};
 
 /** Snapshot setup untuk Step 2: filter antrian = type bongkaran (Intake 71 = manual+tilting gabung) + material persis (kode/value select). */
 function bwEffectiveSetup() {
@@ -190,13 +194,9 @@ function bwRestoreWizardLocal() {
     if (d.supplier != null && $('bw_supplier')) $('bw_supplier').value = d.supplier;
     if (d.step >= 1 && d.step <= 3) bwWiz.step = d.step;
     else bwWiz.step = 1;
-    if (d.setupLocked && d.lockSnap && typeof d.lockSnap === 'object') {
-      bwWiz.setupLocked = true;
-      bwWiz.lockSnap = d.lockSnap;
-    } else {
-      bwWiz.setupLocked = false;
-      bwWiz.lockSnap = null;
-    }
+    // Selalu mulai setup terbuka saat wizard dibuka ulang.
+    bwWiz.setupLocked = false;
+    bwWiz.lockSnap = null;
     if (typeof applyBongkarMasterDefaults === 'function') applyBongkarMasterDefaults($('bw_bk_id').value);
     bwUpdateSetupLockUI();
     return true;
@@ -220,6 +220,132 @@ function bwWizardSaveEnd() {
 
 function bwEsc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+}
+
+function bwDayPlus(ymd, plus) {
+  var d = new Date(ymd + 'T00:00:00+07:00');
+  if (isNaN(d.getTime())) return ymd;
+  d.setDate(d.getDate() + (plus || 0));
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+
+function bwTimeMsWithOffset(ymd, hm, dayOffset) {
+  if (!ymd || !hm) return NaN;
+  return bwConcatMs(bwDayPlus(ymd, dayOffset || 0), hm);
+}
+
+function bwWarnPopup(title, text) {
+  if (typeof Swal !== 'undefined' && Swal.fire) {
+    Swal.fire({ icon: 'warning', title: title, text: text, confirmButtonText: 'OK' });
+    return;
+  }
+  alert(title + '\n' + text);
+}
+
+function bwSuggestRevisePbTiming(tr, text, targetMin, detail) {
+  var nopol = (tr && tr.cells && tr.cells[0] && tr.cells[0].textContent) ? String(tr.cells[0].textContent).trim() : '';
+  var rowId = tr ? String(tr.getAttribute('data-id') || '').trim() : '';
+  var openParam = function() {
+    var t = Number(targetMin) || 0;
+    if (t <= 0) t = 1;
+    bwRequireRealtimeBreakdown(
+      's3fix|' + (rowId || nopol || 'x') + '|abqc_pbsampai',
+      t,
+      'Parameter Step 2: AB QC vs PB Sampai (' + t + ' m)',
+      detail || ('Nopol: ' + (nopol || '—')),
+      function() {}
+    );
+  };
+  var retryInput = function() {
+    if (!tr) return;
+    var iq = tr.querySelector('.bw-ab-qc');
+    if (iq) {
+      iq.value = '';
+      bwStep3SetOffset(iq, 0);
+      iq.focus();
+    }
+  };
+  if (typeof Swal !== 'undefined' && Swal.fire) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Urutan tidak valid',
+      text: text + ' Revisi timeline PB di Step 2 dulu sebelum isi netto.',
+      showCancelButton: true,
+      confirmButtonText: 'Isi parameter Step 2',
+      cancelButtonText: 'Nanti dulu'
+    }).then(function(res) {
+      if (res.isConfirmed) openParam();
+      else retryInput();
+    });
+    return;
+  }
+  alert('Urutan tidak valid.\n' + text + '\nRevisi timeline PB di Step 2 dulu sebelum isi netto.');
+  retryInput();
+}
+
+function bwRequireRealtimeBreakdown(key, targetMin, title, detail, done) {
+  if (!bwWiz.liveBreakdowns) bwWiz.liveBreakdowns = {};
+  var saved = bwWiz.liveBreakdowns[key];
+  if (saved && saved.targetMin === targetMin && Array.isArray(saved.rows) && saved.rows.length) {
+    if (typeof done === 'function') done(saved.rows);
+    return;
+  }
+  bwRunBreakdownQueue([{ key: key, targetMin: targetMin, title: title, detail: detail || '' }], 0, {}, function(acc) {
+    var rows = acc[key] || [];
+    bwWiz.liveBreakdowns[key] = { targetMin: targetMin, rows: rows };
+    if (typeof done === 'function') done(rows);
+  });
+}
+
+function bwRequireRealtimeBreakdownQueue(items, done) {
+  if (!Array.isArray(items) || !items.length) {
+    if (typeof done === 'function') done();
+    return;
+  }
+  if (!bwWiz.liveBreakdowns) bwWiz.liveBreakdowns = {};
+  var prefilled = {};
+  var queue = items.filter(function(it) {
+    var sv = bwWiz.liveBreakdowns[it.key];
+    if (sv && sv.targetMin === it.targetMin && Array.isArray(sv.rows) && sv.rows.length) {
+      prefilled[it.key] = sv.rows;
+      return false;
+    }
+    return true;
+  });
+  if (!queue.length) {
+    if (typeof done === 'function') done();
+    return;
+  }
+  bwRunBreakdownQueue(queue, 0, prefilled, function(acc) {
+    Object.keys(acc || {}).forEach(function(k) {
+      var rows = acc[k];
+      var q = queue.find(function(x) { return x.key === k; });
+      var tg = q ? q.targetMin : 0;
+      bwWiz.liveBreakdowns[k] = { targetMin: tg, rows: rows };
+    });
+    if (typeof done === 'function') done();
+  });
+}
+
+function bwAskNextDay(fieldLabel, prevLabel, prevHm, currHm, onYes, onNo) {
+  var msg = fieldLabel + ' (' + currHm + ') lebih kecil dari ' + prevLabel + ' (' + prevHm + ').\n' +
+    'Apakah ' + fieldLabel + ' dianggap tanggal berikutnya (+1)?';
+  if (typeof Swal !== 'undefined' && Swal.fire) {
+    Swal.fire({
+      icon: 'question',
+      title: 'Konfirmasi lintas tanggal',
+      text: msg,
+      showCancelButton: true,
+      confirmButtonText: 'Ya, tanggal +1',
+      cancelButtonText: 'Tidak, saya ubah lagi'
+    }).then(function(res) {
+      if (res.isConfirmed) onYes();
+      else onNo();
+    });
+    return;
+  }
+  if (confirm(msg)) onYes();
+  else onNo();
 }
 
 /** Riwayat dari API harus selalu array (JSONP kadang mengirim bentuk lain). */
@@ -463,6 +589,12 @@ function bwIntakeDirectColumnLabel() {
   return g === 'direct' ? 'Direct' : 'Intake 71';
 }
 
+function bwInputByDisplayName(rawInputBy) {
+  var txt = String(rawInputBy == null ? '' : rawInputBy).trim();
+  if (!txt) return '—';
+  return txt.replace(/\s*\(Shift\s*\d+\)\s*$/i, '').trim() || txt;
+}
+
 /** Daftar truck antrian (PB ≥ 07:00) untuk filter setup saat ini. */
 function bwStep2QueueList0700() {
   var es = bwEffectiveSetup();
@@ -488,9 +620,78 @@ function bwRefreshNopolShadow() {
     return;
   }
   var list0700 = bwStep2QueueList0700();
-  var nextN = list0700.length + 1;
+  var extra = (bwWiz.nopolBatch && bwWiz.nopolBatch.length) ? bwWiz.nopolBatch.length : 0;
+  var nextN = list0700.length + 1 + extra;
   el.hidden = false;
   el.textContent = 'Truck ke-' + nextN + ' — pengisian form ini (lanjutan antrian). Isi nopol & durasi lalu simpan.';
+}
+
+function bwNormNopol(x) {
+  return String(x || '').trim().toUpperCase().replace(/\s+/g, ' ');
+}
+
+function bwRenderNopolBatch() {
+  var host = $('bw_nopol_batch_list');
+  if (!host) return;
+  host.innerHTML = '';
+  var list = Array.isArray(bwWiz.nopolBatch) ? bwWiz.nopolBatch : [];
+  if (!list.length) {
+    host.innerHTML = '<span class="fhint" style="font-size:0.78rem;color:#64748b;">Belum ada nopol tambahan.</span>';
+    bwRefreshNopolShadow();
+    return;
+  }
+  list.forEach(function(np, idx) {
+    var chip = document.createElement('span');
+    chip.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid #cbd5e1;background:#f8fafc;font-size:0.78rem;';
+    chip.innerHTML = '<strong style="font-weight:700;">' + bwEsc(np) + '</strong>';
+    var rm = document.createElement('button');
+    rm.type = 'button';
+    rm.textContent = 'x';
+    rm.style.cssText = 'border:none;background:transparent;cursor:pointer;color:#64748b;font-weight:700;';
+    rm.addEventListener('click', function() {
+      bwWiz.nopolBatch.splice(idx, 1);
+      bwRenderNopolBatch();
+    });
+    chip.appendChild(rm);
+    host.appendChild(chip);
+  });
+  bwRefreshNopolShadow();
+}
+
+function bwAddCurrentNopolToBatch() {
+  var inp = $('bw_nopol');
+  if (!inp) return false;
+  var nopol = bwNormNopol(inp.value);
+  if (!nopol) {
+    toast('Isi nopol dulu, lalu klik Tambah Nopol.', 'w');
+    return false;
+  }
+  if (!Array.isArray(bwWiz.nopolBatch)) bwWiz.nopolBatch = [];
+  if (bwWiz.nopolBatch.indexOf(nopol) >= 0) {
+    toast('Nopol sudah ada di daftar.', 'w');
+    return false;
+  }
+  bwWiz.nopolBatch.push(nopol);
+  inp.value = '';
+  bwRenderNopolBatch();
+  inp.focus();
+  return true;
+}
+
+function bwGetStep2NopolListForSubmit() {
+  if (!Array.isArray(bwWiz.nopolBatch)) bwWiz.nopolBatch = [];
+  var inp = $('bw_nopol');
+  var liveNp = inp ? bwNormNopol(inp.value) : '';
+  if (liveNp && bwWiz.nopolBatch.indexOf(liveNp) < 0) bwWiz.nopolBatch.push(liveNp);
+  var out = [];
+  var seen = {};
+  bwWiz.nopolBatch.forEach(function(x) {
+    var np = bwNormNopol(x);
+    if (!np || seen[np]) return;
+    seen[np] = true;
+    out.push(np);
+  });
+  return out;
 }
 
 function bwRefreshStep2MiniTable() {
@@ -548,7 +749,6 @@ function bwRefreshStep2MiniTable() {
     var tr = document.createElement('tr');
     var net = x.nettoKg;
     var pending = !net || net <= 0;
-    var note = pending ? 'Lanjut Step 3: isi netto untuk nopol ini.' : '—';
     function td(txt) {
       var c = document.createElement('td');
       c.textContent = txt;
@@ -558,10 +758,7 @@ function bwRefreshStep2MiniTable() {
     tr.appendChild(td(x.pbStartHM || '—'));
     tr.appendChild(td(x.nopol || '—'));
     tr.appendChild(td(pending ? '—' : String(net)));
-    var tn = document.createElement('td');
-    tn.className = 'bw-q-note';
-    tn.textContent = note;
-    tr.appendChild(tn);
+    tr.appendChild(td(x.userName || '—'));
     tb.appendChild(tr);
   });
   bwRefreshNopolShadow();
@@ -570,14 +767,22 @@ function bwRefreshStep2MiniTable() {
 function bwClearStep2Form() {
   var np = $('bw_nopol');
   if (np) np.value = '';
+  bwWiz.nopolBatch = [];
+  bwWiz.liveBreakdowns = {};
+  bwRenderNopolBatch();
   var s1 = $('bw_sbm_pb_start');
   var s2 = $('bw_sbm_pb_finish');
   if (s1) s1.value = '';
   if (s2) s2.value = '';
   ['bw_pb_sampai', 'bw_pb_start', 'bw_pb_hold', 'bw_pb_restart', 'bw_pb_finish'].forEach(function(id) {
     var x = $(id);
-    if (x) x.value = '';
+    if (x) {
+      x.value = '';
+      bwStep2SetFieldDayOffset(x, 0);
+    }
   });
+  bwStep2SetFieldDayOffset($('bw_sbm_pb_start'), 0);
+  bwStep2SetFieldDayOffset($('bw_sbm_pb_finish'), 0);
   bwSyncGhostHint();
   bwUpdateTruckBadge();
   bwRefreshStep2MiniTable();
@@ -678,7 +883,8 @@ function bwListChainTrucksCore(optionalRows, chainKind) {
       nopol: String(r.NO_POLISI || '').trim().toUpperCase(),
       dayYmd: ymd,
       nettoKg: net,
-      rowId: r.ID
+      rowId: r.ID,
+      userName: bwInputByDisplayName(r.INPUT_BY)
     });
   });
   out.sort(function(a, b) { return a.msStart - b.msStart; });
@@ -877,7 +1083,8 @@ function bwBuildSegmentQueueNonSBM(pbT) {
     var el = $(steps[i].hmId);
     var hm = el ? el.value : '';
     if (!hm) continue;
-    var ms = bwConcatMs(steps[i].y, hm);
+    var off = bwStep2GetFieldDayOffset(el);
+    var ms = bwTimeMsWithOffset(steps[i].y, hm, off);
     if (isNaN(ms)) continue;
     points.push({ ms: ms, lab: steps[i].lab, idx: i });
   }
@@ -1027,6 +1234,71 @@ function bwBdConfirmCancel() {
   bwWizardSaveEnd();
 }
 
+function bwStep2SetFieldDayOffset(inputEl, dayOffset) {
+  if (!inputEl) return;
+  inputEl.setAttribute('data-day-offset', String(dayOffset || 0));
+  var ghostId = inputEl.id + '_dayhint';
+  var g = document.getElementById(ghostId);
+  if (!g) {
+    g = document.createElement('div');
+    g.id = ghostId;
+    g.className = 'fhint';
+    g.style.cssText = 'font-size:0.75rem;color:#0369a1;margin-top:4px;';
+    inputEl.insertAdjacentElement('afterend', g);
+  }
+  g.textContent = (dayOffset || 0) > 0 ? ('Tanggal +' + dayOffset) : '';
+}
+
+function bwStep2GetFieldDayOffset(inputEl) {
+  if (!inputEl) return 0;
+  var n = parseInt(inputEl.getAttribute('data-day-offset') || '0', 10);
+  return isNaN(n) ? 0 : n;
+}
+
+function bwStep2ValidatePairOnMove(prevId, currId, prevLabel, currLabel, thresholdMin, thresholdLabel, breakdownKey) {
+  var prevEl = $(prevId);
+  var curEl = $(currId);
+  if (!prevEl || !curEl) return;
+  var tgl = ($('bw_pb_tgl') && $('bw_pb_tgl').value) || ($('bw_sbm_pb_tgl') && $('bw_sbm_pb_tgl').value) || $('bw_tanggal').value;
+  var pv = (prevEl.value || '').trim();
+  var cv = (curEl.value || '').trim();
+  if (!tgl || !pv || !cv) return;
+  var prevOff = bwStep2GetFieldDayOffset(prevEl);
+  var curOff = bwStep2GetFieldDayOffset(curEl);
+  var pm = bwTimeMsWithOffset(tgl, pv, prevOff);
+  var cm = bwTimeMsWithOffset(tgl, cv, curOff);
+  if (isNaN(pm) || isNaN(cm)) return;
+  if (cm < pm) {
+    bwAskNextDay(currLabel, prevLabel, pv, cv, function() {
+      bwStep2SetFieldDayOffset(curEl, prevOff + 1);
+      cm = bwTimeMsWithOffset(tgl, cv, prevOff + 1);
+      var gap2 = bwDiffMin(pm, cm);
+      if (!isNaN(gap2) && thresholdMin > 0 && gap2 > thresholdMin) {
+        bwRequireRealtimeBreakdown(
+          breakdownKey || ('live|' + prevId + '|' + currId),
+          gap2,
+          'Breakdown: ' + thresholdLabel + ' (' + gap2 + ' m)',
+          prevLabel + ' ' + pv + ' → ' + currLabel + ' ' + cv + ' (Tanggal +' + (prevOff + 1) + ')'
+        );
+      }
+    }, function() {
+      curEl.value = '';
+      bwStep2SetFieldDayOffset(curEl, 0);
+      curEl.focus();
+    });
+    return;
+  }
+  var gap = bwDiffMin(pm, cm);
+  if (!isNaN(gap) && thresholdMin > 0 && gap > thresholdMin) {
+    bwRequireRealtimeBreakdown(
+      breakdownKey || ('live|' + prevId + '|' + currId),
+      gap,
+      'Breakdown: ' + thresholdLabel + ' (' + gap + ' m)',
+      prevLabel + ' ' + pv + ' → ' + currLabel + ' ' + cv
+    );
+  }
+}
+
 function bwSubmitStep2() {
   var bkId = $('bw_bk_id').value;
   var tgl = $('bw_tanggal').value;
@@ -1034,9 +1306,10 @@ function bwSubmitStep2() {
   var mat = $('bw_material').value;
   var sup = $('bw_supplier').value;
   var typ = $('bw_type_bongkaran').value;
-  var nopol = ($('bw_nopol') && $('bw_nopol').value || '').trim().toUpperCase();
-  if (!bkId || !tgl || !nopol) {
-    toast('Lengkapi BK, tanggal operasi, dan nopol', 'w');
+  var nopolList = bwGetStep2NopolListForSubmit();
+  var nopol = nopolList[0] || '';
+  if (!bkId || !tgl || !nopolList.length) {
+    toast('Lengkapi BK, tanggal operasi, dan minimal 1 nopol', 'w');
     return;
   }
   if (!bwWizardSaveStart()) return;
@@ -1045,26 +1318,28 @@ function bwSubmitStep2() {
   var dj = { v: 1, is_sbm: isSbm, type_bongkaran: typ, pb_tanggal: tgl };
 
   bkkEnsureOpnameHistory(function() {
-    var v = bkkValidateTanggalBongkarKirim(bkId, tgl);
-    if (!v.ok) {
-      bkkShowReject(v.msg);
-      bwWizardSaveEnd();
-      return;
-    }
-
     var queue = [];
 
     if (isSbm) {
       var ps = $('bw_sbm_pb_start').value;
       var pf = $('bw_sbm_pb_finish').value;
       var pbt = ($('bw_sbm_pb_tgl') && $('bw_sbm_pb_tgl').value) || tgl;
+      var sbmStartOff = bwStep2GetFieldDayOffset($('bw_sbm_pb_start'));
+      var sbmFinishOff = bwStep2GetFieldDayOffset($('bw_sbm_pb_finish'));
       dj.pb_tanggal = pbt;
       dj.pb_start = ps;
       dj.pb_finish = pf;
-      var msS = bwConcatMs(pbt, ps);
-      var msF = bwConcatMs(pbt, pf);
+      dj.pb_day_offsets = { pb_start: sbmStartOff, pb_finish: sbmFinishOff };
+      var msS = bwTimeMsWithOffset(pbt, ps, sbmStartOff);
+      var msF = bwTimeMsWithOffset(pbt, pf, sbmFinishOff);
       if (isNaN(msS) || isNaN(msF)) {
         toast('Isi PB Start & PB Finish', 'w');
+        bwWizardSaveEnd();
+        return;
+      }
+      var vSo = bkkValidateTanggalBongkarKirim(bkId, pbt, { eventMs: msS });
+      if (!vSo.ok) {
+        bkkShowReject(vSo.msg);
         bwWizardSaveEnd();
         return;
       }
@@ -1087,16 +1362,18 @@ function bwSubmitStep2() {
       }
 
       var dmin = bwDiffMin(msS, msF);
-      if (dmin > 5) queue.push({ key: 'sbm_pb_window', targetMin: dmin, title: 'Downtime PB — total ' + dmin + ' menit (wajib dirinci penuh)' });
+      if (bwTypeIsIntake71() && dmin > BW_SBM_INTAKE_PROCESS_MIN) {
+        queue.push({ key: 'sbm_pb_window', targetMin: dmin, title: 'Downtime PB (SBM Intake) — total ' + dmin + ' menit (wajib dirinci penuh)' });
+      }
 
       if (bwTypeIsIntake71()) {
         var g = bwGapPrevIntakePB(msS);
-        if (!isNaN(g) && g > 5) {
+        if (!isNaN(g) && g > BW_SBM_INTAKE_GAP_TRUCK_MIN) {
           queue.push({
             key: 'sbm_gap_truck',
             targetMin: g,
             title: 'Jeda vs truck Intake 71 sebelumnya — total ' + g + ' menit (wajib dirinci penuh)',
-            detail: bwFormatGapTruckSubtitle(nopol, ps)
+            detail: bwFormatGapTruckSubtitle(nopolList.join(', '), ps)
           });
         }
       }
@@ -1124,6 +1401,32 @@ function bwSubmitStep2() {
       dj.pb_hold = $('bw_pb_hold').value;
       dj.pb_restart = $('bw_pb_restart').value;
       dj.pb_finish = $('bw_pb_finish').value;
+      var offSampai = bwStep2GetFieldDayOffset($('bw_pb_sampai'));
+      var offStart = bwStep2GetFieldDayOffset($('bw_pb_start'));
+      var offHold = bwStep2GetFieldDayOffset($('bw_pb_hold'));
+      var offRestart = bwStep2GetFieldDayOffset($('bw_pb_restart'));
+      var offFinish = bwStep2GetFieldDayOffset($('bw_pb_finish'));
+      dj.pb_day_offsets = {
+        pb_sampai: offSampai,
+        pb_start: offStart,
+        pb_hold: offHold,
+        pb_restart: offRestart,
+        pb_finish: offFinish
+      };
+
+      var pbMsS = bwTimeMsWithOffset(pbT, dj.pb_start, offStart);
+      var pbMsF = bwTimeMsWithOffset(pbT, dj.pb_finish, offFinish);
+      if (isNaN(pbMsS) || isNaN(pbMsF)) {
+        toast('PB Start / PB Finish tidak valid', 'w');
+        bwWizardSaveEnd();
+        return;
+      }
+      var vSoN = bkkValidateTanggalBongkarKirim(bkId, pbT, { eventMs: pbMsS });
+      if (!vSoN.ok) {
+        bkkShowReject(vSoN.msg);
+        bwWizardSaveEnd();
+        return;
+      }
 
       var seg = bwBuildSegmentQueueNonSBM(pbT);
       if (seg.error) {
@@ -1133,9 +1436,7 @@ function bwSubmitStep2() {
       }
       seg.queue.forEach(function(s) { queue.push(s); });
 
-      var pbMsS = bwConcatMs(pbT, dj.pb_start);
-      var pbMsF = bwConcatMs(pbT, dj.pb_finish);
-      if (!isNaN(pbMsS) && !isNaN(pbMsF) && bwTypeIsIntake71()) {
+      if (bwTypeIsIntake71()) {
         var strictN = bwValidatePbStrictAfterPrevious(pbMsS, pbMsF);
         if (strictN) {
           toast(strictN, 'w');
@@ -1154,54 +1455,77 @@ function bwSubmitStep2() {
             key: 'gap_truck_ns',
             targetMin: g2,
             title: 'Jeda vs truck Intake 71 sebelumnya — total ' + g2 + ' menit (wajib dirinci penuh)',
-            detail: bwFormatGapTruckSubtitle(nopol, dj.pb_start)
+            detail: bwFormatGapTruckSubtitle(nopolList.join(', '), dj.pb_start)
           });
         }
       }
     }
 
-    bwRunBreakdownQueue(queue, 0, {}, function(breakdowns) {
+    var prefilled = {};
+    if (!bwWiz.liveBreakdowns) bwWiz.liveBreakdowns = {};
+    queue = queue.filter(function(it) {
+      var sv = bwWiz.liveBreakdowns[it.key];
+      if (sv && sv.targetMin === it.targetMin && Array.isArray(sv.rows) && sv.rows.length) {
+        prefilled[it.key] = sv.rows;
+        return false;
+      }
+      return true;
+    });
+    bwRunBreakdownQueue(queue, 0, prefilled, function(breakdowns) {
       dj.breakdowns = breakdowns;
       var inpBy = (appState.user ? appState.user.nama + ' (Shift ' + shift + ')' : '');
-      var payload = {
-        TANGGAL: tgl,
-        BK_ID: bkId,
-        MATERIAL: mat,
-        SUPPLIER: sup,
-        NETTO_KG: 0,
-        NO_POLISI: nopol,
-        SHIFT: shift,
-        TYPE_BONGKARAN: typ,
-        STATUS_ROW: 'pending_final',
-        INPUT_BY: inpBy,
-        DURASI_JSON: JSON.stringify(dj)
-      };
       if (typeof showLoader === 'function') showLoader(true);
       /** POST body — hindari potong URL JSONP; breakdown wizard hilang jika DURASI_JSON terlalu panjang di query string. */
       var sendAdd = typeof postJSONAPI === 'function' ? postJSONAPI : postAPI;
-      sendAdd('addBongkar', payload, function(resp) {
-        bwWizardSaveEnd();
-        if (resp.status === 'error') {
-          toast('Gagal: ' + resp.message, 'e');
+      var okCount = 0;
+      var fail = [];
+      var idx = 0;
+      function sendNext() {
+        if (idx >= nopolList.length) {
+          bwWizardSaveEnd();
+          if (okCount > 0) {
+            toast('Durasi tersimpan untuk ' + okCount + ' nopol. Lanjut isi truck berikutnya, atau buka Step 3.', 's');
+            if (dj.pb_finish) bwSetSessionPbFinishHint(dj.pb_finish, nopolList[nopolList.length - 1]);
+          }
+          if (fail.length) {
+            toast('Sebagian gagal: ' + fail.join(' | '), 'w');
+          }
+          bwUpdateTruckBadge();
+          bwClearStep2Form();
+          fetchAPI('getBongkarHistory', { limit: 1500 }, function(r2) {
+            appState.history.bongkar = bwNormalizeBongkarHistory(r2.status !== 'error' ? r2.data : []);
+            bwRefreshStep3();
+            bwSyncGhostHint();
+            bwRefreshStep2MiniTable();
+            bwPersistWizardLocal();
+          });
+          if (typeof loadDashboard === 'function') {
+            setTimeout(function() { loadDashboard(function() {}); }, 80);
+          }
+          bwGoStep(2);
           return;
         }
-        toast('Durasi truck tersimpan. Lanjut isi truck berikutnya, atau buka Step 3 untuk netto & arrival.', 's');
-        if (dj.pb_finish) bwSetSessionPbFinishHint(dj.pb_finish, nopol);
-        bwUpdateTruckBadge();
-        bwClearStep2Form();
-        // Hanya refresh riwayat bongkar (untuk Step 3 & validasi truck berikutnya). Dashboard full dipanggil di background supaya tidak terasa lama.
-        fetchAPI('getBongkarHistory', { limit: 1500 }, function(r2) {
-          appState.history.bongkar = bwNormalizeBongkarHistory(r2.status !== 'error' ? r2.data : []);
-          bwRefreshStep3();
-          bwSyncGhostHint();
-          bwRefreshStep2MiniTable();
-          bwPersistWizardLocal();
+        var np = nopolList[idx++];
+        var payload = {
+          TANGGAL: tgl,
+          BK_ID: bkId,
+          MATERIAL: mat,
+          SUPPLIER: sup,
+          NETTO_KG: 0,
+          NO_POLISI: np,
+          SHIFT: shift,
+          TYPE_BONGKARAN: typ,
+          STATUS_ROW: 'pending_final',
+          INPUT_BY: inpBy,
+          DURASI_JSON: JSON.stringify(dj)
+        };
+        sendAdd('addBongkar', payload, function(resp) {
+          if (resp.status === 'error') fail.push(np + ': ' + resp.message);
+          else okCount++;
+          sendNext();
         });
-        if (typeof loadDashboard === 'function') {
-          setTimeout(function() { loadDashboard(function() {}); }, 80);
-        }
-        bwGoStep(2);
-      });
+      }
+      sendNext();
     });
   });
 }
@@ -1276,8 +1600,151 @@ function bwStep3AbDefaults(r) {
   return { abTgl: abTgl, abArr: abArr, abQc: abQc };
 }
 
+function bwStep3PairMs(abTgl, hm, off) {
+  if (!abTgl || !hm) return NaN;
+  return bwTimeMsWithOffset(abTgl, hm, off || 0);
+}
+
+function bwStep3SetOffset(el, off) {
+  if (!el) return;
+  el.setAttribute('data-day-offset', String(off || 0));
+  var hintId = (el.id || ('abw_' + Math.random())) + '_dayhint';
+  var h = el.nextElementSibling;
+  if (!h || !h.classList || !h.classList.contains('bw-day-hint')) {
+    h = document.createElement('div');
+    h.className = 'bw-day-hint';
+    h.style.cssText = 'font-size:0.72rem;color:#0369a1;margin-top:2px;';
+    el.insertAdjacentElement('afterend', h);
+  }
+  h.textContent = (off || 0) > 0 ? ('Tanggal +' + off) : '';
+}
+
+function bwStep3GetOffset(el) {
+  if (!el) return 0;
+  var n = parseInt(el.getAttribute('data-day-offset') || '0', 10);
+  return isNaN(n) ? 0 : n;
+}
+
+function bwStep3ValidateRowRealtime(tr, trigger) {
+  if (!tr) return;
+  var isSbm = tr.getAttribute('data-bw-sbm') === '1';
+  if (isSbm) return;
+  var it = tr.querySelector('.bw-ab-tgl');
+  var ia = tr.querySelector('.bw-ab-arr');
+  var iq = tr.querySelector('.bw-ab-qc');
+  if (!it || !ia || !iq) return;
+  var abTgl = (it.value || '').trim();
+  var abArr = (ia.value || '').trim();
+  var abQc = (iq.value || '').trim();
+  var pbTgl = tr.getAttribute('data-pb-tgl') || '';
+  var pbSampai = tr.getAttribute('data-pb-sampai') || '';
+  var baseAbTgl = abTgl || pbTgl || (($('bw_tanggal') && $('bw_tanggal').value) || '');
+  var rowId = String(tr.getAttribute('data-id') || 'x');
+  var nopolText = (tr.cells && tr.cells[0] && tr.cells[0].textContent) ? String(tr.cells[0].textContent).trim() : '—';
+  var pendingBd = [];
+  if (abTgl && pbTgl && abTgl > pbTgl) {
+    bwWarnPopup('Urutan tidak valid', 'AB Tanggal tidak boleh lebih dari PB Tanggal.');
+    it.focus();
+    return;
+  }
+  if (abArr && abQc) {
+    var arrOff = bwStep3GetOffset(ia);
+    var qcOff = bwStep3GetOffset(iq);
+    var arrMs = bwStep3PairMs(baseAbTgl, abArr, arrOff);
+    var qcMs = bwStep3PairMs(baseAbTgl, abQc, qcOff);
+    if (!isNaN(arrMs) && !isNaN(qcMs) && qcMs < arrMs) {
+      bwAskNextDay('AB QC', 'AB Arrival', abArr, abQc, function() {
+        bwStep3SetOffset(iq, arrOff + 1);
+        var qcMs2 = bwStep3PairMs(baseAbTgl, abQc, arrOff + 1);
+        var gap2 = bwDiffMin(arrMs, qcMs2);
+        var chainItems = [];
+        if (!isNaN(gap2) && gap2 > 60) {
+          chainItems.push({
+            key: 's3|' + rowId + '|ab_arr_qc',
+            targetMin: gap2,
+            title: 'Breakdown: AB Arrival → AB QC (' + gap2 + ' m)',
+            detail: 'Nopol: ' + nopolText + ' · ' + abArr + ' → ' + abQc + ' (Tanggal +1)'
+          });
+        }
+        if (pbSampai && pbTgl) {
+          var pbMs2 = bwTimeMsWithOffset(pbTgl, pbSampai, 0);
+          if (!isNaN(pbMs2) && !isNaN(qcMs2)) {
+            if (qcMs2 > pbMs2) {
+              var gapFix2 = bwDiffMin(pbMs2, qcMs2);
+              bwSuggestRevisePbTiming(
+                tr,
+                'AB QC tidak boleh setelah PB Sampai Gudang.',
+                gapFix2,
+                'Nopol: ' + nopolText + ' · PB Sampai ' + pbSampai + ' vs AB QC ' + abQc
+              );
+              iq.focus();
+              return;
+            }
+            var gapPb2 = bwDiffMin(qcMs2, pbMs2);
+            if (gapPb2 > BW_ABQC_TO_PBSAMPAI_MIN) {
+              chainItems.push({
+                key: 's3|' + rowId + '|ab_qc_pbsampai',
+                targetMin: gapPb2,
+                title: 'Breakdown: AB QC → PB Sampai Gudang (' + gapPb2 + ' m)',
+                detail: 'Nopol: ' + nopolText + ' · AB QC ' + abQc + ' → PB Sampai ' + pbSampai
+              });
+            }
+          }
+        }
+        bwRequireRealtimeBreakdownQueue(chainItems, function() {});
+      }, function() {
+        iq.value = '';
+        bwStep3SetOffset(iq, 0);
+        iq.focus();
+      });
+      return;
+    }
+    var gap = bwDiffMin(arrMs, qcMs);
+    if (!isNaN(gap) && gap > 60 && (trigger === 'to_qc' || trigger === 'to_netto')) {
+      pendingBd.push({
+        key: 's3|' + rowId + '|ab_arr_qc',
+        targetMin: gap,
+        title: 'Breakdown: AB Arrival → AB QC (' + gap + ' m)',
+        detail: 'Nopol: ' + nopolText + ' · ' + abArr + ' → ' + abQc
+      });
+    }
+  }
+  if (abQc && pbSampai && pbTgl) {
+    var qcOff2 = bwStep3GetOffset(iq);
+    var qcMs3 = bwStep3PairMs(baseAbTgl, abQc, qcOff2);
+    var pbMs = bwTimeMsWithOffset(pbTgl, pbSampai, 0);
+    if (!isNaN(qcMs3) && !isNaN(pbMs)) {
+      if (qcMs3 > pbMs) {
+        var gapFix = bwDiffMin(pbMs, qcMs3);
+        var nopolQ = (tr.cells && tr.cells[0] && tr.cells[0].textContent) ? String(tr.cells[0].textContent).trim() : '—';
+        bwSuggestRevisePbTiming(
+          tr,
+          'AB QC tidak boleh setelah PB Sampai Gudang.',
+          gapFix,
+          'Nopol: ' + nopolQ + ' · PB Sampai ' + pbSampai + ' vs AB QC ' + abQc
+        );
+        iq.focus();
+        return;
+      }
+      var gap3 = bwDiffMin(qcMs3, pbMs);
+      if (gap3 > BW_ABQC_TO_PBSAMPAI_MIN && (trigger === 'to_qc' || trigger === 'to_netto')) {
+        pendingBd.push({
+          key: 's3|' + rowId + '|ab_qc_pbsampai',
+          targetMin: gap3,
+          title: 'Breakdown: AB QC → PB Sampai Gudang (' + gap3 + ' m)',
+          detail: 'Nopol: ' + nopolText + ' · AB QC ' + abQc + ' → PB Sampai ' + pbSampai
+        });
+      }
+    }
+  }
+  if (pendingBd.length) {
+    bwRequireRealtimeBreakdownQueue(pendingBd, function() {});
+  }
+}
+
 function bwRefreshStep3() {
   var tb = $('bw_step3_tb');
+  var tbd = $('bw_step3_durasi_tb');
   var sum = $('bw_step3_summary');
   if (!tb || !appState.user) return;
   var tgl = $('bw_tanggal').value;
@@ -1289,6 +1756,7 @@ function bwRefreshStep3() {
       ' · ' + bwEsc(appState.user.nama || '');
   }
   tb.innerHTML = '';
+  if (tbd) tbd.innerHTML = '';
   var rows = bwNormalizeBongkarHistory(appState.history && appState.history.bongkar);
   var shown = 0;
   rows.forEach(function(r) {
@@ -1299,9 +1767,25 @@ function bwRefreshStep3() {
 
     var isSbm = String(r.MATERIAL || '').toLowerCase().indexOf('sbm') >= 0;
     var ab = bwStep3AbDefaults(r);
+    var djDur = bwGetDurasiFields(r) || {};
+    if (tbd) {
+      var trd = document.createElement('tr');
+      trd.innerHTML =
+        '<td>' + bwEsc(r.NO_POLISI || '') + '</td>' +
+        '<td>' + bwEsc(djDur.pb_tanggal || '—') + '</td>' +
+        '<td>' + bwEsc(djDur.pb_sampai || '—') + '</td>' +
+        '<td>' + bwEsc(djDur.pb_start || '—') + '</td>' +
+        '<td>' + bwEsc(djDur.pb_hold || '—') + '</td>' +
+        '<td>' + bwEsc(djDur.pb_restart || '—') + '</td>' +
+        '<td>' + bwEsc(djDur.pb_finish || '—') + '</td>';
+      tbd.appendChild(trd);
+    }
     var tr = document.createElement('tr');
     tr.setAttribute('data-id', r.ID);
     tr.setAttribute('data-bw-sbm', isSbm ? '1' : '0');
+    var dj2 = bwGetDurasiFields(r) || {};
+    tr.setAttribute('data-pb-tgl', dj2.pb_tanggal || tgl);
+    tr.setAttribute('data-pb-sampai', dj2.pb_sampai || '');
     tr.innerHTML =
       '<td>' + bwEsc(r.NO_POLISI || '') + '</td>' +
       (isSbm
@@ -1318,6 +1802,9 @@ function bwRefreshStep3() {
       if (it && ab.abTgl) it.value = ab.abTgl.length >= 10 ? ab.abTgl.substring(0, 10) : ab.abTgl;
       if (ia && ab.abArr) ia.value = ab.abArr;
       if (iq && ab.abQc) iq.value = ab.abQc;
+      if (it) it.addEventListener('change', function() { bwStep3ValidateRowRealtime(tr, 'to_arrival'); });
+      if (ia) ia.addEventListener('blur', function() { bwStep3ValidateRowRealtime(tr, 'to_qc'); });
+      if (iq) iq.addEventListener('blur', function() { bwStep3ValidateRowRealtime(tr, 'to_netto'); });
     }
     shown++;
   });
@@ -1357,6 +1844,25 @@ function bwStep3CollectFilledRows() {
       skipIncomplete++;
       return;
     }
+    var pbTgl = tr.getAttribute('data-pb-tgl') || '';
+    var pbSampai = tr.getAttribute('data-pb-sampai') || '';
+    if (pbTgl && abTgl > pbTgl) {
+      skipIncomplete++;
+      return;
+    }
+    var arrOff = bwStep3GetOffset(tr.querySelector('.bw-ab-arr'));
+    var qcOff = bwStep3GetOffset(tr.querySelector('.bw-ab-qc'));
+    var arrMs = bwStep3PairMs(abTgl, abArr, arrOff);
+    var qcMs = bwStep3PairMs(abTgl, abQc, qcOff);
+    var pbMs = pbTgl && pbSampai ? bwTimeMsWithOffset(pbTgl, pbSampai, 0) : NaN;
+    if (!isNaN(arrMs) && !isNaN(qcMs) && qcMs < arrMs) {
+      skipIncomplete++;
+      return;
+    }
+    if (!isNaN(qcMs) && !isNaN(pbMs) && qcMs > pbMs) {
+      skipIncomplete++;
+      return;
+    }
     ok.push({
       id: id,
       netto: netto,
@@ -1373,7 +1879,7 @@ function bwStep3CollectFilledRows() {
 function bwFinalizeStep3Bulk() {
   var pack = bwStep3CollectFilledRows();
   if (pack.skipIncomplete > 0) {
-    toast(pack.skipIncomplete + ' baris: netto ada tapi AB tanggal / AB arrival / AB QC belum lengkap — tidak ikut disimpan.', 'w');
+    toast(pack.skipIncomplete + ' baris dilewati: AB belum lengkap atau urutan waktu tidak valid.', 'w');
   }
   if (!pack.ok.length) {
     toast('Isi netto pada baris yang ingin disimpan (baris kosong tidak diproses).', 'w');
@@ -1477,11 +1983,12 @@ function initBongkarWizard() {
   if (appState.user && appState.user.username) {
     restored = bwRestoreWizardLocal();
   }
-  if (!restored) {
-    bwWiz.setupLocked = false;
-    bwWiz.lockSnap = null;
-    bwUpdateSetupLockUI();
-  }
+  if (!restored) bwWiz.step = 1;
+  // Default selalu buka Step 1 dalam kondisi unlocked.
+  bwWiz.step = 1;
+  bwWiz.setupLocked = false;
+  bwWiz.lockSnap = null;
+  bwUpdateSetupLockUI();
   fetchAPI('getBongkarHistory', { limit: 4000 }, function(resp) {
     appState.history.bongkar = bwNormalizeBongkarHistory(resp.status !== 'error' ? resp.data : []);
     bwSyncGhostHint();
@@ -1514,6 +2021,15 @@ document.addEventListener('DOMContentLoaded', function() {
   if (bs2) bs2.addEventListener('click', bwSubmitStep2);
   var bs3 = $('bw_btn_save_step3');
   if (bs3) bs3.addEventListener('click', bwFinalizeStep3Bulk);
+  var addNp = $('bw_btn_add_nopol');
+  if (addNp) addNp.addEventListener('click', bwAddCurrentNopolToBatch);
+  var npInp = $('bw_nopol');
+  if (npInp) npInp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      bwAddCurrentNopolToBatch();
+    }
+  });
   var bok = $('bw_bd_ok');
   if (bok) bok.addEventListener('click', bwBdConfirmOk);
   var bca = $('bw_bd_cancel');
@@ -1566,6 +2082,34 @@ document.addEventListener('DOMContentLoaded', function() {
       bwUpdateTruckBadge();
     });
   }
+  var pbSampai = $('bw_pb_sampai');
+  var pbHold = $('bw_pb_hold');
+  var pbRestart = $('bw_pb_restart');
+  var pbFinish = $('bw_pb_finish');
+  if (pbHold) pbHold.addEventListener('focus', function() {
+    bwStep2ValidatePairOnMove('bw_pb_sampai', 'bw_pb_start', 'PB Sampai Gudang', 'PB Start', 60, 'PB Sampai Gudang vs PB Start', 'seg_0_1');
+  });
+  if (pbRestart) pbRestart.addEventListener('focus', function() {
+    bwStep2ValidatePairOnMove('bw_pb_start', 'bw_pb_hold', 'PB Start', 'PB Hold', 60, 'PB Start vs PB Hold', 'seg_1_2');
+  });
+  if (pbFinish) pbFinish.addEventListener('focus', function() {
+    bwStep2ValidatePairOnMove('bw_pb_hold', 'bw_pb_restart', 'PB Hold', 'PB Restart', 60, 'PB Hold vs PB Restart', 'seg_2_3');
+  });
+  if (pbFinish) pbFinish.addEventListener('blur', function() {
+    if (($('bw_pb_restart') && $('bw_pb_restart').value) || ($('bw_pb_hold') && $('bw_pb_hold').value)) {
+      bwStep2ValidatePairOnMove('bw_pb_restart', 'bw_pb_finish', 'PB Restart', 'PB Finish', 60, 'PB Restart vs PB Finish', 'seg_3_4');
+    } else {
+      bwStep2ValidatePairOnMove('bw_pb_start', 'bw_pb_finish', 'PB Start', 'PB Finish', 60, 'PB Start vs PB Finish', 'seg_1_4');
+    }
+  });
+  if (sbmPs) sbmPs.addEventListener('change', function() { bwStep2SetFieldDayOffset(sbmPs, 0); });
+  var sbmPf = $('bw_sbm_pb_finish');
+  if (sbmPf) {
+    sbmPf.addEventListener('blur', function() {
+      bwStep2ValidatePairOnMove('bw_sbm_pb_start', 'bw_sbm_pb_finish', 'PB Start', 'PB Finish', BW_SBM_INTAKE_PROCESS_MIN, 'PB Start vs PB Finish (SBM Intake)', 'sbm_pb_window');
+    });
+  }
+  [pbSampai, pbStart, pbHold, pbRestart, pbFinish, sbmPs, sbmPf].forEach(function(el) { bwStep2SetFieldDayOffset(el, 0); });
   var typEl = $('bw_type_bongkaran');
   if (typEl) typEl.addEventListener('change', function() {
     bwRefreshGhostFromServer();
@@ -1582,4 +2126,5 @@ document.addEventListener('DOMContentLoaded', function() {
       if (e.target && e.target.classList && e.target.classList.contains('bw-bd-cat')) bwBdUpdateSisa();
     });
   }
+  bwRenderNopolBatch();
 });

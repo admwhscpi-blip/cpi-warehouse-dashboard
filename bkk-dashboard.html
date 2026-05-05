@@ -342,7 +342,7 @@
                           <th>PB Start</th>
                           <th>Nopol</th>
                           <th>Netto (kg)</th>
-                          <th>Keterangan</th>
+                          <th>Nama User</th>
                         </tr>
                       </thead>
                       <tbody id="bw_step2_queue_tb"></tbody>
@@ -353,6 +353,11 @@
                   <div class="bw-nopol-fields">
                     <label for="bw_nopol">No. Polisi</label>
                     <input type="text" id="bw_nopol" placeholder="B 1234 XX" style="text-transform:uppercase;">
+                    <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+                      <button type="button" class="btn btn-sm" id="bw_btn_add_nopol"><i class="fas fa-plus"></i> Tambah Nopol</button>
+                      <span class="fhint" style="font-size:0.78rem;">Bisa isi beberapa nopol, durasi dipakai sama untuk semuanya.</span>
+                    </div>
+                    <div id="bw_nopol_batch_list" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"></div>
                   </div>
                   <div id="bw_nopol_next_shadow" class="bw-nopol-next-shadow" hidden aria-live="polite"></div>
                 </div>
@@ -385,6 +390,22 @@
           <div id="bw-panel-3" class="bw-panel">
             <div id="bw_step3_summary" class="bw-step3-head"></div>
             <p class="fhint" style="font-size:0.85rem;">Non-SBM: isi <strong>AB tanggal, AB arrival, AB QC</strong> + netto. SBM: isi netto saja (AB bertanda —).</p>
+            <div class="twrap" style="overflow-x:auto;margin-bottom:10px;">
+              <table class="bw-step3-table dtable">
+                <thead>
+                  <tr>
+                    <th>Nopol</th>
+                    <th>PB Tanggal</th>
+                    <th>PB Sampai</th>
+                    <th>PB Start</th>
+                    <th>PB Hold</th>
+                    <th>PB Restart</th>
+                    <th>PB Finish</th>
+                  </tr>
+                </thead>
+                <tbody id="bw_step3_durasi_tb"></tbody>
+              </table>
+            </div>
             <div class="twrap" style="overflow-x:auto;">
               <table class="bw-step3-table dtable">
                 <thead><tr><th>Nopol</th><th>AB Tanggal</th><th>AB Arrival</th><th>AB QC</th><th>Netto (kg)</th></tr></thead>
@@ -445,7 +466,7 @@
                 <option value="">— Pilih —</option>
                 <option>Intake 11</option><option>Intake 12</option><option>Intake 13</option>
                 <option>Intake 14</option><option>Intake 15</option><option>Intake 16</option><option>Intake 17</option>
-                <option>HM22</option><option>HM26</option>
+                <option>HM22</option><option>HM25</option><option>HM26</option>
               </select>
             </div>
             <div class="fg">
@@ -729,7 +750,7 @@
                           <option value="">— Pilih —</option>
                           <option>Intake 11</option><option>Intake 12</option><option>Intake 13</option>
                           <option>Intake 14</option><option>Intake 15</option><option>Intake 16</option><option>Intake 17</option>
-                          <option>HM22</option><option>HM26</option>
+                          <option>HM22</option><option>HM25</option><option>HM26</option>
                         </select>
                       </div>
                       <div class="fg full"><label>Netto (kg) <span style="color:var(--ck)">*</span></label><input type="number" id="sap_ik_netto" placeholder="0" min="0" step="0.01"></div>

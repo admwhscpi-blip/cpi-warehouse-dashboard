@@ -127,6 +127,29 @@ function ksNoonMs(ds) {
   return new Date(ds + 'T12:00:00+07:00').getTime();
 }
 
+function ksLatestSoBaselineForBk(bkId, maxDate) {
+  var bkTarget = ksNormBK(bkId);
+  var best = null;
+  ksState.raw.opname.forEach(function(r) {
+    if (ksNormBK(r.BK_ID) !== bkTarget) return;
+    if (maxDate && r.TANGGAL > maxDate) return;
+    var t = ksRowTsMs(r);
+    if (isNaN(t)) t = ksNoonMs(r.TANGGAL || maxDate || '1970-01-01');
+    if (!best) {
+      best = { date: r.TANGGAL || '', ts: t };
+      return;
+    }
+    if ((r.TANGGAL || '') > best.date) {
+      best = { date: r.TANGGAL || '', ts: t };
+      return;
+    }
+    if ((r.TANGGAL || '') === best.date && t > best.ts) {
+      best = { date: r.TANGGAL || '', ts: t };
+    }
+  });
+  return best;
+}
+
 /**
  * Replay bongkar/kirim/opname same day (urut TIMESTAMP) untuk beberapa SO di tanggal sama.
  */
@@ -233,19 +256,29 @@ function ksComputeStock(bkId, ascDates) {
   if (!ascDates.length) return {};
 
   var firstDate = ascDates[0];
+  var lastDate = ascDates[ascDates.length - 1];
   var bkTarget = ksNormBK(bkId);
+  var resetBase = ksLatestSoBaselineForBk(bkTarget, lastDate);
+  var resetDate = resetBase ? resetBase.date : '';
+  var resetTs = resetBase ? resetBase.ts : NaN;
+  var hasResetSo = !!resetBase;
 
   // Find last opname BEFORE the start of this period → initial stock baseline
   var lastOp = null;
-  ksState.raw.opname.forEach(function(r) {
-    if (ksNormBK(r.BK_ID) !== bkTarget) return;
-    if (r.TANGGAL < firstDate) {
-      if (!lastOp || r.TANGGAL > lastOp.TANGGAL) lastOp = r;
-    }
-  });
+  if (!hasResetSo) {
+    ksState.raw.opname.forEach(function(r) {
+      if (ksNormBK(r.BK_ID) !== bkTarget) return;
+      if (r.TANGGAL < firstDate) {
+        if (!lastOp || r.TANGGAL > lastOp.TANGGAL) lastOp = r;
+      }
+    });
+  }
 
   var prevStock = 0;
-  if (lastOp) {
+  if (hasResetSo) {
+    // Sesuai kebutuhan operasional: setelah SO, baseline kartu stock dimulai ulang dari nol.
+    prevStock = 0;
+  } else if (lastOp) {
     prevStock = Number(lastOp.STOK_FISIK_KG) || 0;
     // Forward-compute from lastOp.TANGGAL up to (but not including) firstDate
     ksState.raw.bongkar.forEach(function(r) {
@@ -273,11 +306,22 @@ function ksComputeStock(bkId, ascDates) {
   }
 
   var result = {};
+  var totalPenerimaan = 0;
   ascDates.forEach(function(ds) {
+    if (hasResetSo && ds < resetDate) {
+      result[ds] = { rows: [], stock: null };
+      return;
+    }
+
     // Bongkar per shift (BKK_Bongkar may or may not have SHIFT column)
     var b1=0, b2=0, b3=0;
     ksState.raw.bongkar.forEach(function(r) {
       if (ksNormBK(r.BK_ID) !== bkTarget || r.TANGGAL !== ds) return;
+      if (hasResetSo && ds === resetDate) {
+        var tbms = ksRowTsMs(r);
+        if (isNaN(tbms)) tbms = ksNoonMs(ds);
+        if (!isNaN(resetTs) && tbms <= resetTs) return;
+      }
       var s = String(r.SHIFT || '').trim();
       var kg = ksEffectiveBongkarKg(r);
       if (s === '2') b2 += kg;
@@ -289,6 +333,11 @@ function ksComputeStock(bkId, ascDates) {
     var u1=0, u2=0, u3=0;
     ksState.raw.kirim.forEach(function(r) {
       if (ksNormBK(r.BK_ID) !== bkTarget || r.TANGGAL !== ds) return;
+      if (hasResetSo && ds === resetDate) {
+        var ukms = ksRowTsMs(r);
+        if (isNaN(ukms)) ukms = ksNoonMs(ds);
+        if (!isNaN(resetTs) && ukms <= resetTs) return;
+      }
       var s = String(r.SHIFT || '').trim();
       if (s === '2') u2 += r.NETTO_KG;
       else if (s === '3') u3 += r.NETTO_KG;
@@ -304,35 +353,65 @@ function ksComputeStock(bkId, ascDates) {
       var tb = ksRowTsMs(b); if (isNaN(tb)) tb = ksNoonMs(ds);
       return ta - tb;
     });
+    if (hasResetSo && ds === resetDate && !isNaN(resetTs)) {
+      opRecs = opRecs.filter(function(r) {
+        var oms = ksRowTsMs(r);
+        if (isNaN(oms)) oms = ksNoonMs(ds);
+        return oms >= resetTs;
+      });
+    }
 
     var dayFinal;
     if (opRecs.length > 1) {
-      var rp = ksReplayMultiSoDay(ds, bkTarget, prevStock, opRecs);
-      dayFinal = rp.dayFinal;
-      var rowsMulti = [];
-      if (tb > 0 || tu > 0) {
-        rowsMulti.push({
-          segment: 'txn',
-          b1: b1, b2: b2, b3: b3, u1: u1, u2: u2, u3: u3, tb: tb, tu: tu,
-          hasOpname: false, opnameQty: null, selisih: null, persen: null, userSO: null,
+      if (hasResetSo) {
+        totalPenerimaan = 0;
+        dayFinal = 0 + tb - tu;
+        totalPenerimaan += tb;
+        var multiUser = opRecs.map(function(op) { return op.INPUT_BY || '—'; }).filter(Boolean).join(', ');
+        result[ds] = {
+          rows: [{
+            segment: 'day',
+            b1: b1, b2: b2, b3: b3, u1: u1, u2: u2, u3: u3, tb: tb, tu: tu,
+            hasOpname: true,
+            opnameQty: Number(opRecs[opRecs.length - 1].STOK_FISIK_KG) || 0,
+            selisih: null, persen: null,
+            userSO: multiUser || '—',
+            stock: dayFinal,
+            totalPenerimaan: totalPenerimaan
+          }],
           stock: dayFinal
+        };
+      } else {
+        var rp = ksReplayMultiSoDay(ds, bkTarget, prevStock, opRecs);
+        dayFinal = rp.dayFinal;
+        var rowsMulti = [];
+        if (tb > 0 || tu > 0) {
+          rowsMulti.push({
+            segment: 'txn',
+            b1: b1, b2: b2, b3: b3, u1: u1, u2: u2, u3: u3, tb: tb, tu: tu,
+            hasOpname: false, opnameQty: null, selisih: null, persen: null, userSO: null,
+            stock: dayFinal,
+            totalPenerimaan: totalPenerimaan + tb
+          });
+        }
+        rp.soSegments.forEach(function(seg, idx) {
+          rowsMulti.push({
+            segment: 'so',
+            soIndex: idx + 1,
+            soTotal: rp.soSegments.length,
+            b1: 0, b2: 0, b3: 0, u1: 0, u2: 0, u3: 0, tb: 0, tu: 0,
+            hasOpname: true,
+            opnameQty: seg.opPhys,
+            selisih: seg.selisih,
+            persen: seg.persen,
+            userSO: seg.opRec.INPUT_BY || '—',
+            stock: seg.opPhys,
+            totalPenerimaan: totalPenerimaan
+          });
         });
+        totalPenerimaan += tb;
+        result[ds] = { rows: rowsMulti, stock: dayFinal };
       }
-      rp.soSegments.forEach(function(seg, idx) {
-        rowsMulti.push({
-          segment: 'so',
-          soIndex: idx + 1,
-          soTotal: rp.soSegments.length,
-          b1: 0, b2: 0, b3: 0, u1: 0, u2: 0, u3: 0, tb: 0, tu: 0,
-          hasOpname: true,
-          opnameQty: seg.opPhys,
-          selisih: seg.selisih,
-          persen: seg.persen,
-          userSO: seg.opRec.INPUT_BY || '—',
-          stock: seg.opPhys
-        });
-      });
-      result[ds] = { rows: rowsMulti, stock: dayFinal };
       prevStock = dayFinal;
     } else if (opRecs.length === 1) {
       var opRec = opRecs[0];
@@ -340,24 +419,43 @@ function ksComputeStock(bkId, ascDates) {
       var userLab = opRec.INPUT_BY || '—';
       var splitTxn = tb > 0 || tu > 0;
 
-      if (splitTxn) {
+      if (hasResetSo) {
+        totalPenerimaan = 0;
+        dayFinal = 0 + tb - tu;
+        totalPenerimaan += tb;
+        result[ds] = {
+          rows: [{
+            segment: 'day',
+            b1: b1, b2: b2, b3: b3, u1: u1, u2: u2, u3: u3, tb: tb, tu: tu,
+            hasOpname: true, opnameQty: opPhys, selisih: null, persen: null,
+            userSO: userLab,
+            stock: dayFinal,
+            totalPenerimaan: totalPenerimaan
+          }],
+          stock: dayFinal
+        };
+        prevStock = dayFinal;
+      } else if (splitTxn) {
         var selSO = opPhys - prevStock;
         var pctSO = prevStock > 0 ? (opPhys / prevStock) * 100 : 0;
         dayFinal = opPhys + tb - tu;
+        totalPenerimaan += tb;
         result[ds] = {
           rows: [
             {
               segment: 'txn',
               b1: b1, b2: b2, b3: b3, u1: u1, u2: u2, u3: u3, tb: tb, tu: tu,
               hasOpname: false, opnameQty: null, selisih: null, persen: null, userSO: null,
-              stock: dayFinal
+              stock: dayFinal,
+              totalPenerimaan: totalPenerimaan
             },
             {
               segment: 'so',
               b1: 0, b2: 0, b3: 0, u1: 0, u2: 0, u3: 0, tb: 0, tu: 0,
               hasOpname: true, opnameQty: opPhys, selisih: selSO, persen: pctSO,
               userSO: userLab,
-              stock: opPhys
+              stock: opPhys,
+              totalPenerimaan: totalPenerimaan - tb
             }
           ],
           stock: dayFinal
@@ -367,6 +465,7 @@ function ksComputeStock(bkId, ascDates) {
         var selOne = opPhys - prevStock;
         var pctOne = prevStock > 0 ? (opPhys / prevStock) * 100 : 0;
         dayFinal = opPhys + tb - tu;
+        totalPenerimaan += tb;
         prevStock = dayFinal;
         result[ds] = {
           rows: [{
@@ -374,20 +473,23 @@ function ksComputeStock(bkId, ascDates) {
             b1: b1, b2: b2, b3: b3, u1: u1, u2: u2, u3: u3, tb: tb, tu: tu,
             hasOpname: true, opnameQty: opPhys, selisih: selOne, persen: pctOne,
             userSO: userLab,
-            stock: dayFinal
+            stock: dayFinal,
+            totalPenerimaan: totalPenerimaan
           }],
           stock: dayFinal
         };
       }
     } else {
       dayFinal = prevStock + tb - tu;
+      totalPenerimaan += tb;
       prevStock = dayFinal;
       result[ds] = {
         rows: [{
           segment: 'day',
           b1: b1, b2: b2, b3: b3, u1: u1, u2: u2, u3: u3, tb: tb, tu: tu,
           hasOpname: false, opnameQty: null, selisih: null, persen: null, userSO: null,
-          stock: dayFinal
+          stock: dayFinal,
+          totalPenerimaan: totalPenerimaan
         }],
         stock: dayFinal
       };
@@ -435,8 +537,7 @@ function renderKSSummary() {
       var s = bundle.stock;
       var cls = s == null ? 'ks-empty' : s < 0 ? 'ks-neg' : s === 0 ? 'ks-zero' : '';
       var hasSo = bundle.rows && bundle.rows.some(function(r) { return r.hasOpname; });
-      var badge = hasSo ? '<span class="ks-so-dot">SO</span>' : '';
-      cells += '<td class="ks-td-stock ' + cls + '">' + (s != null ? fmtNum(s) : '—') + badge + '</td>';
+      cells += '<td class="ks-td-stock ' + cls + '">' + (s != null ? fmtNum(s) : '—') + '</td>';
     });
     tr.innerHTML = cells;
     tbody.appendChild(tr);
@@ -460,6 +561,7 @@ function renderKSBreakdown() {
     '<th class="ks-th-group-u" colspan="3">Usage (kg)</th>' +
     '<th class="ks-th-group-so" colspan="5">Stock Opname</th>' +
     '<th class="ks-th-akhir" rowspan="2">Stock Akhir</th>' +
+    '<th class="ks-th-akhir" rowspan="2">Total Penerimaan</th>' +
     '</tr>' +
     '<tr>' +
     '<th class="ks-th-s ks-b">S1</th><th class="ks-th-s ks-b">S2</th><th class="ks-th-s ks-b">S3</th>' +
@@ -515,7 +617,8 @@ function renderKSBreakdown() {
         '<td class="ks-td-num ' + selCls + '">' + (day.selisih != null ? fmtNum(Math.abs(day.selisih)) : '<span class="ks-dash">—</span>') + '</td>' +
         '<td class="ks-td-num ' + selCls + '">' + (day.persen != null ? fmtNum(day.persen) + '%' : '<span class="ks-dash">—</span>') + '</td>' +
         '<td class="ks-td-user">' + (day.userSO || '<span class="ks-dash">—</span>') + '</td>' +
-        '<td class="ks-td-stock-end ' + (day.stock < 0 ? 'ks-neg' : '') + '">' + fmtNum(day.stock) + '</td>';
+        '<td class="ks-td-stock-end ' + (day.stock < 0 ? 'ks-neg' : '') + '">' + fmtNum(day.stock) + '</td>' +
+        '<td class="ks-td-stock-end">' + n(day.totalPenerimaan) + '</td>';
 
       tbody.appendChild(tr);
     });

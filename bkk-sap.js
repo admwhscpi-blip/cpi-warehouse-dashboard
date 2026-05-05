@@ -1004,33 +1004,85 @@ function bkkEnsureOpnameHistory(callback) {
   });
 }
 
-function bkkLatestOpnameYmdLeToday(bkId) {
+/** SO terakhir untuk BK (tanggal kalender ≤ hari ini WIB): prioritas TIMESTAMP posting, bukan hanya TANGGAL. */
+function bkkLatestOpnameInfoLeToday(bkId) {
   var todayWib = typeof todayYMD_WIB === 'function' ? todayYMD_WIB() : (typeof todayStr === 'function' ? todayStr() : '');
   var rows = appState.history.opname || [];
-  var maxY = '';
+  var bestMs = -1;
+  var best = null;
+  var bestYmd = '';
   rows.forEach(function(r) {
     if (!sapBkRowMatches(r.BK_ID, bkId)) return;
     var y = typeof dashDateToYMD === 'function' ? dashDateToYMD(r.TANGGAL) : String(r.TANGGAL || '').substring(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(y)) return;
     if (y > todayWib) return;
-    if (!maxY || y > maxY) maxY = y;
+    var ms = bkkRowEventTimeMs(r);
+    if (isNaN(ms)) return;
+    if (ms > bestMs) {
+      bestMs = ms;
+      best = r;
+      bestYmd = y;
+    }
   });
-  return maxY;
+  if (!best || bestMs < 0) return null;
+  return { row: best, eventMs: bestMs, ymd: bestYmd };
 }
 
-function bkkValidateTanggalBongkarKirim(bkId, tanggalYmd) {
+function bkkFormatWibClockHM_(ms) {
+  if (isNaN(ms)) return '—';
+  try {
+    return new Date(ms).toLocaleTimeString('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  } catch (e) {
+    return '—';
+  }
+}
+
+/**
+ * @param {string} bkId
+ * @param {string} tanggalYmd — tanggal operasi / transaksi (yyyy-MM-dd)
+ * @param {{ eventMs?: number }=} opt — bila isi, dibandingkan dengan jam posting SO pada hari yang sama
+ */
+function bkkValidateTanggalBongkarKirim(bkId, tanggalYmd, opt) {
+  opt = opt || {};
   var todayWib = typeof todayYMD_WIB === 'function' ? todayYMD_WIB() : (typeof todayStr === 'function' ? todayStr() : '');
   if (!tanggalYmd || String(tanggalYmd).length < 10)
     return { ok: false, msg: 'Pilih tanggal transaksi.' };
   var ymd = String(tanggalYmd).substring(0, 10);
   if (ymd > todayWib)
     return { ok: false, msg: 'Tanggal tidak boleh lebih maju dari hari ini (zona WIB).' };
-  var lastOp = bkkLatestOpnameYmdLeToday(bkId);
-  if (lastOp && ymd < lastOp)
+  var info = bkkLatestOpnameInfoLeToday(bkId);
+  if (!info) return { ok: true };
+  var cutoffMs = info.eventMs;
+  var cutoffYmd = info.ymd;
+  if (ymd < cutoffYmd)
     return {
       ok: false,
-      msg: 'Transaksi tanggal sebelum ' + lastOp + ' ditolak — periode tersebut sudah ditutup oleh Stock Opname untuk BK ini. Minimal tanggal ' + lastOp + '.'
+      msg: 'Transaksi tanggal sebelum ' + cutoffYmd + ' ditolak — periode tersebut sudah ditutup oleh Stock Opname untuk BK ini. Minimal tanggal ' + cutoffYmd + '.'
     };
+  if (ymd > cutoffYmd) return { ok: true };
+  var txMs = opt.eventMs;
+  if (txMs == null || isNaN(txMs)) {
+    if (ymd === todayWib) txMs = Date.now();
+    else txMs = bkkStartOfJakartaDayMs(ymd);
+  }
+  if (isNaN(txMs)) return { ok: true };
+  if (txMs <= cutoffMs) {
+    var jamSo = bkkFormatWibClockHM_(cutoffMs);
+    return {
+      ok: false,
+      msg:
+        'Operasi harus sesudah posting Stock Opname pada ' +
+        cutoffYmd +
+        ' pukul ' +
+        jamSo +
+        ' WIB. Setelah SO, stok di-reset — atur PB Start / waktu operasi agar benar-benar setelah jam tersebut (mis. SO 08:00 → PB Start 08:01 atau lebih).'
+    };
+  }
   return { ok: true };
 }
 
@@ -1058,7 +1110,7 @@ function saveBongkar() {
   var tgl = $('b_tanggal').value;
 
   function doPost() {
-    var v = bkkValidateTanggalBongkarKirim(bkId, tgl);
+    var v = bkkValidateTanggalBongkarKirim(bkId, tgl, { eventMs: Date.now() });
     if (!v.ok) { bkkShowReject(v.msg); return; }
     var data = {
       action: 'addBongkar',
@@ -1103,7 +1155,7 @@ function doSaveKirim() {
   var bkId = $('k_bk_id').value;
   var netto = parseFloat($('k_netto').value);
   bkkEnsureOpnameHistory(function() {
-    var kv = bkkValidateTanggalBongkarKirim(bkId, $('k_tanggal').value);
+    var kv = bkkValidateTanggalBongkarKirim(bkId, $('k_tanggal').value, { eventMs: Date.now() });
     if (!kv.ok) { bkkShowReject(kv.msg); return; }
     var data = {
       action: 'addKirim',
