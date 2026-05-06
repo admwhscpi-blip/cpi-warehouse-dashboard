@@ -13,7 +13,12 @@
   var _bkkDbSortCol = null;
   var _bkkDbSortAsc = true;
   var _bkkDbMiniCharts = {};
+  var _bkkDbInapDonut = null;
+  var _bkkDbInapTrend = null;
+  var _bkkDbQtyTarget = null;
+  var _bkkDbIntakeByDate = {};
   var _bkkDbLastFiltered = [];
+  var _bkkDbAggBreakdownByKey = {};
   var _bkkDbKeysSbm = [];
   var _bkkDbKeysNs = [];
 
@@ -344,11 +349,25 @@
     return '';
   }
 
+  function bkkDbRowTypeBongkaran(r) {
+    var t = String(bkkDbCol(r, 'TYPE_BONGKARAN') || '').trim().toLowerCase();
+    if (!t) {
+      var dj = bkkDbParseDj(r);
+      if (dj && dj.type_bongkaran) t = String(dj.type_bongkaran).trim().toLowerCase();
+    }
+    var norm = t.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    if (norm === 'intake_71_manual' || norm === 'intake71_manual') t = 'intake71_manual';
+    else if (norm === 'intake_71_tilting' || norm === 'intake71_tilting' || norm === 'tilting') t = 'intake71_tilting';
+    else if (norm === 'direct_gudang' || norm === 'direct') t = 'direct_gudang';
+    else t = norm || '';
+    return t;
+  }
+
   /** Rantai Intake 71 — sama logika wizard (exclude Direct Gudang). */
   function bkkDbRowInIntakeChain(r) {
     if (!r) return false;
-    if (String(bkkDbCol(r, 'TYPE_BONGKARAN')).trim() === 'direct_gudang') return false;
-    var t = String(bkkDbCol(r, 'TYPE_BONGKARAN')).trim();
+    var t = bkkDbRowTypeBongkaran(r);
+    if (t === 'direct_gudang') return false;
     if (!t) return true;
     return t === 'intake71_manual' || t === 'intake71_tilting';
   }
@@ -479,7 +498,7 @@
     var total = el.querySelectorAll('input[type="checkbox"]');
     var label = el.querySelector('.ms-label');
     if (!label) return;
-    var allTxt = { 'bkkdb-ms-material': 'SEMUA MATERIAL', 'bkkdb-ms-bk': 'SEMUA BK', 'bkkdb-ms-shift': 'SEMUA SHIFT' };
+    var allTxt = { 'bkkdb-ms-material': 'SEMUA MATERIAL', 'bkkdb-ms-bk': 'SEMUA BK', 'bkkdb-ms-shift': 'SEMUA SHIFT', 'bkkdb-ms-type-bongkaran': 'SEMUA TYPE BONGKARAN' };
     if (checked.length === 0 || checked.length === total.length) {
       label.textContent = allTxt[id] || 'SEMUA';
       label.style.color = 'var(--text-secondary, #64748b)';
@@ -508,6 +527,42 @@
       list.appendChild(div);
     });
     bkkDbUpdateMsLabel(id);
+  }
+
+  function bkkDbPopulateTypeBongkaranMs() {
+    var el = document.getElementById('bkkdb-ms-type-bongkaran');
+    if (!el) return;
+    var list = el.querySelector('.ms-dropdown .ms-list');
+    var dropdown = el.querySelector('.ms-dropdown');
+    var label = el.querySelector('.ms-label');
+    if (!dropdown || !list) {
+      // Fallback: jika struktur sedikit berbeda, ambil langsung ms-list
+      list = el.querySelector('.ms-list');
+    }
+    if (!list) return;
+
+    var opts = [
+      { value: 'intake71_manual', text: 'Intake 71 Manual' },
+      { value: 'intake71_tilting', text: 'Tilting' },
+      { value: 'direct_gudang', text: 'Direct Gudang' }
+    ];
+
+    list.innerHTML = '';
+    opts.forEach(function(opt) {
+      var div = document.createElement('div');
+      div.className = 'ms-item';
+      div.onclick = function(e) {
+        var inp = div.querySelector('input');
+        if (e.target.tagName !== 'INPUT') {
+          inp.checked = !inp.checked;
+        }
+        bkkDbUpdateMsLabel('bkkdb-ms-type-bongkaran');
+        window.bkkDbRender();
+      };
+      div.innerHTML = '<input type="checkbox" value="' + bkkDbEscAttr(opt.value) + '" checked> <span>' + bkkDbEsc(opt.text) + '</span>';
+      list.appendChild(div);
+    });
+    bkkDbUpdateMsLabel('bkkdb-ms-type-bongkaran');
   }
 
   function bkkDbGetMsSel(id) {
@@ -571,6 +626,7 @@
     var selMat = bkkDbGetMsSel('bkkdb-ms-material');
     var selBk = bkkDbGetMsSel('bkkdb-ms-bk');
     var selSh = bkkDbGetMsSel('bkkdb-ms-shift');
+    var selType = bkkDbGetMsSel('bkkdb-ms-type-bongkaran');
 
     var out = rows.filter(function(r) {
       var t = String(r.TANGGAL || '').substring(0, 10);
@@ -579,6 +635,7 @@
       if (selMat && selMat.indexOf(String(r.MATERIAL || '').trim()) < 0) return false;
       if (selBk && selBk.indexOf(String(r.BK_ID || '').trim()) < 0) return false;
       if (selSh && selSh.indexOf(String(r.SHIFT || '').trim()) < 0) return false;
+      if (selType && selType.indexOf(bkkDbRowTypeBongkaran(r)) < 0) return false;
       return true;
     });
 
@@ -594,6 +651,250 @@
     }
 
     return out;
+  }
+
+  function bkkDbIsIntake71Type(v) {
+    var t = String(v || '').trim().toLowerCase();
+    return t === 'intake71_manual' || t === 'intake71_tilting';
+  }
+
+  function bkkDbComputeRowTotalMinutes(row, allRows) {
+    var dj = bkkDbParseDj(row);
+    var isS = bkkDbIsSbmRow(row, dj);
+    var computed = bkkDbComputeDurationsFromRow(row, dj, allRows || []);
+    var keys = isS ? _bkkDbKeysSbm : _bkkDbKeysNs;
+    var total = 0;
+    var hasAny = false;
+    keys.forEach(function(k) {
+      var v = bkkDbResolveMinutes(dj, k, computed);
+      if (v !== null && !isNaN(v) && v >= 0) {
+        total += v;
+        hasAny = true;
+      }
+    });
+    return hasAny ? total : null;
+  }
+
+  function bkkDbMergeIntervals(intervals) {
+    if (!intervals.length) return [];
+    intervals.sort(function(a, b) { return a.s - b.s; });
+    var merged = [intervals[0]];
+    for (var i = 1; i < intervals.length; i++) {
+      var cur = intervals[i];
+      var last = merged[merged.length - 1];
+      if (cur.s <= last.e) {
+        if (cur.e > last.e) last.e = cur.e;
+      } else {
+        merged.push(cur);
+      }
+    }
+    return merged;
+  }
+
+  function bkkDbBuildLeadtimeAnalytics(filtered, allRows) {
+    var totalTruck = filtered.length;
+    var inap = 0;
+    var tidak = 0;
+    var inapTon = 0;
+    var byDate = {};
+    var qtyByDate = {};
+    var intakeByDate = {};
+    var onlyDirectType = false;
+
+    var selType = bkkDbGetMsSel('bkkdb-ms-type-bongkaran');
+    if (selType && selType.length === 1 && selType[0] === 'direct_gudang') onlyDirectType = true;
+
+    filtered.forEach(function(r) {
+      var date = bkkDbYmdFromCell(bkkDbCol(r, 'TANGGAL'));
+      if (!date) return;
+      var totalMin = bkkDbComputeRowTotalMinutes(r, allRows);
+      if (totalMin !== null && totalMin > 24 * 60) {
+        inap++;
+        inapTon += (Number(r.NETTO_KG) || 0) / 1000;
+      } else {
+        tidak++;
+      }
+      if (!byDate[date]) byDate[date] = { inap: 0, tidak: 0 };
+      if (totalMin !== null && totalMin > 24 * 60) byDate[date].inap++;
+      else byDate[date].tidak++;
+
+      if (!qtyByDate[date]) qtyByDate[date] = { qtyTon: 0, inapTon: 0, hasSbm: false, hasNonSbm: false };
+      var ton = (Number(r.NETTO_KG) || 0) / 1000;
+      qtyByDate[date].qtyTon += ton;
+      if (totalMin !== null && totalMin > 24 * 60) qtyByDate[date].inapTon += ton;
+      var isS = bkkDbIsSbmRow(r, bkkDbParseDj(r));
+      if (isS) qtyByDate[date].hasSbm = true; else qtyByDate[date].hasNonSbm = true;
+
+      var rowType = bkkDbRowTypeBongkaran(r);
+      var isIntakeLike = rowType !== 'direct_gudang';
+      if (isIntakeLike) {
+        if (!intakeByDate[date]) intakeByDate[date] = { trucks: 0, nettoKg: 0, intervals: [], details: [], fallbackActiveMin: 0 };
+        var pbYmd = bkkDbYmdFromCell(bkkDbCol(r, 'PB_TANGGAL')) || date;
+        var ps = bkkDbNormalizeHM(bkkDbCol(r, 'PB_START'));
+        var pf = bkkDbNormalizeHM(bkkDbCol(r, 'PB_FINISH'));
+        var msS = bkkDbConcatMs(pbYmd, ps);
+        var msF = bkkDbConcatMs(pbYmd, pf);
+        intakeByDate[date].trucks++;
+        intakeByDate[date].nettoKg += Number(r.NETTO_KG) || 0;
+        if (!isNaN(msS) && !isNaN(msF) && msF >= msS) {
+          intakeByDate[date].intervals.push({ s: msS, e: msF });
+          intakeByDate[date].details.push({
+            nopol: String(r.NO_POLISI || '-'),
+            start: bkkDbNormalizeHM(bkkDbCol(r, 'PB_START')) || '-',
+            finish: bkkDbNormalizeHM(bkkDbCol(r, 'PB_FINISH')) || '-',
+            durMin: Math.round((msF - msS) / 60000),
+            nettoKg: Number(r.NETTO_KG) || 0
+          });
+        } else {
+          var fallbackDur = bkkDbComputeRowTotalMinutes(r, allRows);
+          if (fallbackDur && fallbackDur > 0) {
+            intakeByDate[date].fallbackActiveMin += Math.min(1440, Math.round(fallbackDur));
+            intakeByDate[date].details.push({
+              nopol: String(r.NO_POLISI || '-'),
+              start: '-',
+              finish: '-',
+              durMin: Math.round(fallbackDur),
+              nettoKg: Number(r.NETTO_KG) || 0
+            });
+          }
+        }
+      }
+    });
+
+    var dates = Object.keys(byDate).sort();
+    var trend = {
+      labels: dates,
+      inap: dates.map(function(d) { return byDate[d].inap; }),
+      tidak: dates.map(function(d) { return byDate[d].tidak; })
+    };
+    var qtyTrend = {
+      labels: Object.keys(qtyByDate).sort(),
+      qtyTon: [],
+      targetTon: [],
+      inapTon: []
+    };
+    qtyTrend.labels.forEach(function(d) {
+      var obj = qtyByDate[d];
+      var tgt = (obj.hasSbm ? 800 : 0) + (obj.hasNonSbm ? 300 : 0);
+      qtyTrend.qtyTon.push(Number(obj.qtyTon.toFixed(2)));
+      qtyTrend.targetTon.push(tgt);
+      qtyTrend.inapTon.push(Number(obj.inapTon.toFixed(2)));
+    });
+
+    var intakeRows = Object.keys(intakeByDate).sort().map(function(d) {
+      var rec = intakeByDate[d];
+      var merged = bkkDbMergeIntervals(rec.intervals.slice());
+      var activeMin = merged.reduce(function(acc, it) { return acc + Math.max(0, Math.round((it.e - it.s) / 60000)); }, 0);
+      if (activeMin <= 0 && rec.fallbackActiveMin > 0) activeMin = rec.fallbackActiveMin;
+      if (activeMin > 1440) activeMin = 1440;
+      var offMin = Math.max(0, 1440 - activeMin);
+      var util = (activeMin / 1440) * 100;
+      return {
+        date: d,
+        trucks: rec.trucks,
+        activeMin: activeMin,
+        offMin: offMin,
+        nettoKg: rec.nettoKg,
+        utilPct: util,
+        details: rec.details
+      };
+    });
+
+    return {
+      totalTruck: totalTruck,
+      inap: inap,
+      tidak: tidak,
+      inapPct: totalTruck > 0 ? (inap / totalTruck) * 100 : 0,
+      trend: trend,
+      qtyTrend: qtyTrend,
+      intakeRows: intakeRows,
+      onlyDirectType: onlyDirectType
+    };
+  }
+
+  function bkkDbRenderLeadtimePanels(analytics) {
+    var kpi = document.getElementById('bkkdb-inap-kpi-grid');
+    if (kpi) {
+      kpi.innerHTML =
+        '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;border-top:4px solid #3b82f6;"><div style="font-size:.72rem;color:#64748b;font-weight:700;text-transform:uppercase;">Total Truck</div><div style="font-family:\'Rajdhani\',sans-serif;font-size:2rem;font-weight:800;color:#1e293b;">' + analytics.totalTruck + '</div></div>' +
+        '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;border-top:4px solid #ef4444;"><div style="font-size:.72rem;color:#64748b;font-weight:700;text-transform:uppercase;">Inap (>24j)</div><div style="font-family:\'Rajdhani\',sans-serif;font-size:2rem;font-weight:800;color:#ef4444;">' + analytics.inap + '</div></div>' +
+        '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;border-top:4px solid #10b981;"><div style="font-size:.72rem;color:#64748b;font-weight:700;text-transform:uppercase;">Tidak Inap</div><div style="font-family:\'Rajdhani\',sans-serif;font-size:2rem;font-weight:800;color:#10b981;">' + analytics.tidak + '</div></div>' +
+        '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;border-top:4px solid #8b5cf6;"><div style="font-size:.72rem;color:#64748b;font-weight:700;text-transform:uppercase;">Proporsi Inap</div><div style="font-family:\'Rajdhani\',sans-serif;font-size:2rem;font-weight:800;color:#8b5cf6;">' + analytics.inapPct.toFixed(1) + '%</div></div>';
+    }
+
+    if (typeof Chart !== 'undefined') {
+      if (_bkkDbInapDonut) { try { _bkkDbInapDonut.destroy(); } catch (e) {} _bkkDbInapDonut = null; }
+      if (_bkkDbInapTrend) { try { _bkkDbInapTrend.destroy(); } catch (e) {} _bkkDbInapTrend = null; }
+      if (_bkkDbQtyTarget) { try { _bkkDbQtyTarget.destroy(); } catch (e) {} _bkkDbQtyTarget = null; }
+
+      var c1 = document.getElementById('bkkdb-inap-donut');
+      if (c1) {
+        _bkkDbInapDonut = new Chart(c1.getContext('2d'), {
+          type: 'doughnut',
+          data: { labels: ['Inap', 'Tidak Inap'], datasets: [{ data: [analytics.inap, analytics.tidak], backgroundColor: ['#ef4444', '#10b981'] }] },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, cutout: '68%' }
+        });
+      }
+      var c2 = document.getElementById('bkkdb-inap-trend');
+      if (c2) {
+        _bkkDbInapTrend = new Chart(c2.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: analytics.trend.labels,
+            datasets: [
+              { label: 'Inap', data: analytics.trend.inap, borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.35, pointRadius: 3 },
+              { label: 'Tidak Inap', data: analytics.trend.tidak, borderColor: '#10b981', backgroundColor: '#10b981', tension: 0.35, pointRadius: 3 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+      }
+      var c3 = document.getElementById('bkkdb-qty-target-chart');
+      if (c3) {
+        _bkkDbQtyTarget = new Chart(c3.getContext('2d'), {
+          data: {
+            labels: analytics.qtyTrend.labels,
+            datasets: [
+              { type: 'bar', label: 'Qty Bongkar (ton)', data: analytics.qtyTrend.qtyTon, backgroundColor: 'rgba(56,189,248,0.7)', borderRadius: 6 },
+              { type: 'line', label: 'Target (ton)', data: analytics.qtyTrend.targetTon, borderColor: '#6366f1', borderWidth: 2, tension: 0.3, pointRadius: 3 },
+              { type: 'bar', label: 'Qty Inapan (ton)', data: analytics.qtyTrend.inapTon, backgroundColor: 'rgba(225,29,72,0.65)', borderRadius: 6 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Ton' } } } }
+        });
+      }
+    }
+
+    var intakePanel = document.getElementById('bkkdb-intake71-panel');
+    var intakeBody = document.getElementById('bkkdb-intake71-tbody');
+    var note = document.getElementById('bkkdb-intake71-note');
+    _bkkDbIntakeByDate = {};
+    if (intakeBody) {
+      if (analytics.onlyDirectType) {
+        if (intakePanel) intakePanel.style.opacity = '0.6';
+        if (note) note.textContent = 'Nonaktif karena filter hanya Direct Gudang.';
+        intakeBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b;">Filter Direct Gudang aktif. Tabel Intake 71 dinonaktifkan.</td></tr>';
+      } else {
+        if (intakePanel) intakePanel.style.opacity = '1';
+        if (note) note.textContent = 'Klik baris untuk popup durasi per truck.';
+        if (!analytics.intakeRows.length) {
+          intakeBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#64748b;">Tidak ada data Intake 71 untuk filter ini.</td></tr>';
+        } else {
+          intakeBody.innerHTML = analytics.intakeRows.map(function(r) {
+            _bkkDbIntakeByDate[r.date] = r.details || [];
+            var actH = Math.floor(r.activeMin / 60), actM = r.activeMin % 60;
+            var offH = Math.floor(r.offMin / 60), offM = r.offMin % 60;
+            return '<tr style="cursor:pointer;" onclick="bkkDbShowIntakePopup(\'' + bkkDbEscAttr(r.date) + '\')">' +
+              '<td>' + bkkDbEsc(r.date) + '</td>' +
+              '<td style="text-align:center;font-weight:700;">' + r.trucks + '</td>' +
+              '<td style="font-weight:700;color:#10b981;">' + actH + 'j ' + bkkDbP2(actM) + 'm</td>' +
+              '<td style="font-weight:700;color:#ef4444;">' + offH + 'j ' + bkkDbP2(offM) + 'm</td>' +
+              '<td style="text-align:right;font-family:\'Rajdhani\',sans-serif;font-weight:800;">' + (r.nettoKg || 0).toLocaleString('id-ID') + ' kg</td>' +
+              '<td><span class="db-badge db-badge-normal">' + r.utilPct.toFixed(1) + '%</span></td></tr>';
+          }).join('');
+        }
+      }
+    }
   }
 
   function bkkDbFormatMin(m) {
@@ -756,6 +1057,7 @@
 
     var filtered = bkkDbFilterRows(rows);
     _bkkDbLastFiltered = filtered;
+    _bkkDbAggBreakdownByKey = {};
 
     var hasNs = _bkkDbSelNs.length > 0;
     var hasSbm = _bkkDbSelSbm.length > 0;
@@ -772,6 +1074,7 @@
       sumMap[t.key] = 0;
       countMap[t.key] = 0;
       distMap[t.key] = [0, 0, 0, 0, 0];
+      _bkkDbAggBreakdownByKey[t.key] = { totalMin: 0, totalTruck: 0, causes: {} };
     });
 
     var tableData = [];
@@ -804,6 +1107,23 @@
           else if (v < 120) distMap[t.key][2]++;
           else if (v < 240) distMap[t.key][3]++;
           else distMap[t.key][4]++;
+
+          var agg = _bkkDbAggBreakdownByKey[t.key];
+          if (agg) {
+            agg.totalMin += Number(v) || 0;
+            agg.totalTruck += 1;
+            var rowBd = (entry.breakdownRoot && entry.breakdownRoot[t.key]) ? entry.breakdownRoot[t.key] : [];
+            if (Array.isArray(rowBd) && rowBd.length) {
+              rowBd.forEach(function(it) {
+                var ket = bkkDbBreakdownKeterangan(it) || 'Lainnya';
+                var mn = parseInt(it.min != null ? it.min : it.MIN, 10);
+                if (isNaN(mn) || mn <= 0) return;
+                agg.causes[ket] = (agg.causes[ket] || 0) + mn;
+              });
+            } else {
+              agg.causes['Durasi dari selisih jam (tanpa breakdown)'] = (agg.causes['Durasi dari selisih jam (tanpa breakdown)'] || 0) + Number(v || 0);
+            }
+          }
         }
       });
       entry.total = hasAny ? rowTotal : null;
@@ -812,7 +1132,8 @@
     });
 
     bkkDbRenderTopSummary(selected, tableData, sumMap, countMap);
-    bkkDbRenderBottomSummary(filtered);
+    // Ringkasan per-BK & Statistik disembunyikan sesuai permintaan.
+    bkkDbRenderLeadtimePanels(bkkDbBuildLeadtimeAnalytics(filtered, rows));
     bkkDbRenderMiniGrid(selected, sumMap, countMap, distMap);
     bkkDbRenderTable(selected, tableData, rows);
   };
@@ -833,14 +1154,14 @@
 
     grid.innerHTML = selected.map(function(t) {
       var sid = 'bkkdb-dmc-' + String(t.key).replace(/[^a-zA-Z0-9]/g, '_');
-      return '<div class="db-mini-card" id="' + sid + '-card" style="border-top-color:' + t.color + ';">' +
+      return '<div class="db-mini-card" id="' + sid + '-card" style="border-top-color:' + t.color + ';cursor:pointer;" onclick="bkkDbShowAggregateByKey(\'' + bkkDbEscAttr(t.key) + '\',\'' + bkkDbEscAttr(t.label) + '\')">' +
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">' +
         '<div><div style="font-size:0.85rem;font-weight:700;color:#475569;text-transform:uppercase;">' + bkkDbEsc(t.label) + '</div>' +
         '<div style="font-size:0.7rem;color:#94a3b8;margin-top:2px;">' + bkkDbEsc(t.sub) + '</div></div>' +
         '<span id="' + sid + '-sts"></span></div>' +
         '<div id="' + sid + '-avg" style="font-family:\'Rajdhani\',sans-serif;font-size:2rem;font-weight:800;color:' + t.color + ';margin-bottom:15px;">-</div>' +
         '<div style="height:120px;margin-bottom:15px;position:relative;"><canvas id="' + sid + '-chart"></canvas></div>' +
-        '<div style="border-top:1px dashed #e2e8f0;padding-top:12px;font-size:0.75rem;color:#64748b;">Data valid: <span id="' + sid + '-cnt" style="color:' + t.color + ';font-weight:700;">0</span> truck</div></div>';
+        '<div style="border-top:1px dashed #e2e8f0;padding-top:12px;font-size:0.75rem;color:#64748b;display:flex;justify-content:space-between;align-items:center;"><span>Data valid: <span id="' + sid + '-cnt" style="color:' + t.color + ';font-weight:700;">0</span> truck</span><span style="color:' + t.color + ';font-weight:700;font-size:0.68rem;">Klik detail</span></div></div>';
     }).join('');
 
     selected.forEach(function(t, idx) {
@@ -1001,6 +1322,52 @@
     }
     tbody.innerHTML = html;
   }
+
+  window.bkkDbShowAggregateByKey = function(stageKey, stageLabel) {
+    try {
+      var agg = _bkkDbAggBreakdownByKey[stageKey];
+      if (!agg || !agg.totalTruck) {
+        Swal.fire({ icon: 'info', title: 'Data kosong', text: 'Belum ada data untuk kategori ini pada filter aktif.' });
+        return;
+      }
+      var totalMin = Number(agg.totalMin || 0);
+      var causes = Object.keys(agg.causes || {}).map(function(k) {
+        return { ket: k, menit: Number(agg.causes[k] || 0) };
+      }).sort(function(a, b) { return b.menit - a.menit; });
+
+      var html = '<div style="text-align:left;">' +
+        '<div style="background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px;">' +
+          '<div style="font-size:0.8rem;opacity:.9;">BREAKDOWN DETAIL (AGGREGATE)</div>' +
+          '<div style="font-size:1.05rem;font-weight:800;margin-top:4px;">' + bkkDbEsc(stageLabel || '-') + '</div>' +
+          '<div style="font-size:0.75rem;opacity:.85;margin-top:4px;">' + agg.totalTruck + ' truck | ' + bkkDbFormatMin(totalMin) + '</div>' +
+        '</div>' +
+        '<div style="max-height:55vh;overflow:auto;border:1px solid #e2e8f0;border-radius:12px;">' +
+        '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">' +
+        '<thead style="position:sticky;top:0;background:#f8fafc;z-index:2;"><tr>' +
+        '<th style="text-align:left;padding:10px;border-bottom:1px solid #e2e8f0;">Penyebab</th>' +
+        '<th style="text-align:right;padding:10px;border-bottom:1px solid #e2e8f0;">Menit</th>' +
+        '<th style="text-align:right;padding:10px;border-bottom:1px solid #e2e8f0;">%</th>' +
+        '</tr></thead><tbody>' +
+        (causes.length ? causes.map(function(c) {
+          var pct = totalMin > 0 ? (c.menit * 100 / totalMin) : 0;
+          return '<tr><td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;">' + bkkDbEsc(c.ket) + '</td>' +
+            '<td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;text-align:right;">' + bkkDbFormatMin(c.menit) + '</td>' +
+            '<td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;text-align:right;">' + pct.toFixed(1) + '%</td></tr>';
+        }).join('') : '<tr><td colspan="3" style="padding:16px;text-align:center;color:#64748b;">Tidak ada rincian penyebab.</td></tr>') +
+        '</tbody></table></div></div>';
+
+      Swal.fire({
+        title: '',
+        html: html,
+        width: 880,
+        showCloseButton: true,
+        confirmButtonText: 'Tutup'
+      });
+    } catch (e) {
+      console.error('bkkDbShowAggregateByKey error', e);
+      Swal.fire({ icon: 'error', title: 'Gagal membuka detail', text: String(e && e.message ? e.message : e) });
+    }
+  };
 
   /**
    * Popup breakdown + grafik doughnut — selaras rm-dt-v2 showBreakdownDetail.
@@ -1240,6 +1607,36 @@
     });
   };
 
+  window.bkkDbShowIntakePopup = function(dateKey) {
+    if (typeof Swal === 'undefined') return;
+    var rows = _bkkDbIntakeByDate[dateKey] || [];
+    if (!rows.length) return;
+    var totalNet = rows.reduce(function(a, b) { return a + (b.nettoKg || 0); }, 0);
+    var totalMin = rows.reduce(function(a, b) { return a + (b.durMin || 0); }, 0);
+    var body = '<div style="text-align:left;font-size:0.9rem;">' +
+      '<div style="margin-bottom:10px;color:#64748b;">Tanggal <b>' + bkkDbEsc(dateKey) + '</b> · ' + rows.length + ' truck · Netto total <b>' + totalNet.toLocaleString('id-ID') + ' kg</b></div>' +
+      '<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">' +
+      '<thead><tr style="background:#f8fafc;"><th style="padding:8px;text-align:left;">No Polisi</th><th style="padding:8px;">Start</th><th style="padding:8px;">Finish</th><th style="padding:8px;text-align:right;">Durasi</th><th style="padding:8px;text-align:right;">Netto</th></tr></thead><tbody>';
+    rows.forEach(function(r, i) {
+      var bg = i % 2 ? '#f8fafc' : '#fff';
+      body += '<tr style="background:' + bg + ';">' +
+        '<td style="padding:8px;font-weight:700;">' + bkkDbEsc(r.nopol) + '</td>' +
+        '<td style="padding:8px;text-align:center;">' + bkkDbEsc(r.start) + '</td>' +
+        '<td style="padding:8px;text-align:center;">' + bkkDbEsc(r.finish) + '</td>' +
+        '<td style="padding:8px;text-align:right;font-family:\'Rajdhani\',sans-serif;font-weight:700;">' + (r.durMin || 0) + ' mnt</td>' +
+        '<td style="padding:8px;text-align:right;font-family:\'Rajdhani\',sans-serif;font-weight:700;">' + (r.nettoKg || 0).toLocaleString('id-ID') + ' kg</td>' +
+        '</tr>';
+    });
+    body += '</tbody><tfoot><tr style="background:#0f172a;color:#fff;"><td colspan="3" style="padding:8px;text-align:right;font-weight:800;">TOTAL</td><td style="padding:8px;text-align:right;">' + totalMin + ' mnt</td><td style="padding:8px;text-align:right;">' + totalNet.toLocaleString('id-ID') + ' kg</td></tr></tfoot></table></div>';
+    Swal.fire({
+      title: '<div style="font-family:\'Orbitron\',sans-serif;color:#8b5cf6;font-size:1.1rem;letter-spacing:.8px;">DETAIL DURASI INTAKE 71</div>',
+      html: body,
+      width: 820,
+      confirmButtonText: 'Tutup',
+      confirmButtonColor: '#64748b'
+    });
+  };
+
   function bkkDbInitOnce() {
     if (_bkkDbInit) return;
     _bkkDbInit = true;
@@ -1284,6 +1681,7 @@
       bkkDbPopulateOneMs('bkkdb-ms-material', mats, 'SEMUA MATERIAL');
       bkkDbPopulateOneMs('bkkdb-ms-bk', bks, 'SEMUA BK');
       bkkDbPopulateOneMs('bkkdb-ms-shift', shifts, 'SEMUA SHIFT');
+      bkkDbPopulateTypeBongkaranMs();
 
       bkkDbDiscoverKeys(window._bkkDbHistoryRows);
       bkkDbBuildChips();

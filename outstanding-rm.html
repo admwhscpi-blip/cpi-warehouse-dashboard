@@ -642,10 +642,10 @@
             </div>
         </a>
 
-        <!-- BACK BUTTON SPECIFIC FOR DT V2 -->
+        <!-- DT V2 EMBED CONTROL BUTTON -->
         <a href="rm-dt-v2.html" id="btn-back-dtv2" style="display:none; text-decoration:none; margin-left:20px;">
-            <button style="background:rgba(255,255,255,0.1); border:1px solid var(--neon-blue); color:var(--neon-blue); padding:8px 15px; border-radius:4px; font-family:'Orbitron'; font-size:0.75rem; cursor:pointer; font-weight:700; transition:all 0.3s; display:flex; align-items:center; gap:8px;">
-                <i class="fas fa-arrow-left"></i> KEMBALI KE DT V2
+            <button onclick="event.preventDefault(); toggleFullscreen();" style="background:rgba(255,255,255,0.1); border:1px solid var(--neon-blue); color:var(--neon-blue); padding:8px 15px; border-radius:4px; font-family:'Orbitron'; font-size:0.75rem; cursor:pointer; font-weight:700; transition:all 0.3s; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-expand"></i> FULL SCREEN (ESC KEMBALI)
             </button>
         </a>
 
@@ -1195,6 +1195,7 @@
                         innerBtn.style.padding = '12px 24px';
                         innerBtn.style.fontSize = '0.9rem';
                         innerBtn.style.boxShadow = '0 0 30px rgba(0, 243, 255, 0.6)';
+                        innerBtn.innerHTML = '<i class="fas fa-expand"></i> FULL SCREEN (ESC KEMBALI)';
                     }
                 }
             }
@@ -1226,6 +1227,12 @@
                 }
             }
         }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.fullscreenElement) {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        });
 
         document.addEventListener('fullscreenchange', () => {
             setTimeout(drawConnectors, 500);

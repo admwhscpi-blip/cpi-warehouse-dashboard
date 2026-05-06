@@ -1568,7 +1568,7 @@
                 <div class="view-toggle-group">
                     <button class="view-tab active" onclick="switchView('leadtime')" id="tab-leadtime"><i class="fas fa-route"></i> Lead Time</button>
                     <button class="view-tab" onclick="switchView('outstanding')" id="tab-outstanding-live"><i class="fas fa-list-check"></i> Outstanding (Live)</button>
-                    <button class="view-tab" onclick="window.location.href='rm-dashboard.html?from=dtv2'" id="tab-inventory"><i class="fas fa-boxes-stacked"></i> Inventory</button>
+                    <button class="view-tab" onclick="switchView('inventory')" id="tab-inventory"><i class="fas fa-boxes-stacked"></i> Inventory</button>
                     <button class="view-tab" onclick="switchView('ops')" id="tab-ops"><i class="fas fa-chart-line"></i> Operasional</button>
                     <button class="view-tab" onclick="switchView('durbreakdown')" id="tab-durbreakdown"><i class="fas fa-stopwatch"></i> Duration Breakdown</button>
                     <button class="view-tab" onclick="switchView('costmuat')" id="tab-costmuat"><i class="fas fa-chart-pie"></i> Cost Muat</button>
@@ -1765,7 +1765,7 @@
                             <i class="fas fa-list-check" style="color:#7c3aed; margin-right:6px;"></i> OUTSTANDING LIVE (EMBED)
                         </div>
                         <span style="font-size:.72rem; color:#8b7ec8; background:#ede8fb; border:1px solid #ddd6fe; padding:4px 10px; border-radius:999px; font-weight:700;">
-                            Light View
+                            Embedded View
                         </span>
                     </div>
                     <div style="background:#fff; border:1px solid #ede8fb; border-radius:14px; overflow:hidden; min-height:72vh;">
@@ -1775,6 +1775,21 @@
                     </div>
                 </div>
             </div> <!-- CLOSE view-outstanding -->
+
+            <!-- VIEW: INVENTORY (EMBED) -->
+            <div id="view-inventory" style="display:none;">
+                <div style="background:#f7f5ff; border:1px solid #ede8fb; border-radius:18px; padding:14px; box-shadow:0 8px 24px rgba(124,58,237,0.08);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
+                        <div style="font-family:'Rajdhani',sans-serif; font-weight:800; letter-spacing:.6px; color:#1e1345; font-size:1rem;">
+                            <i class="fas fa-boxes-stacked" style="color:#7c3aed; margin-right:6px;"></i> INVENTORY (EMBED)
+                        </div>
+                    </div>
+                    <div style="background:#fff; border:1px solid #ede8fb; border-radius:14px; overflow:hidden; min-height:72vh;">
+                        <iframe id="inventory-embed-frame" title="Inventory Embed" src="about:blank" loading="lazy"
+                            style="width:100%; height:72vh; border:none; background:#ffffff;" referrerpolicy="no-referrer"></iframe>
+                    </div>
+                </div>
+            </div> <!-- CLOSE view-inventory -->
 
             <!-- VIEW: OPERASIONAL -->
             <div id="view-ops" style="display:none;">
@@ -2266,6 +2281,8 @@
             document.getElementById('tab-leadtime').classList.toggle('active', mode === 'leadtime');
             const tabOutstanding = document.getElementById('tab-outstanding-live');
             if (tabOutstanding) tabOutstanding.classList.toggle('active', mode === 'outstanding');
+            const tabInventory = document.getElementById('tab-inventory');
+            if (tabInventory) tabInventory.classList.toggle('active', mode === 'inventory');
             document.getElementById('tab-ops').classList.toggle('active', mode === 'ops');
             document.getElementById('tab-durbreakdown').classList.toggle('active', mode === 'durbreakdown');
             const tabCost = document.getElementById('tab-costmuat');
@@ -2273,12 +2290,14 @@
 
             const vLead = document.getElementById('view-leadtime');
             const vOutstanding = document.getElementById('view-outstanding');
+            const vInventory = document.getElementById('view-inventory');
             const vOps  = document.getElementById('view-ops');
             const vDb   = document.getElementById('view-durbreakdown');
             const vCost = document.getElementById('view-costmuat');
 
             if (vLead) vLead.style.display = mode === 'leadtime'      ? 'block' : 'none';
             if (vOutstanding) vOutstanding.style.display = mode === 'outstanding' ? 'block' : 'none';
+            if (vInventory) vInventory.style.display = mode === 'inventory' ? 'block' : 'none';
             if (vOps)  vOps.style.display  = mode === 'ops'           ? 'block' : 'none';
             if (vDb)   vDb.style.display   = mode === 'durbreakdown'  ? 'block' : 'none';
             if (vCost) vCost.style.display = mode === 'costmuat'      ? 'block' : 'none';
@@ -2286,7 +2305,13 @@
             if (mode === 'outstanding') {
                 const frame = document.getElementById('outstanding-embed-frame');
                 if (frame && (!frame.src || frame.src === 'about:blank')) {
-                    frame.src = 'outstanding-rm.html?from=dtv2&embed=1&theme=light';
+                    frame.src = 'outstanding-rm.html?from=dtv2&embed=1';
+                }
+            }
+            if (mode === 'inventory') {
+                const frame = document.getElementById('inventory-embed-frame');
+                if (frame && (!frame.src || frame.src === 'about:blank')) {
+                    frame.src = 'rm-dashboard.html?from=dtv2&embed=1';
                 }
             }
             if (mode === 'durbreakdown') initDurationBreakdown();
@@ -5892,10 +5917,11 @@
         }
 
         function buildBreakdownAnalyticsHtml(model) {
-            const { title, subtitle, totalMenit, data, materialData, heatmapData, trendData, topMaterialLabel, footerLabel } = model;
+            const { title, subtitle, stageKey, totalMenit, data, materialData, heatmapData, trendData, topMaterialLabel, footerLabel } = model;
             if (!data || data.length === 0) {
                 return `<div style="padding:24px; border:1px dashed #ddd6fe; border-radius:12px; text-align:center; color:#8b7ec8;">Tidak ada rincian data breakdown.</div>`;
             }
+            const stageExplain = getStageExplanation(stageKey);
             let cum = 0, idx80 = 0;
             for (let i = 0; i < data.length; i++) { cum += data[i].durasi; if (cum / totalMenit >= 0.8) { idx80 = i + 1; break; } }
             const top1 = data[0];
@@ -5967,6 +5993,8 @@
                     .swal2-popup.premium-panel { background:#f7f5ff; color:#1e1345; border:1px solid #ede8fb; border-radius:20px; }
                     .bdx-shell { color:#1e1345; text-align:left; }
                     .bdx-modal-header { position:sticky; top:0; z-index:10; backdrop-filter:blur(12px); background:rgba(247,245,255,0.92); border-bottom:1px solid rgba(237,232,251,0.8); padding:10px 2px 12px; margin-bottom:14px; }
+                    .bdx-scroll { max-height: calc(100vh - 260px); overflow-y:auto; overflow-x:hidden; padding-right:6px; -webkit-overflow-scrolling: touch; }
+                    .bdx-stage-explain { margin-top:8px; font-size:0.8rem; font-weight:700; color:#5b4ea1; background:#f8f6ff; border:1px solid #ddd6fe; border-radius:12px; padding:8px 10px; display:flex; align-items:center; gap:8px; }
                     .bdx-title { font-family:'Orbitron',sans-serif; color:#7c3aed; font-size:1.15rem; letter-spacing:.8px; font-weight:800; display:flex; align-items:center; gap:8px; }
                     .bdx-subtitle { margin-top:8px; display:inline-block; background:#ede8fb; color:#8b7ec8; border:1px solid #ddd6fe; padding:6px 12px; border-radius:999px; font-size:.78rem; font-weight:700; }
                     .grid-4col { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
@@ -6019,16 +6047,18 @@
                       .bdx-chart-wrap { height:190px; }
                     }
                 </style>
-                <div class="bdx-modal-header anim-item">
-                    <div class="bdx-title"><i class="fas fa-stopwatch"></i>${title}</div>
-                    <div class="bdx-subtitle">${subtitle}</div>
-                </div>
-                <div class="grid-4col anim-stagger">
+                <div class="bdx-scroll">
+                    <div class="bdx-modal-header anim-item">
+                        <div class="bdx-title"><i class="fas fa-stopwatch"></i>${title}</div>
+                        <div class="bdx-subtitle" style="color:#7c3aed;">${subtitle}</div>
+                        ${stageExplain ? `<div class="bdx-stage-explain"><i class="fas fa-arrow-right" style="color:#7c3aed;"></i>${stageExplain}</div>` : ''}
+                    </div>
+                    <div class="grid-4col anim-stagger">
                     <div class="card-3d kpi-card anim-item" style="--kpi-color:#7c3aed;"><div class="kpi-label">Total Durasi</div><div class="kpi-val" data-countup="${totalMenit}">0</div><div class="kpi-sub">menit</div></div>
                     <div class="card-3d kpi-card anim-item" style="--kpi-color:${top1.warna};"><div class="kpi-label">Penyebab #1</div><div class="kpi-val" data-countup="${top1.durasi}">0</div><div class="kpi-sub">${top1.nama} (${top1Pct}%)</div></div>
                     <div class="card-3d kpi-card anim-item" style="--kpi-color:#d97706;"><div class="kpi-label">80% Delay</div><div class="kpi-val" data-countup="${idx80}">0</div><div class="kpi-sub">${idx80} kategori</div></div>
                     <div class="card-3d kpi-card anim-item" style="--kpi-color:#059669;"><div class="kpi-label">Material Terlama</div><div class="kpi-val">${matTop ? matTop.material : '-'}</div><div class="kpi-sub">${matTopTotal} mnt</div></div>
-                </div>
+                    </div>
                 <div class="grid-2col">
                     <div class="card-3d anim-item"><h5 class="bdx-card-title"><i class="fas fa-chart-line" style="color:#dc2626"></i>Pareto 80/20</h5><div class="bdx-chart-wrap"><canvas id="bdxPareto"></canvas></div><div class="bdx-insight">${paretoInsight}</div></div>
                     <div class="card-3d anim-item"><h5 class="bdx-card-title"><i class="fas fa-layer-group" style="color:#2563eb"></i>Material x Penyebab</h5><div class="bdx-chart-wrap"><canvas id="bdxMaterialStacked"></canvas></div><div class="bdx-insight">${materialInsight}</div></div>
@@ -6045,7 +6075,8 @@
                     <h5 class="bdx-card-title"><i class="fas fa-table" style="color:#059669"></i>Detail Table</h5>
                     <div class="bdx-table-wrap"><table class="bdx-table"><thead><tr><th>#</th><th>Nama Delay</th><th>Durasi (mnt)</th><th>%</th><th>Kumulatif %</th><th>Proporsi</th></tr></thead><tbody>${tableRows}</tbody><tfoot><tr><td colspan="2" style="text-align:right; font-weight:800;">TOTAL</td><td style="font-weight:900;color:#7c3aed;">${totalMenit}</td><td colspan="3"></td></tr></tfoot></table></div>
                 </div>
-                <div class="bdx-footer">${footerLabel || subtitle}</div>
+                    <div class="bdx-footer">${footerLabel || subtitle}</div>
+                </div>
             </div>`;
         }
 
@@ -6292,7 +6323,19 @@
             return stepDetails.map((d, i) => ({ nama: d.keterangan, durasi: d.waktu, ...defaultDelayPalette(i) }));
         }
 
-        function buildFallbackModel(typeLabel, delayItems) {
+        function getStageExplanation(stageKey) {
+            const map = {
+                samplingAwal:   'Arrival → QC Sampling 1',
+                panggilMasuk:   'QC Sampling 1 → Sampai Gudang',
+                tungguQC:       'Sampai Gudang → Start Bongkar',
+                bongkarAwal:    'Start Bongkar → Hold QC',
+                sampling2:      'Hold QC → Restart QC',
+                bongkarAkhir:   'Restart QC → Finish PB'
+            };
+            return map[stageKey] || '';
+        }
+
+        function buildFallbackModel(typeLabel, delayItems, stageKey) {
             const totalMenit = delayItems.reduce((s, d) => s + d.durasi, 0);
             const jam = ['07:00', '09:00', '11:00', '13:00', '15:00', '17:00', '19:00'];
             const kategori = delayItems.map(d => d.nama);
@@ -6304,6 +6347,7 @@
             return {
                 title: 'BREAKDOWN DETAIL (AGGREGATE)',
                 subtitle: typeLabel,
+                stageKey,
                 totalMenit,
                 data: delayItems,
                 materialData: [{ material: 'ALL MATERIAL', penyebab: delayItems.slice(0, 6).map(d => ({ nama: d.nama, durasi: d.durasi, warna: d.warna })) }],
@@ -6357,6 +6401,7 @@
             const model = (contextAnalytics && contextAnalytics.hasData) ? {
                 title: 'BREAKDOWN DETAIL (AGGREGATE)',
                 subtitle: typeLabel,
+                stageKey: typeKey,
                 totalMenit: totalMin,
                 data: contextAnalytics.delayItems.length ? contextAnalytics.delayItems : delayItems,
                 materialData: contextAnalytics.materialData.length ? contextAnalytics.materialData : [{ material: '-', penyebab: [] }],
@@ -6364,14 +6409,11 @@
                 trendData: contextAnalytics.trendData,
                 topMaterialLabel: contextAnalytics.topMaterial?.label || '-',
                 footerLabel: `Tahapan: ${typeLabel} | Shift dominan: ${contextAnalytics.topShift?.label || '-'}`
-            } : buildFallbackModel(typeLabel, delayItems);
+            } : buildFallbackModel(typeLabel, delayItems, typeKey);
             let html = buildBreakdownAnalyticsHtml(model);
 
             Swal.fire({
-                title: `<div style="font-family:'Orbitron',sans-serif; color:var(--purple); font-size:1.4rem; font-weight:800; letter-spacing:1px;"><i class="fas fa-stopwatch" style="margin-right:8px;"></i>BREAKDOWN DETAIL (AGGREGATE)</div>
-                        <div style="font-size:0.9rem; color:#64748b; font-family:'Inter',sans-serif; margin-top:8px; font-weight:600; background:#f1f5f9; padding:4px 10px; border-radius:20px; display:inline-block;">
-                            ${typeLabel}
-                        </div>`,
+                title: '',
                 html: html,
                 confirmButtonText: '<i class="fas fa-times"></i> TUTUP',
                 confirmButtonColor: '#64748b',

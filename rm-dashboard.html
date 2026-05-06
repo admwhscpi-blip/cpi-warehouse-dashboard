@@ -27,6 +27,9 @@
             background: rgba(5, 5, 5, 0.95);
             z-index: 1000;
         }
+        /* When opened via embed + fullscreen, hide some chrome for cleaner view */
+        :fullscreen .navbar { display: none !important; }
+        :fullscreen #rm-view-banner { display: none !important; }
     </style>
 </head>
 
@@ -58,9 +61,10 @@
     </nav>
 
     <!-- BACK TO DT V2 BUTTON (FIXED) -->
-    <a id="btn-back-dtv2" href="rm-dt-v2.html" style="display:none; position: fixed; top: 15px; right: 20px; z-index: 10001; text-decoration:none;">
+    <a id="btn-back-dtv2" href="rm-dt-v2.html" style="display:none; position: fixed; top: 15px; right: 20px; z-index: 10001; text-decoration:none;"
+        onclick="event.preventDefault(); toggleFullscreen();">
         <button style="background:#00f3ff; color:#000; border:none; padding:12px 24px; font-family:'Orbitron'; font-weight:900; border-radius:4px; cursor:pointer; display:flex; align-items:center; gap:10px; box-shadow:0 0 30px rgba(0, 243, 255, 0.6); letter-spacing:1px; font-size:0.9rem;">
-            <i class="fas fa-arrow-left"></i> KEMBALI KE DT V2
+            <i class="fas fa-expand"></i> FULL SCREEN (ESC KEMBALI)
         </button>
     </a>
 
@@ -147,6 +151,11 @@
             </div>
         </div>
 
+        <div id="rm-view-banner" style="display:none;margin-bottom:24px;padding:14px 18px;border-radius:10px;background:rgba(188,19,254,0.12);border:1px solid rgba(188,19,254,0.35);font-family:Inter,sans-serif;font-size:0.9rem;color:#e2e8f0;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;">
+            <span id="rm-view-banner-text"></span>
+            <button type="button" id="rm-btn-live" onclick="rmGoLive()" style="background:#00f3ff;color:#000;border:none;padding:8px 18px;border-radius:6px;font-family:'Orbitron',sans-serif;font-weight:800;cursor:pointer;">← KEMBALI LIVE</button>
+        </div>
+
         <!-- VIEW 1: STOCK MONITOR -->
         <div id="view-stock" style="display:block;">
             <div id="module-rm">
@@ -171,6 +180,16 @@
                             style="font-family:'Orbitron'; color:#fff; border-left:3px solid #bc13fe; padding-left:10px; margin-bottom:20px;">
                             🏆 Top Materials</h3>
                         <div id="top-items-table"></div>
+                        <div id="rm-history-wrap" style="margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.08);">
+                            <h4 style="font-family:'Orbitron',sans-serif;font-size:0.75rem;color:#94a3b8;margin:0 0 10px 0;letter-spacing:2px;">HISTORIS SNAPSHOT</h4>
+                            <p style="color:#64748b;font-size:0.72rem;margin:0 0 12px 0;line-height:1.45;">Pilih tanggal: tampilan di atas (3 stat, gudang, Top Materials, kategori) mengikuti data tersimpan untuk tanggal itu.</p>
+                            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;">
+                                <input type="date" id="rm-hist-date" style="background:#0f172a;border:1px solid #334155;color:#fff;padding:8px 10px;border-radius:6px;font-family:Inter,sans-serif;">
+                                <button type="button" onclick="rmLoadHistoricalSnapshot()" style="background:#bc13fe;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-family:'Orbitron',sans-serif;font-weight:700;cursor:pointer;">Tampilkan</button>
+                            </div>
+                            <div id="rm-hist-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+                            <p style="color:#475569;font-size:0.65rem;margin:0;">Otomatis jam 12:00 WIB: simpan snapshot (browser + Google Sheet setelah deploy Apps Script).</p>
+                        </div>
                     </div>
 
                     <!-- CATEGORY DISTRIBUTION -->
@@ -181,6 +200,12 @@
                             📊 Category Distribution</h3>
                         <div id="category-chart-container"
                             style="display:flex; justify-content:space-around; align-items:center;"></div>
+                        <div id="rm-search-wrap" style="margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.08);">
+                            <h4 style="font-family:'Orbitron',sans-serif;font-size:0.75rem;color:#94a3b8;margin:0 0 10px 0;letter-spacing:2px;">SEARCH MATERIAL</h4>
+                            <input type="search" id="rm-search-input" placeholder="Ketik nama material (min. 2 huruf)…" autocomplete="off"
+                                style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;color:#fff;padding:10px 12px;border-radius:8px;font-family:Inter,sans-serif;font-size:0.85rem;margin-bottom:10px;">
+                            <div id="rm-search-results" style="max-height:340px;overflow-y:auto;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -235,12 +260,166 @@
     <!-- SCRIPTS FOR DATA LOGIC -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/app-config.js?v=1202"></script>
-    <script src="js/app-data.js?v=1202"></script>
+    <script src="js/app-data.js?v=20260504rmsnap"></script>
 
     <script>
         // --- DASHBOARD SPECIFIC CONTROLLER ---
 
-        const App = { data: null };
+        const App = { data: null, liveData: null, viewMode: 'live', snapshotDate: null };
+        var rmSearchTimer = null;
+        var rmSnapSchedulerStarted = false;
+
+        function rmEsc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function rmJakartaYmd() {
+            return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+        }
+
+        function rmJakartaHour() {
+            var parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jakarta', hour: '2-digit', hour12: false }).formatToParts(new Date());
+            var h = parts.find(function (p) { return p.type === 'hour'; });
+            return h ? parseInt(h.value, 10) : 0;
+        }
+
+        function applyRmDashboardData(raw) {
+            var data = typeof DataService.sanitizeRmDashboard === 'function' ? DataService.sanitizeRmDashboard(raw) : raw;
+            if (!data) return;
+            App.data = data;
+            renderGlobalStats(DataService.processGlobalStats(App.data));
+            renderWarehouseCards(App.data);
+            var analytics = DataService.getAnalytics(App.data);
+            renderAnalytics(analytics);
+            var categories = DataService.getCategoryStats(App.data);
+            renderCategoryStats(categories);
+            rmRunMaterialSearch();
+        }
+
+        function rmGoLive() {
+            if (!App.liveData) return;
+            App.viewMode = 'live';
+            App.snapshotDate = null;
+            var b = document.getElementById('rm-view-banner');
+            if (b) b.style.display = 'none';
+            applyRmDashboardData(App.liveData);
+        }
+
+        async function rmLoadHistoricalSnapshot() {
+            var inp = document.getElementById('rm-hist-date');
+            var t = inp && inp.value ? inp.value : '';
+            if (!t) { alert('Pilih tanggal dulu.'); return; }
+            var snap = null;
+            try {
+                if (typeof DataService.fetchRmSnapshot === 'function') snap = await DataService.fetchRmSnapshot(t);
+            } catch (e) { console.warn('fetchRmSnapshot', e); }
+            if (!snap && typeof DataService.loadRmSnapshotLocal === 'function') snap = DataService.loadRmSnapshotLocal(t);
+            if (!snap) {
+                alert('Tidak ada snapshot untuk tanggal ' + t + '. Pastikan sudah pernah tersimpan (setelah jam 12 WIB atau deploy Apps Script).');
+                return;
+            }
+            App.viewMode = 'hist';
+            App.snapshotDate = t.substring(0, 10);
+            var b = document.getElementById('rm-view-banner');
+            var tx = document.getElementById('rm-view-banner-text');
+            if (b) {
+                b.style.display = 'flex';
+                b.style.flexDirection = 'row';
+            }
+            if (tx) tx.textContent = 'Snapshot: ' + App.snapshotDate + ' (bukan live)';
+            applyRmDashboardData(snap);
+        }
+
+        function rmChipClick(iso) {
+            var inp = document.getElementById('rm-hist-date');
+            if (inp) inp.value = iso;
+            rmLoadHistoricalSnapshot();
+        }
+
+        async function refreshRmHistChips() {
+            var el = document.getElementById('rm-hist-chips');
+            if (!el) return;
+            var server = [];
+            try {
+                if (typeof DataService.fetchRmSnapshotList === 'function') server = await DataService.fetchRmSnapshotList();
+            } catch (e) {}
+            var local = typeof DataService.listRmSnapshotLocal === 'function' ? DataService.listRmSnapshotLocal() : [];
+            var merged = {};
+            server.forEach(function (d) { merged[d] = 1; });
+            local.forEach(function (d) { merged[d] = 1; });
+            var dates = Object.keys(merged).sort().reverse().slice(0, 24);
+            if (!dates.length) {
+                el.innerHTML = '<span style="color:#475569;font-size:0.7rem;">Belum ada tanggal tersimpan di perangkat ini.</span>';
+                return;
+            }
+            el.innerHTML = dates.map(function (d) {
+                return '<button type="button" onclick="rmChipClick(\'' + d + '\')" style="background:rgba(15,23,42,0.9);border:1px solid #334155;color:#cbd5e1;padding:4px 10px;border-radius:999px;font-size:0.7rem;cursor:pointer;font-family:Inter,sans-serif;">' + d + '</button>';
+            }).join('');
+        }
+
+        function rmRunMaterialSearch() {
+            var inp = document.getElementById('rm-search-input');
+            var out = document.getElementById('rm-search-results');
+            if (!inp || !out || !App.data) return;
+            var q = inp.value.trim();
+            if (q.length < 2) {
+                out.innerHTML = '';
+                return;
+            }
+            var rows = DataService.searchMaterials(App.data, q);
+            if (!rows.length) {
+                out.innerHTML = '<span style="color:#64748b;font-size:0.75rem;">Tidak ada material cocok.</span>';
+                return;
+            }
+            var html = '';
+            rows.forEach(function (r) {
+                html += '<div style="margin-bottom:14px;padding:12px;border-radius:8px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.06);">';
+                html += '<div style="font-weight:700;color:#00f3ff;font-size:0.85rem;margin-bottom:8px;font-family:Rajdhani,sans-serif;">' + rmEsc(r.name) + '</div>';
+                html += '<div style="color:#94a3b8;font-size:0.7rem;margin-bottom:6px;">Total: <strong style="color:#fff;">' + r.totalTon.toLocaleString('id-ID', { maximumFractionDigits: 2 }) + '</strong> TON</div>';
+                html += '<table style="width:100%;font-size:0.72rem;border-collapse:collapse;"><thead><tr><th style="text-align:left;color:#64748b;padding:4px 0;">Gudang</th><th style="text-align:right;color:#64748b;padding:4px 0;">Stok (TON)</th><th style="text-align:right;color:#64748b;padding:4px 0;">%</th></tr></thead><tbody>';
+                r.distribution.forEach(function (d) {
+                    html += '<tr><td style="padding:3px 0;color:#cbd5e1;">' + rmEsc(d.warehouse) + '</td><td style="padding:3px 0;text-align:right;color:#fff;font-weight:600;">' + d.qtyTon.toLocaleString('id-ID', { maximumFractionDigits: 2 }) + '</td><td style="padding:3px 0;text-align:right;color:#64748b;">' + d.percent.toFixed(0) + '%</td></tr>';
+                });
+                html += '</tbody></table></div>';
+            });
+            out.innerHTML = html;
+        }
+
+        async function maybeDailyRmSnapshot() {
+            if (rmJakartaHour() < 12) return;
+            var ymd = rmJakartaYmd();
+            var flagKey = 'rm_snap_noon_done_' + ymd;
+            if (localStorage.getItem(flagKey)) return;
+            var dataToSave = App.liveData;
+            try {
+                var fresh = await DataService.fetchData();
+                if (fresh && typeof DataService.sanitizeRmDashboard === 'function') {
+                    App.liveData = DataService.sanitizeRmDashboard(fresh);
+                    if (App.viewMode === 'live') {
+                        App.data = App.liveData;
+                        applyRmDashboardData(App.liveData);
+                    }
+                    dataToSave = App.liveData;
+                }
+            } catch (err) {
+                console.warn('Noon snapshot fetch', err);
+            }
+            if (!dataToSave) return;
+            if (typeof DataService.saveRmSnapshotLocal === 'function') DataService.saveRmSnapshotLocal(ymd, dataToSave);
+            localStorage.setItem(flagKey, '1');
+            if (typeof DataService.postRmSnapshot === 'function') {
+                DataService.postRmSnapshot(ymd, dataToSave).catch(function () {});
+            }
+            refreshRmHistChips();
+        }
+
+        function startRmSnapshotScheduler() {
+            if (rmSnapSchedulerStarted) return;
+            rmSnapSchedulerStarted = true;
+            setInterval(maybeDailyRmSnapshot, 60 * 1000);
+            maybeDailyRmSnapshot();
+        }
 
         // --- MODAL LOGIC ---
         function openDetailModal(warehouseIndex) {
@@ -361,14 +540,27 @@
             App.data = await DataService.fetchData();
             if (!App.data) return;
 
-            renderGlobalStats(DataService.processGlobalStats(App.data));
-            renderWarehouseCards(App.data);
+            App.liveData = typeof DataService.sanitizeRmDashboard === 'function'
+                ? DataService.sanitizeRmDashboard(App.data)
+                : App.data;
+            App.viewMode = 'live';
+            App.snapshotDate = null;
+            var b = document.getElementById('rm-view-banner');
+            if (b) b.style.display = 'none';
 
-            const analytics = DataService.getAnalytics(App.data);
-            renderAnalytics(analytics);
+            applyRmDashboardData(App.liveData);
+            await refreshRmHistChips();
+            startRmSnapshotScheduler();
 
-            const categories = DataService.getCategoryStats(App.data);
-            renderCategoryStats(categories);
+            var si = document.getElementById('rm-search-input');
+            if (si) {
+                si.addEventListener('input', function () {
+                    clearTimeout(rmSearchTimer);
+                    rmSearchTimer = setTimeout(rmRunMaterialSearch, 280);
+                });
+            }
+            var hd = document.getElementById('rm-hist-date');
+            if (hd && !hd.value) hd.value = rmJakartaYmd();
         }
 
         // 2. RENDER FUNCTIONS (PIXEL PERFECT COPIES)
@@ -820,6 +1012,21 @@
                 setTimeout(() => btn.innerHTML = oldContent, 2000);
             }
         }
+
+        // Fullscreen control (for embed mode from rm-dt-v2.html)
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.fullscreenElement) {
+                if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+            }
+        });
 
 
     </script>
