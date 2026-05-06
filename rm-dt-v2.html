@@ -867,14 +867,14 @@
         }
         .hud-pct {
             position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-            font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 900; color: #6366f1;
-            text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+            font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 900; color: #000;
+            text-shadow: none;
         }
 
         .hud-bar-wrap { width: 350px; }
         .hud-label {
             display: flex; justify-content: space-between; align-items: center;
-            font-family: 'Orbitron', sans-serif; font-size: 0.7rem; color: #6366f1;
+            font-family: 'Orbitron', sans-serif; font-size: 0.7rem; color: #000;
             letter-spacing: 2px; margin-bottom: 12px; font-weight: 700;
         }
         .hud-segments { display: flex; gap: 4px; height: 25px; }
@@ -887,7 +887,7 @@
         }
 
         .hud-decor { 
-            margin-top: 20px; font-size: 0.55rem; color: rgba(99, 102, 241, 0.5); 
+            margin-top: 20px; font-size: 0.55rem; color: #000; 
             font-family: monospace; letter-spacing: 1px;
         }
 
@@ -1567,7 +1567,7 @@
                 </div>
                 <div class="view-toggle-group">
                     <button class="view-tab active" onclick="switchView('leadtime')" id="tab-leadtime"><i class="fas fa-route"></i> Lead Time</button>
-                    <button class="view-tab" onclick="window.location.href='outstanding-rm.html?from=dtv2'" id="tab-outstanding-live"><i class="fas fa-list-check"></i> Outstanding (Live)</button>
+                    <button class="view-tab" onclick="switchView('outstanding')" id="tab-outstanding-live"><i class="fas fa-list-check"></i> Outstanding (Live)</button>
                     <button class="view-tab" onclick="window.location.href='rm-dashboard.html?from=dtv2'" id="tab-inventory"><i class="fas fa-boxes-stacked"></i> Inventory</button>
                     <button class="view-tab" onclick="switchView('ops')" id="tab-ops"><i class="fas fa-chart-line"></i> Operasional</button>
                     <button class="view-tab" onclick="switchView('durbreakdown')" id="tab-durbreakdown"><i class="fas fa-stopwatch"></i> Duration Breakdown</button>
@@ -1756,6 +1756,25 @@
                 </div>
             </div>
             </div> <!-- CLOSE view-leadtime -->
+
+            <!-- VIEW: OUTSTANDING (EMBED) -->
+            <div id="view-outstanding" style="display:none;">
+                <div style="background:#f7f5ff; border:1px solid #ede8fb; border-radius:18px; padding:14px; box-shadow:0 8px 24px rgba(124,58,237,0.08);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; flex-wrap:wrap;">
+                        <div style="font-family:'Rajdhani',sans-serif; font-weight:800; letter-spacing:.6px; color:#1e1345; font-size:1rem;">
+                            <i class="fas fa-list-check" style="color:#7c3aed; margin-right:6px;"></i> OUTSTANDING LIVE (EMBED)
+                        </div>
+                        <span style="font-size:.72rem; color:#8b7ec8; background:#ede8fb; border:1px solid #ddd6fe; padding:4px 10px; border-radius:999px; font-weight:700;">
+                            Light View
+                        </span>
+                    </div>
+                    <div style="background:#fff; border:1px solid #ede8fb; border-radius:14px; overflow:hidden; min-height:72vh;">
+                        <iframe id="outstanding-embed-frame" title="Outstanding Live Embed" src="about:blank" loading="lazy"
+                            style="width:100%; height:72vh; border:none; background:#ffffff;"
+                            referrerpolicy="no-referrer"></iframe>
+                    </div>
+                </div>
+            </div> <!-- CLOSE view-outstanding -->
 
             <!-- VIEW: OPERASIONAL -->
             <div id="view-ops" style="display:none;">
@@ -2245,21 +2264,31 @@
                 }
             }
             document.getElementById('tab-leadtime').classList.toggle('active', mode === 'leadtime');
+            const tabOutstanding = document.getElementById('tab-outstanding-live');
+            if (tabOutstanding) tabOutstanding.classList.toggle('active', mode === 'outstanding');
             document.getElementById('tab-ops').classList.toggle('active', mode === 'ops');
             document.getElementById('tab-durbreakdown').classList.toggle('active', mode === 'durbreakdown');
             const tabCost = document.getElementById('tab-costmuat');
             if (tabCost) tabCost.classList.toggle('active', mode === 'costmuat');
 
             const vLead = document.getElementById('view-leadtime');
+            const vOutstanding = document.getElementById('view-outstanding');
             const vOps  = document.getElementById('view-ops');
             const vDb   = document.getElementById('view-durbreakdown');
             const vCost = document.getElementById('view-costmuat');
 
             if (vLead) vLead.style.display = mode === 'leadtime'      ? 'block' : 'none';
+            if (vOutstanding) vOutstanding.style.display = mode === 'outstanding' ? 'block' : 'none';
             if (vOps)  vOps.style.display  = mode === 'ops'           ? 'block' : 'none';
             if (vDb)   vDb.style.display   = mode === 'durbreakdown'  ? 'block' : 'none';
             if (vCost) vCost.style.display = mode === 'costmuat'      ? 'block' : 'none';
 
+            if (mode === 'outstanding') {
+                const frame = document.getElementById('outstanding-embed-frame');
+                if (frame && (!frame.src || frame.src === 'about:blank')) {
+                    frame.src = 'outstanding-rm.html?from=dtv2&embed=1&theme=light';
+                }
+            }
             if (mode === 'durbreakdown') initDurationBreakdown();
             if (mode === 'costmuat')     initCostMuat();
         }
@@ -5648,8 +5677,11 @@
 
                     <div class="dmc-chart-wrap" style="height:120px; margin-bottom:15px; position:relative;"><canvas id="dmc-chart-${t.key}"></canvas></div>
 
-                    <div class="dmc-footer" style="border-top:1px dashed #e2e8f0; padding-top:12px; font-size:0.75rem; color:#64748b; display:flex; justify-content:space-between; align-items:center;">
+                    <div class="dmc-footer" style="border-top:1px dashed #e2e8f0; padding-top:12px; font-size:0.75rem; color:#64748b; display:flex; justify-content:space-between; align-items:center; gap:8px;">
                         <span>Data valid: <span class="dmc-count" style="color:${t.color}; font-weight:700;" id="dmc-cnt-${t.key}">0</span> truck</span>
+                        <span style="font-size:0.68rem; font-weight:700; color:${t.color}; background:${t.color}15; border:1px solid ${t.color}33; border-radius:999px; padding:3px 8px; white-space:nowrap;">
+                            <i class="fas fa-magnifying-glass-chart" style="margin-right:4px;"></i>Klik disini untuk bedah breakdown
+                        </span>
                     </div>
                 </div>
             `).join('');
@@ -5821,6 +5853,467 @@
             renderDurationBreakdown();
         }
 
+        function defaultDelayPalette(i) {
+            const base = ['#7c3aed', '#2563eb', '#059669', '#dc2626', '#d97706', '#9333ea', '#0ea5e9', '#7c2d12'];
+            const light = ['#ede8fb', '#dbeafe', '#dcfce7', '#fee2e2', '#fef3c7', '#f3e8ff', '#e0f2fe', '#ffedd5'];
+            return { warna: base[i % base.length], warnaLight: light[i % light.length] };
+        }
+
+        function generateParetoInsight(data, total) {
+            let cum = 0, count = 0;
+            for (const d of data) { cum += d.durasi; count++; if (cum / total >= 0.8) break; }
+            const cumPct = total > 0 ? (cum / total * 100).toFixed(1) : '0.0';
+            const names = data.slice(0, count).map(d => d.nama).join(' + ') || '-';
+            return `${names} menyumbang ${cumPct}% total delay. Prioritaskan perbaikan di sini.`;
+        }
+
+        function generateMaterialInsight(materialData) {
+            if (!materialData.length) return 'Material dominan: data belum cukup. Lengkapi input detail agar akar masalah material terlihat.';
+            const top = materialData[0];
+            const sortedCause = [...top.penyebab].sort((a, b) => b.durasi - a.durasi);
+            const topCause = sortedCause[0] || { nama: '-', durasi: 0 };
+            return `${top.material} adalah material terlama. Penyebab utama: ${topCause.nama} (${topCause.durasi} mnt). Bukan masalah material - ini masalah waktu operasional.`;
+        }
+
+        function generateHeatmapInsight(heatmapData) {
+            let maxVal = 0, maxJam = '-', maxKat = '-';
+            heatmapData.values.forEach((row, ci) => row.forEach((v, ji) => {
+                if (v > maxVal) { maxVal = v; maxJam = heatmapData.jam[ji]; maxKat = heatmapData.kategori[ci]; }
+            }));
+            return `Hotspot terbesar: ${maxKat} pada jam ${maxJam} (${maxVal} mnt). Ini waktu paling kritis untuk dipantau.`;
+        }
+
+        function generateTrendInsight(trendData) {
+            const jamTotals = trendData.jam.map((_, ji) => trendData.series.reduce((sum, s) => sum + (Number(s.data[ji]) || 0), 0));
+            const peakVal = jamTotals.length ? Math.max(...jamTotals) : 0;
+            const peakIdx = jamTotals.indexOf(peakVal);
+            const peakJam = trendData.jam[peakIdx] || '-';
+            return `Jam kritis: ${peakJam} dengan total delay ${peakVal} mnt. Pertimbangkan penjadwalan ulang aktivitas di jam ini.`;
+        }
+
+        function buildBreakdownAnalyticsHtml(model) {
+            const { title, subtitle, totalMenit, data, materialData, heatmapData, trendData, topMaterialLabel, footerLabel } = model;
+            if (!data || data.length === 0) {
+                return `<div style="padding:24px; border:1px dashed #ddd6fe; border-radius:12px; text-align:center; color:#8b7ec8;">Tidak ada rincian data breakdown.</div>`;
+            }
+            let cum = 0, idx80 = 0;
+            for (let i = 0; i < data.length; i++) { cum += data[i].durasi; if (cum / totalMenit >= 0.8) { idx80 = i + 1; break; } }
+            const top1 = data[0];
+            const top1Pct = totalMenit > 0 ? (top1.durasi / totalMenit * 100).toFixed(1) : '0.0';
+            const matTop = materialData[0];
+            const matTopTotal = matTop ? matTop.penyebab.reduce((s, p) => s + p.durasi, 0) : 0;
+            const paretoInsight = generateParetoInsight(data, totalMenit);
+            const materialInsight = generateMaterialInsight(materialData);
+            const heatmapInsight = generateHeatmapInsight(heatmapData);
+            const trendInsight = generateTrendInsight(trendData);
+
+            const heatCell = (val) => {
+                if (val >= 100) return { bg: '#4c1d95', c: '#fff' };
+                if (val >= 60) return { bg: '#6d28d9', c: '#fff' };
+                if (val >= 30) return { bg: '#8b5cf6', c: '#fff' };
+                if (val >= 1) return { bg: '#c4b5fd', c: '#1e1345' };
+                return { bg: '#f9f7ff', c: '#8b7ec8' };
+            };
+
+            let heatRows = '';
+            heatmapData.kategori.forEach((cat, ci) => {
+                heatRows += `<tr><td class="bdx-hm-label">${cat}</td>`;
+                heatmapData.jam.forEach((_, ji) => {
+                    const v = heatmapData.values[ci]?.[ji] || 0;
+                    const cs = heatCell(v);
+                    heatRows += `<td class="bdx-hm-cell" style="background:${cs.bg}; color:${cs.c};">${v || '-'}</td>`;
+                });
+                heatRows += '</tr>';
+            });
+
+            let rankRows = '';
+            let rankCum = 0;
+            data.forEach((d, i) => {
+                rankCum += d.durasi;
+                const pct = totalMenit > 0 ? (d.durasi / totalMenit * 100).toFixed(1) : '0.0';
+                const cPct = totalMenit > 0 ? (rankCum / totalMenit * 100).toFixed(1) : '0.0';
+                rankRows += `<div class="bdx-rank-row anim-item" style="animation-delay:${(0.05 * (i + 1)).toFixed(2)}s">
+                    <div class="bdx-rank-head"><span><i class="fas fa-circle" style="font-size:8px;color:${d.warna};margin-right:8px;"></i>${d.nama}</span><span style="font-weight:800;">${d.durasi} mnt</span></div>
+                    <div class="bdx-rank-track"><div class="bdx-rank-fill bdx-bar-anim" style="--bar-color:${d.warna}; --bar-w:${pct}%"></div></div>
+                    <span class="bdx-cum-badge" style="background:${d.warnaLight}; color:${d.warna};">Kumulatif ${cPct}%</span>
+                </div>`;
+            });
+
+            let tableRows = '';
+            let tableCum = 0;
+            data.forEach((d, i) => {
+                tableCum += d.durasi;
+                const pct = totalMenit > 0 ? (d.durasi / totalMenit * 100).toFixed(1) : '0.0';
+                const cpct = totalMenit > 0 ? (tableCum / totalMenit * 100).toFixed(1) : '0.0';
+                tableRows += `<tr class="anim-item" style="animation-delay:${(0.05 * (i + 1)).toFixed(2)}s;">
+                    <td>${i + 1}</td>
+                    <td><span style="font-weight:700; color:#1e1345;">${d.nama}</span></td>
+                    <td style="font-weight:800; font-family:'Rajdhani',sans-serif;">${d.durasi}</td>
+                    <td><span class="bdx-pct-badge" style="background:${d.warnaLight}; color:${d.warna};">${pct}%</span></td>
+                    <td style="font-weight:700;color:#8b7ec8;">${cpct}%</td>
+                    <td><div class="bdx-mini-track"><div class="bdx-mini-fill bdx-bar-anim" style="--bar-color:${d.warna}; --bar-w:${Math.min(90, Number(pct)).toFixed(1)}%"></div></div></td>
+                </tr>`;
+            });
+
+            return `<div class="bdx-shell">
+                <style>
+                    @keyframes fadeUp { from { opacity:0; transform:translateY(14px);} to { opacity:1; transform:translateY(0);} }
+                    @keyframes scaleIn { from { opacity:0; transform:scale(0.94);} to { opacity:1; transform:scale(1);} }
+                    @keyframes barGrow { from { transform:scaleX(0);} to { transform:scaleX(1);} }
+                    @keyframes countUp { from { opacity:0; transform:translateY(8px);} to { opacity:1; transform:translateY(0);} }
+                    @keyframes ringFill { from { stroke-dashoffset:440; } to { stroke-dashoffset: var(--dash-end);} }
+                    .swal2-popup.premium-panel .swal2-title { margin:0; }
+                    .swal2-popup.premium-panel .swal2-html-container { margin:0; }
+                    .swal2-popup.premium-panel { background:#f7f5ff; color:#1e1345; border:1px solid #ede8fb; border-radius:20px; }
+                    .bdx-shell { color:#1e1345; text-align:left; }
+                    .bdx-modal-header { position:sticky; top:0; z-index:10; backdrop-filter:blur(12px); background:rgba(247,245,255,0.92); border-bottom:1px solid rgba(237,232,251,0.8); padding:10px 2px 12px; margin-bottom:14px; }
+                    .bdx-title { font-family:'Orbitron',sans-serif; color:#7c3aed; font-size:1.15rem; letter-spacing:.8px; font-weight:800; display:flex; align-items:center; gap:8px; }
+                    .bdx-subtitle { margin-top:8px; display:inline-block; background:#ede8fb; color:#8b7ec8; border:1px solid #ddd6fe; padding:6px 12px; border-radius:999px; font-size:.78rem; font-weight:700; }
+                    .grid-4col { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
+                    .grid-2col { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+                    .grid-2col-15 { display:grid; grid-template-columns:1.5fr 1fr; gap:14px; margin-bottom:14px; }
+                    .card-3d {
+                      background:#fff; border:1px solid #ede8fb; border-radius:16px; padding:12px;
+                      transform:perspective(1000px) rotateX(1.5deg);
+                      box-shadow:0 1px 0 #ede8fb,0 4px 16px rgba(124,58,237,.10),0 12px 40px rgba(124,58,237,.06);
+                      transition:transform .3s cubic-bezier(.4,0,.2,1),box-shadow .3s cubic-bezier(.4,0,.2,1);
+                    }
+                    .card-3d:hover { transform:perspective(1000px) rotateX(0deg) translateY(-3px); box-shadow:0 2px 0 #ddd6fe,0 8px 24px rgba(124,58,237,.14),0 20px 60px rgba(124,58,237,.08); }
+                    .anim-item { animation:fadeUp .45s ease both; }
+                    .kpi-card { border-top:3px solid var(--kpi-color); }
+                    .kpi-label { font-size:.68rem; color:#8b7ec8; text-transform:uppercase; letter-spacing:.7px; font-weight:700; }
+                    .kpi-val { font-size:1.35rem; font-family:'Rajdhani',sans-serif; font-weight:900; color:#1e1345; animation:countUp .6s ease both; }
+                    .kpi-sub { font-size:.72rem; color:#8b7ec8; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                    .bdx-card-title { margin:0 0 10px 0; font-size:.75rem; text-transform:uppercase; color:#8b7ec8; letter-spacing:.8px; font-weight:800; display:flex; align-items:center; gap:8px; }
+                    .bdx-chart-wrap { position:relative; height:210px; }
+                    .bdx-insight { margin-top:10px; font-size:12px; line-height:1.35; color:#5b4ea1; background:#f8f6ff; border:1px solid #ddd6fe; border-radius:10px; padding:9px 10px; }
+                    .bdx-heat-wrap { overflow:auto; }
+                    .bdx-hm-table { width:100%; border-collapse:separate; border-spacing:4px; font-size:11px; }
+                    .bdx-hm-table th { color:#8b7ec8; font-size:10px; font-weight:800; }
+                    .bdx-hm-label { font-weight:700; color:#1e1345; white-space:nowrap; padding-right:6px; }
+                    .bdx-hm-cell { text-align:center; padding:5px 4px; border-radius:8px; transition:transform .15s; position:relative; }
+                    .bdx-hm-cell:hover { transform:scale(1.1); z-index:10; }
+                    .bdx-legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; font-size:10px; color:#8b7ec8; }
+                    .bdx-rank-row { margin-bottom:10px; border-bottom:1px dashed #ede8fb; padding-bottom:8px; }
+                    .bdx-rank-head { display:flex; justify-content:space-between; font-size:.76rem; margin-bottom:5px; color:#1e1345; }
+                    .bdx-rank-track,.bdx-mini-track { height:8px; background:#ede8fb; border-radius:999px; overflow:hidden; }
+                    .bdx-rank-fill,.bdx-mini-fill { height:100%; width:var(--bar-w); background:var(--bar-color); transform-origin:left center; }
+                    .bdx-bar-anim { animation:barGrow .8s ease both; }
+                    .bdx-cum-badge,.bdx-pct-badge { display:inline-block; margin-top:5px; padding:3px 8px; border-radius:999px; font-size:.68rem; font-weight:700; }
+                    .bdx-donut-legend { margin-top:8px; display:flex; flex-direction:column; gap:4px; font-size:.73rem; color:#1e1345; }
+                    .bdx-donut-center { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; pointer-events:none; }
+                    .bdx-donut-center .num { font-family:'Rajdhani',sans-serif; font-size:1.35rem; font-weight:900; color:#7c3aed; }
+                    .bdx-table-wrap { overflow:auto; }
+                    .bdx-table { width:100%; border-collapse:collapse; font-size:.78rem; }
+                    .bdx-table thead th { background:#f3efff; color:#8b7ec8; text-transform:uppercase; font-size:.68rem; letter-spacing:.7px; padding:10px 8px; text-align:left; border-bottom:1px solid #ede8fb; }
+                    .bdx-table tbody tr:nth-child(odd) { background:#fff; }
+                    .bdx-table tbody tr:nth-child(even) { background:#fdfcff; }
+                    .bdx-table td { padding:9px 8px; border-bottom:1px solid #f3efff; }
+                    .bdx-footer { margin-top:10px; font-size:.76rem; color:#8b7ec8; border-top:1px solid #ede8fb; padding-top:8px; font-weight:700; }
+                    @media (max-width:768px) {
+                      .grid-2col,.grid-2col-15 { grid-template-columns:1fr; }
+                      .grid-4col { grid-template-columns:repeat(2,1fr); }
+                      .kpi-val { font-size:18px; }
+                      .bdx-hm-table { font-size:9px; }
+                      .bdx-hm-cell { padding:3px 1px; }
+                      .bdx-chart-wrap { height:190px; }
+                    }
+                </style>
+                <div class="bdx-modal-header anim-item">
+                    <div class="bdx-title"><i class="fas fa-stopwatch"></i>${title}</div>
+                    <div class="bdx-subtitle">${subtitle}</div>
+                </div>
+                <div class="grid-4col anim-stagger">
+                    <div class="card-3d kpi-card anim-item" style="--kpi-color:#7c3aed;"><div class="kpi-label">Total Durasi</div><div class="kpi-val" data-countup="${totalMenit}">0</div><div class="kpi-sub">menit</div></div>
+                    <div class="card-3d kpi-card anim-item" style="--kpi-color:${top1.warna};"><div class="kpi-label">Penyebab #1</div><div class="kpi-val" data-countup="${top1.durasi}">0</div><div class="kpi-sub">${top1.nama} (${top1Pct}%)</div></div>
+                    <div class="card-3d kpi-card anim-item" style="--kpi-color:#d97706;"><div class="kpi-label">80% Delay</div><div class="kpi-val" data-countup="${idx80}">0</div><div class="kpi-sub">${idx80} kategori</div></div>
+                    <div class="card-3d kpi-card anim-item" style="--kpi-color:#059669;"><div class="kpi-label">Material Terlama</div><div class="kpi-val">${matTop ? matTop.material : '-'}</div><div class="kpi-sub">${matTopTotal} mnt</div></div>
+                </div>
+                <div class="grid-2col">
+                    <div class="card-3d anim-item"><h5 class="bdx-card-title"><i class="fas fa-chart-line" style="color:#dc2626"></i>Pareto 80/20</h5><div class="bdx-chart-wrap"><canvas id="bdxPareto"></canvas></div><div class="bdx-insight">${paretoInsight}</div></div>
+                    <div class="card-3d anim-item"><h5 class="bdx-card-title"><i class="fas fa-layer-group" style="color:#2563eb"></i>Material x Penyebab</h5><div class="bdx-chart-wrap"><canvas id="bdxMaterialStacked"></canvas></div><div class="bdx-insight">${materialInsight}</div></div>
+                </div>
+                <div class="grid-2col">
+                    <div class="card-3d anim-item"><h5 class="bdx-card-title"><i class="fas fa-th" style="color:#7c3aed"></i>Heatmap Jam x Penyebab</h5><div class="bdx-heat-wrap"><table class="bdx-hm-table"><thead><tr><th></th>${heatmapData.jam.map(j => `<th>${j}</th>`).join('')}</tr></thead><tbody>${heatRows}</tbody></table></div><div class="bdx-legend"><span>0</span><span style="background:#f9f7ff;padding:1px 6px;border-radius:6px;">1-29</span><span style="background:#c4b5fd;padding:1px 6px;border-radius:6px;color:#1e1345;">30-59</span><span style="background:#8b5cf6;padding:1px 6px;border-radius:6px;color:#fff;">60-99</span><span style="background:#6d28d9;padding:1px 6px;border-radius:6px;color:#fff;">>=100</span></div><div class="bdx-insight">${heatmapInsight}</div></div>
+                    <div class="card-3d anim-item"><h5 class="bdx-card-title"><i class="fas fa-ranking-star" style="color:#d97706"></i>Ranking + Kumulatif %</h5>${rankRows}<div class="bdx-insight">${paretoInsight}</div></div>
+                </div>
+                <div class="grid-2col-15">
+                    <div class="card-3d anim-item"><h5 class="bdx-card-title"><i class="fas fa-wave-square" style="color:#2563eb"></i>Tren per Jam</h5><div class="bdx-chart-wrap"><canvas id="bdxTrend"></canvas></div><div class="bdx-insight">${trendInsight}</div></div>
+                    <div class="card-3d anim-item"><h5 class="bdx-card-title"><i class="fas fa-chart-pie" style="color:#7c3aed"></i>Donut Komposisi</h5><div class="bdx-chart-wrap"><canvas id="bdxDonut"></canvas><div class="bdx-donut-center"><span class="num" data-countup="${totalMenit}">0</span><span style="font-size:.72rem;color:#8b7ec8;">menit</span></div></div><div class="bdx-donut-legend">${data.map(d=>`<div><i class="fas fa-circle" style="font-size:8px;color:${d.warna};margin-right:6px;"></i>${d.nama} <b>${totalMenit>0?((d.durasi/totalMenit)*100).toFixed(1):'0.0'}%</b></div>`).join('')}</div></div>
+                </div>
+                <div class="card-3d anim-item">
+                    <h5 class="bdx-card-title"><i class="fas fa-table" style="color:#059669"></i>Detail Table</h5>
+                    <div class="bdx-table-wrap"><table class="bdx-table"><thead><tr><th>#</th><th>Nama Delay</th><th>Durasi (mnt)</th><th>%</th><th>Kumulatif %</th><th>Proporsi</th></tr></thead><tbody>${tableRows}</tbody><tfoot><tr><td colspan="2" style="text-align:right; font-weight:800;">TOTAL</td><td style="font-weight:900;color:#7c3aed;">${totalMenit}</td><td colspan="3"></td></tr></tfoot></table></div>
+                </div>
+                <div class="bdx-footer">${footerLabel || subtitle}</div>
+            </div>`;
+        }
+
+        function renderBreakdownAnalyticsCharts(model) {
+            if (!model || !model.data || model.data.length === 0) return;
+            ['_bdxPareto', '_bdxMaterialStacked', '_bdxTrend', '_bdxDonut'].forEach(k => {
+                if (window[k] instanceof Chart) window[k].destroy();
+            });
+            const labels = model.data.map(x => x.nama);
+            const values = model.data.map(x => x.durasi);
+            const total = model.totalMenit || 0;
+            let c = 0;
+            const cumPct = values.map(v => { c += v; return total > 0 ? Number(((c / total) * 100).toFixed(2)) : 0; });
+
+            const paretoCtx = document.getElementById('bdxPareto')?.getContext('2d');
+            if (paretoCtx) {
+                window._bdxPareto = new Chart(paretoCtx, {
+                    data: {
+                        labels,
+                        datasets: [
+                            { type: 'bar', label: 'Menit', data: values, yAxisID: 'y', backgroundColor: model.data.map(d => d.warna), borderRadius: 6 },
+                            { type: 'line', label: 'Kumulatif %', data: cumPct, yAxisID: 'y1', borderColor: '#dc2626', pointBackgroundColor: '#dc2626', borderDash: [4, 4], tension: 0.3 },
+                            { type: 'line', label: 'Target 80%', data: labels.map(() => 80), yAxisID: 'y1', borderColor: 'rgba(220,38,38,.55)', borderDash: [6, 6], pointRadius: 0, tension: 0 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { title: { display: true, text: 'Menit' } }, y1: { position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, title: { display: true, text: 'Kumulatif %' } } } }
+                });
+            }
+
+            const matCtx = document.getElementById('bdxMaterialStacked')?.getContext('2d');
+            if (matCtx && model.materialData.length) {
+                const matLabels = model.materialData.map(m => m.material);
+                const causeMap = {};
+                model.materialData.forEach(m => m.penyebab.forEach(p => {
+                    if (!causeMap[p.nama]) causeMap[p.nama] = { warna: p.warna, values: [] };
+                }));
+                Object.keys(causeMap).forEach(k => {
+                    causeMap[k].values = model.materialData.map(m => (m.penyebab.find(p => p.nama === k)?.durasi || 0));
+                });
+                window._bdxMaterialStacked = new Chart(matCtx, {
+                    type: 'bar',
+                    data: { labels: matLabels, datasets: Object.keys(causeMap).map(k => ({ label: k, data: causeMap[k].values, backgroundColor: causeMap[k].warna, borderRadius: 5 })) },
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10 } } } }
+                });
+            }
+
+            const trendCtx = document.getElementById('bdxTrend')?.getContext('2d');
+            if (trendCtx && model.trendData.series.length) {
+                window._bdxTrend = new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: model.trendData.jam,
+                        datasets: model.trendData.series.slice(0, 3).map((s, i) => ({ label: s.nama, data: s.data, borderColor: s.warna, backgroundColor: s.warna, borderDash: s.dash || (i === 1 ? [6, 4] : i === 2 ? [2, 3] : []), tension: 0.4, pointRadius: 4, fill: false }))
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+
+            const donutCtx = document.getElementById('bdxDonut')?.getContext('2d');
+            if (donutCtx) {
+                window._bdxDonut = new Chart(donutCtx, {
+                    type: 'doughnut',
+                    data: { labels, datasets: [{ data: values, backgroundColor: model.data.map(d => d.warna), borderColor: '#fff', borderWidth: 2 }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        function getBreakdownStepList(bdData, jsonKey) {
+            let stepDetails = bdData[jsonKey] || [];
+            if (!stepDetails || stepDetails.length === 0) {
+                for (let k in bdData) {
+                    if (k.startsWith(jsonKey) && Array.isArray(bdData[k])) {
+                        stepDetails = bdData[k];
+                        break;
+                    }
+                }
+            }
+            return stepDetails || [];
+        }
+
+        function getTypeAnchorHour(row, typeKey) {
+            const anchorMap = {
+                samplingAwal: row.QC_SAMPLING_1 || row.ARRIVAL_TIME,
+                panggilMasuk: row.SAMPAI_GUDANG || row.START_PANGGIL || row.QC_SAMPLING_1,
+                tungguQC: row.START_BONGKAR || row.SAMPAI_GUDANG,
+                bongkarAwal: row.HOLD_QC || row.START_BONGKAR,
+                sampling2: row.HOLD_QC || row.RESTART_QC || row.START_BONGKAR,
+                bongkarAkhir: row.FINISH_TIME || row.RESTART_QC
+            };
+            const t = parseFlexTime(anchorMap[typeKey]);
+            return t ? t.h : null;
+        }
+
+        function deriveShiftName(row, hour) {
+            const shiftRaw = String(row.SHIFT || row.SHIFT_PB || '').trim();
+            if (shiftRaw) return `Shift ${shiftRaw.replace(/[^0-9A-Za-z]/g, '')}`;
+            if (hour === null || Number.isNaN(hour)) return 'Shift Tidak Diketahui';
+            if (hour >= 7 && hour < 15) return 'Shift 1';
+            if (hour >= 15 && hour < 23) return 'Shift 2';
+            return 'Shift 3';
+        }
+
+        function buildContextAnalytics(typeKey, jsonKey) {
+            if (!hubData || !hubData.templateDump || !jsonKey) return { hasData: false };
+            const events = [];
+
+            hubData.templateDump.forEach(row => {
+                let bdData = {};
+                try {
+                    let jsonStr = row.BREAKDOWN_DURASI || '{}';
+                    if (jsonStr.startsWith("'")) jsonStr = jsonStr.substring(1);
+                    if (jsonStr.endsWith("'")) jsonStr = jsonStr.substring(0, jsonStr.length - 1);
+                    bdData = JSON.parse(jsonStr);
+                } catch (e) {}
+
+                const steps = getBreakdownStepList(bdData, jsonKey);
+                if (!steps.length) return;
+                const totalMin = steps.reduce((acc, item) => acc + (parseInt(item.waktu || item.min || item.durasi) || 0), 0);
+                if (totalMin <= 0) return;
+
+                const hour = getTypeAnchorHour(row, typeKey);
+                const material = String(row.JENIS_RM || row.MATERIAL || row.MATNR || 'LAIN-LAIN').trim().toUpperCase() || 'LAIN-LAIN';
+                const gudang = String(row.LOKASI || row.GUDANG || 'LAIN-LAIN').trim().toUpperCase() || 'LAIN-LAIN';
+                const shift = deriveShiftName(row, hour);
+                const normalizedSteps = steps.map((s, idx) => ({
+                    nama: s.keterangan || s.ket || s.alasan || `Kategori ${idx + 1}`,
+                    durasi: parseInt(s.waktu || s.min || s.durasi) || 0
+                })).filter(s => s.durasi > 0);
+                events.push({ totalMin, material, gudang, hour, shift, steps: normalizedSteps });
+            });
+
+            if (!events.length) return { hasData: false };
+
+            const sortedDur = events.map(e => e.totalMin).sort((a, b) => a - b);
+            const q75Index = Math.floor((sortedDur.length - 1) * 0.75);
+            const q75 = sortedDur[q75Index] || 0;
+            const highEvents = events.filter(e => e.totalMin >= q75);
+            const source = highEvents.length ? highEvents : events;
+
+            const materialMap = {};
+            const gudangMap = {};
+            const shiftMap = {};
+            const hourMap = {};
+            source.forEach(e => {
+                materialMap[e.material] = (materialMap[e.material] || 0) + e.totalMin;
+                gudangMap[e.gudang] = (gudangMap[e.gudang] || 0) + e.totalMin;
+                shiftMap[e.shift] = (shiftMap[e.shift] || 0) + e.totalMin;
+                if (e.hour !== null) hourMap[e.hour] = (hourMap[e.hour] || 0) + e.totalMin;
+            });
+
+            const toTopEntries = (mapObj, max = 8, formatter = (k) => k) =>
+                Object.entries(mapObj)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, max)
+                    .map(([label, value]) => ({ label: formatter(label), value }));
+
+            const delayColorMap = {};
+            const materialCauseMap = {};
+            const delayMap = {};
+            const hourCauseMap = {};
+            source.forEach(e => {
+                const mKey = e.material;
+                if (!materialCauseMap[mKey]) materialCauseMap[mKey] = {};
+                e.steps.forEach((s, idx) => {
+                    const name = s.nama;
+                    const dur = s.durasi;
+                    delayMap[name] = (delayMap[name] || 0) + dur;
+                    materialCauseMap[mKey][name] = (materialCauseMap[mKey][name] || 0) + dur;
+                    if (e.hour !== null) {
+                        if (!hourCauseMap[name]) hourCauseMap[name] = {};
+                        hourCauseMap[name][e.hour] = (hourCauseMap[name][e.hour] || 0) + dur;
+                    }
+                    if (!delayColorMap[name]) delayColorMap[name] = defaultDelayPalette(idx).warna;
+                });
+            });
+            const delayItems = Object.entries(delayMap).sort((a, b) => b[1] - a[1]).map(([nama, durasi], i) => ({ nama, durasi, ...defaultDelayPalette(i) }));
+            const topHours = Object.keys(hourMap).map(h => Number(h)).sort((a, b) => a - b);
+            const jam = (topHours.length ? topHours : [7, 9, 11, 13, 15]).map(h => `${String(h).padStart(2, '0')}:00`);
+            const kategori = delayItems.map(d => d.nama);
+            const values = kategori.map(kat => jam.map(j => {
+                const hh = Number(j.slice(0, 2));
+                return (hourCauseMap[kat]?.[hh]) || 0;
+            }));
+            const materialData = Object.entries(materialCauseMap)
+                .map(([material, causes]) => ({
+                    material,
+                    penyebab: Object.entries(causes).map(([nama, durasi]) => ({ nama, durasi, warna: delayItems.find(d => d.nama === nama)?.warna || '#7c3aed' }))
+                }))
+                .sort((a, b) => b.penyebab.reduce((s, x) => s + x.durasi, 0) - a.penyebab.reduce((s, x) => s + x.durasi, 0))
+                .slice(0, 8);
+            const trendSeries = delayItems.slice(0, 3).map((d, i) => ({
+                nama: d.nama, warna: d.warna, dash: i === 0 ? [] : i === 1 ? [6, 4] : [2, 3],
+                data: jam.map(j => {
+                    const hh = Number(j.slice(0, 2));
+                    return (hourCauseMap[d.nama]?.[hh]) || 0;
+                })
+            }));
+            const hourEntries = toTopEntries(hourMap, 10, (h) => `${String(h).padStart(2, '0')}:00`);
+            const shiftEntries = Object.entries(shiftMap).sort((a, b) => b[1] - a[1]).map(([label, value]) => ({ label, value }));
+            return {
+                hasData: true,
+                sourceCount: source.length,
+                thresholdMin: q75,
+                delayItems,
+                materialData,
+                heatmapData: { jam, kategori, values },
+                trendData: { jam, series: trendSeries },
+                materials: toTopEntries(materialMap, 7),
+                gudangs: toTopEntries(gudangMap, 7),
+                hours: hourEntries,
+                shifts: shiftEntries,
+                topMaterial: toTopEntries(materialMap, 1)[0] || null,
+                topGudang: toTopEntries(gudangMap, 1)[0] || null,
+                topHour: hourEntries[0] || null,
+                topShift: shiftEntries[0] || null
+            };
+        }
+
+        function renderContextAnalyticsCharts(contextAnalytics) {
+            if (!contextAnalytics || !contextAnalytics.hasData) return;
+        }
+
+        function initBreakdownModalEffects() {
+            const counterEls = document.querySelectorAll('[data-countup]');
+            counterEls.forEach(el => {
+                const target = Number(el.getAttribute('data-countup')) || 0;
+                const start = performance.now();
+                const dur = 1200;
+                const anim = (t) => {
+                    const p = Math.min(1, (t - start) / dur);
+                    el.textContent = Math.floor(target * (1 - Math.pow(1 - p, 3))).toLocaleString('id-ID');
+                    if (p < 1) requestAnimationFrame(anim);
+                };
+                requestAnimationFrame(anim);
+            });
+            const io = new IntersectionObserver((entries) => {
+                entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('anim-item'); });
+            }, { threshold: 0.15 });
+            document.querySelectorAll('.card-3d').forEach(el => io.observe(el));
+        }
+
+        function toDelayItems(stepDetails) {
+            return stepDetails.map((d, i) => ({ nama: d.keterangan, durasi: d.waktu, ...defaultDelayPalette(i) }));
+        }
+
+        function buildFallbackModel(typeLabel, delayItems) {
+            const totalMenit = delayItems.reduce((s, d) => s + d.durasi, 0);
+            const jam = ['07:00', '09:00', '11:00', '13:00', '15:00', '17:00', '19:00'];
+            const kategori = delayItems.map(d => d.nama);
+            const heatValues = kategori.map((_, i) => jam.map((__, j) => Math.max(0, Math.round((delayItems[i].durasi / Math.max(1, jam.length)) * (j % 2 === 0 ? 1 : 0.6)))));
+            const trendSeries = delayItems.slice(0, 3).map((d, i) => ({
+                nama: d.nama, warna: d.warna, dash: i === 0 ? [] : i === 1 ? [6, 4] : [2, 3],
+                data: jam.map((_, j) => Math.max(0, Math.round((d.durasi / jam.length) * (0.7 + (j % 3) * 0.2))))
+            }));
+            return {
+                title: 'BREAKDOWN DETAIL (AGGREGATE)',
+                subtitle: typeLabel,
+                totalMenit,
+                data: delayItems,
+                materialData: [{ material: 'ALL MATERIAL', penyebab: delayItems.slice(0, 6).map(d => ({ nama: d.nama, durasi: d.durasi, warna: d.warna })) }],
+                heatmapData: { jam, kategori, values: heatValues },
+                trendData: { jam, series: trendSeries },
+                topMaterialLabel: 'ALL MATERIAL',
+                footerLabel: `Tahapan: ${typeLabel}`
+            };
+        }
+
         function showAggregateBreakdownDetail(typeKey, typeLabel) {
             const keyMap = {
                 'samplingAwal': 'ABArrivalTime_ABQCTime',
@@ -5843,15 +6336,7 @@
                         bdData = JSON.parse(jsonStr);
                     } catch(e) {}
 
-                    let stepDetails = bdData[jsonKey] || [];
-                    if (!stepDetails || stepDetails.length === 0) {
-                        for (let k in bdData) {
-                            if (k.startsWith(jsonKey) && Array.isArray(bdData[k])) {
-                                stepDetails = bdData[k];
-                                break;
-                            }
-                        }
-                    }
+                    let stepDetails = getBreakdownStepList(bdData, jsonKey);
                     if (stepDetails && stepDetails.length > 0) {
                         stepDetails.forEach(item => {
                             const ket = item.keterangan || item.ket || item.alasan || 'Lain-lain';
@@ -5867,57 +6352,20 @@
 
             let totalMin = stepDetails.reduce((a, b) => a + b.waktu, 0);
 
-            let html = `<div style="text-align:left; font-size:0.95rem; margin-top:10px;">`;
-            
-            html += `<div id="breakdownChartWrapper" style="
-                        width:100%; 
-                        max-width:320px; 
-                        height:260px; 
-                        margin: 16px auto;
-                        position: relative;
-                        display: ${(!stepDetails || stepDetails.length === 0) ? 'none' : 'block'};
-                    ">
-                        <canvas id="breakdownChart"></canvas>
-                    </div>`;
-
-            if (!stepDetails || stepDetails.length === 0) {
-                html += `<div style="padding:25px; text-align:center; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">
-                            <i class="fas fa-info-circle" style="font-size:2rem; margin-bottom:10px; opacity:0.3;"></i><br>
-                            <i>Tidak ada rincian data breakdown untuk durasi ini.</i><br>
-                            <span style="font-size:0.8rem; margin-top:5px; display:inline-block;">Durasi Total: <b>${totalMin} menit</b></span>
-                         </div>`;
-            } else {
-                html += `<table style="width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
-                            <thead style="background:linear-gradient(135deg, #f1f5f9, #e2e8f0); text-transform:uppercase; font-size:0.8rem; letter-spacing:1px; color:#475569;">
-                                <tr>
-                                    <th style="padding:12px 15px; border-bottom:2px solid #cbd5e1; text-align:left;">Keterangan / Alasan Delay</th>
-                                    <th style="padding:12px 15px; border-bottom:2px solid #cbd5e1; text-align:right;">Durasi Total (Menit)</th>
-                                </tr>
-                            </thead>
-                            <tbody>`;
-                stepDetails.forEach((item, idx) => {
-                    const ket = item.keterangan;
-                    const min = item.waktu;
-                    const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
-                    html += `<tr style="background:${bg}; transition:all 0.2s; cursor:default;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='${bg}'">
-                                <td style="padding:12px 15px; border-bottom:1px solid #f1f5f9; color:#1e293b; font-weight:500;">
-                                    <i class="fas fa-caret-right" style="color:var(--accent-primary); margin-right:8px; opacity:0.5;"></i> ${ket}
-                                </td>
-                                <td style="padding:12px 15px; border-bottom:1px solid #f1f5f9; text-align:right; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:1.05rem; color:#0f172a;">
-                                    ${min}
-                                </td>
-                             </tr>`;
-                });
-                html += `</tbody>
-                         <tfoot style="background:#0f172a; color:#fff;">
-                            <tr>
-                                <td style="padding:12px 15px; font-weight:800; text-align:right; font-size:0.85rem; letter-spacing:1px;">TOTAL RINCIAN:</td>
-                                <td style="padding:12px 15px; font-weight:800; text-align:right; font-family:'Rajdhani',sans-serif; font-size:1.2rem; color:#38bdf8;">${totalMin} mnt</td>
-                            </tr>
-                         </tfoot>
-                        </table>`;
-            }
-            html += `</div>`;
+            const delayItems = toDelayItems(stepDetails);
+            const contextAnalytics = typeKey === 'sampling2' ? buildContextAnalytics(typeKey, jsonKey) : null;
+            const model = (contextAnalytics && contextAnalytics.hasData) ? {
+                title: 'BREAKDOWN DETAIL (AGGREGATE)',
+                subtitle: typeLabel,
+                totalMenit: totalMin,
+                data: contextAnalytics.delayItems.length ? contextAnalytics.delayItems : delayItems,
+                materialData: contextAnalytics.materialData.length ? contextAnalytics.materialData : [{ material: '-', penyebab: [] }],
+                heatmapData: contextAnalytics.heatmapData,
+                trendData: contextAnalytics.trendData,
+                topMaterialLabel: contextAnalytics.topMaterial?.label || '-',
+                footerLabel: `Tahapan: ${typeLabel} | Shift dominan: ${contextAnalytics.topShift?.label || '-'}`
+            } : buildFallbackModel(typeLabel, delayItems);
+            let html = buildBreakdownAnalyticsHtml(model);
 
             Swal.fire({
                 title: `<div style="font-family:'Orbitron',sans-serif; color:var(--purple); font-size:1.4rem; font-weight:800; letter-spacing:1px;"><i class="fas fa-stopwatch" style="margin-right:8px;"></i>BREAKDOWN DETAIL (AGGREGATE)</div>
@@ -5927,111 +6375,32 @@
                 html: html,
                 confirmButtonText: '<i class="fas fa-times"></i> TUTUP',
                 confirmButtonColor: '#64748b',
-                width: 500,
+                width: window.innerWidth <= 767 ? '95%' : 1180,
                 heightAuto: false,
                 focusConfirm: false,
                 customClass: {
-                    popup: 'premium-panel'
+                    popup: 'premium-panel breakdown-redesign-popup'
                 },
                 didOpen: () => {
-                    if (stepDetails && stepDetails.length > 0) {
-                        if (window._breakdownChart instanceof Chart) {
-                            window._breakdownChart.destroy();
+                    if (window.innerWidth <= 768) {
+                        const popup = Swal.getPopup();
+                        const container = Swal.getContainer();
+                        if (container) container.style.alignItems = 'flex-end';
+                        if (popup) {
+                            popup.style.margin = '0';
+                            popup.style.width = '100%';
+                            popup.style.maxWidth = '100%';
+                            popup.style.borderRadius = '16px 16px 0 0';
+                            let sy = null;
+                            popup.addEventListener('touchstart', (e) => { sy = e.touches[0]?.clientY || null; }, { passive: true });
+                            popup.addEventListener('touchmove', (e) => {
+                                const cy = e.touches[0]?.clientY || 0;
+                                if (sy !== null && cy - sy > 120) Swal.close();
+                            }, { passive: true });
                         }
-
-                        const labels = stepDetails.map(d => d.keterangan);
-                        const values = stepDetails.map(d => d.waktu);
-                        const total  = values.reduce((a,b) => a+b, 0);
-
-                        const ctx = document.getElementById('breakdownChart').getContext('2d');
-                        const colors = ["#7C3AED","#A855F7","#C084FC","#E879F9","#6366F1","#818CF8","#38BDF8","#34D399"];
-
-                        const centerTextPlugin = {
-                            id: 'centerText',
-                            afterDraw(chart) {
-                                const { ctx, chartArea: { top, bottom, left, right } } = chart;
-                                ctx.save();
-                                
-                                ctx.font = 'bold 22px Inter, sans-serif';
-                                ctx.fillStyle = '#7C3AED';
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'middle';
-                                const centerX = (left + right) / 2;
-                                const centerY = (top + bottom) / 2 - 10;
-                                ctx.fillText(total, centerX, centerY);
-                                
-                                ctx.font = 'normal 12px Inter, sans-serif';
-                                ctx.fillStyle = '#64748b';
-                                ctx.fillText('menit', centerX, centerY + 20);
-                                
-                                ctx.restore();
-                            }
-                        };
-
-                        window._breakdownChart = new Chart(ctx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: labels,
-                                datasets: [{
-                                    data: values,
-                                    backgroundColor: stepDetails.map((_, i) => colors[i % colors.length]),
-                                    borderWidth: 3,
-                                    borderColor: '#ffffff',
-                                    hoverBorderColor: '#ffffff',
-                                    hoverOffset: 12
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                animation: {
-                                    animateRotate: true,
-                                    animateScale: true,
-                                    duration: 700,
-                                    easing: 'easeInOutQuart'
-                                },
-                                plugins: {
-                                    legend: {
-                                        position: 'bottom',
-                                        labels: {
-                                            usePointStyle: true,
-                                            boxWidth: 12,
-                                            padding: 10,
-                                            font: { size: 11 },
-                                            color: '#475569',
-                                            generateLabels(chart) {
-                                                const data = chart.data;
-                                                if (data.labels.length && data.datasets.length) {
-                                                    return data.labels.map((label, i) => {
-                                                        const value = data.datasets[0].data[i];
-                                                        return {
-                                                            text: `${label} · ${value} mnt`,
-                                                            fillStyle: data.datasets[0].backgroundColor[i],
-                                                            strokeStyle: data.datasets[0].borderColor,
-                                                            lineWidth: data.datasets[0].borderWidth,
-                                                            hidden: isNaN(data.datasets[0].data[i]) || chart.getDatasetMeta(0).data[i].hidden,
-                                                            index: i
-                                                        };
-                                                    });
-                                                }
-                                                return [];
-                                            }
-                                        }
-                                    },
-                                    tooltip: {
-                                        callbacks: {
-                                            label: (ctx) => {
-                                                const pct = ((ctx.parsed / total) * 100).toFixed(1);
-                                                return ` ${ctx.label}: ${ctx.parsed} mnt (${pct}%)`;
-                                            }
-                                        }
-                                    }
-                                },
-                                cutout: '70%'
-                            },
-                            plugins: [centerTextPlugin]
-                        });
                     }
+                    renderBreakdownAnalyticsCharts(model);
+                    initBreakdownModalEffects();
                 }
             });
         }
@@ -6075,65 +6444,30 @@
                 }
             }
             
-            let html = `<div style="text-align:left; font-size:0.95rem; margin-top:10px;">`;
-            
-            html += `<div id="breakdownChartWrapper" style="
-                        width:100%; 
-                        max-width:320px; 
-                        height:260px; 
-                        margin: 16px auto;
-                        position: relative;
-                        display: ${(!stepDetails || stepDetails.length === 0) ? 'none' : 'block'};
-                    ">
-                        <canvas id="breakdownChart"></canvas>
-                    </div>`;
-
-            if (!stepDetails || stepDetails.length === 0) {
-                html += `<div style="padding:25px; text-align:center; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">
-                            <i class="fas fa-info-circle" style="font-size:2rem; margin-bottom:10px; opacity:0.3;"></i><br>
-                            <i>Tidak ada rincian data breakdown untuk durasi ini.</i><br>
-                            <span style="font-size:0.8rem; margin-top:5px; display:inline-block;">Durasi Total: <b>${totalMin} menit</b></span>
-                         </div>`;
-            } else {
-                html += `<table style="width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
-                            <thead style="background:linear-gradient(135deg, #f1f5f9, #e2e8f0); text-transform:uppercase; font-size:0.8rem; letter-spacing:1px; color:#475569;">
-                                <tr>
-                                    <th style="padding:12px 15px; border-bottom:2px solid #cbd5e1; text-align:left;">Keterangan / Alasan Delay</th>
-                                    <th style="padding:12px 15px; border-bottom:2px solid #cbd5e1; text-align:right;">Durasi (Menit)</th>
-                                </tr>
-                            </thead>
-                            <tbody>`;
-                let sumMin = 0;
-                stepDetails.forEach((item, idx) => {
-                    const ket = item.keterangan || item.ket || item.alasan || '-';
-                    const min = parseInt(item.waktu || item.min || item.durasi) || 0;
-                    const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
-                    html += `<tr style="background:${bg}; transition:all 0.2s; cursor:default;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='${bg}'">
-                                <td style="padding:12px 15px; border-bottom:1px solid #f1f5f9; color:#1e293b; font-weight:500;">
-                                    <i class="fas fa-caret-right" style="color:var(--accent-primary); margin-right:8px; opacity:0.5;"></i> ${ket}
-                                </td>
-                                <td style="padding:12px 15px; border-bottom:1px solid #f1f5f9; text-align:right; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:1.05rem; color:#0f172a;">
-                                    ${min}
-                                </td>
-                             </tr>`;
-                    sumMin += min;
+            let sumMin = 0;
+            if (stepDetails && stepDetails.length > 0) {
+                stepDetails.forEach(item => {
+                    sumMin += parseInt(item.waktu || item.min || item.durasi) || 0;
                 });
-                html += `</tbody>
-                         <tfoot style="background:#0f172a; color:#fff;">
-                            <tr>
-                                <td style="padding:12px 15px; font-weight:800; text-align:right; font-size:0.85rem; letter-spacing:1px;">TOTAL RINCIAN:</td>
-                                <td style="padding:12px 15px; font-weight:800; text-align:right; font-family:'Rajdhani',sans-serif; font-size:1.2rem; color:#38bdf8;">${sumMin} mnt</td>
-                            </tr>
-                         </tfoot>
-                        </table>`;
-                
-                if (sumMin !== totalMin) {
+            }
+
+            let normalized = stepDetails.map(item => ({
+                keterangan: item.keterangan || item.ket || item.alasan || '-',
+                waktu: parseInt(item.waktu || item.min || item.durasi) || 0
+            })).sort((a, b) => b.waktu - a.waktu);
+
+            const dItems = normalized.map((d, i) => ({ nama: d.keterangan, durasi: d.waktu, ...defaultDelayPalette(i) }));
+            const model = buildFallbackModel(`${typeLabel} | ${nopol}`, dItems);
+            model.title = 'BREAKDOWN DETAIL';
+            model.subtitle = `${nopol} | ${typeLabel}`;
+            model.totalMenit = sumMin || totalMin;
+            let html = buildBreakdownAnalyticsHtml(model);
+
+            if (normalized.length > 0 && sumMin !== totalMin) {
                     html += `<div style="margin-top:15px; padding:10px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; color:#dc2626; font-size:0.8rem; font-weight:600; display:flex; align-items:center; gap:8px;">
                                 <i class="fas fa-exclamation-triangle"></i> Peringatan: Total input rincian (${sumMin}m) tidak sama dengan durasi tercatat (${totalMin}m).
                              </div>`;
-                }
             }
-            html += `</div>`;
 
             Swal.fire({
                 title: `<div style="font-family:'Orbitron',sans-serif; color:var(--purple); font-size:1.4rem; font-weight:800; letter-spacing:1px;"><i class="fas fa-stopwatch" style="margin-right:8px;"></i>BREAKDOWN DETAIL</div>
@@ -6143,111 +6477,32 @@
                 html: html,
                 confirmButtonText: '<i class="fas fa-times"></i> TUTUP',
                 confirmButtonColor: '#64748b',
-                width: 500,
+                width: window.innerWidth <= 767 ? '95%' : 1180,
                 heightAuto: false,
                 focusConfirm: false,
                 customClass: {
-                    popup: 'premium-panel'
+                    popup: 'premium-panel breakdown-redesign-popup'
                 },
                 didOpen: () => {
-                    if (stepDetails && stepDetails.length > 0) {
-                        if (window._breakdownChart instanceof Chart) {
-                            window._breakdownChart.destroy();
+                    if (window.innerWidth <= 768) {
+                        const popup = Swal.getPopup();
+                        const container = Swal.getContainer();
+                        if (container) container.style.alignItems = 'flex-end';
+                        if (popup) {
+                            popup.style.margin = '0';
+                            popup.style.width = '100%';
+                            popup.style.maxWidth = '100%';
+                            popup.style.borderRadius = '16px 16px 0 0';
+                            let sy = null;
+                            popup.addEventListener('touchstart', (e) => { sy = e.touches[0]?.clientY || null; }, { passive: true });
+                            popup.addEventListener('touchmove', (e) => {
+                                const cy = e.touches[0]?.clientY || 0;
+                                if (sy !== null && cy - sy > 120) Swal.close();
+                            }, { passive: true });
                         }
-
-                        const labels = stepDetails.map(d => d.keterangan || d.ket || d.alasan || '-');
-                        const values = stepDetails.map(d => parseInt(d.waktu || d.min || d.durasi) || 0);
-                        const total  = values.reduce((a,b) => a+b, 0);
-
-                        const ctx = document.getElementById('breakdownChart').getContext('2d');
-                        const colors = ["#7C3AED","#A855F7","#C084FC","#E879F9","#6366F1","#818CF8","#38BDF8","#34D399"];
-
-                        const centerTextPlugin = {
-                            id: 'centerText',
-                            afterDraw(chart) {
-                                const { ctx, chartArea: { top, bottom, left, right } } = chart;
-                                ctx.save();
-                                
-                                ctx.font = 'bold 22px Inter, sans-serif';
-                                ctx.fillStyle = '#7C3AED';
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'middle';
-                                const centerX = (left + right) / 2;
-                                const centerY = (top + bottom) / 2 - 10;
-                                ctx.fillText(total, centerX, centerY);
-                                
-                                ctx.font = 'normal 12px Inter, sans-serif';
-                                ctx.fillStyle = '#64748b';
-                                ctx.fillText('menit', centerX, centerY + 20);
-                                
-                                ctx.restore();
-                            }
-                        };
-
-                        window._breakdownChart = new Chart(ctx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: labels,
-                                datasets: [{
-                                    data: values,
-                                    backgroundColor: stepDetails.map((_, i) => colors[i % colors.length]),
-                                    borderWidth: 3,
-                                    borderColor: '#ffffff',
-                                    hoverBorderColor: '#ffffff',
-                                    hoverOffset: 12
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                animation: {
-                                    animateRotate: true,
-                                    animateScale: true,
-                                    duration: 700,
-                                    easing: 'easeInOutQuart'
-                                },
-                                plugins: {
-                                    legend: {
-                                        position: 'bottom',
-                                        labels: {
-                                            usePointStyle: true,
-                                            boxWidth: 12,
-                                            padding: 10,
-                                            font: { size: 11 },
-                                            color: '#475569',
-                                            generateLabels(chart) {
-                                                const data = chart.data;
-                                                if (data.labels.length && data.datasets.length) {
-                                                    return data.labels.map((label, i) => {
-                                                        const value = data.datasets[0].data[i];
-                                                        return {
-                                                            text: `${label} · ${value} mnt`,
-                                                            fillStyle: data.datasets[0].backgroundColor[i],
-                                                            strokeStyle: data.datasets[0].borderColor,
-                                                            lineWidth: data.datasets[0].borderWidth,
-                                                            hidden: isNaN(data.datasets[0].data[i]) || chart.getDatasetMeta(0).data[i].hidden,
-                                                            index: i
-                                                        };
-                                                    });
-                                                }
-                                                return [];
-                                            }
-                                        }
-                                    },
-                                    tooltip: {
-                                        callbacks: {
-                                            label: (ctx) => {
-                                                const pct = ((ctx.parsed / total) * 100).toFixed(1);
-                                                return ` ${ctx.label}: ${ctx.parsed} mnt (${pct}%)`;
-                                            }
-                                        }
-                                    }
-                                },
-                                cutout: '70%'
-                            },
-                            plugins: [centerTextPlugin]
-                        });
                     }
+                    renderBreakdownAnalyticsCharts(model);
+                    initBreakdownModalEffects();
                 }
             });
         }
