@@ -446,7 +446,12 @@ function bwNormalizeSheetTime(v) {
 function bwSheetYMD(cell) {
   if (cell == null || cell === '') return '';
   if (typeof cell === 'object' && cell instanceof Date && !isNaN(cell.getTime())) return dashDateToYMD(cell);
-  return String(cell).substring(0, 10);
+  var s = String(cell).trim();
+  if (!s) return '';
+  if (s.indexOf('T') !== -1) {
+    return typeof dashDateToYMD === 'function' ? dashDateToYMD(s) : s.substring(0, 10);
+  }
+  return s.substring(0, 10);
 }
 
 /**
@@ -1749,6 +1754,8 @@ function bwRefreshStep3() {
   if (!tb || !appState.user) return;
   var tgl = $('bw_tanggal').value;
   var sh = $('bw_shift').value;
+  var es = bwEffectiveSetup();
+  var grp = bwWizardTypeGroupFromType(es.type_bongkaran);
   var matSel = $('bw_material');
   var matLabel = matSel && matSel.options[matSel.selectedIndex] ? matSel.options[matSel.selectedIndex].text : '';
   if (sum) {
@@ -1763,6 +1770,10 @@ function bwRefreshStep3() {
     if (!bwIsPendingBongkarRow(r)) return;
     if (!bwRowMatchesWizardTanggal(r, tgl)) return;
     if (!bwShiftMatchesRow(r, sh)) return;
+    if (es.bk_id && String(r.BK_ID || '') !== String(es.bk_id)) return;
+    if (es.material && !bwRowMaterialExact(r, es.material)) return;
+    var rowType = String(r.TYPE_BONGKARAN || '').trim();
+    if (grp && rowType && !bwRowMatchesTypeGroup(r, grp)) return;
     if (!bwInputByMatchesUser(r)) return;
 
     var isSbm = String(r.MATERIAL || '').toLowerCase().indexOf('sbm') >= 0;

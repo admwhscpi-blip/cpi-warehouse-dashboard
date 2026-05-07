@@ -305,6 +305,26 @@ function handleGet(e) {
 }
 
 /** Tambah header kolom durasi di BKK_Bongkar bila belum ada (supaya insertRow bisa mengisi per kolom). */
+function ensureBongkarMetaColumns_() {
+  var names = ['TYPE_BONGKARAN', 'STATUS_ROW', 'DURASI_JSON'];
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_BONGKAR);
+  if (!sheet) return;
+  var lastCol = sheet.getLastColumn();
+  if (lastCol < 1) return;
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var miss = [];
+  for (var i = 0; i < names.length; i++) {
+    if (headers.indexOf(names[i]) < 0) miss.push(names[i]);
+  }
+  if (miss.length === 0) return;
+  var start = lastCol + 1;
+  for (var mi = 0; mi < miss.length; mi++) {
+    sheet.getRange(1, start + mi).setValue(miss[mi]);
+  }
+}
+
+/** Tambah header kolom durasi di BKK_Bongkar bila belum ada (supaya insertRow bisa mengisi per kolom). */
 function ensureBongkarDurasiColumns_() {
   var names = ['AB_TANGGAL', 'PB_TANGGAL', 'AB_ARRIVAL', 'AB_QC', 'PB_SAMPAI', 'PB_START', 'PB_HOLD', 'PB_RESTART', 'PB_FINISH'];
   var ss = getSpreadsheet();
@@ -429,7 +449,7 @@ function saveBongkarSetup(username, dateKey, nama, payloadJson) {
     }
   }
   if (rowIdx > 0) {
-    sheet.getRange(rowIdx, 3, rowIdx, 5).setValues([[nama || '', ts, payloadJson]]);
+    sheet.getRange(rowIdx, 3, 1, 3).setValues([[nama || '', ts, payloadJson]]);
   } else {
     sheet.appendRow([username, dateKey, nama || '', ts, payloadJson]);
   }
@@ -512,6 +532,7 @@ function handlePost(e) {
       } catch (eBd) {
         bdJson = '';
       }
+      ensureBongkarMetaColumns_();
       ensureBongkarDurasiColumns_();
       ensureBongkarBreakdownColumns_();
       var rowData = {
@@ -553,6 +574,7 @@ function handlePost(e) {
       return { status: 'success', data: rowData };
 
     } else if (action === 'finalizeBongkar') {
+      ensureBongkarMetaColumns_();
       var fid = data.ID || data.id;
       if (!fid) throw new Error('ID wajib');
       var abTgl = data.AB_TANGGAL || data.ab_tanggal || '';

@@ -127,14 +127,22 @@
   function bkkDbYmdFromCell(v) {
     if (v == null || v === '') return '';
     if (typeof v === 'object' && v instanceof Date && !isNaN(v.getTime())) {
-      return v.getFullYear() + '-' + bkkDbP2(v.getMonth() + 1) + '-' + bkkDbP2(v.getDate());
+      try {
+        return v.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+      } catch (e0) {
+        return v.getFullYear() + '-' + bkkDbP2(v.getMonth() + 1) + '-' + bkkDbP2(v.getDate());
+      }
     }
     var s = String(v).trim();
     if (s.indexOf('T') !== -1) {
       try {
         var d = new Date(s);
         if (!isNaN(d.getTime())) {
-          return d.getFullYear() + '-' + bkkDbP2(d.getMonth() + 1) + '-' + bkkDbP2(d.getDate());
+          try {
+            return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+          } catch (e1) {
+            return d.getFullYear() + '-' + bkkDbP2(d.getMonth() + 1) + '-' + bkkDbP2(d.getDate());
+          }
         }
       } catch (e) {}
     }
@@ -368,7 +376,7 @@
     if (!r) return false;
     var t = bkkDbRowTypeBongkaran(r);
     if (t === 'direct_gudang') return false;
-    if (!t) return true;
+    if (!t) return false;
     return t === 'intake71_manual' || t === 'intake71_tilting';
   }
 
@@ -629,7 +637,7 @@
     var selType = bkkDbGetMsSel('bkkdb-ms-type-bongkaran');
 
     var out = rows.filter(function(r) {
-      var t = String(r.TANGGAL || '').substring(0, 10);
+      var t = bkkDbYmdFromCell(bkkDbCol(r, 'TANGGAL'));
       if (startDate && t < startDate) return false;
       if (endDate && t > endDate) return false;
       if (selMat && selMat.indexOf(String(r.MATERIAL || '').trim()) < 0) return false;
@@ -726,7 +734,7 @@
       if (isS) qtyByDate[date].hasSbm = true; else qtyByDate[date].hasNonSbm = true;
 
       var rowType = bkkDbRowTypeBongkaran(r);
-      var isIntakeLike = rowType !== 'direct_gudang';
+      var isIntakeLike = bkkDbIsIntake71Type(rowType);
       if (isIntakeLike) {
         if (!intakeByDate[date]) intakeByDate[date] = { trucks: 0, nettoKg: 0, intervals: [], details: [], fallbackActiveMin: 0 };
         var pbYmd = bkkDbYmdFromCell(bkkDbCol(r, 'PB_TANGGAL')) || date;
