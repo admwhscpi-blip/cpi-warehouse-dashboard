@@ -342,6 +342,114 @@
     return { rows: rows };
   }
 
+  function i71BreakdownMinutes(arr) {
+    if (!Array.isArray(arr) || !arr.length) return 0;
+    return arr.reduce(function(sum, it) {
+      var mn = Number(it && (it.min != null ? it.min : it.MIN));
+      return sum + (isNaN(mn) || mn <= 0 ? 0 : mn);
+    }, 0);
+  }
+
+  function i71BuildStepPerOperation(dayRows) {
+    var mapBreakdownKey = {
+      pbSampaiStart: ['seg_0_1'],
+      pbStartHold: ['seg_1_2'],
+      pbHoldRestart: ['seg_2_3'],
+      pbRestartFinish: ['seg_3_4'],
+      pbWindowTilting: ['sbm_pb_window'],
+      idleLoss: ['gap_truck_ns', 'sbm_gap_truck']
+    };
+    var ops = [];
+    (dayRows || []).forEach(function(r, idx) {
+      var dj = i71ParseDurasiJson(r) || {};
+      var bds = dj && dj.breakdowns ? dj.breakdowns : {};
+      var bdsNorm = {};
+      Object.keys(bds || {}).forEach(function(k) { bdsNorm[String(k).toLowerCase()] = bds[k]; });
+      function bdFor(stepKey) {
+        var keys = mapBreakdownKey[stepKey] || [];
+        var out = 0;
+        for (var i = 0; i < keys.length; i++) {
+          out += i71BreakdownMinutes(bdsNorm[String(keys[i]).toLowerCase()]);
+        }
+        return out;
+      }
+      var id = String(i71GetCol(r, 'ID') || ('row_' + idx)).trim();
+      var nopol = String(i71GetCol(r, 'NO_POLISI') || '-').trim() || '-';
+      var type = i71RowType(r);
+      var startHm = i71RowStart(r);
+      var finishHm = i71RowFinish(r);
+      var startMin = i71TimeToMinutes(startHm);
+      var endMin = i71TimeToMinutes(finishHm);
+      if (!type || startMin == null || endMin == null || endMin <= startMin) return;
+      var nettoKg = Number(i71GetCol(r, 'NETTO_KG') || 0);
+      if (isNaN(nettoKg)) nettoKg = 0;
+      var pbSampai = i71NormalizeHm(i71GetCol(r, 'PB_SAMPAI')) || i71NormalizeHm(dj.pb_sampai);
+      var pbHold = i71NormalizeHm(i71GetCol(r, 'PB_HOLD')) || i71NormalizeHm(dj.pb_hold);
+      var pbRestart = i71NormalizeHm(i71GetCol(r, 'PB_RESTART')) || i71NormalizeHm(dj.pb_restart);
+      var d1 = i71StepDuration(pbSampai, startHm); if (d1 == null) d1 = 0;
+      var d2 = i71StepDuration(startHm, pbHold); if (d2 == null) d2 = 0;
+      var d3 = i71StepDuration(pbHold, pbRestart); if (d3 == null) d3 = 0;
+      var d4 = i71StepDuration(pbRestart, finishHm); if (d4 == null) d4 = 0;
+      var d5 = type === 'tilting' ? (i71StepDuration(startHm, finishHm) || 0) : 0;
+      var b1 = Math.min(d1, bdFor('pbSampaiStart'));
+      var b2 = Math.min(d2, bdFor('pbStartHold'));
+      var b3 = Math.min(d3, bdFor('pbHoldRestart'));
+      var b4 = Math.min(d4, bdFor('pbRestartFinish'));
+      var b5 = Math.min(d5, bdFor('pbWindowTilting'));
+      ops.push({
+        id: id,
+        nopol: nopol,
+        type: type,
+        startHm: startHm,
+        finishHm: finishHm,
+        startMin: startMin,
+        endMin: endMin,
+        nettoKg: nettoKg,
+        nettoTon: nettoKg / 1000,
+        durations: {
+          pbSampaiStart: d1,
+          pbStartHold: d2,
+          pbHoldRestart: d3,
+          pbRestartFinish: d4,
+          pbWindowTilting: d5,
+          idleLoss: 0
+        },
+        breakdown: {
+          pbSampaiStart: b1,
+          pbStartHold: b2,
+          pbHoldRestart: b3,
+          pbRestartFinish: b4,
+          pbWindowTilting: b5,
+          idleLoss: 0
+        },
+        idleBreakdownRaw: bdFor('idleLoss')
+      });
+    });
+    ops.sort(function(a, b) { return a.startMin - b.startMin; });
+    for (var i = 0; i < ops.length; i++) {
+      if (i === 0) continue;
+      var gap = ops[i].startMin - ops[i - 1].endMin;
+      if (gap > 0) {
+        ops[i].durations.idleLoss = gap;
+        ops[i].breakdown.idleLoss = Math.min(gap, Number(ops[i].idleBreakdownRaw) || 0);
+      }
+    }
+    ops.forEach(function(op) {
+      op.normal = {
+        pbSampaiStart: Math.max(0, op.durations.pbSampaiStart - op.breakdown.pbSampaiStart),
+        pbStartHold: Math.max(0, op.durations.pbStartHold - op.breakdown.pbStartHold),
+        pbHoldRestart: Math.max(0, op.durations.pbHoldRestart - op.breakdown.pbHoldRestart),
+        pbRestartFinish: Math.max(0, op.durations.pbRestartFinish - op.breakdown.pbRestartFinish),
+        pbWindowTilting: Math.max(0, op.durations.pbWindowTilting - op.breakdown.pbWindowTilting),
+        idleLoss: Math.max(0, op.durations.idleLoss - op.breakdown.idleLoss)
+      };
+      op.breakdownTotal =
+        op.breakdown.pbSampaiStart + op.breakdown.pbStartHold + op.breakdown.pbHoldRestart +
+        op.breakdown.pbRestartFinish + op.breakdown.pbWindowTilting + op.breakdown.idleLoss;
+    });
+    return ops;
+  }
+
   function i71DestroyCharts() {
     ['util', 'type', 'timeline', 'steps'].forEach(function(k) {
       if (i71State.charts[k] && typeof i71State.charts[k].destroy === 'function') {
@@ -569,7 +677,71 @@
     };
   }
 
-  function i71RenderCharts(res, stepStats) {
+  function i71AttachTimelineHeatmapHover(canvas, chart, hourlyNettoTon) {
+    if (!canvas || !chart) return;
+    if (canvas._i71HeatmapMove) canvas.removeEventListener('mousemove', canvas._i71HeatmapMove);
+    if (canvas._i71HeatmapLeave) canvas.removeEventListener('mouseleave', canvas._i71HeatmapLeave);
+
+    var host = canvas.parentElement;
+    if (host && (!host.style.position || host.style.position === 'static')) host.style.position = 'relative';
+
+    var tip = host ? host.querySelector('.i71-heatmap-tip') : null;
+    if (!tip && host) {
+      tip = document.createElement('div');
+      tip.className = 'i71-heatmap-tip';
+      tip.style.cssText = 'position:absolute;background:rgba(15,20,35,0.92);border:1px solid rgba(79,195,247,0.4);border-radius:8px;font-size:11px;color:#fff;padding:4px 10px;pointer-events:none;opacity:0;transform:translate(-50%,-120%);transition:opacity .12s ease;z-index:30;white-space:nowrap;';
+      host.appendChild(tip);
+    }
+
+    function hideTip() {
+      if (tip) tip.style.opacity = '0';
+    }
+
+    function onMove(ev) {
+      if (!tip || !chart || !chart.chartArea) return;
+      var area = chart.chartArea;
+      var gapY = 1;
+      var stripH = 12;
+      var stripY = area.bottom + gapY;
+      var rect = canvas.getBoundingClientRect();
+      var x = ev.clientX - rect.left;
+      var y = ev.clientY - rect.top;
+      if (y < stripY || y > stripY + stripH || x < area.left || x > area.right) {
+        hideTip();
+        return;
+      }
+
+      var n = 24;
+      var fullCell = area.width / n;
+      var idx = Math.floor((x - area.left) / fullCell);
+      if (idx < 0 || idx >= n) {
+        hideTip();
+        return;
+      }
+      var cellGap = 2;
+      var cellLeft = area.left + idx * fullCell + (cellGap / 2);
+      var cellRight = area.left + (idx + 1) * fullCell - (cellGap / 2);
+      if (x < cellLeft || x > cellRight) {
+        hideTip();
+        return;
+      }
+
+      var v = Number((hourlyNettoTon && hourlyNettoTon[idx]) || 0);
+      tip.textContent = i71Pad2(idx) + ':00 — ' + v.toFixed(2) + ' ton';
+      tip.style.left = ((cellLeft + cellRight) / 2) + 'px';
+      tip.style.top = stripY + 'px';
+      tip.style.opacity = '1';
+    }
+
+    function onLeave() { hideTip(); }
+
+    canvas.addEventListener('mousemove', onMove);
+    canvas.addEventListener('mouseleave', onLeave);
+    canvas._i71HeatmapMove = onMove;
+    canvas._i71HeatmapLeave = onLeave;
+  }
+
+  function i71RenderCharts(res, stepStats, stepPerOps) {
     if (typeof Chart === 'undefined') return;
     i71DestroyCharts();
     function withAlpha(hex, a) {
@@ -656,8 +828,8 @@
           animation: { duration: 1200, easing: 'easeOutCubic' },
           plugins: { legend: { position: 'bottom', labels: { color: '#0f172a' } } },
           scales: {
-            y: { beginAtZero: true, ticks: { color: '#334155' }, grid: { color: withAlpha('#64748b', 0.18) } },
-            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#dc2626' } },
+            y: { beginAtZero: true, ticks: { color: '#334155' }, grid: { display: false } },
+            y1: { beginAtZero: true, position: 'right', grid: { display: false, drawOnChartArea: false }, ticks: { color: '#dc2626' } },
             x: { ticks: { color: '#334155' }, grid: { display: false } }
           }
         }
@@ -731,6 +903,50 @@
           ctx.restore();
         }
       };
+      var timelineHeatmapStripPlugin = {
+        id: 'i71TimelineHeatmapStrip',
+        afterDraw: function(chart) {
+          if (!chart || !chart.chartArea) return;
+          var area = chart.chartArea;
+          var ctx = chart.ctx;
+          var values = nettoTonPerHour.slice(0, 24);
+          var maxV = values.reduce(function(m, v) { return Math.max(m, Number(v) || 0); }, 0);
+          var stripY = area.bottom + 1;
+          var stripH = 12;
+          var cellGap = 2;
+          var cellW = area.width / 24;
+          function drawRoundRect(x, y, w, h, r) {
+            if (typeof ctx.roundRect === 'function') {
+              ctx.beginPath();
+              ctx.roundRect(x, y, w, h, r);
+              return;
+            }
+            var rr = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+            ctx.beginPath();
+            ctx.moveTo(x + rr, y);
+            ctx.lineTo(x + w - rr, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+            ctx.lineTo(x + w, y + h - rr);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+            ctx.lineTo(x + rr, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+            ctx.lineTo(x, y + rr);
+            ctx.quadraticCurveTo(x, y, x + rr, y);
+          }
+          ctx.save();
+          for (var hi = 0; hi < 24; hi++) {
+            var vv = Number(values[hi]) || 0;
+            var ratio = maxV > 0 ? (vv / maxV) : 0;
+            var alpha = 0.15 + (0.85 * ratio);
+            var x = area.left + (hi * cellW) + (cellGap / 2);
+            var w = Math.max(2, cellW - cellGap);
+            drawRoundRect(x, stripY, w, stripH, 3);
+            ctx.fillStyle = 'rgba(79,195,247,' + alpha.toFixed(4) + ')';
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      };
       var timelineLabels = Array.from({ length: 25 }, function(_, h2) { return i71Pad2(h2) + ':00'; });
       var points24 = points.slice();
       var netto24 = nettoTonPerHour.slice();
@@ -780,9 +996,10 @@
           responsive: true,
           maintainAspectRatio: false,
           animation: { duration: 1400, easing: 'easeOutQuart' },
+          layout: { padding: { top: 2, bottom: 4 } },
           plugins: {
             legend: {
-              position: 'bottom',
+              display: false,
               labels: {
                 color: '#334155',
                 usePointStyle: true,
@@ -792,13 +1009,20 @@
             }
           },
           scales: {
-            y: { beginAtZero: true, ticks: { color: '#334155' }, grid: { color: withAlpha('#64748b', 0.16) } },
-            y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#6d28d9' } },
-            x: { ticks: { color: '#334155', maxRotation: 0, autoSkip: false, callback: function(v, idx) { return idx % 3 === 0 || idx === 24 ? timelineLabels[idx] : ''; } }, grid: { display: false } }
+            y: { beginAtZero: true, ticks: { color: '#334155' }, grid: { display: false } },
+            y1: { beginAtZero: true, position: 'right', grid: { display: false, drawOnChartArea: false }, ticks: { color: '#6d28d9' } },
+            x: { ticks: { color: '#334155', padding: 4, maxRotation: 0, autoSkip: false, callback: function(v, idx) { return idx % 3 === 0 || idx === 24 ? timelineLabels[idx] : ''; } }, grid: { display: false } }
           }
         },
-        plugins: [timelineLabelPlugin]
+        plugins: [timelineLabelPlugin, timelineHeatmapStripPlugin]
       });
+      i71AttachTimelineHeatmapHover(lineCanvas, i71State.charts.timeline, nettoTonPerHour);
+      var tlg = document.getElementById('i71_timeline_legend_top');
+      if (tlg) {
+        tlg.innerHTML =
+          '<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#06b6d4;display:inline-block;"></span>Aktif per jam (menit)</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#a78bfa;border:1px solid rgba(109,40,217,.45);display:inline-block;"></span>Netto per jam (ton)</span>';
+      }
     }
 
     var stepCanvas = document.getElementById('i71_chart_steps');
@@ -816,9 +1040,165 @@
           maintainAspectRatio: false,
           indexAxis: 'y',
           plugins: { legend: { position: 'bottom' } },
-          scales: { x: { beginAtZero: true } }
+          scales: {
+            x: { beginAtZero: true, grid: { display: false } },
+            y: { grid: { display: false } }
+          }
         }
       });
+    }
+
+    var stepPerOpCanvas = document.getElementById('canvas-step-per-operasi');
+    var stepPerOpWrap = document.querySelector('#chart-step-per-operasi .i71-step-per-op-canvas');
+    if (stepPerOpCanvas && stepPerOpWrap) {
+      if (window._chartStepPerOp && typeof window._chartStepPerOp.destroy === 'function') {
+        try { window._chartStepPerOp.destroy(); } catch (eSp) {}
+      }
+      var ops = Array.isArray(stepPerOps) ? stepPerOps.slice() : [];
+      var wrapH = Math.max(180, Math.min(250, 155 + (ops.length * 5)));
+      stepPerOpWrap.style.height = wrapH + 'px';
+      stepPerOpCanvas.height = wrapH;
+      var minW = Math.max(stepPerOpWrap.clientWidth || 720, ops.length * 74);
+      stepPerOpCanvas.style.width = minW + 'px';
+      stepPerOpCanvas.width = minW;
+      var xLabels = ops.map(function(op) {
+        return op.nopol + ' · ' + Number(op.nettoTon || 0).toFixed(2) + 't';
+      });
+      var accentIdx = {};
+      ops.forEach(function(op, idx) {
+        if ((Number(op.breakdownTotal) || 0) > 0) accentIdx[idx] = true;
+      });
+      var labelAccentPlugin = {
+        id: 'i71StepPerOpLabelAccent',
+        afterDraw: function(chart) {
+          var scale = chart.scales && chart.scales.x;
+          var area = chart.chartArea;
+          if (!scale || !area) return;
+          var ctx = chart.ctx;
+          ctx.save();
+          ctx.strokeStyle = '#EF5350';
+          ctx.lineWidth = 2;
+          Object.keys(accentIdx).forEach(function(k) {
+            var idx = Number(k);
+            var x = scale.getPixelForValue(idx);
+            ctx.beginPath();
+            ctx.moveTo(x - 10, area.bottom + 6);
+            ctx.lineTo(x - 10, area.bottom + 18);
+            ctx.stroke();
+          });
+          ctx.restore();
+        }
+      };
+      function makeBarGradient(ctx, colorTop, colorBottom) {
+        var area = ctx.chart.chartArea;
+        if (!area) return colorTop;
+        var g = ctx.chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+        g.addColorStop(0, colorTop);
+        g.addColorStop(1, colorBottom);
+        return g;
+      }
+      var barShadowPlugin = {
+        id: 'i71StepPerOpShadow',
+        beforeDatasetsDraw: function(chart) {
+          var c = chart.ctx;
+          c.save();
+          c.shadowColor = 'rgba(15,23,42,0.28)';
+          c.shadowBlur = 7;
+          c.shadowOffsetY = 3;
+        },
+        afterDatasetsDraw: function(chart) {
+          chart.ctx.restore();
+        }
+      };
+      window._chartStepPerOp = new Chart(stepPerOpCanvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: xLabels,
+          datasets: [
+            { label: 'PB Sampai→Start', data: ops.map(function(op) { return op.normal.pbSampaiStart; }), backgroundColor: function(ctx) { return makeBarGradient(ctx, '#56CCFF', '#00AEEF'); }, borderColor: '#0082C8', borderWidth: 1, stack: 'dur', borderRadius: 5 },
+            { label: 'PB Start→Hold', data: ops.map(function(op) { return op.normal.pbStartHold; }), backgroundColor: function(ctx) { return makeBarGradient(ctx, '#42FFB5', '#00C777'); }, borderColor: '#009B5A', borderWidth: 1, stack: 'dur', borderRadius: 5 },
+            { label: 'PB Hold→Restart', data: ops.map(function(op) { return op.normal.pbHoldRestart; }), backgroundColor: function(ctx) { return makeBarGradient(ctx, '#9B7BFF', '#6738E8'); }, borderColor: '#4A23B5', borderWidth: 1, stack: 'dur', borderRadius: 5 },
+            { label: 'PB Restart→Finish', data: ops.map(function(op) { return op.normal.pbRestartFinish; }), backgroundColor: function(ctx) { return makeBarGradient(ctx, '#58A8FF', '#1D67E0'); }, borderColor: '#1A4FAD', borderWidth: 1, stack: 'dur', borderRadius: 5 },
+            { label: 'Tilting Start→Finish', data: ops.map(function(op) { return op.normal.pbWindowTilting; }), backgroundColor: function(ctx) { return makeBarGradient(ctx, '#4EFFFF', '#00BCD4'); }, borderColor: '#008FA1', borderWidth: 1, stack: 'dur', borderRadius: 5 },
+            { label: 'IDLE LOSS', data: ops.map(function(op) { return op.normal.idleLoss; }), backgroundColor: function(ctx) { return makeBarGradient(ctx, '#FFC164', '#FF8F00'); }, borderColor: '#C16A00', borderWidth: 1, stack: 'dur', borderRadius: 5 },
+            { label: 'Breakdown', data: ops.map(function(op) { return op.breakdownTotal; }), backgroundColor: function(ctx) { return makeBarGradient(ctx, '#FF6B7A', '#FF1744'); }, borderColor: '#C40028', borderWidth: 1, stack: 'dur', borderRadius: 5 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 1200, easing: 'easeOutQuart' },
+          scales: {
+            x: {
+              stacked: true,
+              ticks: {
+                color: '#0f172a',
+                maxRotation: 38,
+                minRotation: 38,
+                font: { size: 10, weight: 600 }
+              },
+              grid: { display: false }
+            },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              ticks: { color: '#1e293b', font: { size: 11, weight: 700 } },
+              grid: { display: false }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(2,6,23,0.95)',
+              borderColor: 'rgba(79,195,247,0.35)',
+              borderWidth: 1,
+              titleColor: '#f8fafc',
+              bodyColor: '#cbd5e1',
+              callbacks: {
+                title: function(items) {
+                  if (!items || !items.length) return '';
+                  return xLabels[items[0].dataIndex] || '';
+                },
+                label: function(ctx) {
+                  var op = ops[ctx.dataIndex];
+                  if (!op) return '';
+                  var typeText = op.type === 'tilting' ? 'Tilting' : 'Manual';
+                  var typeMark = op.type === 'tilting' ? '🔷 ' : '🟪 ';
+                  return [
+                    'Nopol: ' + op.nopol,
+                    'Tipe: ' + typeMark + typeText,
+                    'Jam: ' + op.startHm + ' - ' + op.finishHm,
+                    'Netto: ' + Number(op.nettoTon || 0).toFixed(2) + ' t',
+                    'PB Sampai→Start: ' + op.durations.pbSampaiStart + ' m',
+                    'PB Start→Hold: ' + op.durations.pbStartHold + ' m',
+                    'PB Hold→Restart: ' + op.durations.pbHoldRestart + ' m',
+                    'PB Restart→Finish: ' + op.durations.pbRestartFinish + ' m',
+                    'Tilting Start→Finish: ' + op.durations.pbWindowTilting + ' m',
+                    'IDLE LOSS Antar Truck: ' + op.durations.idleLoss + ' m',
+                    'Total Breakdown: ' + Number(op.breakdownTotal || 0).toFixed(1) + ' m'
+                  ];
+                }
+              }
+            }
+          }
+        },
+        plugins: [barShadowPlugin, labelAccentPlugin]
+      });
+      var lg = document.getElementById('i71_step_per_op_legend');
+      if (lg) {
+        var legendItems = [
+          ['PB Sampai→Start', '#4FC3F7'],
+          ['PB Start→Hold', '#26A69A'],
+          ['PB Hold→Restart', '#7E57C2'],
+          ['PB Restart→Finish', '#42A5F5'],
+          ['Tilting Start→Finish', '#00BCD4'],
+          ['IDLE LOSS', '#FFA726'],
+          ['Breakdown', '#EF5350']
+        ];
+        lg.innerHTML = legendItems.map(function(it) {
+          return '<span class="lg-item"><span class="lg-dot" style="background:' + it[1] + ';"></span>' + it[0] + '</span>';
+        }).join('');
+      }
     }
   }
 
@@ -835,6 +1215,7 @@
     });
     var res = i71Analyze(ops);
     var stepStats = i71ComputeStepStats(dayRows);
+    var stepPerOps = i71BuildStepPerOperation(dayRows);
     var matInfoEl = document.getElementById('i71_material_info');
     if (matInfoEl) {
       var matMap = {};
@@ -923,7 +1304,7 @@
       }).join('') + '<div class="i71-step-item"><div class="i71-step-meta"><b>Total akumulasi 24 jam:</b> ' + Number(totalStep24).toFixed(1) + ' menit</div></div>';
     }
 
-    i71RenderCharts(res, stepStats);
+    i71RenderCharts(res, stepStats, stepPerOps);
   }
 
   window.loadIntake71Page = function() {

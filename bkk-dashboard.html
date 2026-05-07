@@ -395,6 +395,14 @@
           .i71-top-right .i71-grid-two .i71-card { height:100%; min-height:0; }
           .i71-top-row .i71-calendar-shell { height:100%; margin-bottom:0; }
           .i71-top-left { height:100%; }
+          #chart-step-per-operasi { background:rgba(255,255,255,0.03); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:12px; margin:0 0 8px; box-shadow:0 12px 24px -18px rgba(2,6,23,0.7); transition:box-shadow .25s ease, border-color .25s ease; }
+          #chart-step-per-operasi:hover { border-color:rgba(79,195,247,0.45); box-shadow:0 14px 30px -16px rgba(79,195,247,0.38), 0 0 18px rgba(126,87,194,0.26); }
+          #chart-step-per-operasi .i71-step-per-op-title { margin:0 0 8px; font-size:.9rem; font-weight:700; letter-spacing:.2px; background:linear-gradient(90deg,#4FC3F7 0%,#7E57C2 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+          #chart-step-per-operasi .i71-step-per-op-canvas { position:relative; min-height:190px; overflow-x:auto; overflow-y:hidden; padding-bottom:6px; }
+          #chart-step-per-operasi #canvas-step-per-operasi { display:block; }
+          #i71_step_per_op_legend { margin-top:10px; display:flex; gap:10px 14px; flex-wrap:wrap; font-size:.72rem; color:#0f172a; }
+          #i71_step_per_op_legend .lg-item { display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:999px; border:1px solid rgba(15,23,42,0.14); background:rgba(255,255,255,0.58); box-shadow: inset 0 1px 0 rgba(255,255,255,0.75); }
+          #i71_step_per_op_legend .lg-dot { width:10px; height:10px; border-radius:3px; display:inline-block; }
           @keyframes i71fade { from { opacity:0; transform:translateY(8px) scale(.99); } to { opacity:1; transform:translateY(0) scale(1); } }
         </style>
 
@@ -446,7 +454,10 @@
         </div>
 
         <div class="i71-card" style="margin-bottom:8px;border:1px solid rgba(14,165,233,.35); background:linear-gradient(155deg,#f7fcff,#eaf6ff); box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 14px 22px -18px rgba(14,116,144,.65);">
-          <h4 style="color:#0c4a6e;">Timeline Aktivitas &amp; Netto per Jam</h4>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+            <h4 style="color:#0c4a6e;margin:0;">Timeline Aktivitas &amp; Netto per Jam</h4>
+            <div id="i71_timeline_legend_top" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.72rem;color:#334155;"></div>
+          </div>
           <div class="i71-card-plot" style="height:196px;"><canvas id="i71_chart_timeline"></canvas></div>
         </div>
 
@@ -459,6 +470,14 @@
             <h4>Penjelasan Toleransi & Breakdown</h4>
             <div class="i71-overlap-wrap" id="i71_step_explain"></div>
           </div>
+        </div>
+
+        <div id="chart-step-per-operasi">
+          <h4 class="i71-step-per-op-title">Stacked Bar: Durasi Step per Operasi</h4>
+          <div class="i71-step-per-op-canvas">
+            <canvas id="canvas-step-per-operasi"></canvas>
+          </div>
+          <div id="i71_step_per_op_legend"></div>
         </div>
 
         <div class="i71-card">
