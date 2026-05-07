@@ -90,7 +90,7 @@ function loadDashboard(doneCb) {
       if (doneCb) doneCb(true);
     }
 
-    fetchAPI('getBongkarHistory', { limit: 4000 }, function(r1) {
+    fetchAPI('getBongkarHistory', {}, function(r1) {
       if (r1.status !== 'error') {
         rowsB = r1.data || [];
         rowsB.forEach(function(row) {
@@ -100,7 +100,7 @@ function loadDashboard(doneCb) {
       }
       finishHistory();
     });
-    fetchAPI('getKirimHistory', { limit: 4000 }, function(r2) {
+    fetchAPI('getKirimHistory', {}, function(r2) {
       if (r2.status !== 'error') {
         rowsK = r2.data || [];
         rowsK.forEach(function(row) {
@@ -109,7 +109,7 @@ function loadDashboard(doneCb) {
       }
       finishHistory();
     });
-    fetchAPI('getOpnameHistory', { limit: 800 }, function(r3) {
+    fetchAPI('getOpnameHistory', {}, function(r3) {
       if (r3.status !== 'error') rowsO = r3.data || [];
       finishHistory();
     });

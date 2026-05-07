@@ -367,6 +367,7 @@
     if (norm === 'intake_71_manual' || norm === 'intake71_manual') t = 'intake71_manual';
     else if (norm === 'intake_71_tilting' || norm === 'intake71_tilting' || norm === 'tilting') t = 'intake71_tilting';
     else if (norm === 'direct_gudang' || norm === 'direct') t = 'direct_gudang';
+    else if (norm === 'sap_adjustment' || norm === 'sap') t = 'sap_adjustment';
     else t = norm || '';
     return t;
   }
@@ -376,8 +377,31 @@
     if (!r) return false;
     var t = bkkDbRowTypeBongkaran(r);
     if (t === 'direct_gudang') return false;
-    if (!t) return false;
+    if (!t) return bkkDbLegacyLooksIntake71(r);
     return t === 'intake71_manual' || t === 'intake71_tilting';
+  }
+
+  function bkkDbLegacyLooksIntake71(r) {
+    var dj = bkkDbParseDj(r);
+    var bd = dj && dj.breakdowns ? dj.breakdowns : {};
+    return !!(bd.gap_truck_ns || bd.sbm_gap_truck);
+  }
+
+  /**
+   * Type efektif untuk filter UI. Data lama tanpa TYPE_BONGKARAN diarahkan
+   * ke Intake 71 Manual bila punya gap antar truck, selain itu Direct Gudang.
+   */
+  function bkkDbEffectiveFilterType(r) {
+    var types = bkkDbEffectiveFilterTypes(r);
+    return types.length ? types[0] : '';
+  }
+
+  function bkkDbEffectiveFilterTypes(r) {
+    var t = bkkDbRowTypeBongkaran(r);
+    if (t === 'sap_adjustment') return [];
+    if (t === 'intake71_manual' || t === 'intake71_tilting' || t === 'direct_gudang') return [t];
+    if (bkkDbLegacyLooksIntake71(r)) return ['intake71_manual', 'intake71_tilting'];
+    return ['direct_gudang'];
   }
 
   function bkkDbShiftCompatible(rowA, rowB) {
@@ -404,7 +428,9 @@
     var map = {
       sbm_pb_window: 'Durasi PB (Start–Finish)',
       sbm_gap_truck: 'IDLE LOSS',
-      gap_truck_ns: 'IDLE LOSS'
+      gap_truck_ns: 'IDLE LOSS',
+      ab_arr_qc: 'AB Arrival → AB QC',
+      ab_qc_pbsampai: 'AB QC → PB Sampai'
     };
     if (map[key]) return map[key];
     var m = /^seg_(\d+)_(\d+)$/.exec(key);
@@ -506,7 +532,7 @@
     var total = el.querySelectorAll('input[type="checkbox"]');
     var label = el.querySelector('.ms-label');
     if (!label) return;
-    var allTxt = { 'bkkdb-ms-material': 'SEMUA MATERIAL', 'bkkdb-ms-bk': 'SEMUA BK', 'bkkdb-ms-shift': 'SEMUA SHIFT', 'bkkdb-ms-type-bongkaran': 'SEMUA TYPE BONGKARAN' };
+    var allTxt = { 'bkkdb-ms-material': 'SEMUA MATERIAL', 'bkkdb-ms-bk': 'SEMUA BK', 'bkkdb-ms-type-bongkaran': 'SEMUA TYPE BONGKARAN' };
     if (checked.length === 0 || checked.length === total.length) {
       label.textContent = allTxt[id] || 'SEMUA';
       label.style.color = 'var(--text-secondary, #64748b)';
@@ -550,9 +576,9 @@
     if (!list) return;
 
     var opts = [
-      { value: 'intake71_manual', text: 'Intake 71 Manual' },
-      { value: 'intake71_tilting', text: 'Tilting' },
-      { value: 'direct_gudang', text: 'Direct Gudang' }
+      { value: 'intake71_manual', text: 'Intake 71 Manual', checked: true },
+      { value: 'intake71_tilting', text: 'Tilting', checked: true },
+      { value: 'direct_gudang', text: 'Direct Gudang', checked: true }
     ];
 
     list.innerHTML = '';
@@ -567,7 +593,7 @@
         bkkDbUpdateMsLabel('bkkdb-ms-type-bongkaran');
         window.bkkDbRender();
       };
-      div.innerHTML = '<input type="checkbox" value="' + bkkDbEscAttr(opt.value) + '" checked> <span>' + bkkDbEsc(opt.text) + '</span>';
+      div.innerHTML = '<input type="checkbox" value="' + bkkDbEscAttr(opt.value) + '"' + (opt.checked ? ' checked' : '') + '> <span>' + bkkDbEsc(opt.text) + '</span>';
       list.appendChild(div);
     });
     bkkDbUpdateMsLabel('bkkdb-ms-type-bongkaran');
@@ -580,6 +606,12 @@
     var total = el.querySelectorAll('input[type="checkbox"]');
     if (checked.length === 0 || checked.length === total.length) return null;
     return Array.from(checked).map(function(c) { return c.value; });
+  }
+
+  function bkkDbGetTypeSel() {
+    var el = document.getElementById('bkkdb-ms-type-bongkaran');
+    if (!el) return ['intake71_manual', 'intake71_tilting', 'direct_gudang'];
+    return Array.from(el.querySelectorAll('input:checked')).map(function(c) { return c.value; });
   }
 
   function bkkDbPad2(n) {
@@ -633,8 +665,7 @@
     var endDate = (document.getElementById('bkkdb_end_date') || {}).value || '';
     var selMat = bkkDbGetMsSel('bkkdb-ms-material');
     var selBk = bkkDbGetMsSel('bkkdb-ms-bk');
-    var selSh = bkkDbGetMsSel('bkkdb-ms-shift');
-    var selType = bkkDbGetMsSel('bkkdb-ms-type-bongkaran');
+    var selType = bkkDbGetTypeSel();
 
     var out = rows.filter(function(r) {
       var t = bkkDbYmdFromCell(bkkDbCol(r, 'TANGGAL'));
@@ -642,8 +673,8 @@
       if (endDate && t > endDate) return false;
       if (selMat && selMat.indexOf(String(r.MATERIAL || '').trim()) < 0) return false;
       if (selBk && selBk.indexOf(String(r.BK_ID || '').trim()) < 0) return false;
-      if (selSh && selSh.indexOf(String(r.SHIFT || '').trim()) < 0) return false;
-      if (selType && selType.indexOf(bkkDbRowTypeBongkaran(r)) < 0) return false;
+      var effTypes = bkkDbEffectiveFilterTypes(r);
+      if (!effTypes.length || !effTypes.some(function(tp) { return selType.indexOf(tp) >= 0; })) return false;
       return true;
     });
 
@@ -709,7 +740,7 @@
     var intakeByDate = {};
     var onlyDirectType = false;
 
-    var selType = bkkDbGetMsSel('bkkdb-ms-type-bongkaran');
+    var selType = bkkDbGetTypeSel();
     if (selType && selType.length === 1 && selType[0] === 'direct_gudang') onlyDirectType = true;
 
     filtered.forEach(function(r) {
@@ -733,8 +764,7 @@
       var isS = bkkDbIsSbmRow(r, bkkDbParseDj(r));
       if (isS) qtyByDate[date].hasSbm = true; else qtyByDate[date].hasNonSbm = true;
 
-      var rowType = bkkDbRowTypeBongkaran(r);
-      var isIntakeLike = bkkDbIsIntake71Type(rowType);
+      var isIntakeLike = bkkDbRowInIntakeChain(r);
       if (isIntakeLike) {
         if (!intakeByDate[date]) intakeByDate[date] = { trucks: 0, nettoKg: 0, intervals: [], details: [], fallbackActiveMin: 0 };
         var pbYmd = bkkDbYmdFromCell(bkkDbCol(r, 'PB_TANGGAL')) || date;
@@ -1061,7 +1091,7 @@
       return;
     }
 
-    ['bkkdb-ms-material', 'bkkdb-ms-bk', 'bkkdb-ms-shift'].forEach(bkkDbUpdateMsLabel);
+    ['bkkdb-ms-material', 'bkkdb-ms-bk'].forEach(bkkDbUpdateMsLabel);
 
     var filtered = bkkDbFilterRows(rows);
     _bkkDbLastFiltered = filtered;
@@ -1074,6 +1104,14 @@
     var selected = selectedKeys.map(function(k) {
       return bkkDbMetaForKey(k, keyList);
     }).filter(function(t) { return keyList.indexOf(t.key) >= 0; });
+
+    if (!hasNs && !hasSbm) {
+      bkkDbRenderTopSummary([], [], {}, {});
+      bkkDbRenderLeadtimePanels(bkkDbBuildLeadtimeAnalytics([], rows));
+      bkkDbRenderMiniGrid([], {}, {}, {});
+      bkkDbRenderTable([], [], rows);
+      return;
+    }
 
     var sumMap = {};
     var countMap = {};
@@ -1673,26 +1711,28 @@
 
     if (typeof fetchAPI !== 'function') return;
     if (typeof showLoader === 'function') showLoader(true);
-    fetchAPI('getBongkarHistory', { limit: 8000 }, function(resp) {
+    fetchAPI('getBongkarHistory', {}, function(resp) {
       if (typeof showLoader === 'function') showLoader(false);
       var raw = resp.status !== 'error' ? resp.data : [];
       window._bkkDbHistoryRows = typeof bwNormalizeBongkarHistory === 'function' ? bwNormalizeBongkarHistory(raw) : (Array.isArray(raw) ? raw : []);
 
       var mats = new Set();
       var bks = new Set();
-      var shifts = new Set();
       window._bkkDbHistoryRows.forEach(function(r) {
         if (r.MATERIAL) mats.add(String(r.MATERIAL).trim());
         if (r.BK_ID) bks.add(String(r.BK_ID).trim());
-        if (r.SHIFT != null && r.SHIFT !== '') shifts.add(String(r.SHIFT));
       });
       bkkDbPopulateOneMs('bkkdb-ms-material', mats, 'SEMUA MATERIAL');
       bkkDbPopulateOneMs('bkkdb-ms-bk', bks, 'SEMUA BK');
-      bkkDbPopulateOneMs('bkkdb-ms-shift', shifts, 'SEMUA SHIFT');
       bkkDbPopulateTypeBongkaranMs();
 
       bkkDbDiscoverKeys(window._bkkDbHistoryRows);
       bkkDbBuildChips();
+      _bkkDbSelSbm = [];
+      _bkkDbSelNs = [];
+      document.querySelectorAll('#bkkdb-chips-sbm .db-chip, #bkkdb-chips-nonsbm .db-chip').forEach(function(c) {
+        c.classList.remove('active');
+      });
       window.bkkDbRender();
     });
   };

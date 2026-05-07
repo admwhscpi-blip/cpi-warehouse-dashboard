@@ -3,7 +3,6 @@ function loadHistoryData(tab, bkId, bulan) {
   var map = { bongkar: 'getBongkarHistory', kirim: 'getKirimHistory', opname: 'getOpnameHistory' };
   var params = {};
   if (bkId) params.bk_id = bkId;
-  if (bulan) params.limit = 500;
   showLoader(true);
   fetchAPI(map[tab], params, function(resp) {
     showLoader(false);
@@ -13,8 +12,10 @@ function loadHistoryData(tab, bkId, bulan) {
       var yr = parseInt(bulan.split('-')[0]);
       var mo = parseInt(bulan.split('-')[1]) - 1;
       data = data.filter(function(r) {
-        var d = new Date(r.TANGGAL);
-        return d.getFullYear() === yr && d.getMonth() === mo;
+        var ymd = typeof dashDateToYMD === 'function' ? dashDateToYMD(r.TANGGAL) : String(r.TANGGAL || '').substring(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return false;
+        var p = ymd.split('-');
+        return Number(p[0]) === yr && Number(p[1]) - 1 === mo;
       });
     }
     if (bkId) data = data.filter(function(r) { return r.BK_ID === bkId; });

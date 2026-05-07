@@ -998,7 +998,7 @@ function bwRefreshGhostFromServer() {
     bwRefreshStep2MiniTable();
     return;
   }
-  fetchAPI('getBongkarHistory', { bk_id: bk, limit: 800 }, function(resp) {
+  fetchAPI('getBongkarHistory', { bk_id: bk }, function(resp) {
     var pack = resp.status !== 'error' ? resp.data : [];
     if (!Array.isArray(pack)) pack = [];
     syncBongkarHistoryMergeBK(bk, pack);
@@ -1497,7 +1497,7 @@ function bwSubmitStep2() {
           }
           bwUpdateTruckBadge();
           bwClearStep2Form();
-          fetchAPI('getBongkarHistory', { limit: 1500 }, function(r2) {
+          fetchAPI('getBongkarHistory', {}, function(r2) {
             appState.history.bongkar = bwNormalizeBongkarHistory(r2.status !== 'error' ? r2.data : []);
             bwRefreshStep3();
             bwSyncGhostHint();
@@ -1558,7 +1558,7 @@ function bwGoStep(n) {
   }
   if (n === 3) {
     showLoader(true);
-    fetchAPI('getBongkarHistory', { limit: 4000 }, function(resp) {
+    fetchAPI('getBongkarHistory', {}, function(resp) {
       showLoader(false);
       appState.history.bongkar = bwNormalizeBongkarHistory(resp.status !== 'error' ? resp.data : []);
       bwRefreshStep3();
@@ -1824,6 +1824,22 @@ function bwRefreshStep3() {
   }
 }
 
+function bwStep3CollectBreakdownsForRow(rowId) {
+  var out = {};
+  if (!rowId || !bwWiz.liveBreakdowns) return out;
+  Object.keys(bwWiz.liveBreakdowns).forEach(function(k) {
+    if (k.indexOf('s3|' + rowId + '|') !== 0 && k.indexOf('s3fix|' + rowId + '|') !== 0) return;
+    var sv = bwWiz.liveBreakdowns[k];
+    if (!sv || !Array.isArray(sv.rows) || !sv.rows.length) return;
+    var parts = k.split('|');
+    var rawKey = parts[parts.length - 1] || '';
+    var bdKey = rawKey === 'abqc_pbsampai' ? 'ab_qc_pbsampai' : rawKey;
+    if (!bdKey) return;
+    out[bdKey] = sv.rows;
+  });
+  return out;
+}
+
 /** Kumpulkan baris yang siap disimpan (SBM: netto saja; non-SBM: AB + netto). */
 function bwStep3CollectFilledRows() {
   var tb = $('bw_step3_tb');
@@ -1844,6 +1860,7 @@ function bwStep3CollectFilledRows() {
         abTgl: '',
         abArr: '',
         abQc: '',
+        breakdowns: {},
         nopol: (tr.cells[0] && tr.cells[0].textContent) || ''
       });
       return;
@@ -1880,6 +1897,7 @@ function bwStep3CollectFilledRows() {
       abTgl: abTgl,
       abArr: abArr,
       abQc: abQc,
+      breakdowns: bwStep3CollectBreakdownsForRow(id),
       nopol: (tr.cells[0] && tr.cells[0].textContent) || ''
     });
   });
@@ -1914,7 +1932,7 @@ function bwFinalizeStep3Bulk() {
       } else if (failMsg.length) {
         toast('Gagal menyimpan ' + failMsg.length + ' baris.', 'e');
       }
-      fetchAPI('getBongkarHistory', { limit: 4000 }, function(r2) {
+      fetchAPI('getBongkarHistory', {}, function(r2) {
         appState.history.bongkar = bwNormalizeBongkarHistory(r2.status !== 'error' ? r2.data : []);
         bwRefreshStep3();
         if (typeof loadDashboard === 'function') loadDashboard(function() {});
@@ -1931,7 +1949,8 @@ function bwFinalizeStep3Bulk() {
       AB_ARRIVAL: p.abArr || '',
       AB_QC: p.abQc || '',
       ARRIVAL_DATE: p.abTgl || '',
-      ARRIVAL_TIME: p.abArr || ''
+      ARRIVAL_TIME: p.abArr || '',
+      BREAKDOWN_PATCH: JSON.stringify(p.breakdowns || {})
     }, function(resp) {
       if (resp.status === 'error') {
         failMsg.push((p.nopol || p.id) + ': ' + resp.message);
@@ -2000,7 +2019,7 @@ function initBongkarWizard() {
   bwWiz.setupLocked = false;
   bwWiz.lockSnap = null;
   bwUpdateSetupLockUI();
-  fetchAPI('getBongkarHistory', { limit: 4000 }, function(resp) {
+  fetchAPI('getBongkarHistory', {}, function(resp) {
     appState.history.bongkar = bwNormalizeBongkarHistory(resp.status !== 'error' ? resp.data : []);
     bwSyncGhostHint();
     if ((bwWiz.step || 1) === 2) bwRefreshGhostFromServer();

@@ -52,27 +52,35 @@ function gsRowInstantMs_(r) {
   return tg instanceof Date ? tg.getTime() : new Date(tg).getTime();
 }
 
+function gsNormBkId_(id) {
+  var s = String(id == null ? '' : id).trim();
+  var m = s.match(/^BK\s*-?\s*(\d+)$/i);
+  return m ? ('BK-' + m[1]) : s;
+}
+
 function calculateStock(bkId, allOpname, allBongkar, allKirim) {
-  var bkOpname = allOpname.filter(function(r) { return r.BK_ID == bkId; });
+  var targetBk = gsNormBkId_(bkId);
+  var bkOpname = allOpname.filter(function(r) { return gsNormBkId_(r.BK_ID) == targetBk; });
   bkOpname.sort(function(a, b) { return gsRowInstantMs_(b) - gsRowInstantMs_(a); });
   var lastOpname = bkOpname.length > 0 ? bkOpname[0] : null;
   var baseline = lastOpname ? Number(lastOpname.STOK_FISIK_KG) : 0;
+  if (isNaN(baseline)) baseline = 0;
   
   var cutoffTime = lastOpname ? gsRowInstantMs_(lastOpname) : 0;
   
   var totalBongkar = 0;
   for (var i=0; i<allBongkar.length; i++) {
     var rowBg = allBongkar[i];
-    if (rowBg.BK_ID != bkId || gsRowInstantMs_(rowBg) <= cutoffTime) continue;
+    if (gsNormBkId_(rowBg.BK_ID) != targetBk || gsRowInstantMs_(rowBg) <= cutoffTime) continue;
     var st = rowBg.STATUS_ROW;
     if (st === 'pending_final') continue;
-    totalBongkar += Number(rowBg.NETTO_KG);
+    totalBongkar += Number(rowBg.NETTO_KG) || 0;
   }
   
   var totalKirim = 0;
   for (var j=0; j<allKirim.length; j++) {
-    if (allKirim[j].BK_ID == bkId && gsRowInstantMs_(allKirim[j]) > cutoffTime) {
-      totalKirim += Number(allKirim[j].NETTO_KG);
+    if (gsNormBkId_(allKirim[j].BK_ID) == targetBk && gsRowInstantMs_(allKirim[j]) > cutoffTime) {
+      totalKirim += Number(allKirim[j].NETTO_KG) || 0;
     }
   }
   
@@ -143,11 +151,12 @@ function getBKList() {
 function getHistory(sheetName, bkId, limit) {
   var data = getSheetData(sheetName);
   if (bkId) {
-    data = data.filter(function(r) { return r.BK_ID == bkId; });
+    var targetBk = gsNormBkId_(bkId);
+    data = data.filter(function(r) { return gsNormBkId_(r.BK_ID) == targetBk; });
   }
   data.sort(function(a, b) { 
-    var dateA = a.TANGGAL ? new Date(a.TANGGAL).getTime() : 0;
-    var dateB = b.TANGGAL ? new Date(b.TANGGAL).getTime() : 0;
+    var dateA = gsRowInstantMs_(a);
+    var dateB = gsRowInstantMs_(b);
     return dateB - dateA; 
   });
   if (limit) {
@@ -431,6 +440,57 @@ function updateBongkarById(id, updates) {
   return false;
 }
 
+function getBongkarRowById_(id) {
+  var ss = getSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_BONGKAR);
+  if (!sheet) throw new Error('Sheet Bongkar not found');
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return null;
+  var headers = data[0];
+  var idCol = headers.indexOf('ID');
+  if (idCol < 0) throw new Error('Kolom ID tidak ada');
+  for (var r = 1; r < data.length; r++) {
+    if (String(data[r][idCol]) !== String(id)) continue;
+    var row = {};
+    for (var c = 0; c < headers.length; c++) {
+      row[headers[c]] = data[r][c];
+    }
+    return row;
+  }
+  return null;
+}
+
+function parseObjectJson_(v) {
+  if (!v) return {};
+  if (typeof v === 'object') return v || {};
+  try {
+    var parsed = JSON.parse(String(v));
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function mergeBreakdownObjects_(base, patch) {
+  var out = {};
+  var k;
+  base = base || {};
+  patch = patch || {};
+  for (k in base) {
+    if (base.hasOwnProperty(k)) out[k] = base[k];
+  }
+  for (k in patch) {
+    if (!patch.hasOwnProperty(k)) continue;
+    var arr = patch[k];
+    if (Array.isArray(arr) && arr.length) out[k] = arr;
+  }
+  return out;
+}
+
+function hasObjectKeys_(o) {
+  return !!(o && typeof o === 'object' && Object.keys(o).length);
+}
+
 function saveBongkarSetup(username, dateKey, nama, payloadJson) {
   if (!username) throw new Error('username wajib');
   var ss = getSpreadsheet();
@@ -575,11 +635,14 @@ function handlePost(e) {
 
     } else if (action === 'finalizeBongkar') {
       ensureBongkarMetaColumns_();
+      ensureBongkarBreakdownColumns_();
       var fid = data.ID || data.id;
       if (!fid) throw new Error('ID wajib');
       var abTgl = data.AB_TANGGAL || data.ab_tanggal || '';
       var abArr = data.AB_ARRIVAL || data.ab_arrival || '';
       var abQc = data.AB_QC || data.ab_qc || '';
+      var bdPatch = parseObjectJson_(data.BREAKDOWN_PATCH || data.breakdown_patch || '');
+      var oldRow = hasObjectKeys_(bdPatch) ? getBongkarRowById_(fid) : null;
       var upd = {
         NETTO_KG: Number(data.NETTO_KG || data.netto_kg || 0),
         STATUS_ROW: 'complete',
@@ -589,6 +652,16 @@ function handlePost(e) {
         AB_ARRIVAL: abArr,
         AB_QC: abQc
       };
+      if (oldRow) {
+        var oldBd = parseObjectJson_(oldRow.BREAKDOWN_DURASI || oldRow['BREAKDOWN DURASI'] || '');
+        var mergedBd = mergeBreakdownObjects_(oldBd, bdPatch);
+        var djObj = parseObjectJson_(oldRow.DURASI_JSON || '');
+        if (!hasObjectKeys_(djObj)) djObj = { v: 1 };
+        djObj.breakdowns = mergeBreakdownObjects_(djObj.breakdowns || {}, bdPatch);
+        upd.BREAKDOWN_DURASI = hasObjectKeys_(mergedBd) ? JSON.stringify(mergedBd) : '';
+        upd.BREAKDOWN_TXT = formatBreakdownTxt_(mergedBd);
+        upd.DURASI_JSON = JSON.stringify(djObj);
+      }
       if (!updateBongkarById(fid, upd)) throw new Error('Baris bongkar tidak ditemukan');
       return { status: 'success', message: 'Data dilengkapi' };
 

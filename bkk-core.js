@@ -160,9 +160,15 @@ function fmtPct2(n) {
 
 function fmtDate(d) {
   if (!d) return '—';
+  var ymd = typeof dashDateToYMD === 'function' ? dashDateToYMD(d) : '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+    var p = ymd.split('-');
+    var dtWib = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 12, 0, 0);
+    return dtWib.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
   var dt = new Date(d);
   if (isNaN(dt.getTime())) return String(d);
-  return dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  return dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
 }
 
 function todayStr() {

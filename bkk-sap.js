@@ -1,10 +1,10 @@
 // ── CEK SAP ──────────────────────────────────────────────────────────────────
 function loadSAPData() {
   // Cache global (tanpa bk_id): dipakai halaman lain; limit besar agar tidak menimpa subset BK saat user buka Riwayat.
-  fetchAPI('getBongkarHistory', { limit: 2500 }, function(resp) {
+  fetchAPI('getBongkarHistory', {}, function(resp) {
     if (resp.status !== 'error') appState.history.bongkar = resp.data || [];
   });
-  fetchAPI('getKirimHistory', { limit: 2500 }, function(resp) {
+  fetchAPI('getKirimHistory', {}, function(resp) {
     if (resp.status !== 'error') appState.history.kirim = resp.data || [];
   });
 }
@@ -17,15 +17,15 @@ function loadOpnamePageData() {
     if (pending > 0) return;
     updateOpnameInfo();
   }
-  fetchAPI('getBongkarHistory', { limit: 4000 }, function(resp) {
+  fetchAPI('getBongkarHistory', {}, function(resp) {
     if (resp.status !== 'error') appState.history.bongkar = resp.data || [];
     done();
   });
-  fetchAPI('getKirimHistory', { limit: 4000 }, function(resp) {
+  fetchAPI('getKirimHistory', {}, function(resp) {
     if (resp.status !== 'error') appState.history.kirim = resp.data || [];
     done();
   });
-  fetchAPI('getOpnameHistory', { limit: 800 }, function(resp) {
+  fetchAPI('getOpnameHistory', {}, function(resp) {
     if (resp.status !== 'error') appState.history.opname = resp.data || [];
     done();
   });
@@ -942,6 +942,9 @@ function sapBongkarSave() {
     SUPPLIER: supplier || 'Penyesuaian SAP',
     NETTO_KG: qty,
     SHIFT: shift,
+    TYPE_BONGKARAN: 'sap_adjustment',
+    STATUS_ROW: 'complete',
+    DURASI_JSON: JSON.stringify({ v: 1, is_sbm: String(material || '').toLowerCase().indexOf('sbm') >= 0, type_bongkaran: 'sap_adjustment', breakdowns: {} }),
     INPUT_BY: (appState.user ? appState.user.nama + ' (Auto-SAP)' : '')
   };
   showLoader(true);
@@ -998,7 +1001,7 @@ function bkkEnsureOpnameHistory(callback) {
     callback();
     return;
   }
-  fetchAPI('getOpnameHistory', { limit: 800 }, function(resp) {
+  fetchAPI('getOpnameHistory', {}, function(resp) {
     if (resp.status !== 'error') appState.history.opname = resp.data || [];
     callback();
   });

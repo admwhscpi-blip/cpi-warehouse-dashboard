@@ -10,7 +10,27 @@ var ksState = {
   loaded: false
 };
 
-var KS_BKS = ['BK-1','BK-2','BK-3','BK-4','BK-5','BK-6'];
+var KS_BKS_DEFAULT = ['BK-1','BK-2','BK-3','BK-4','BK-5','BK-6'];
+
+function ksGetBKIds() {
+  var source = appState.dashData && appState.dashData.length ? appState.dashData : [];
+  var seen = {};
+  var ids = [];
+  source.forEach(function(bk) {
+    var id = ksNormBK(bk.BK_ID);
+    if (!id || seen[id]) return;
+    seen[id] = true;
+    ids.push(id);
+  });
+  if (!ids.length) ids = KS_BKS_DEFAULT.slice();
+  ids.sort(function(a, b) {
+    var ma = String(a).match(/^BK-(\d+)$/);
+    var mb = String(b).match(/^BK-(\d+)$/);
+    if (ma && mb) return Number(ma[1]) - Number(mb[1]);
+    return String(a).localeCompare(String(b));
+  });
+  return ids;
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────
 function initKartuStock() {
@@ -22,6 +42,8 @@ function initKartuStock() {
   var defVal = now.getFullYear() + '-' + pad2(now.getMonth() + 1);
   sel.value = defVal;
   ksState.bulan = defVal;
+  var ids = ksGetBKIds();
+  if (ids.length && ids.indexOf(ksState.bk) < 0) ksState.bk = ids[0];
 
   ksRenderBKChips();
 
@@ -50,7 +72,9 @@ function ksRenderBKChips() {
   var chips = $('ks_bk_chips_area');
   if (!chips) return;
   chips.innerHTML = '';
-  KS_BKS.forEach(function(bk) {
+  var ids = ksGetBKIds();
+  if (ids.length && ids.indexOf(ksState.bk) < 0) ksState.bk = ids[0];
+  ids.forEach(function(bk) {
     var btn = document.createElement('button');
     btn.className = 'ks-bk-chip' + (bk === ksState.bk ? ' active' : '');
     btn.textContent = bk;
@@ -212,17 +236,17 @@ function loadKartuStockData() {
       renderKartuStock();
     }
   }
-  fetchAPI('getBongkarHistory', { limit: 4000 }, function(resp) {
+  fetchAPI('getBongkarHistory', {}, function(resp) {
     var raw = (resp.status !== 'error') ? (resp.data || []) : [];
     ksState.raw.bongkar = raw.map(ksNormalizeDate);
     check();
   });
-  fetchAPI('getKirimHistory', { limit: 4000 }, function(resp) {
+  fetchAPI('getKirimHistory', {}, function(resp) {
     var raw = (resp.status !== 'error') ? (resp.data || []) : [];
     ksState.raw.kirim = raw.map(ksNormalizeDate);
     check();
   });
-  fetchAPI('getOpnameHistory', { limit: 800 }, function(resp) {
+  fetchAPI('getOpnameHistory', {}, function(resp) {
     var raw = (resp.status !== 'error') ? (resp.data || []) : [];
     ksState.raw.opname = raw.map(ksNormalizeDate);
     check();
@@ -515,11 +539,12 @@ function renderKSSummary() {
 
   var ascDates = dates.slice().sort();
   var allData = {};
-  KS_BKS.forEach(function(bk) { allData[bk] = ksComputeStock(ksNormBK(bk), ascDates); });
+  var ids = ksGetBKIds();
+  ids.forEach(function(bk) { allData[bk] = ksComputeStock(ksNormBK(bk), ascDates); });
 
   $('ks_thead').innerHTML = '<tr>' +
     '<th class="ks-th-date ks-sticky-col">Tanggal</th>' +
-    KS_BKS.map(function(bk) { return '<th class="ks-th-bk">' + bk + '</th>'; }).join('') +
+    ids.map(function(bk) { return '<th class="ks-th-bk">' + bk + '</th>'; }).join('') +
     '</tr>';
 
   var tbody = $('ks_tbody');
@@ -532,7 +557,7 @@ function renderKSSummary() {
     var cells = '<td class="ks-td-date ks-sticky-col">' +
       (d === today ? '<span class="ks-today-badge">HARI INI</span>' : '') +
       '<span class="ks-date-txt">' + fmtDate(d) + '</span></td>';
-    KS_BKS.forEach(function(bk) {
+    ids.forEach(function(bk) {
       var bundle = allData[bk][d] || {};
       var s = bundle.stock;
       var cls = s == null ? 'ks-empty' : s < 0 ? 'ks-neg' : s === 0 ? 'ks-zero' : '';
