@@ -360,7 +360,7 @@ function postAPI(action, data, cb) {
 function navigateTo(page) {
   if (!appState.user) return;
   var perms = ROLE_PERMISSIONS[appState.user.role] || {};
-  var menuNames = { bongkar:'Bongkar', kirim:'Kirim', opname:'Stock Opname', ceksap:'Cek SAP', history:'Riwayat', dashboard:'Dashboard', kartustock:'Kartu Stock', outstanding:'Outstanding', durbreakdown:'Breakdown Durasi' };
+  var menuNames = { bongkar:'Bongkar', kirim:'Kirim', opname:'Stock Opname', ceksap:'Cek SAP', history:'Riwayat', dashboard:'Dashboard', kartustock:'Kartu Stock', intake71:'Intake-71', outstanding:'Outstanding', durbreakdown:'Breakdown Durasi' };
   if (!perms[page]) {
     if (typeof Swal !== 'undefined') {
       Swal.fire({ icon:'error', title:'Akses Ditolak 🔒', html:'<div style="font-size:0.95rem;color:#64748b;">Anda tidak memiliki otorisasi untuk mengakses menu <b style="color:#ef4444;">' + (menuNames[page]||page) + '</b></div>', confirmButtonText:'Mengerti', confirmButtonColor:'#0284c7', background:'#fff', customClass:{ popup:'swal-premium' } });
@@ -372,7 +372,7 @@ function navigateTo(page) {
   var pg = $('page-' + page);
   if (pg) pg.classList.add('active');
   /* Kartu Stock & Outstanding termasuk area Dashboard — sorot menu Dashboard di sidebar */
-  var sidebarNavPage = page === 'kartustock' || page === 'outstanding' || page === 'durbreakdown' ? 'dashboard' : page;
+  var sidebarNavPage = page === 'kartustock' || page === 'intake71' || page === 'outstanding' || page === 'durbreakdown' ? 'dashboard' : page;
   document.querySelectorAll('.nav-item[data-page="' + sidebarNavPage + '"]').forEach(function(el) { el.classList.add('active'); });
   document.querySelectorAll('.header-tab').forEach(function(el) { el.classList.remove('active'); });
   document.querySelectorAll('.header-tab[data-page="' + page + '"]').forEach(function(el) { el.classList.add('active'); });
@@ -394,6 +394,9 @@ function navigateTo(page) {
   if (page === 'durbreakdown' && typeof loadBkkDurationBreakdownPage === 'function') {
     loadBkkDurationBreakdownPage();
   }
+  if (page === 'intake71' && typeof loadIntake71Page === 'function') {
+    loadIntake71Page();
+  }
   if (page === 'bongkar' || page === 'kirim' || page === 'opname') prefillFormOperatorNames();
   if (page === 'opname' && typeof loadOpnamePageData === 'function') loadOpnamePageData();
   if (page === 'bongkar') {
@@ -408,7 +411,7 @@ function updateSubnavDashKartu(page) {
   var bar = $('subnavDashStock');
   if (!bar) return;
   /* Subnav Dashboard | Kartu Stock | Outstanding — hanya di ketiga halaman ini */
-  var show = page === 'dashboard' || page === 'kartustock' || page === 'outstanding' || page === 'durbreakdown';
+  var show = page === 'dashboard' || page === 'kartustock' || page === 'intake71' || page === 'outstanding' || page === 'durbreakdown';
   if (show) {
     bar.removeAttribute('hidden');
     bar.style.display = 'flex';
@@ -418,7 +421,7 @@ function updateSubnavDashKartu(page) {
   }
   if (!show) return;
   bar.querySelectorAll('.view-tab').forEach(function(t) { t.classList.remove('active'); });
-  var tabSel = { dashboard: '.tab-dashboard', kartustock: '.tab-kartustock', outstanding: '.tab-outstanding', durbreakdown: '.tab-durbreakdown' };
+  var tabSel = { dashboard: '.tab-dashboard', kartustock: '.tab-kartustock', intake71: '.tab-intake71', outstanding: '.tab-outstanding', durbreakdown: '.tab-durbreakdown' };
   var sel = tabSel[page] || '.tab-dashboard';
   var btn = bar.querySelector(sel);
   if (btn) btn.classList.add('active');

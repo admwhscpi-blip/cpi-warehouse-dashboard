@@ -115,6 +115,7 @@
         <div class="view-toggle-group">
           <button type="button" class="view-tab tab-dashboard active" data-page="dashboard"><i class="fas fa-th-large"></i> Dashboard</button>
           <button type="button" class="view-tab tab-kartustock" data-page="kartustock"><i class="fas fa-chart-bar"></i> Kartu Stock</button>
+          <button type="button" class="view-tab tab-intake71" data-page="intake71"><i class="fas fa-industry"></i> Intake-71</button>
           <button type="button" class="view-tab tab-outstanding" data-page="outstanding"><i class="fas fa-broadcast-tower"></i> Outstanding (live)</button>
           <button type="button" class="view-tab tab-durbreakdown" data-page="durbreakdown"><i class="fas fa-stopwatch"></i> Lead Time & Breakdown durasi</button>
         </div>
@@ -332,6 +333,142 @@
             <table class="db-detail-table" id="bkkdb-detail-table" style="min-width:1000px;">
               <thead id="bkkdb-thead"><tr></tr></thead>
               <tbody id="bkkdb-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: INTAKE-71 ANALYTICS -->
+      <div class="page dash-page-shell" id="page-intake71">
+        <input type="date" id="i71_date" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
+        <style>
+          #page-intake71 { --i71glass: linear-gradient(145deg,rgba(255,255,255,.92),rgba(244,248,255,.82)); --i71ink:#0f172a; }
+          .i71-hero { background:linear-gradient(120deg,#ecfeff 0%, #dbeafe 48%, #e0e7ff 100%); border:1px solid #bfdbfe; border-radius:16px; padding:12px 14px; margin-bottom:10px; box-shadow:0 10px 20px -16px rgba(14,116,144,.45); position:relative; overflow:hidden; }
+          .i71-hero::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at 80% 10%, rgba(56,189,248,.15), transparent 40%); pointer-events:none; }
+          .i71-hero-title { margin:0; font-family:'Orbitron',sans-serif; color:#0f172a; letter-spacing:1px; font-size:1rem; position:relative; z-index:1; }
+          .i71-hero-sub { margin-top:6px; color:#475569; font-size:.78rem; position:relative; z-index:1; }
+          .i71-calendar-shell { background:linear-gradient(180deg,#0b1327,#0a1021); border:1px solid #1e3a8a; border-radius:12px; padding:8px 10px; margin-bottom:10px; color:#bfdbfe; box-shadow:0 10px 20px -14px rgba(30,64,175,.5); width:360px; max-width:100%; }
+          .i71-calendar-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+          .i71-cal-nav { width:20px; height:20px; border-radius:6px; border:1px solid #1d4ed8; background:#0f1a34; color:#bfdbfe; cursor:pointer; font-weight:700; transition:all .22s ease; }
+          .i71-cal-nav:hover { transform:translateY(-1px); box-shadow:0 8px 16px -12px rgba(59,130,246,.6); border-color:#60a5fa; color:#dbeafe; }
+          .i71-cal-head { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin-bottom:5px; font-family:'Orbitron',sans-serif; font-size:.58rem; color:#93c5fd; text-align:center; }
+          .i71-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+          .i71-cal-day { height:28px; border-radius:6px; border:1px solid #1e3a8a; background:#0f1a34; color:#bfdbfe; font-family:'Orbitron',sans-serif; font-size:.72rem; cursor:pointer; transition:all .22s ease; position:relative; overflow:hidden; }
+          .i71-cal-day:hover { transform:translateY(-1px) scale(1.01); box-shadow:0 8px 16px -12px rgba(59,130,246,.5); }
+          .i71-cal-day.has-data::after { content:''; position:absolute; inset:auto 3px 3px 3px; height:3px; border-radius:999px; background:linear-gradient(90deg,#22d3ee,#60a5fa); opacity:.95; }
+          .i71-cal-day.has-data::before { content:''; position:absolute; width:6px; height:6px; border-radius:50%; right:4px; top:4px; background:#22d3ee; box-shadow:0 0 8px #22d3ee; }
+          .i71-cal-day.is-active { border-color:#22c55e; color:#166534; box-shadow:0 0 0 1px rgba(34,197,94,.15) inset; background:#f0fdf4; }
+          .i71-cal-day.is-today:not(.is-active) { border-color:#60a5fa; color:#e0f2fe; }
+          .i71-cal-day.is-blank { visibility:hidden; cursor:default; }
+          #i71_kpi_grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:10px; }
+          .i71-kpi-card { background:var(--i71glass); border:1px solid rgba(148,163,184,.28); border-radius:12px; padding:10px; box-shadow:0 10px 18px -16px rgba(15,23,42,.4); transform:perspective(1000px) rotateX(1.2deg); transition:transform .25s ease, box-shadow .25s ease; animation:i71fade .5s ease both; }
+          .i71-kpi-card:hover { transform:perspective(1000px) rotateX(0deg) translateY(-2px); box-shadow:0 18px 30px -20px rgba(14,116,144,.5); }
+          .i71-kpi-label { font-size:.62rem; text-transform:uppercase; letter-spacing:.8px; color:#64748b; font-weight:700; }
+          .i71-kpi-value { font-family:'Rajdhani',sans-serif; font-size:1.45rem; font-weight:800; color:var(--i71ink); line-height:1; margin-top:5px; }
+          .i71-grid-two { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+          .i71-card { background:var(--i71glass); border:1px solid rgba(148,163,184,.28); border-radius:12px; padding:10px; box-shadow:0 10px 18px -16px rgba(15,23,42,.4); animation:i71fade .6s ease both; }
+          .i71-card h4 { margin:0 0 6px; font-size:.86rem; color:#0f172a; letter-spacing:.2px; }
+          .i71-card-plot { height:205px; }
+          .i71-step-grid { display:grid; grid-template-columns:1.1fr .9fr; gap:8px; margin-bottom:8px; }
+          .i71-overlap-wrap { max-height:220px; overflow:auto; }
+          .i71-step-item { padding:8px 9px; border:1px solid #e2e8f0; border-radius:10px; background:#fff; margin-bottom:7px; }
+          .i71-step-head { font-size:.78rem; color:#0f172a; margin-bottom:2px; }
+          .i71-step-meta { font-size:.72rem; color:#475569; margin-bottom:3px; }
+          .i71-step-cause { font-size:.7rem; color:#64748b; }
+          .i71-top-row { display:grid; grid-template-columns:360px 1fr; gap:10px; align-items:stretch; margin-bottom:10px; min-height:320px; }
+          .i71-top-left { display:flex; flex-direction:column; gap:8px; }
+          .i71-top-right { min-width:0; }
+          .i71-top-right #i71_kpi_grid { margin-bottom:0; }
+          .i71-top-right .i71-grid-two { margin-top:4px; margin-bottom:0; }
+          .i71-top-right .i71-grid-two .i71-card { padding:10px; border:1px solid rgba(56,189,248,.35); background:linear-gradient(150deg,#f8fcff,#ecf7ff); box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 14px 22px -18px rgba(14,116,144,.65); }
+          .i71-top-right .i71-grid-two .i71-card h4 { font-size:.8rem; margin-bottom:4px; color:#0c4a6e; }
+          .i71-top-right .i71-grid-two .i71-card-plot { height:140px; }
+          .i71-top-row .i71-hero { padding:9px 10px; margin-bottom:6px; }
+          .i71-top-row .i71-hero-title { font-size:.88rem; }
+          .i71-top-row .i71-hero-sub { font-size:.7rem; margin-top:3px; }
+          .i71-top-row #i71_kpi_grid { gap:5px; margin-bottom:0; }
+          .i71-top-row #i71_kpi_grid .i71-kpi-card { padding:7px 8px; }
+          .i71-top-row #i71_kpi_grid .i71-kpi-label { font-size:.53rem; }
+          .i71-top-row #i71_kpi_grid .i71-kpi-value { font-size:1.06rem; margin-top:2px; }
+          .i71-top-right { display:flex; flex-direction:column; height:100%; }
+          .i71-top-right .i71-grid-two { flex:1; grid-template-rows:1fr; align-items:stretch; }
+          .i71-top-right .i71-grid-two .i71-card { height:100%; min-height:0; }
+          .i71-top-row .i71-calendar-shell { height:100%; margin-bottom:0; }
+          .i71-top-left { height:100%; }
+          @keyframes i71fade { from { opacity:0; transform:translateY(8px) scale(.99); } to { opacity:1; transform:translateY(0) scale(1); } }
+        </style>
+
+        <div class="i71-top-row">
+          <div class="i71-top-left">
+            <div class="i71-calendar-shell">
+            <div style="font-size:.64rem;font-weight:700;letter-spacing:.3px;color:#93c5fd;margin-bottom:6px;">
+              Klik tanggal di kalender untuk memunculkan data analisis hari tersebut.
+            </div>
+            <div class="i71-calendar-top">
+              <div style="display:flex;align-items:center;gap:8px;font-family:'Orbitron',sans-serif;letter-spacing:.5px;">
+              <i class="fas fa-calendar-alt" style="color:#60a5fa;"></i>
+              <strong style="font-weight:700;">BKK DAILY CALENDAR</strong>
+            </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button type="button" id="i71_cal_prev" class="i71-cal-nav">‹</button>
+                <span id="i71_calendar_title" style="font-family:'Orbitron',sans-serif;font-size:.68rem;color:#dbeafe;"></span>
+                <button type="button" id="i71_cal_next" class="i71-cal-nav">›</button>
+              </div>
+            </div>
+            <div class="i71-cal-head">
+              <span>MIN</span><span>SEN</span><span>SEL</span><span>RAB</span><span>KAM</span><span>JUM</span><span>SAB</span>
+            </div>
+              <div id="i71_calendar_grid" class="i71-cal-grid"></div>
+            </div>
+          </div>
+          <div class="i71-top-right">
+            <div class="i71-hero">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+                <div>
+                  <h3 class="i71-hero-title"><i class="fas fa-industry" style="color:#f59e0b;"></i> INTAKE-71 COMMAND ANALYTICS</h3>
+                  <div id="i71_summary_text" class="i71-hero-sub">Memuat data...</div>
+                </div>
+                <div id="i71_material_info" style="min-width:260px;max-width:52%;font-size:.7rem;line-height:1.35;color:#334155;text-align:right;"></div>
+              </div>
+            </div>
+            <div id="i71_kpi_grid"></div>
+            <div class="i71-grid-two">
+              <div class="i71-card">
+                <h4>Proporsi Active vs Downtime</h4>
+                <div class="i71-card-plot"><canvas id="i71_chart_util"></canvas></div>
+              </div>
+              <div class="i71-card">
+                <h4>Perbandingan Tilting vs Manual</h4>
+                <div class="i71-card-plot"><canvas id="i71_chart_type"></canvas></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="i71-card" style="margin-bottom:8px;border:1px solid rgba(14,165,233,.35); background:linear-gradient(155deg,#f7fcff,#eaf6ff); box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 14px 22px -18px rgba(14,116,144,.65);">
+          <h4 style="color:#0c4a6e;">Timeline Aktivitas &amp; Netto per Jam</h4>
+          <div class="i71-card-plot" style="height:196px;"><canvas id="i71_chart_timeline"></canvas></div>
+        </div>
+
+        <div class="i71-step-grid">
+          <div class="i71-card">
+            <h4>Total Durasi Step (Hari Terpilih · Total 24 Jam)</h4>
+            <div class="i71-card-plot"><canvas id="i71_chart_steps"></canvas></div>
+          </div>
+          <div class="i71-card">
+            <h4>Penjelasan Toleransi & Breakdown</h4>
+            <div class="i71-overlap-wrap" id="i71_step_explain"></div>
+          </div>
+        </div>
+
+        <div class="i71-card">
+          <h4>Overlapping Operations</h4>
+          <div class="i71-overlap-wrap">
+            <table class="dtable" style="min-width:720px;">
+              <thead>
+                <tr><th>Mulai</th><th>Selesai</th><th>Durasi</th><th>Jumlah Operasi</th><th>Nopol</th></tr>
+              </thead>
+              <tbody id="i71_overlap_body"></tbody>
             </table>
           </div>
         </div>
@@ -962,6 +1099,7 @@
 <script src="bkk-bongkar-wizard.js?v=20260507fix8"></script>
 <script src="bkk-duration-breakdown.js?v=20260507fix9"></script>
 <script src="bkk-kartustock.js?v=20260507fix3"></script>
+<script src="bkk-intake71-dashboard.js?v=20260507i71"></script>
 
 </body>
 </html>

@@ -219,6 +219,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('.view-toggle-bar .view-tab').forEach(function(t) { t.classList.remove('active'); });
       this.classList.add('active');
       if (page === 'kartustock') navigateTo('kartustock');
+      else if (page === 'intake71') navigateTo('intake71');
       else if (page === 'outstanding') navigateTo('outstanding');
       else if (page === 'durbreakdown') navigateTo('durbreakdown');
       else if (page === 'dashboard') navigateTo('dashboard');

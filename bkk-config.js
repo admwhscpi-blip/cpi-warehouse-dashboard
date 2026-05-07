@@ -26,9 +26,9 @@ var USERS_DATABASE = [
 ];
 
 var ROLE_PERMISSIONS = {
-  admin:   { dashboard: true, bongkar: true, kirim: true, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true },
-  kirim:   { dashboard: true, bongkar: false, kirim: true, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true },
-  bongkar: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true },
-  opname:  { dashboard: true, bongkar: false, kirim: false, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true },
-  bongkar_only: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: false, history: false, kartustock: false, outstanding: false, durbreakdown: false }
+  admin:   { dashboard: true, bongkar: true, kirim: true, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true, intake71: true },
+  kirim:   { dashboard: true, bongkar: false, kirim: true, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true, intake71: true },
+  bongkar: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true, intake71: true },
+  opname:  { dashboard: true, bongkar: false, kirim: false, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true, intake71: true },
+  bongkar_only: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: false, history: false, kartustock: false, outstanding: false, durbreakdown: false, intake71: false }
 };
