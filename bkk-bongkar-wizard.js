@@ -635,6 +635,30 @@ function bwNormNopol(x) {
   return String(x || '').trim().toUpperCase().replace(/\s+/g, ' ');
 }
 
+function bwNormTruckType(x) {
+  return String(x || '').trim().toUpperCase();
+}
+
+function bwParseJumlahKuli(x) {
+  var n = parseInt(String(x == null ? '' : x).trim(), 10);
+  if (!isFinite(n) || isNaN(n) || n < 1) return NaN;
+  return n;
+}
+
+function bwToBatchItem(entry) {
+  if (typeof entry === 'string') {
+    return { nopol: bwNormNopol(entry), jenis_truck: '', jumlah_kuli: '' };
+  }
+  if (!entry || typeof entry !== 'object') {
+    return { nopol: '', jenis_truck: '', jumlah_kuli: '' };
+  }
+  return {
+    nopol: bwNormNopol(entry.nopol),
+    jenis_truck: bwNormTruckType(entry.jenis_truck),
+    jumlah_kuli: entry.jumlah_kuli == null ? '' : String(entry.jumlah_kuli).trim()
+  };
+}
+
 function bwRenderNopolBatch() {
   var host = $('bw_nopol_batch_list');
   if (!host) return;
@@ -645,10 +669,15 @@ function bwRenderNopolBatch() {
     bwRefreshNopolShadow();
     return;
   }
-  list.forEach(function(np, idx) {
+  list.forEach(function(row, idx) {
+    var item = bwToBatchItem(row);
+    if (!item.nopol) return;
     var chip = document.createElement('span');
     chip.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid #cbd5e1;background:#f8fafc;font-size:0.78rem;';
-    chip.innerHTML = '<strong style="font-weight:700;">' + bwEsc(np) + '</strong>';
+    var meta = [];
+    if (item.jenis_truck) meta.push(item.jenis_truck);
+    if (item.jumlah_kuli) meta.push('Kuli ' + item.jumlah_kuli);
+    chip.innerHTML = '<strong style="font-weight:700;">' + bwEsc(item.nopol) + '</strong>' + (meta.length ? '<span style="color:#64748b;">(' + bwEsc(meta.join(' • ')) + ')</span>' : '');
     var rm = document.createElement('button');
     rm.type = 'button';
     rm.textContent = 'x';
@@ -665,19 +694,36 @@ function bwRenderNopolBatch() {
 
 function bwAddCurrentNopolToBatch() {
   var inp = $('bw_nopol');
+  var typeEl = $('bw_jenis_truck');
+  var kuliEl = $('bw_jumlah_kuli');
   if (!inp) return false;
   var nopol = bwNormNopol(inp.value);
+  var jenisTruck = bwNormTruckType(typeEl ? typeEl.value : '');
+  var jumlahKuli = bwParseJumlahKuli(kuliEl ? kuliEl.value : '');
   if (!nopol) {
     toast('Isi nopol dulu, lalu klik Tambah Nopol.', 'w');
     return false;
   }
+  if (!jenisTruck) {
+    toast('Pilih jenis truck sebelum tambah nopol.', 'w');
+    if (typeEl) typeEl.focus();
+    return false;
+  }
+  if (isNaN(jumlahKuli)) {
+    toast('Isi jumlah kuli (minimal 1) sebelum tambah nopol.', 'w');
+    if (kuliEl) kuliEl.focus();
+    return false;
+  }
   if (!Array.isArray(bwWiz.nopolBatch)) bwWiz.nopolBatch = [];
-  if (bwWiz.nopolBatch.indexOf(nopol) >= 0) {
+  var exists = bwWiz.nopolBatch.some(function(x) { return bwToBatchItem(x).nopol === nopol; });
+  if (exists) {
     toast('Nopol sudah ada di daftar.', 'w');
     return false;
   }
-  bwWiz.nopolBatch.push(nopol);
+  bwWiz.nopolBatch.push({ nopol: nopol, jenis_truck: jenisTruck, jumlah_kuli: jumlahKuli });
   inp.value = '';
+  if (typeEl) typeEl.value = '';
+  if (kuliEl) kuliEl.value = '';
   bwRenderNopolBatch();
   inp.focus();
   return true;
@@ -686,17 +732,35 @@ function bwAddCurrentNopolToBatch() {
 function bwGetStep2NopolListForSubmit() {
   if (!Array.isArray(bwWiz.nopolBatch)) bwWiz.nopolBatch = [];
   var inp = $('bw_nopol');
+  var typeEl = $('bw_jenis_truck');
+  var kuliEl = $('bw_jumlah_kuli');
   var liveNp = inp ? bwNormNopol(inp.value) : '';
-  if (liveNp && bwWiz.nopolBatch.indexOf(liveNp) < 0) bwWiz.nopolBatch.push(liveNp);
+  var liveType = bwNormTruckType(typeEl ? typeEl.value : '');
+  var liveKuli = kuliEl ? bwParseJumlahKuli(kuliEl.value) : NaN;
+  if (liveNp) {
+    if (!liveType) return { error: 'Pilih jenis truck untuk nopol yang belum ditambahkan.' };
+    if (isNaN(liveKuli)) return { error: 'Isi jumlah kuli (minimal 1) untuk nopol yang belum ditambahkan.' };
+    var hasLive = bwWiz.nopolBatch.some(function(x) { return bwToBatchItem(x).nopol === liveNp; });
+    if (!hasLive) bwWiz.nopolBatch.push({ nopol: liveNp, jenis_truck: liveType, jumlah_kuli: liveKuli });
+  }
   var out = [];
   var seen = {};
   bwWiz.nopolBatch.forEach(function(x) {
-    var np = bwNormNopol(x);
+    var row = bwToBatchItem(x);
+    var np = row.nopol;
     if (!np || seen[np]) return;
     seen[np] = true;
-    out.push(np);
+    out.push({
+      nopol: np,
+      jenis_truck: row.jenis_truck,
+      jumlah_kuli: bwParseJumlahKuli(row.jumlah_kuli)
+    });
   });
-  return out;
+  for (var i = 0; i < out.length; i++) {
+    if (!out[i].jenis_truck) return { error: 'Jenis truck wajib diisi untuk semua nopol.' };
+    if (isNaN(out[i].jumlah_kuli)) return { error: 'Jumlah kuli wajib diisi (minimal 1) untuk semua nopol.' };
+  }
+  return { list: out };
 }
 
 function bwRefreshStep2MiniTable() {
@@ -771,7 +835,11 @@ function bwRefreshStep2MiniTable() {
 
 function bwClearStep2Form() {
   var np = $('bw_nopol');
+  var jt = $('bw_jenis_truck');
+  var jk = $('bw_jumlah_kuli');
   if (np) np.value = '';
+  if (jt) jt.value = '';
+  if (jk) jk.value = '';
   bwWiz.nopolBatch = [];
   bwWiz.liveBreakdowns = {};
   bwRenderNopolBatch();
@@ -1311,8 +1379,13 @@ function bwSubmitStep2() {
   var mat = $('bw_material').value;
   var sup = $('bw_supplier').value;
   var typ = $('bw_type_bongkaran').value;
-  var nopolList = bwGetStep2NopolListForSubmit();
-  var nopol = nopolList[0] || '';
+  var nopolPack = bwGetStep2NopolListForSubmit();
+  if (nopolPack.error) {
+    toast(nopolPack.error, 'w');
+    return;
+  }
+  var nopolList = nopolPack.list || [];
+  var nopol = (nopolList[0] && nopolList[0].nopol) || '';
   if (!bkId || !tgl || !nopolList.length) {
     toast('Lengkapi BK, tanggal operasi, dan minimal 1 nopol', 'w');
     return;
@@ -1378,7 +1451,7 @@ function bwSubmitStep2() {
             key: 'sbm_gap_truck',
             targetMin: g,
             title: 'Jeda vs truck Intake 71 sebelumnya — total ' + g + ' menit (wajib dirinci penuh)',
-            detail: bwFormatGapTruckSubtitle(nopolList.join(', '), ps)
+            detail: bwFormatGapTruckSubtitle(nopolList.map(function(it) { return it.nopol; }).join(', '), ps)
           });
         }
       }
@@ -1460,7 +1533,7 @@ function bwSubmitStep2() {
             key: 'gap_truck_ns',
             targetMin: g2,
             title: 'Jeda vs truck Intake 71 sebelumnya — total ' + g2 + ' menit (wajib dirinci penuh)',
-            detail: bwFormatGapTruckSubtitle(nopolList.join(', '), dj.pb_start)
+            detail: bwFormatGapTruckSubtitle(nopolList.map(function(it) { return it.nopol; }).join(', '), dj.pb_start)
           });
         }
       }
@@ -1490,7 +1563,7 @@ function bwSubmitStep2() {
           bwWizardSaveEnd();
           if (okCount > 0) {
             toast('Durasi tersimpan untuk ' + okCount + ' nopol. Lanjut isi truck berikutnya, atau buka Step 3.', 's');
-            if (dj.pb_finish) bwSetSessionPbFinishHint(dj.pb_finish, nopolList[nopolList.length - 1]);
+            if (dj.pb_finish) bwSetSessionPbFinishHint(dj.pb_finish, nopolList[nopolList.length - 1].nopol);
           }
           if (fail.length) {
             toast('Sebagian gagal: ' + fail.join(' | '), 'w');
@@ -1510,14 +1583,16 @@ function bwSubmitStep2() {
           bwGoStep(2);
           return;
         }
-        var np = nopolList[idx++];
+        var npItem = nopolList[idx++];
         var payload = {
           TANGGAL: tgl,
           BK_ID: bkId,
           MATERIAL: mat,
           SUPPLIER: sup,
           NETTO_KG: 0,
-          NO_POLISI: np,
+          NO_POLISI: npItem.nopol,
+          JENIS_TRUCK: npItem.jenis_truck,
+          JUMLAH_KULI: npItem.jumlah_kuli,
           SHIFT: shift,
           TYPE_BONGKARAN: typ,
           STATUS_ROW: 'pending_final',
@@ -1525,7 +1600,7 @@ function bwSubmitStep2() {
           DURASI_JSON: JSON.stringify(dj)
         };
         sendAdd('addBongkar', payload, function(resp) {
-          if (resp.status === 'error') fail.push(np + ': ' + resp.message);
+          if (resp.status === 'error') fail.push(npItem.nopol + ': ' + resp.message);
           else okCount++;
           sendNext();
         });

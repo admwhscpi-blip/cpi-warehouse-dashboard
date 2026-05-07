@@ -537,9 +537,25 @@
                   <div class="bw-nopol-fields">
                     <label for="bw_nopol">No. Polisi</label>
                     <input type="text" id="bw_nopol" placeholder="B 1234 XX" style="text-transform:uppercase;">
+                    <div class="fgrid" style="margin-top:10px;">
+                      <div class="fg">
+                        <label for="bw_jenis_truck">Jenis Truck</label>
+                        <select id="bw_jenis_truck">
+                          <option value="">Pilih jenis truck</option>
+                          <option value="TRAILER DUMPT">Trailer Dumpt</option>
+                          <option value="DUMPT TRUCK">Dumpt Truck</option>
+                          <option value="TRONTON">Tronton</option>
+                          <option value="GANDENG">Gandeng</option>
+                        </select>
+                      </div>
+                      <div class="fg">
+                        <label for="bw_jumlah_kuli">Jumlah Kuli</label>
+                        <input type="number" id="bw_jumlah_kuli" placeholder="0" min="1" step="1">
+                      </div>
+                    </div>
                     <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap;">
                       <button type="button" class="btn btn-sm" id="bw_btn_add_nopol"><i class="fas fa-plus"></i> Tambah Nopol</button>
-                      <span class="fhint" style="font-size:0.78rem;">Bisa isi beberapa nopol, durasi dipakai sama untuk semuanya.</span>
+                      <span class="fhint" style="font-size:0.78rem;">Isi nopol + jenis truck + jumlah kuli dulu, lalu tambah ke daftar. Durasi dipakai sama untuk semuanya.</span>
                     </div>
                     <div id="bw_nopol_batch_list" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"></div>
                   </div>

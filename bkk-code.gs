@@ -315,7 +315,7 @@ function handleGet(e) {
 
 /** Tambah header kolom durasi di BKK_Bongkar bila belum ada (supaya insertRow bisa mengisi per kolom). */
 function ensureBongkarMetaColumns_() {
-  var names = ['TYPE_BONGKARAN', 'STATUS_ROW', 'DURASI_JSON'];
+  var names = ['TYPE_BONGKARAN', 'STATUS_ROW', 'DURASI_JSON', 'JENIS_TRUCK', 'JUMLAH_KULI'];
   var ss = getSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_BONGKAR);
   if (!sheet) return;
@@ -604,6 +604,8 @@ function handlePost(e) {
         SUPPLIER: data.SUPPLIER || data.supplier || "",
         NETTO_KG: Number(data.NETTO_KG || data.netto_kg || 0),
         NO_POLISI: data.NO_POLISI || data.no_polisi || "",
+        JENIS_TRUCK: data.JENIS_TRUCK || data.jenis_truck || "",
+        JUMLAH_KULI: Number(data.JUMLAH_KULI || data.jumlah_kuli || 0),
         KETERANGAN: data.KETERANGAN || data.keterangan || "",
         INPUT_BY: data.INPUT_BY || (data.operator ? data.operator + " (Shift " + (data.shift || "-") + ")" : data.input_by || ""),
         SHIFT: data.SHIFT || data.shift || "",
