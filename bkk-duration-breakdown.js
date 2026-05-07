@@ -1369,6 +1369,158 @@
     tbody.innerHTML = html;
   }
 
+  function bkkDbAggToItems(causes) {
+    var colors = ['#7c3aed', '#dc2626', '#2563eb', '#d97706', '#059669', '#0891b2', '#be185d', '#65a30d'];
+    return causes.map(function(c, i) {
+      var col = colors[i % colors.length];
+      return {
+        nama: c.ket,
+        durasi: Math.round(Number(c.menit) || 0),
+        warna: col,
+        warnaLight: col + '22'
+      };
+    });
+  }
+
+  function bkkDbAggregateInsight(items, totalMin) {
+    if (!items.length || totalMin <= 0) return 'Tidak ada rincian penyebab yang dapat dianalisis.';
+    var top = items[0];
+    var pct = ((top.durasi / totalMin) * 100).toFixed(1);
+    var cum = 0;
+    var n80 = 0;
+    for (var i = 0; i < items.length; i++) {
+      cum += items[i].durasi;
+      if (cum / totalMin >= 0.8) {
+        n80 = i + 1;
+        break;
+      }
+    }
+    return 'Penyebab terbesar adalah ' + top.nama + ' (' + pct + '%). Sekitar 80% durasi terkumpul dari ' + n80 + ' kategori teratas.';
+  }
+
+  function bkkDbBuildAggregateHtml(model) {
+    var items = model.items || [];
+    var totalMin = model.totalMin || 0;
+    var top = items[0] || { nama: '-', durasi: 0, warna: '#7c3aed', warnaLight: '#ede9fe' };
+    var topPct = totalMin > 0 ? ((top.durasi / totalMin) * 100).toFixed(1) : '0.0';
+    var cum = 0;
+    var n80 = 0;
+    for (var i = 0; i < items.length; i++) {
+      cum += items[i].durasi;
+      if (cum / Math.max(1, totalMin) >= 0.8) {
+        n80 = i + 1;
+        break;
+      }
+    }
+    var rankRows = '';
+    var tableRows = '';
+    var running = 0;
+    items.forEach(function(d, idx) {
+      running += d.durasi;
+      var pct = totalMin > 0 ? ((d.durasi / totalMin) * 100).toFixed(1) : '0.0';
+      var cpct = totalMin > 0 ? ((running / totalMin) * 100).toFixed(1) : '0.0';
+      rankRows += '<div class="bdx-rank-row anim-item" style="animation-delay:' + (0.05 * (idx + 1)).toFixed(2) + 's;">' +
+        '<div class="bdx-rank-head"><span><i class="fas fa-circle" style="font-size:8px;color:' + d.warna + ';margin-right:8px;"></i>' + bkkDbEsc(d.nama) + '</span><span style="font-weight:800;">' + bkkDbFormatMin(d.durasi) + '</span></div>' +
+        '<div class="bdx-rank-track"><div class="bdx-rank-fill bdx-bar-anim" style="--bar-color:' + d.warna + '; --bar-w:' + pct + '%"></div></div>' +
+        '<span class="bdx-cum-badge" style="background:' + d.warnaLight + '; color:' + d.warna + ';">Kumulatif ' + cpct + '%</span>' +
+      '</div>';
+      tableRows += '<tr class="anim-item" style="animation-delay:' + (0.05 * (idx + 1)).toFixed(2) + 's;">' +
+        '<td>' + (idx + 1) + '</td>' +
+        '<td><span style="font-weight:700;color:#1e1345;">' + bkkDbEsc(d.nama) + '</span></td>' +
+        '<td style="font-weight:800;font-family:\'Rajdhani\',sans-serif;">' + bkkDbFormatMin(d.durasi) + '</td>' +
+        '<td><span class="bdx-pct-badge" style="background:' + d.warnaLight + '; color:' + d.warna + ';">' + pct + '%</span></td>' +
+        '<td style="font-weight:700;color:#8b7ec8;">' + cpct + '%</td>' +
+        '<td><div class="bdx-mini-track"><div class="bdx-mini-fill bdx-bar-anim" style="--bar-color:' + d.warna + '; --bar-w:' + Math.min(90, Number(pct)).toFixed(1) + '%"></div></div></td>' +
+      '</tr>';
+    });
+    var legend = items.slice(0, 8).map(function(d) {
+      var pct = totalMin > 0 ? ((d.durasi / totalMin) * 100).toFixed(1) : '0.0';
+      return '<div><i class="fas fa-circle" style="font-size:8px;color:' + d.warna + ';margin-right:6px;"></i>' + bkkDbEsc(d.nama) + ' <b>' + pct + '%</b></div>';
+    }).join('');
+    return '<div class="bdx-shell">' +
+      '<style>' +
+      '@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}@keyframes barGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}' +
+      '.swal2-popup.premium-panel .swal2-title{margin:0}.swal2-popup.premium-panel .swal2-html-container{margin:0}.swal2-popup.premium-panel{background:#f7f5ff;color:#1e1345;border:1px solid #ede8fb;border-radius:20px}' +
+      '.bdx-shell{color:#1e1345;text-align:left}.bdx-scroll{max-height:calc(100vh - 250px);overflow:auto;padding-right:6px}.bdx-modal-header{position:sticky;top:0;z-index:10;background:rgba(247,245,255,.94);backdrop-filter:blur(12px);border-bottom:1px solid #ede8fb;padding:10px 2px 12px;margin-bottom:14px}' +
+      '.bdx-title{font-family:Orbitron,Rajdhani,sans-serif;color:#7c3aed;font-size:1.15rem;letter-spacing:.8px;font-weight:800;display:flex;align-items:center;gap:8px}.bdx-subtitle{margin-top:8px;display:inline-block;background:#ede8fb;color:#7c3aed;border:1px solid #ddd6fe;padding:6px 12px;border-radius:999px;font-size:.78rem;font-weight:700}' +
+      '.grid-4col{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.grid-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}.grid-2col-15{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}' +
+      '.card-3d{background:#fff;border:1px solid #ede8fb;border-radius:16px;padding:12px;transform:perspective(1000px) rotateX(1.5deg);box-shadow:0 1px 0 #ede8fb,0 4px 16px rgba(124,58,237,.10),0 12px 40px rgba(124,58,237,.06);transition:.25s}.card-3d:hover{transform:perspective(1000px) rotateX(0deg) translateY(-3px)}' +
+      '.anim-item{animation:fadeUp .45s ease both}.kpi-card{border-top:3px solid var(--kpi-color)}.kpi-label{font-size:.68rem;color:#8b7ec8;text-transform:uppercase;letter-spacing:.7px;font-weight:700}.kpi-val{font-size:1.35rem;font-family:Rajdhani,sans-serif;font-weight:900;color:#1e1345}.kpi-sub{font-size:.72rem;color:#8b7ec8;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.bdx-card-title{margin:0 0 10px 0;font-size:.75rem;text-transform:uppercase;color:#8b7ec8;letter-spacing:.8px;font-weight:800;display:flex;align-items:center;gap:8px}.bdx-chart-wrap{position:relative;height:230px}.bdx-insight{margin-top:10px;font-size:12px;line-height:1.35;color:#5b4ea1;background:#f8f6ff;border:1px solid #ddd6fe;border-radius:10px;padding:9px 10px}' +
+      '.bdx-rank-row{margin-bottom:10px;border-bottom:1px dashed #ede8fb;padding-bottom:8px}.bdx-rank-head{display:flex;justify-content:space-between;font-size:.76rem;margin-bottom:5px;color:#1e1345}.bdx-rank-track,.bdx-mini-track{height:8px;background:#ede8fb;border-radius:999px;overflow:hidden}.bdx-rank-fill,.bdx-mini-fill{height:100%;width:var(--bar-w);background:var(--bar-color);transform-origin:left center}.bdx-bar-anim{animation:barGrow .8s ease both}.bdx-cum-badge,.bdx-pct-badge{display:inline-block;margin-top:5px;padding:3px 8px;border-radius:999px;font-size:.68rem;font-weight:700}' +
+      '.bdx-donut-legend{margin-top:8px;display:flex;flex-direction:column;gap:4px;font-size:.73rem;color:#1e1345}.bdx-donut-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;pointer-events:none}.bdx-donut-center .num{font-family:Rajdhani,sans-serif;font-size:1.35rem;font-weight:900;color:#7c3aed}' +
+      '.bdx-table-wrap{overflow:auto}.bdx-table{width:100%;border-collapse:collapse;font-size:.78rem}.bdx-table thead th{background:#f3efff;color:#8b7ec8;text-transform:uppercase;font-size:.68rem;letter-spacing:.7px;padding:10px 8px;text-align:left;border-bottom:1px solid #ede8fb}.bdx-table tbody tr:nth-child(odd){background:#fff}.bdx-table tbody tr:nth-child(even){background:#fdfcff}.bdx-table td{padding:9px 8px;border-bottom:1px solid #f3efff}.bdx-footer{margin-top:10px;font-size:.76rem;color:#8b7ec8;border-top:1px solid #ede8fb;padding-top:8px;font-weight:700}' +
+      '@media(max-width:768px){.grid-2col,.grid-2col-15{grid-template-columns:1fr}.grid-4col{grid-template-columns:repeat(2,1fr)}.bdx-chart-wrap{height:190px}.kpi-val{font-size:18px}}' +
+      '</style>' +
+      '<div class="bdx-scroll">' +
+        '<div class="bdx-modal-header anim-item"><div class="bdx-title"><i class="fas fa-stopwatch"></i>BREAKDOWN DETAIL (AGGREGATE)</div><div class="bdx-subtitle">' + bkkDbEsc(model.stageLabel) + '</div></div>' +
+        '<div class="grid-4col">' +
+          '<div class="card-3d kpi-card anim-item" style="--kpi-color:#7c3aed;"><div class="kpi-label">Total Durasi</div><div class="kpi-val">' + bkkDbFormatMin(totalMin) + '</div><div class="kpi-sub">' + model.totalTruck + ' truck valid</div></div>' +
+          '<div class="card-3d kpi-card anim-item" style="--kpi-color:' + top.warna + ';"><div class="kpi-label">Penyebab #1</div><div class="kpi-val">' + bkkDbFormatMin(top.durasi) + '</div><div class="kpi-sub">' + bkkDbEsc(top.nama) + ' (' + topPct + '%)</div></div>' +
+          '<div class="card-3d kpi-card anim-item" style="--kpi-color:#d97706;"><div class="kpi-label">80% Delay</div><div class="kpi-val">' + n80 + '</div><div class="kpi-sub">kategori teratas</div></div>' +
+          '<div class="card-3d kpi-card anim-item" style="--kpi-color:#059669;"><div class="kpi-label">Kategori</div><div class="kpi-val">' + items.length + '</div><div class="kpi-sub">penyebab tercatat</div></div>' +
+        '</div>' +
+        '<div class="grid-2col">' +
+          '<div class="card-3d anim-item"><h5 class="bdx-card-title"><i class="fas fa-chart-line" style="color:#dc2626"></i>Pareto 80/20</h5><div class="bdx-chart-wrap"><canvas id="bkkAggPareto"></canvas></div><div class="bdx-insight">' + bkkDbEsc(bkkDbAggregateInsight(items, totalMin)) + '</div></div>' +
+          '<div class="card-3d anim-item"><h5 class="bdx-card-title"><i class="fas fa-ranking-star" style="color:#d97706"></i>Ranking + Kumulatif %</h5>' + rankRows + '</div>' +
+        '</div>' +
+        '<div class="grid-2col-15">' +
+          '<div class="card-3d anim-item"><h5 class="bdx-card-title"><i class="fas fa-table" style="color:#059669"></i>Detail Table</h5><div class="bdx-table-wrap"><table class="bdx-table"><thead><tr><th>#</th><th>Nama Delay</th><th>Durasi</th><th>%</th><th>Kumulatif %</th><th>Proporsi</th></tr></thead><tbody>' + tableRows + '</tbody><tfoot><tr><td colspan="2" style="text-align:right;font-weight:800;">TOTAL</td><td style="font-weight:900;color:#7c3aed;">' + bkkDbFormatMin(totalMin) + '</td><td colspan="3"></td></tr></tfoot></table></div></div>' +
+          '<div class="card-3d anim-item"><h5 class="bdx-card-title"><i class="fas fa-chart-pie" style="color:#7c3aed"></i>Donut Komposisi</h5><div class="bdx-chart-wrap"><canvas id="bkkAggDonut"></canvas><div class="bdx-donut-center"><span class="num">' + bkkDbFormatMin(totalMin) + '</span><span style="font-size:.72rem;color:#8b7ec8;">total</span></div></div><div class="bdx-donut-legend">' + legend + '</div></div>' +
+        '</div>' +
+        '<div class="bdx-footer">Tahapan: ' + bkkDbEsc(model.stageLabel) + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function bkkDbRenderAggregateCharts(model) {
+    if (!model || !model.items || !model.items.length || typeof Chart === 'undefined') return;
+    ['_bkkAggPareto', '_bkkAggDonut'].forEach(function(k) {
+      if (window[k] && typeof window[k].destroy === 'function') {
+        try { window[k].destroy(); } catch (e) {}
+      }
+    });
+    var labels = model.items.map(function(x) { return x.nama; });
+    var values = model.items.map(function(x) { return x.durasi; });
+    var total = model.totalMin || 0;
+    var run = 0;
+    var cumPct = values.map(function(v) {
+      run += v;
+      return total > 0 ? Number(((run / total) * 100).toFixed(2)) : 0;
+    });
+    var pareto = document.getElementById('bkkAggPareto');
+    if (pareto) {
+      window._bkkAggPareto = new Chart(pareto.getContext('2d'), {
+        data: {
+          labels: labels,
+          datasets: [
+            { type: 'bar', label: 'Menit', data: values, yAxisID: 'y', backgroundColor: model.items.map(function(d) { return d.warna; }), borderRadius: 6 },
+            { type: 'line', label: 'Kumulatif %', data: cumPct, yAxisID: 'y1', borderColor: '#dc2626', pointBackgroundColor: '#dc2626', borderDash: [4, 4], tension: 0.3 },
+            { type: 'line', label: 'Target 80%', data: labels.map(function() { return 80; }), yAxisID: 'y1', borderColor: 'rgba(220,38,38,.55)', borderDash: [6, 6], pointRadius: 0, tension: 0 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } },
+          scales: {
+            y: { beginAtZero: true, title: { display: true, text: 'Menit' } },
+            y1: { beginAtZero: true, max: 100, position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: function(v) { return v + '%'; } } },
+            x: { ticks: { maxRotation: 35, minRotation: 0 } }
+          }
+        }
+      });
+    }
+    var donut = document.getElementById('bkkAggDonut');
+    if (donut) {
+      window._bkkAggDonut = new Chart(donut.getContext('2d'), {
+        type: 'doughnut',
+        data: { labels: labels, datasets: [{ data: values, backgroundColor: model.items.map(function(d) { return d.warna; }), borderColor: '#fff', borderWidth: 3 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false } } }
+      });
+    }
+  }
+
   window.bkkDbShowAggregateByKey = function(stageKey, stageLabel) {
     try {
       var agg = _bkkDbAggBreakdownByKey[stageKey];
@@ -1381,33 +1533,28 @@
         return { ket: k, menit: Number(agg.causes[k] || 0) };
       }).sort(function(a, b) { return b.menit - a.menit; });
 
-      var html = '<div style="text-align:left;">' +
-        '<div style="background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px;">' +
-          '<div style="font-size:0.8rem;opacity:.9;">BREAKDOWN DETAIL (AGGREGATE)</div>' +
-          '<div style="font-size:1.05rem;font-weight:800;margin-top:4px;">' + bkkDbEsc(stageLabel || '-') + '</div>' +
-          '<div style="font-size:0.75rem;opacity:.85;margin-top:4px;">' + agg.totalTruck + ' truck | ' + bkkDbFormatMin(totalMin) + '</div>' +
-        '</div>' +
-        '<div style="max-height:55vh;overflow:auto;border:1px solid #e2e8f0;border-radius:12px;">' +
-        '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">' +
-        '<thead style="position:sticky;top:0;background:#f8fafc;z-index:2;"><tr>' +
-        '<th style="text-align:left;padding:10px;border-bottom:1px solid #e2e8f0;">Penyebab</th>' +
-        '<th style="text-align:right;padding:10px;border-bottom:1px solid #e2e8f0;">Menit</th>' +
-        '<th style="text-align:right;padding:10px;border-bottom:1px solid #e2e8f0;">%</th>' +
-        '</tr></thead><tbody>' +
-        (causes.length ? causes.map(function(c) {
-          var pct = totalMin > 0 ? (c.menit * 100 / totalMin) : 0;
-          return '<tr><td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;">' + bkkDbEsc(c.ket) + '</td>' +
-            '<td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;text-align:right;">' + bkkDbFormatMin(c.menit) + '</td>' +
-            '<td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;text-align:right;">' + pct.toFixed(1) + '%</td></tr>';
-        }).join('') : '<tr><td colspan="3" style="padding:16px;text-align:center;color:#64748b;">Tidak ada rincian penyebab.</td></tr>') +
-        '</tbody></table></div></div>';
+      var model = {
+        stageKey: stageKey,
+        stageLabel: stageLabel || '-',
+        totalMin: totalMin,
+        totalTruck: agg.totalTruck || 0,
+        items: bkkDbAggToItems(causes)
+      };
+      var html = bkkDbBuildAggregateHtml(model);
 
       Swal.fire({
         title: '',
         html: html,
-        width: 880,
+        width: window.innerWidth <= 767 ? '95%' : 1180,
+        heightAuto: false,
+        focusConfirm: false,
         showCloseButton: true,
-        confirmButtonText: 'Tutup'
+        confirmButtonText: '<i class="fas fa-times"></i> TUTUP',
+        confirmButtonColor: '#64748b',
+        customClass: { popup: 'premium-panel breakdown-redesign-popup' },
+        didOpen: function() {
+          bkkDbRenderAggregateCharts(model);
+        }
       });
     } catch (e) {
       console.error('bkkDbShowAggregateByKey error', e);
