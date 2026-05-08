@@ -18,6 +18,68 @@
     return '';
   }
 
+  function wibYmdFromMs(ms) {
+    try {
+      return new Date(ms).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function parseAnyDateTimeMs(v) {
+    if (v == null || v === '') return NaN;
+    if (typeof v === 'number' && isFinite(v)) return v;
+    var s = String(v).trim();
+    if (!s) return NaN;
+    var hasZone = /[zZ]$|[+-]\d{2}:\d{2}$|[+-]\d{4}$/.test(s);
+    if (!hasZone) {
+      var m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+      if (m) {
+        var sec = m[6] !== undefined && m[6] !== '' ? Number(m[6]) : 0;
+        return new Date(
+          m[1] + '-' + m[2] + '-' + m[3] + 'T' + m[4] + ':' + m[5] + ':' + pad2(sec) + '+07:00'
+        ).getTime();
+      }
+    }
+    var d = new Date(s);
+    return isNaN(d.getTime()) ? NaN : d.getTime();
+  }
+
+  function rowEventMs(row) {
+    if (!row) return NaN;
+    if (row.TIMESTAMP != null && row.TIMESTAMP !== '') {
+      var ts = parseAnyDateTimeMs(row.TIMESTAMP);
+      if (!isNaN(ts)) return ts;
+    }
+    if (row.TANGGAL == null || row.TANGGAL === '') return NaN;
+    var ymd = rowYMD(row.TANGGAL);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return NaN;
+    return new Date(ymd + 'T00:00:00+07:00').getTime();
+  }
+
+  function buildExportRange() {
+    var nowMs = Date.now();
+    var todayYmd = typeof todayYMD_WIB === 'function' ? todayYMD_WIB() : wibYmdFromMs(nowMs);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(todayYmd)) {
+      return {
+        startMs: NaN,
+        endMs: nowMs,
+        startLabel: '—',
+        endLabel: fmtPrintTs()
+      };
+    }
+    var todayStartMs = new Date(todayYmd + 'T00:00:00+07:00').getTime();
+    var yStartMs = todayStartMs - 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000; // kemarin 07:00 WIB
+    var ymdStart = wibYmdFromMs(yStartMs);
+    var startLabel = ymdStart ? (ymdStart + ' 07:00 WIB') : 'Kemarin 07:00 WIB';
+    return {
+      startMs: yStartMs,
+      endMs: nowMs,
+      startLabel: startLabel,
+      endLabel: fmtPrintTs()
+    };
+  }
+
   function escHtml(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
@@ -63,16 +125,58 @@
     return 'le-util-hi';
   }
 
-  function sumKgForBkDay(rows, bkId, ymd) {
+  function sumKgForBkRange(rows, bkId, startMs, endMs) {
     var nb = normBK(bkId);
     var t = 0;
     (rows || []).forEach(function (r) {
       if (normBK(r.BK_ID) !== nb) return;
-      if (rowYMD(r.TANGGAL) !== ymd) return;
       if (r.STATUS_ROW === 'pending_final') return;
+      var ms = rowEventMs(r);
+      if (isNaN(ms)) return;
+      if (ms < startMs || ms > endMs) return;
       t += Number(r.NETTO_KG) || 0;
     });
     return t;
+  }
+
+  function latestOpnameAtMs(bkId, pointMs) {
+    var nb = normBK(bkId);
+    var best = null;
+    var bestMs = -Infinity;
+    (appState.history && appState.history.opname || []).forEach(function (r) {
+      if (normBK(r.BK_ID) !== nb) return;
+      var ms = rowEventMs(r);
+      if (isNaN(ms) || ms > pointMs) return;
+      if (ms > bestMs) {
+        bestMs = ms;
+        best = r;
+      }
+    });
+    return { row: best, ms: bestMs };
+  }
+
+  function stockAtMsForBk(bkId, pointMs) {
+    var nb = normBK(bkId);
+    var op = latestOpnameAtMs(nb, pointMs);
+    var cutoff = op.row ? op.ms : -Infinity;
+    var stock = op.row ? (Number(op.row.STOK_FISIK_KG) || 0) : 0;
+
+    (appState.history && appState.history.bongkar || []).forEach(function (r) {
+      if (normBK(r.BK_ID) !== nb) return;
+      if (r.STATUS_ROW === 'pending_final') return;
+      var ms = rowEventMs(r);
+      if (isNaN(ms) || ms <= cutoff || ms > pointMs) return;
+      stock += Number(r.NETTO_KG) || 0;
+    });
+
+    (appState.history && appState.history.kirim || []).forEach(function (r) {
+      if (normBK(r.BK_ID) !== nb) return;
+      var ms = rowEventMs(r);
+      if (isNaN(ms) || ms <= cutoff || ms > pointMs) return;
+      stock -= Number(r.NETTO_KG) || 0;
+    });
+
+    return stock < 0 ? 0 : stock;
   }
 
   function sapStatusForBk(bkId) {
@@ -86,6 +190,7 @@
 
   function buildRows() {
     var day = typeof todayYMD_WIB === 'function' ? todayYMD_WIB() : todayStr();
+    var range = buildExportRange();
     var map = {};
     (appState.dashData || []).forEach(function (b) {
       map[normBK(b.BK_ID)] = b;
@@ -96,10 +201,14 @@
     var detail = BK_IDS.map(function (id) {
       var bk = map[id] || {};
       var material = (bk.MATERIAL_DEFAULT || bk.MATERIAL || '—').trim() || '—';
-      var stokH = Number(bk.STOK_AKTIF) || 0;
-      var bToday = sumKgForBkDay(appState.history && appState.history.bongkar, id, day);
-      var kToday = sumKgForBkDay(appState.history && appState.history.kirim, id, day);
-      var stokKm = stokH - bToday + kToday;
+      var bToday = sumKgForBkRange(appState.history && appState.history.bongkar, id, range.startMs, range.endMs);
+      var kToday = sumKgForBkRange(appState.history && appState.history.kirim, id, range.startMs, range.endMs);
+      var stokKm = stockAtMsForBk(id, range.startMs);
+      var stokH = stockAtMsForBk(id, range.endMs);
+      if (!isFinite(stokH) || stokH === 0) {
+        // fallback jika histori belum siap dimuat penuh
+        stokH = Number(bk.STOK_AKTIF) || 0;
+      }
       var kap = Number(bk.KAPASITAS_KG) || 0;
       var util = kap > 0 ? Math.min((stokH / kap) * 100, 999.99) : 0;
       var sap = sapStatusForBk(id);
@@ -138,6 +247,8 @@
       totalBongkarHariIni: totalBongkarHariIni,
       totalUsageHariIni: totalUsageHariIni,
       totalStok: totalStok,
+      periodStartLabel: range.startLabel,
+      periodEndLabel: range.endLabel,
       detail: detail,
       longDate: fmtLongId(day),
       printTs: fmtPrintTs(),
@@ -284,6 +395,7 @@
       '<div>' +
       '<h1 class="le-doc-title">LAPORAN STOCK HARIAN — BK STORAGE</h1>' +
       '<p class="le-doc-meta">Laporan Rutin Harian · Tanggal: ' + escHtml(data.longDate) + ' · Dicetak: ' + escHtml(data.printTs) + '</p>' +
+      '<p class="le-doc-meta">Periode hitung transaksi: ' + escHtml(data.periodStartLabel || '—') + ' s/d ' + escHtml(data.periodEndLabel || '—') + '</p>' +
       '</div>' +
       '<div class="le-badge-daily">DAILY REPORT</div>' +
       '</section>' +
@@ -291,18 +403,18 @@
       '<section class="le-summary-row le-summary-row--4">' +
       '<div class="le-sum-card le-sum-sk">' +
       '<div class="le-sum-val">' + fmtTbl(data.totalStokAwalHariIni) + '</div>' +
-      '<div class="le-sum-lbl">Stok Awal Hari Ini</div></div>' +
+      '<div class="le-sum-lbl">Stok Awal (Kemarin 07:00)</div></div>' +
       '<div class="le-sum-card le-sum-bk">' +
       '<div class="le-sum-val">' + fmtTbl(data.totalBongkarHariIni) + '</div>' +
-      '<div class="le-sum-lbl">Bongkar / Masuk Hari Ini</div></div>' +
+      '<div class="le-sum-lbl">Bongkar / Masuk (Periode)</div></div>' +
       '<div class="le-sum-card le-sum-uk">' +
       '<div class="le-sum-val">' + fmtTbl(data.totalUsageHariIni) + '</div>' +
-      '<div class="le-sum-lbl">Usage / Kirim Hari Ini</div></div>' +
+      '<div class="le-sum-lbl">Usage / Kirim (Periode)</div></div>' +
       '<div class="le-sum-card le-sum-today">' +
       '<div class="le-sum-val">' + fmtTbl(data.totalStok) + '</div>' +
-      '<div class="le-sum-lbl">Stok Hari Ini</div></div>' +
+      '<div class="le-sum-lbl">Stok Saat Laporan</div></div>' +
       '</section>' +
-      '<p class="le-sum-hint">Rumus saldo: <strong>Stok awal + Bongkar hari ini − Usage hari ini = Stok hari ini</strong> (penjumlahan sama dengan kolom pada tabel di bawah).</p>' +
+      '<p class="le-sum-hint">Rumus saldo: <strong>Stok awal periode + Bongkar periode − Usage periode = Stok saat laporan</strong> (harus sama dengan kolom pada tabel di bawah).</p>' +
 
       '<section class="le-bk-cards-section le-bk-cards-area">' +
       '<div class="le-bk-cards-grid">' + cardsHtml + '</div>' +
@@ -353,6 +465,7 @@
     lines.push(csvQuote('PT Charoen Pokphand Indonesia - Cirebon') + ',' + csvQuote('Integrated Warehouse Information System'));
     lines.push(csvQuote('Smart Warehouse v2.0 - Bulk Storage Smart Inventory System'));
     lines.push(csvQuote('Laporan Stock Harian BK-Storage') + ',' + csvQuote('Tanggal: ' + data.longDate));
+    lines.push(csvQuote('Periode transaksi: ' + (data.periodStartLabel || '—') + ' s/d ' + (data.periodEndLabel || '—')));
     lines.push('');
     lines.push('BK,Material,Stok Kemarin (kg),Bongkar/Masuk (kg),Usage/Kirim (kg),Stok Hari Ini (kg),Kapasitas (kg),Utilisasi (%),Status SAP');
     data.detail.forEach(function (r) {
