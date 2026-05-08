@@ -94,6 +94,21 @@ function ksNormBK(id) {
   return String(id || '').trim().replace(/^BK-?(\d)$/i, 'BK-$1');
 }
 
+function ksParseShiftFromInputBy(inputBy) {
+  var s = String(inputBy || '').trim();
+  if (!s) return '';
+  var m = s.match(/\bshift\s*([123])\b/i);
+  return m ? m[1] : '';
+}
+
+function ksGetShiftId(row) {
+  var fromCol = String(row && row.SHIFT != null ? row.SHIFT : '').trim();
+  if (fromCol === '1' || fromCol === '2' || fromCol === '3') return fromCol;
+  var fromInputBy = ksParseShiftFromInputBy(row && row.INPUT_BY);
+  if (fromInputBy) return fromInputBy;
+  return '1';
+}
+
 /** Draft step 3 (pending_final) tidak memasuk netto ke stok sampai dilengkapi. */
 function ksEffectiveBongkarKg(r) {
   if (!r) return 0;
@@ -346,7 +361,7 @@ function ksComputeStock(bkId, ascDates) {
         if (isNaN(tbms)) tbms = ksNoonMs(ds);
         if (!isNaN(resetTs) && tbms <= resetTs) return;
       }
-      var s = String(r.SHIFT || '').trim();
+      var s = ksGetShiftId(r);
       var kg = ksEffectiveBongkarKg(r);
       if (s === '2') b2 += kg;
       else if (s === '3') b3 += kg;
@@ -362,7 +377,7 @@ function ksComputeStock(bkId, ascDates) {
         if (isNaN(ukms)) ukms = ksNoonMs(ds);
         if (!isNaN(resetTs) && ukms <= resetTs) return;
       }
-      var s = String(r.SHIFT || '').trim();
+      var s = ksGetShiftId(r);
       if (s === '2') u2 += r.NETTO_KG;
       else if (s === '3') u3 += r.NETTO_KG;
       else u1 += r.NETTO_KG;

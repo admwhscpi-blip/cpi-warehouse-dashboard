@@ -7,6 +7,9 @@ function loadSAPData() {
   fetchAPI('getKirimHistory', {}, function(resp) {
     if (resp.status !== 'error') appState.history.kirim = resp.data || [];
   });
+  fetchAPI('getOpnameHistory', {}, function(resp) {
+    if (resp.status !== 'error') appState.history.opname = resp.data || [];
+  });
 }
 
 /** Muat riwayat bongkar/kirim/opname untuk perhitungan Stock Opname (penerimaan periode SO). */

@@ -58,6 +58,23 @@ function gsNormBkId_(id) {
   return m ? ('BK-' + m[1]) : s;
 }
 
+function gsNormalizeShiftId_(shiftRaw) {
+  var s = String(shiftRaw == null ? '' : shiftRaw).trim();
+  if (!s) return '';
+  if (s === '1' || s === '2' || s === '3') return s;
+  var m = s.match(/([123])/);
+  return m ? m[1] : '';
+}
+
+function gsEnsureInputByWithShift_(inputByRaw, shiftRaw) {
+  var inputBy = String(inputByRaw == null ? '' : inputByRaw).trim();
+  var shift = gsNormalizeShiftId_(shiftRaw);
+  if (!inputBy) return '';
+  if (!shift) return inputBy;
+  if (/\(\s*shift\s*[123]\s*\)/i.test(inputBy)) return inputBy;
+  return inputBy + ' (Shift ' + shift + ')';
+}
+
 function calculateStock(bkId, allOpname, allBongkar, allKirim) {
   var targetBk = gsNormBkId_(bkId);
   var bkOpname = allOpname.filter(function(r) { return gsNormBkId_(r.BK_ID) == targetBk; });
@@ -677,6 +694,8 @@ function handlePost(e) {
       return { status: 'success', message: 'Setup tersimpan' };
       
     } else if (action === 'addKirim') {
+      var kirimShift = gsNormalizeShiftId_(data.SHIFT || data.shift || "");
+      var kirimInputBy = gsEnsureInputByWithShift_(data.INPUT_BY || "", kirimShift);
       var rowData = {
         ID: generateId('KIRM'),
         TIMESTAMP: Utilities.formatDate(now, 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss'),
@@ -684,10 +703,10 @@ function handlePost(e) {
         BK_ID: data.BK_ID,
         MATERIAL: data.MATERIAL,
         NETTO_KG: Number(data.NETTO_KG),
-        SHIFT: data.SHIFT || data.shift || "",
+        SHIFT: kirimShift,
         GRINDING: data.GRINDING || data.grinding || "",
         OPERATOR: data.OPERATOR || data.operator || "",
-        INPUT_BY: data.INPUT_BY || ""
+        INPUT_BY: kirimInputBy
       };
       if (!rowData.INPUT_BY || rowData.INPUT_BY === '') {
         throw new Error('INPUT_BY (Operator) tidak boleh kosong');
