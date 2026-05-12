@@ -612,3 +612,16 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Specific width adjustments for Dashboard Inventory Table */
+.dash-inv-wrap .dtable { table-layout: fixed; width: 100%; }
+.dash-inv-wrap .dtable th, .dash-inv-wrap .dtable td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.dash-inv-wrap .dtable th:nth-child(1), .dash-inv-wrap .dtable td:nth-child(1) { width: 70px; } /* BK */
+.dash-inv-wrap .dtable th:nth-child(2), .dash-inv-wrap .dtable td:nth-child(2) { width: 120px; } /* Nama */
+.dash-inv-wrap .dtable th:nth-child(3), .dash-inv-wrap .dtable td:nth-child(3) { width: auto; min-width: 150px; } /* Material */
+.dash-inv-wrap .dtable th:nth-child(4), .dash-inv-wrap .dtable td:nth-child(4) { width: 105px; } /* Stok Aktif */
+.dash-inv-wrap .dtable th:nth-child(5), .dash-inv-wrap .dtable td:nth-child(5) { width: 105px; } /* Kapasitas */
+.dash-inv-wrap .dtable th:nth-child(6), .dash-inv-wrap .dtable td:nth-child(6) { width: 95px; } /* Terpakai */
+.dash-inv-wrap .dtable th:nth-child(7), .dash-inv-wrap .dtable td:nth-child(7) { width: 80px; } /* Umur */
+.dash-inv-wrap .dtable th:nth-child(8), .dash-inv-wrap .dtable td:nth-child(8) { width: 115px; } /* Penerimaan */

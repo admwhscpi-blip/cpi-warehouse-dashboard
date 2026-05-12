@@ -729,6 +729,12 @@ function dashApplyLedgerStockFromHistory(bongkarRows, kirimRows, opnameRows) {
       if (cell && cell.stock != null && !isNaN(Number(cell.stock))) {
         bk.STOK_AKTIF = cell.stock;
       }
+      if (cell && Array.isArray(cell.rows) && cell.rows.length) {
+        var lastRow = cell.rows[cell.rows.length - 1];
+        bk.TOTAL_PENERIMAAN = lastRow.totalPenerimaan != null ? lastRow.totalPenerimaan : 0;
+      } else {
+        bk.TOTAL_PENERIMAAN = 0;
+      }
     });
   }
 

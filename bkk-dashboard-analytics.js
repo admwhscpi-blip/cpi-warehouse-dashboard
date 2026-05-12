@@ -110,7 +110,8 @@ function renderInventoryTable() {
       '<td class="num cm">' + fmtNum(bk.STOK_AKTIF) + '</td>' +
       '<td class="num">' + fmtNum(bk.KAPASITAS_KG) + '</td>' +
       '<td class="dinv-util"><div class="dinv-pbar"><div class="dinv-pbar-fill ' + pcls + '" style="width:' + Math.min(pct, 100) + '%"></div></div><span class="dinv-pct">' + fmtNum(pct) + '%</span></td>' +
-      '<td class="dinv-age"><span class="dinv-age-badge ' + ac + '" title="Umur absolut (hari ini − AWAL ISI)">' + umur + ' h</span></td>';
+      '<td class="dinv-age"><span class="dinv-age-badge ' + ac + '" title="Umur absolut (hari ini − AWAL ISI)">' + umur + ' h</span></td>' +
+      '<td class="num">' + fmtNum(bk.TOTAL_PENERIMAAN || 0) + '</td>';
     tbl.appendChild(tr);
   });
 }
