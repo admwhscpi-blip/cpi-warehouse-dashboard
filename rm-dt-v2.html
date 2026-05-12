@@ -5238,6 +5238,37 @@
             requestAnimationFrame(step);
         }
 
+        function getDbFilteredRows(isMuatMode) {
+            const startDate = document.getElementById('db_start_date')?.value || '';
+            const endDate   = document.getElementById('db_end_date')?.value   || '';
+            
+            const getDbSel = (id) => {
+                const checked = document.getElementById(id)?.querySelectorAll('input:checked') || [];
+                const total   = document.getElementById(id)?.querySelectorAll('input') || [];
+                if (checked.length === 0 || checked.length === total.length) return null;
+                return Array.from(checked).map(c => c.value);
+            };
+            const selMat   = getDbSel('db-ms-material');
+            const selSloc  = getDbSel('db-ms-sloc');
+            const selTruck = getDbSel('db-ms-truck');
+
+            let rows = (hubData.templateDump || []).filter(r => {
+                const k = String(r.KEGIATAN || '').toUpperCase();
+                return isMuatMode ? k.includes('MUAT') : k.includes('BONGKAR');
+            });
+
+            if (startDate) rows = rows.filter(r => String(r.TANGGAL||'').substring(0,10) >= startDate);
+            if (endDate)   rows = rows.filter(r => String(r.TANGGAL||'').substring(0,10) <= endDate);
+
+            if (!isMuatMode) {
+                if (selMat)   rows = rows.filter(r => selMat.includes(String(r.JENIS_RM||'').trim().toUpperCase()));
+                if (selSloc)  rows = rows.filter(r => selSloc.includes(String(r.LOKASI||'').trim().toUpperCase()));
+                if (selTruck) rows = rows.filter(r => selTruck.includes(String(r.JENIS_TRUCK||'').trim().toUpperCase()));
+            }
+
+            return rows;
+        }
+
         function initDurationBreakdown() {
             if (_dbInitialized) return;
             _dbInitialized = true;
@@ -5347,35 +5378,8 @@
             const startDate = document.getElementById('db_start_date')?.value || '';
             const endDate   = document.getElementById('db_end_date')?.value   || '';
 
-            const getDbSel = (id) => {
-                const checked = document.getElementById(id)?.querySelectorAll('input:checked') || [];
-                const total   = document.getElementById(id)?.querySelectorAll('input') || [];
-                if (checked.length === 0 || checked.length === total.length) return null;
-                return Array.from(checked).map(c => c.value);
-            };
-            const selMat   = getDbSel('db-ms-material');
-            const selSloc  = getDbSel('db-ms-sloc');
-            const selTruck = getDbSel('db-ms-truck');
-
-            // Deteksi mode
             const isMuatMode = _dbSelectedMuatTypes.length > 0;
-
-            // Filter rows berdasarkan mode
-            let rows = (hubData.templateDump || []).filter(r => {
-                const k = String(r.KEGIATAN || '').toUpperCase();
-                return isMuatMode ? k.includes('MUAT') : k.includes('BONGKAR');
-            });
-
-            // Date filter
-            if (startDate) rows = rows.filter(r => String(r.TANGGAL||'').substring(0,10) >= startDate);
-            if (endDate)   rows = rows.filter(r => String(r.TANGGAL||'').substring(0,10) <= endDate);
-
-            // Multi-select filters (bongkar mode only)
-            if (!isMuatMode) {
-                if (selMat)   rows = rows.filter(r => selMat.includes(String(r.JENIS_RM    ||'').trim().toUpperCase()));
-                if (selSloc)  rows = rows.filter(r => selSloc.includes(String(r.LOKASI     ||'').trim().toUpperCase()));
-                if (selTruck) rows = rows.filter(r => selTruck.includes(String(r.JENIS_TRUCK||'').trim().toUpperCase()));
-            }
+            const rows = getDbFilteredRows(isMuatMode);
 
             ['db-ms-material','db-ms-sloc','db-ms-truck'].forEach(id => updatePivotLabel(id));
 
@@ -6180,11 +6184,11 @@
             return 'Shift 3';
         }
 
-        function buildContextAnalytics(typeKey, jsonKey) {
-            if (!hubData || !hubData.templateDump || !jsonKey) return { hasData: false };
+        function buildContextAnalytics(typeKey, jsonKey, filteredRows) {
+            if (!filteredRows || !filteredRows.length || !jsonKey) return { hasData: false };
             const events = [];
 
-            hubData.templateDump.forEach(row => {
+            filteredRows.forEach(row => {
                 let bdData = {};
                 try {
                     let jsonStr = row.BREAKDOWN_DURASI || '{}';
@@ -6370,8 +6374,11 @@
             const jsonKey = keyMap[typeKey];
             let aggregateMap = {};
 
-            if (hubData && hubData.templateDump) {
-                hubData.templateDump.forEach(row => {
+            const isMuatMode = _dbSelectedMuatTypes.length > 0;
+            const filteredRows = getDbFilteredRows(isMuatMode);
+            
+            if (filteredRows.length > 0) {
+                filteredRows.forEach(row => {
                     let bdData = {};
                     try {
                         let jsonStr = row.BREAKDOWN_DURASI || '{}';
@@ -6397,7 +6404,7 @@
             let totalMin = stepDetails.reduce((a, b) => a + b.waktu, 0);
 
             const delayItems = toDelayItems(stepDetails);
-            const contextAnalytics = typeKey === 'sampling2' ? buildContextAnalytics(typeKey, jsonKey) : null;
+            const contextAnalytics = buildContextAnalytics(typeKey, jsonKey, filteredRows);
             const model = (contextAnalytics && contextAnalytics.hasData) ? {
                 title: 'BREAKDOWN DETAIL (AGGREGATE)',
                 subtitle: typeLabel,
@@ -6498,8 +6505,22 @@
                 waktu: parseInt(item.waktu || item.min || item.durasi) || 0
             })).sort((a, b) => b.waktu - a.waktu);
 
+            let truckMaterial = 'UNKNOWN';
+            if (hubData && hubData.templateDump) {
+                const truckRow = hubData.templateDump.find(r => 
+                    String(r.NOPOL || '').trim() === nopol.trim()
+                );
+                if (truckRow) {
+                    truckMaterial = String(truckRow.JENIS_RM || truckRow.MATERIAL || 'UNKNOWN').trim().toUpperCase();
+                }
+            }
+
             const dItems = normalized.map((d, i) => ({ nama: d.keterangan, durasi: d.waktu, ...defaultDelayPalette(i) }));
-            const model = buildFallbackModel(`${typeLabel} | ${nopol}`, dItems);
+            const model = buildFallbackModel(`${typeLabel} | ${nopol}`, dItems, typeKey);
+            model.materialData = [{ 
+                material: truckMaterial, 
+                penyebab: dItems.slice(0, 6).map(d => ({ nama: d.nama, durasi: d.durasi, warna: d.warna }))
+            }];
             model.title = 'BREAKDOWN DETAIL';
             model.subtitle = `${nopol} | ${typeLabel}`;
             model.totalMenit = sumMin || totalMin;
