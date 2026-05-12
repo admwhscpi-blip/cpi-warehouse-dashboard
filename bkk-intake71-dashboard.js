@@ -58,7 +58,8 @@
   function i71Type(raw) {
     var t = String(raw == null ? '' : raw).trim().toLowerCase();
     var norm = t.replace(/[^a-z0-9]+/g, '_');
-    if (norm === 'intake_71_manual' || norm === 'intake71_manual') return 'manual';
+    // Fix: kenali 'manual' dan 'tilting' langsung (sudah ternormalisasi dari loop sebelumnya)
+    if (norm === 'intake_71_manual' || norm === 'intake71_manual' || norm === 'manual') return 'manual';
     if (norm === 'intake_71_tilting' || norm === 'intake71_tilting' || norm === 'tilting') return 'tilting';
     return '';
   }
@@ -568,6 +569,22 @@
         }
         return out;
       }
+      // Ambil detail kategori breakdown (cat + min) untuk ditampilkan di grafik
+      function bdDetailFor(stepKey) {
+        var keys = mapBreakdownKey[stepKey] || [];
+        var items = [];
+        for (var ki = 0; ki < keys.length; ki++) {
+          var arr = bdsNorm[String(keys[ki]).toLowerCase()];
+          if (Array.isArray(arr)) {
+            arr.forEach(function(it) {
+              var cat = String(it.other && String(it.other).trim() ? it.other : (it.cat || it.CAT || 'Lainnya')).trim();
+              var mn = Number(it.min != null ? it.min : it.MIN) || 0;
+              if (mn > 0) items.push({ cat: cat, min: mn });
+            });
+          }
+        }
+        return items;
+      }
       var id = String(i71GetCol(r, 'ID') || ('row_' + idx)).trim();
       var nopol = String(i71GetCol(r, 'NO_POLISI') || '-').trim() || '-';
       var truckTypeRaw = i71RowTruckType(r);
@@ -648,7 +665,8 @@
           pbWindowTilting: b5,
           idleLoss: 0
         },
-        idleBreakdownRaw: bdFor('idleLoss')
+        idleBreakdownRaw: bdFor('idleLoss'),
+        idleBreakdownCategories: bdDetailFor('idleLoss')
       });
     });
     ops.sort(function(a, b) { return a.startMin - b.startMin; });
@@ -1471,12 +1489,12 @@
         return;
       }
       var totalSvgW = Math.max(stepPerOpWrap.clientWidth || 980, 24 * 220);
-      var svgH = 420;
-      var margin = { top: 110, right: 40, bottom: 110, left: 44 };
+      var svgH = 520;
+      var margin = { top: 78, right: 40, bottom: 82, left: 44 };
       var plotW = totalSvgW - margin.left - margin.right;
       var plotH = svgH - margin.top - margin.bottom;
       var maxTotal = Math.max(1, ops.reduce(function(m, op) { return Math.max(m, Number(op.totalDurasi) || 0); }, 0));
-      var yMax = Math.ceil(maxTotal / 60) * 60 + 60;
+      var yMax = Math.ceil(maxTotal / 30) * 30 + 30;
       function xByMin(min) { return margin.left + (Math.max(0, Math.min(1440, min)) / 1440) * plotW; }
       function yByVal(v) { return margin.top + plotH - ((Number(v) || 0) / yMax) * plotH; }
       var stepDefs = [
@@ -1501,28 +1519,40 @@
       }
       var barsSvg = '';
       var idleLineSvg = '';
-      var prevTop = null;
       var idleIdx = 0;
-      // --- Anti-collision: hitung posisi center x semua bar dulu ---
-      var barCenters = [];
+      var BW = 30; // lebar bar seragam
+      var BW_GAP = 5; // jarak antar lane overlap
+
+      // === Deteksi overlap & assign lane ===
+      var opLanes = [];
+      var laneEndTimes = [];
       ops.forEach(function(op) {
-        var barW = Math.max(16, Math.min(36, ((Number(op.totalDurasi) || 0) / 10) + 12));
-        barCenters.push(xByMin(op.startMin));
-      });
-      var labelLevels = [];
-      var MIN_LABEL_GAP = 68;
-      barCenters.forEach(function(cx, idx) {
-        if (idx === 0) { labelLevels.push(0); return; }
-        var gap = cx - barCenters[idx - 1];
-        if (gap < MIN_LABEL_GAP) {
-          labelLevels.push((labelLevels[idx - 1] + 1) % 3);
-        } else {
-          labelLevels.push(0);
+        var assigned = false;
+        for (var li = 0; li < laneEndTimes.length; li++) {
+          if (op.startMin >= laneEndTimes[li]) {
+            opLanes.push(li);
+            laneEndTimes[li] = op.endMin;
+            assigned = true;
+            break;
+          }
+        }
+        if (!assigned) {
+          opLanes.push(laneEndTimes.length);
+          laneEndTimes.push(op.endMin);
         }
       });
+
+      function opCX(op, laneIdx) {
+        return xByMin(op.startMin) + (laneIdx || 0) * (BW + BW_GAP);
+      }
+
+      // Simpan info puncak tiap bar untuk idle connector
+      var barTops = []; // [{cx, stackTop, rightEdgeX}]
+
       ops.forEach(function(op, idx) {
-        var barW = Math.max(16, Math.min(36, ((Number(op.totalDurasi) || 0) / 10) + 12));
-        var x = xByMin(op.startMin) - barW / 2;
+        var laneIdx = opLanes[idx];
+        var cx = opCX(op, laneIdx);
+        var x = cx - BW / 2;
         var stackTop = yByVal(op.totalDurasi);
         var cursor = margin.top + plotH;
         var segRects = '';
@@ -1531,50 +1561,67 @@
           if (h <= 0) return;
           var pxH = (h / yMax) * plotH;
           cursor -= pxH;
-          segRects += '<rect x="' + x + '" y="' + cursor + '" width="' + barW + '" height="' + pxH + '" fill="url(#i71g_' + sIdx + ')" rx="4" ry="4"/>';
+          segRects += '<rect x="' + x + '" y="' + cursor + '" width="' + BW + '" height="' + pxH + '" fill="url(#i71g_' + sIdx + ')" rx="4" ry="4"/>';
         });
         var glowColor = stepDefs.find(function(sd) { return (Number(op.normal && op.normal[sd.k]) || 0) > 0; });
         var glow = glowColor ? 'filter="drop-shadow(0 0 8px ' + glowColor.c1 + '55)"' : '';
-        barsSvg += '<g style="transform-origin:' + (x + barW / 2) + 'px ' + (margin.top + plotH) + 'px;animation:i71BarGrow .72s ease-out ' + (idx * 55) + 'ms both;" ' + glow + '>' +
+        barsSvg += '<g style="transform-origin:' + cx + 'px ' + (margin.top + plotH) + 'px;animation:i71BarGrow .72s ease-out ' + (idx * 40) + 'ms both;" ' + glow + '>' +
           segRects +
-          '<rect x="' + (x + barW * 0.62) + '" y="' + stackTop + '" width="' + (barW * 0.38) + '" height="' + ((margin.top + plotH) - stackTop) + '" fill="url(#i71_sheen)" rx="4" ry="4"/>' +
+          '<rect x="' + (x + BW * 0.62) + '" y="' + stackTop + '" width="' + (BW * 0.38) + '" height="' + ((margin.top + plotH) - stackTop) + '" fill="url(#i71_sheen)" rx="4" ry="4"/>' +
           '</g>';
-        // --- Label stagger berdasarkan level anti-collision ---
-        var lvl = labelLevels[idx] || 0;
-        var topStagger = lvl * (-24);
-        var botStagger = lvl * 16;
-        var topAlpha = lvl === 0 ? '1' : '0.72';
-        var topFontSize = lvl === 0 ? '11' : '10';
+
+        barTops.push({ cx: cx, stackTop: stackTop, rightEdgeX: cx + BW / 2, leftEdgeX: cx - BW / 2 });
+
+        // === Label atas: truck type + durasi + kuli ===
         var truckType = String(op.truckType || '').trim();
-        var topTxtY = margin.top - 62 + topStagger;
-        if (truckType) {
-          barsSvg += '<text x="' + (x + barW / 2) + '" y="' + topTxtY + '" text-anchor="middle" fill="' + i71StepOpDisplayTruckColor(truckType) + '" font-family="Rajdhani,Orbitron,sans-serif" font-size="' + topFontSize + '" font-weight="700" opacity="' + topAlpha + '">' + i71EscHtml(i71TruckTypeLabel(truckType)) + '</text>';
-          topTxtY += 13;
+        var topBaseY = stackTop - 8;
+        var topLines = [];
+        if (truckType) topLines.push({ text: i71TruckTypeLabel(truckType), color: i71StepOpDisplayTruckColor(truckType) });
+        topLines.push({ text: 'Dur ' + Math.round(op.totalDurasi || 0) + 'm', color: '#cbd5e1' });
+        topLines.push({ text: 'Kuli ' + (op.crewCount == null ? '-' : Number(op.crewCount)), color: '#94a3b8' });
+        topLines.forEach(function(ln, li) {
+          barsSvg += '<text x="' + cx + '" y="' + (topBaseY - (topLines.length - 1 - li) * 13) + '" text-anchor="middle" fill="' + ln.color + '" font-family="Rajdhani,Orbitron,sans-serif" font-size="10" font-weight="700">' + i71EscHtml(ln.text) + '</text>';
+        });
+
+        // === Label bawah: nopol + netto ===
+        var botY1 = margin.top + plotH + 16;
+        var botY2 = margin.top + plotH + 28;
+        barsSvg +=
+          '<text x="' + cx + '" y="' + botY1 + '" text-anchor="middle" fill="#dbeafe" font-family="Rajdhani,Orbitron,sans-serif" font-size="10" font-weight="700">' + i71EscHtml(String(op.nopol || '-')) + '</text>' +
+          '<text x="' + cx + '" y="' + botY2 + '" text-anchor="middle" fill="#2dd4bf" font-family="Rajdhani,Orbitron,sans-serif" font-size="10" font-weight="700">' + Number(op.nettoTon || 0).toFixed(2) + 't</text>';
+
+        // === Idle connector: DI ATAS, nempel dari puncak bar sebelumnya ke puncak bar ini ===
+        var idle = Number(op.durations && op.durations.idleLoss || 0) || 0;
+        if (idle > 0 && idx > 0) {
+          var prev = barTops[idx - 1];
+          var x1 = prev.rightEdgeX;  // sisi kanan bar sebelumnya
+          var y1 = prev.stackTop;     // puncak bar sebelumnya
+          var x2 = cx - BW / 2;      // sisi kiri bar ini
+          var y2 = stackTop;          // puncak bar ini
+          var xmid = (x1 + x2) / 2;
+          var ymid = (y1 + y2) / 2;
+
+          // Garis connector: dari kanan-atas bar prev → kiri-atas bar ini
+          idleLineSvg +=
+            '<path d="M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2 + '" stroke="rgba(245,158,11,.9)" stroke-width="2" fill="none" stroke-dasharray="6 3" filter="drop-shadow(0 0 5px rgba(245,158,11,.5))" style="animation:i71IdleDraw .6s ease-out ' + (250 + idx * 40) + 'ms both;"/>' +
+            '<circle cx="' + x1 + '" cy="' + y1 + '" r="3" fill="#f59e0b" filter="drop-shadow(0 0 4px rgba(245,158,11,.6))" style="animation:i71DotPop .35s ease-out ' + (320 + idx * 40) + 'ms both;"/>' +
+            '<circle cx="' + x2 + '" cy="' + y2 + '" r="3" fill="#f59e0b" filter="drop-shadow(0 0 4px rgba(245,158,11,.6))" style="animation:i71DotPop .35s ease-out ' + (360 + idx * 40) + 'ms both;"/>';
+
+          // Label idle duration: di atas garis connector
+          idleLineSvg += '<text x="' + xmid + '" y="' + (ymid - 9) + '" text-anchor="middle" fill="#fbbf24" font-family="Rajdhani,Orbitron,sans-serif" font-size="10" font-weight="700">Idle ' + Math.round(idle) + 'm</text>';
+
+          // Alasan breakdown di bawah garis connector
+          var cats = op.idleBreakdownCategories || [];
+          cats.slice(0, 2).forEach(function(it, ci) {
+            idleLineSvg += '<text x="' + xmid + '" y="' + (ymid + 11 + ci * 11) + '" text-anchor="middle" fill="#fcd34d" font-family="Rajdhani,sans-serif" font-size="9" opacity="0.85">↓ ' + i71EscHtml(it.cat) + ' ' + Math.round(it.min) + 'm</text>';
+          });
+          idleIdx++;
         }
-        barsSvg += '<text x="' + (x + barW / 2) + '" y="' + topTxtY + '" text-anchor="middle" fill="#cbd5e1" font-family="Rajdhani,Orbitron,sans-serif" font-size="' + topFontSize + '" font-weight="700" opacity="' + topAlpha + '">Dur ' + Math.round(op.totalDurasi || 0) + 'm</text>' +
-          '<text x="' + (x + barW / 2) + '" y="' + (topTxtY + 12) + '" text-anchor="middle" fill="#94a3b8" font-family="Rajdhani,Orbitron,sans-serif" font-size="' + topFontSize + '" font-weight="700" opacity="' + topAlpha + '">Kuli ' + (op.crewCount == null ? '-' : Number(op.crewCount)) + '</text>' +
-          '<text x="' + (x + barW / 2) + '" y="' + (margin.top + plotH + 24 + botStagger) + '" text-anchor="middle" fill="#dbeafe" font-family="Rajdhani,Orbitron,sans-serif" font-size="' + topFontSize + '" font-weight="700" opacity="' + topAlpha + '">' + i71EscHtml(String(op.nopol || '-')) + '</text>' +
-          '<text x="' + (x + barW / 2) + '" y="' + (margin.top + plotH + 37 + botStagger) + '" text-anchor="middle" fill="#2dd4bf" font-family="Rajdhani,Orbitron,sans-serif" font-size="' + topFontSize + '" font-weight="700" opacity="' + topAlpha + '">' + Number(op.nettoTon || 0).toFixed(2) + 't</text>';
-        if (prevTop) {
-          var idle = Number(op.durations && op.durations.idleLoss || 0) || 0;
-          if (idle > 0) {
-            var x2 = x + barW / 2;
-            var y2 = stackTop;
-            var pathId = 'i71_idle_path_' + idleIdx;
-            idleLineSvg +=
-              '<path id="' + pathId + '" d="M ' + prevTop.x + ' ' + prevTop.y + ' L ' + x2 + ' ' + y2 + '" stroke="rgba(245,158,11,.95)" stroke-width="2.2" fill="none" filter="drop-shadow(0 0 6px rgba(245,158,11,.55))" stroke-dasharray="6 4" style="animation:i71IdleDraw .66s ease-out ' + (300 + idx * 55) + 'ms both;"/>' +
-              '<circle cx="' + prevTop.x + '" cy="' + prevTop.y + '" r="3.2" fill="#f59e0b" filter="drop-shadow(0 0 5px rgba(245,158,11,.65))" style="animation:i71DotPop .4s ease-out ' + (420 + idx * 55) + 'ms both;"/>' +
-              '<circle cx="' + x2 + '" cy="' + y2 + '" r="3.2" fill="#f59e0b" filter="drop-shadow(0 0 5px rgba(245,158,11,.65))" style="animation:i71DotPop .4s ease-out ' + (460 + idx * 55) + 'ms both;"/>' +
-              '<text x="' + ((prevTop.x + x2) / 2) + '" y="' + ((prevTop.y + y2) / 2 - 8) + '" text-anchor="middle" fill="#fbbf24" font-family="Rajdhani,Orbitron,sans-serif" font-size="11" font-weight="700">Idle ' + Math.round(idle) + 'm</text>';
-            idleIdx++;
-          }
-        }
-        prevTop = { x: xByMin(op.endMin), y: stackTop };
       });
       var hourLabels = '';
       for (var hL = 0; hL <= 24; hL++) {
         var xx = xByMin(hL * 60);
-        hourLabels += '<text x="' + xx + '" y="' + (margin.top + plotH + 60) + '" text-anchor="middle" fill="#7dd3fc" font-family="Orbitron,Rajdhani,sans-serif" font-size="10" font-weight="700">' + i71Pad2(hL) + '</text>';
+        hourLabels += '<text x="' + xx + '" y="' + (margin.top + plotH + 52) + '" text-anchor="middle" fill="#7dd3fc" font-family="Orbitron,Rajdhani,sans-serif" font-size="10" font-weight="700">' + i71Pad2(hL) + '</text>';
       }
       var svgHtml =
         '<svg width="' + totalSvgW + '" height="' + svgH + '" viewBox="0 0 ' + totalSvgW + ' ' + svgH + '" xmlns="http://www.w3.org/2000/svg">' +
@@ -1585,7 +1632,7 @@
         barsSvg +
         hourLabels +
         '</svg>';
-      stepPerOpWrap.style.height = '430px';
+      stepPerOpWrap.style.height = '530px';
       stepPerOpWrap.innerHTML = '<div style="position:relative;min-width:' + totalSvgW + 'px">' + svgHtml + '<div class="i71-stepop-tooltip" id="i71_stepop_tip"></div></div>';
       if (stepPerOpCanvas && stepPerOpCanvas.parentNode) {
         stepPerOpCanvas.style.display = 'none';
@@ -1593,8 +1640,9 @@
       var tip = document.getElementById('i71_stepop_tip');
       var svg = stepPerOpWrap.querySelector('svg');
       if (svg && tip) {
-        ops.forEach(function(op) {
-          var x = xByMin(op.startMin);
+        ops.forEach(function(op, idx) {
+          var laneIdx = opLanes[idx];
+          var cx = opCX(op, laneIdx);
           var payload = [
             'Nopol: ' + op.nopol,
             'Jenis Truck: ' + (String(op.truckType || '').trim() ? i71TruckTypeLabel(op.truckType) : '-'),
@@ -1607,9 +1655,9 @@
             'Tilting Start→Finish: ' + Math.round(op.durations.pbWindowTilting || 0) + ' m'
           ].join('<br/>');
           var hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          hit.setAttribute('x', x - 18);
+          hit.setAttribute('x', cx - BW / 2 - 4);
           hit.setAttribute('y', margin.top);
-          hit.setAttribute('width', 36);
+          hit.setAttribute('width', BW + 8);
           hit.setAttribute('height', plotH);
           hit.setAttribute('fill', 'transparent');
           hit.style.cursor = 'pointer';
