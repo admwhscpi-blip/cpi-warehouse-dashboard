@@ -1799,6 +1799,73 @@
     }
 
     i71RenderCharts(res, stepStats, stepPerOps, dateYmd);
+
+    // === Logic Tambahan: Output per Jam Panel ===
+    (function() {
+      var panelOutput = document.getElementById('i71_panel_output');
+      if (!panelOutput) return;
+
+      var matStats = {};
+      var maxTph = 0;
+      
+      // Hitung per material
+      daySlices.forEach(function(slc) {
+        var mat = String(i71GetCol(slc.row, 'MATERIAL') || '-').trim();
+        if (!mat) mat = '-';
+        if (!matStats[mat]) matStats[mat] = { netto: 0, minutes: 0, count: 0 };
+        matStats[mat].netto += (Number(slc.netto) || 0);
+        matStats[mat].minutes += (Number(slc.endMin - slc.startMin) || 0);
+        matStats[mat].count++;
+      });
+
+      var totalActiveHours = (res.activeTime.minutes || 0) / 60;
+      var avgOutput = totalActiveHours > 0 ? (res.totalNetto / 1000 / totalActiveHours) : 0;
+
+      var mats = Object.keys(matStats).sort();
+      var matList = mats.map(function(m) {
+        var s = matStats[m];
+        var hours = s.minutes / 60;
+        var tph = hours > 0 ? (s.netto / 1000 / hours) : 0;
+        if (tph > maxTph) maxTph = tph;
+        return { name: m, tph: tph, netto: s.netto, minutes: s.minutes, count: s.count };
+      });
+
+      var matHtml = '';
+      matList.forEach(function(m, idx) {
+        var barWidth = maxTph > 0 ? (m.tph / maxTph * 100) : 0;
+        // User specifically mentioned colors/gradients for Material 1 & 2
+        var color = idx === 0 ? '#3b82f6' : (idx === 1 ? '#f59e0b' : '#64748b');
+        var gradient = idx === 0 ? 'linear-gradient(90deg, #2563eb, #60a5fa)' : (idx === 1 ? 'linear-gradient(90deg, #d97706, #fbbf24)' : 'linear-gradient(90deg, #64748b, #94a3b8)');
+
+        matHtml += 
+          '<div style="margin-bottom:12px; animation: slideInLeft 0.5s ease-out both; animation-delay: ' + (0.1 + idx * 0.15) + 's;">' +
+            '<div style="display:flex; justify-content:space-between; font-size:11px; font-weight:600; color:#334155; margin-bottom:4px;">' +
+              '<span>' + i71EscHtml(m.name) + '</span>' +
+              '<span style="color:' + color + ';">' + m.tph.toFixed(1) + ' t/j</span>' +
+            '</div>' +
+            '<div style="height:5px; background:#f1f5f9; border-radius:99px; overflow:hidden; margin-bottom:4px;">' +
+              '<div style="height:100%; width:' + barWidth + '%; background:' + gradient + '; border-radius:99px; --target-width: ' + barWidth + '%; animation: barFill 0.8s ease-out both; animation-delay: ' + (0.2 + idx * 0.15) + 's;"></div>' +
+            '</div>' +
+            '<div style="font-size:9px; color:#aaa;">' +
+              i71FormatMinutes(m.minutes) + ' aktif · ' + m.count + ' period · ' + (m.netto / 1000).toFixed(2) + ' ton' +
+            '</div>' +
+          '</div>';
+      });
+
+      panelOutput.innerHTML = 
+        '<div style="display:flex; flex-direction:column; height:100%; justify-content:space-between; padding:2px;">' +
+          '<div>' +
+            '<div style="font-size:10px; color:#888; text-transform:uppercase; letter-spacing:0.06em; font-weight:700;">Output per Jam</div>' +
+            '<div style="font-size:28px; font-weight:700; color:#1a1a2e; margin:4px 0 2px; animation: fadeUp 0.6s ease-out both;">' + avgOutput.toFixed(1) + ' <span style="font-size:16px; font-weight:500; color:#64748b;">ton/jam</span></div>' +
+            '<div style="font-size:10px; color:#94a3b8;">rata-rata seluruh material</div>' +
+          '</div>' +
+          '<div style="margin:12px 0; flex:1;">' + matHtml + '</div>' +
+          '<div style="border-top: 0.5px solid #e5e7eb; padding-top:8px;">' +
+            '<div style="font-size:9px; color:#888; text-transform:uppercase; letter-spacing:0.04em;">Total netto hari ini</div>' +
+            '<div style="font-size:16px; font-weight:700; color:#16a34a; animation: subtlePulse 2s infinite ease-in-out;">' + fmtNum(res.totalNetto / 1000) + ' <span style="font-size:12px; font-weight:500;">ton</span></div>' +
+          '</div>' +
+        '</div>';
+    })();
   }
 
   window.loadIntake71Page = function() {

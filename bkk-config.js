@@ -22,7 +22,11 @@ var USERS_DATABASE = [
   { username: 'ade',   password: '1891', nama: 'Ade',   role: 'opname',  bk: [] },
   // Admin (semua akses)
   { username: 'cecep', password: '1891', nama: 'Cecep', role: 'admin',   bk: [] },
-  { username: 'arif',  password: '1891', nama: 'Arif', role: 'admin',   bk: [] }
+  { username: 'arif',  password: '1891', nama: 'Arif', role: 'admin',   bk: [] },
+  // Viewer (Dashboard Only)
+  { username: 'purchase', password: '1891', nama: 'Purchase', role: 'viewer', bk: [] },
+  { username: 'pga',      password: '1891', nama: 'PGA',      role: 'viewer', bk: [] },
+  { username: 'ppic',     password: '1891', nama: 'PPIC',     role: 'viewer', bk: [] }
 ];
 
 var ROLE_PERMISSIONS = {
@@ -30,5 +34,6 @@ var ROLE_PERMISSIONS = {
   kirim:   { dashboard: true, bongkar: false, kirim: true, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true, intake71: true },
   bongkar: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true, intake71: true },
   opname:  { dashboard: true, bongkar: false, kirim: false, opname: true, ceksap: true, history: true, kartustock: true, outstanding: true, durbreakdown: true, intake71: true },
-  bongkar_only: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: false, history: false, kartustock: false, outstanding: false, durbreakdown: false, intake71: false }
+  bongkar_only: { dashboard: true, bongkar: true, kirim: false, opname: false, ceksap: false, history: false, kartustock: false, outstanding: false, durbreakdown: false, intake71: false },
+  viewer:  { dashboard: true, bongkar: false, kirim: false, opname: false, ceksap: false, history: false, kartustock: true, outstanding: true, durbreakdown: true, intake71: true }
 };

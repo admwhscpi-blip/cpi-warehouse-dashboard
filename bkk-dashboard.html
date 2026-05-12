@@ -365,8 +365,15 @@
           .i71-kpi-card:hover { transform:perspective(1000px) rotateX(0deg) translateY(-2px); box-shadow:0 18px 30px -20px rgba(14,116,144,.5); }
           .i71-kpi-label { font-size:.62rem; text-transform:uppercase; letter-spacing:.8px; color:#64748b; font-weight:700; }
           .i71-kpi-value { font-family:'Rajdhani',sans-serif; font-size:1.45rem; font-weight:800; color:var(--i71ink); line-height:1; margin-top:5px; }
-          .i71-grid-two { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+          .i71-grid-two, .i71-grid-three { display:grid; gap:8px; margin-bottom:8px; }
+          .i71-grid-two { grid-template-columns: 1fr 1fr; }
+          .i71-grid-three { grid-template-columns: 1fr 1fr 1fr; }
           .i71-card { background:var(--i71glass); border:1px solid rgba(148,163,184,.28); border-radius:12px; padding:10px; box-shadow:0 10px 18px -16px rgba(15,23,42,.4); animation:i71fade .6s ease both; }
+          .panel-output-perjam { background:#ffffff !important; border:1px solid rgba(99,150,255,0.3) !important; box-shadow:0 4px 24px rgba(80,120,255,0.12) !important; }
+          @keyframes barFill { from { width: 0%; } to { width: var(--target-width); } }
+          @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes slideInLeft { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+          @keyframes subtlePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
           .i71-card h4 { margin:0 0 6px; font-size:.86rem; color:#0f172a; letter-spacing:.2px; }
           .i71-card-plot { height:205px; }
           .i71-step-grid { display:grid; grid-template-columns:1.1fr .9fr; gap:8px; margin-bottom:8px; }
@@ -440,10 +447,13 @@
               </div>
             </div>
             <div id="i71_kpi_grid"></div>
-            <div class="i71-grid-two">
+            <div class="i71-grid-three">
               <div class="i71-card">
                 <h4>Proporsi Active vs Downtime</h4>
                 <div class="i71-card-plot"><canvas id="i71_chart_util"></canvas></div>
+              </div>
+              <div class="i71-card panel-output-perjam" id="i71_panel_output">
+                <!-- Data binding from bkk-intake71-dashboard.js -->
               </div>
               <div class="i71-card">
                 <h4>Perbandingan Tilting vs Manual</h4>
