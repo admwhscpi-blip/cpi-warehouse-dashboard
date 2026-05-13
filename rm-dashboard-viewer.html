@@ -323,11 +323,10 @@
         function renderGlobalStats(stats) {
             const container = document.getElementById('global-stats');
 
-            // Re-calculate based on manual capacities if possible
-            let totalCap = 0;
-            Object.values(CONFIG.WAREHOUSE_CAPACITIES).forEach(c => totalCap += (c * CONFIG.UNIT_DIVIDER));
+            // Gunakan kapasitas dinamis dari API (Stats ditarik dari Spreadsheet Baris 141)
+            const totalCap = stats.totalCapacity;
+            const percentage = stats.percentage;
 
-            const percentage = totalCap > 0 ? (stats.totalFilled / totalCap) * 100 : stats.percentage;
             let strokeColor = percentage > 80 ? '#ef4444' : (percentage > 60 ? '#ff9e0b' : '#00f3ff');
             let stroke = percentage + ", 100";
 
@@ -339,7 +338,7 @@
                  </div>
                  <div class="stat-card" style="background:linear-gradient(135deg, rgba(15,23,42,0.9), rgba(10,10,10,0.95)); border:1px solid rgba(255,255,255,0.08); padding:1.5rem; border-left: 3px solid #ff9e0b; border-radius:4px;">
                      <div class="stat-title" style="color:#94a3b8; font-size:0.8rem; font-weight:600; letter-spacing:1px; margin-bottom:5px;">IDLE CAPACITY (EST)</div>
-                     <div class="stat-value" style="color:#ff9e0b; font-size:2rem; font-weight:700; font-family:'Rajdhani'">${DataService.convertKgToTon(totalCap - stats.totalFilled)} <span class="unit" style="font-size:0.8rem; color:#64748b">TON</span></div>
+                     <div class="stat-value" style="color:#ff9e0b; font-size:2rem; font-weight:700; font-family:'Rajdhani'">${DataService.convertKgToTon(stats.totalSpace)} <span class="unit" style="font-size:0.8rem; color:#64748b">TON</span></div>
                      <div class="stat-desc" style="color:#64748b; font-size:0.8rem;">Based on hard-limit configuration</div>
                  </div>
                  <div class="stat-card" style="background:linear-gradient(135deg, rgba(15,23,42,0.9), rgba(10,10,10,0.95)); border:1px solid rgba(255,255,255,0.08); padding:1.5rem; display:flex; justify-content:space-between; align-items:center; border-left: 3px solid ${strokeColor}; border-radius:4px;">
