@@ -208,9 +208,9 @@ function handleSaveBongkaran(data) {
         truck.jumlahKuli,
 
         // Timestamps (Semua dari Form)
-        data.abTanggal,
-        data.abArrivalTime,
-        data.abQcTime1,
+        truck.abTanggal || data.abTanggal,
+        truck.abArrival || data.abArrivalTime,
+        truck.abQc || data.abQcTime1,
         data.pbTanggal,
         data.pbSampaiGudang,
         data.pbStartBongkar,

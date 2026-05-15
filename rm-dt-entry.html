@@ -1195,7 +1195,7 @@
                 
                 // Krani: Check master attendance from cloud first
                 try {
-                    const scriptURL = 'https://script.google.com/macros/s/AKfycbwBxIXah7j0pVPiEq8-GY4F8SJEX_BWFSZkyfE9046VMfs6jkN-vK42N17TeyaFDeRd/exec';
+                    const scriptURL = 'https://script.google.com/macros/s/AKfycbwJ-FMJeiJMuNQCz64oI_tVYu0EKlslFnW-7PsTmYYoONQnwdYOU4gN7y3HAU7ar8Zz/exec';
                     const response = await fetch(scriptURL + '?action=getGlobalAttendance');
                     const result = await response.json();
                     
@@ -1338,7 +1338,7 @@
 
         async function saveSetupLokal() {
             const isArif = (currentUser === 'ARIF');
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbwBxIXah7j0pVPiEq8-GY4F8SJEX_BWFSZkyfE9046VMfs6jkN-vK42N17TeyaFDeRd/exec';
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbwJ-FMJeiJMuNQCz64oI_tVYu0EKlslFnW-7PsTmYYoONQnwdYOU4gN7y3HAU7ar8Zz/exec';
 
             if (isArif) {
                 // ARIF SAVES GLOBAL ATTENDANCE
@@ -2226,7 +2226,7 @@
             const list = document.getElementById('langsiran-list');
             list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Menghubungkan ke server muatan...</div>';
             
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbxkcoursvhRgV0gI69btwJqMd8IGZk8VntOhpaqvd6_ggqd2wL0n3mHVJhsLhn4D5Pr/exec';
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbwJ-FMJeiJMuNQCz64oI_tVYu0EKlslFnW-7PsTmYYoONQnwdYOU4gN7y3HAU7ar8Zz/exec';
             
             try {
                 const res = await fetch(scriptURL + '?action=getPendingLangsiran');
@@ -2445,9 +2445,17 @@
                     // AB Info context aware
                     let abTgl, abArr, abQc;
                     if(tipe === "Bareng") {
-                        abTgl = box.querySelector('.trk-ab-tanggal').value;
-                        abArr = box.querySelector('.trk-ab-arrival').value;
-                        abQc = box.querySelector('.trk-ab-qc').value;
+                        const tglInp = box.querySelector('.trk-ab-tanggal');
+                        const arrInp = box.querySelector('.trk-ab-arrival');
+                        const qcInp  = box.querySelector('.trk-ab-qc');
+
+                        abTgl = tglInp.value;
+                        abArr = arrInp.value;
+                        abQc  = qcInp.value;
+
+                        // Perbaiki tanggal jika ada midnight crossing per truck
+                        if (arrInp.dataset.actualDate) abTgl = arrInp.dataset.actualDate;
+
                         if(!abTgl || !abArr || !abQc) {
                             Swal.fire('Data Arrival Truck ' + (i+1) + ' Belum Lengkap', 'Setiap truck harus memiliki data Arrival & Scaling jika tipe Bongkaran Bareng.', 'warning');
                             isTruckValid = false;
@@ -2526,7 +2534,7 @@
                 showConfirmButton: false
             });
 
-            const scriptURL = 'https://script.google.com/macros/s/AKfycbxkcoursvhRgV0gI69btwJqMd8IGZk8VntOhpaqvd6_ggqd2wL0n3mHVJhsLhn4D5Pr/exec';
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbwJ-FMJeiJMuNQCz64oI_tVYu0EKlslFnW-7PsTmYYoONQnwdYOU4gN7y3HAU7ar8Zz/exec';
             
             const cachedSetup = localStorage.getItem('RM01_SETUP_ACTIVE') ? JSON.parse(localStorage.getItem('RM01_SETUP_ACTIVE')) : {};
             const tipe = document.getElementById('inp_tipe_bongkaran').value;
