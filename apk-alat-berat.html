@@ -19,46 +19,86 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
-            --primary: #2563EB;
-            --primary-hover: #1D4ED8;
-            --primary-light: #EFF6FF;
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --primary-gradient: linear-gradient(135deg, #4F46E5, #06B6D4);
+            --primary-light: rgba(79, 70, 229, 0.12);
             --accent: #F59E0B;
             --accent-hover: #D97706;
-            --accent-light: #FEF3C7;
+            --accent-light: rgba(245, 158, 11, 0.12);
             --success: #10B981;
-            --success-light: #D1FAE5;
+            --success-light: rgba(16, 185, 129, 0.12);
             --danger: #EF4444;
-            --danger-light: #FEE2E2;
-            --bg-page: #F8FAFC;
-            --bg-card: #FFFFFF;
+            --danger-light: rgba(239, 68, 68, 0.12);
+            --bg-page: #F1F5F9;
+            --bg-glass: rgba(255, 255, 255, 0.75);
+            --bg-glass-heavy: rgba(255, 255, 255, 0.9);
             --text-main: #0F172A;
-            --text-muted: #64748B;
-            --border-color: #E2E8F0;
-            --border-active: #BFDBFE;
+            --text-muted: #475569;
+            --border-color: rgba(255, 255, 255, 0.6);
+            --border-active: #818CF8;
             --font-main: 'Plus Jakarta Sans', sans-serif;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-            --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.03);
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 18px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --shadow-md: 0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04);
+            --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+            --shadow-glow: 0 0 20px rgba(79, 70, 229, 0.4);
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            --glass-blur: blur(24px);
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background-color: var(--bg-page);
+            background: linear-gradient(-45deg, #F8FAFC, #E0E7FF, #FCE7F3, #F1F5F9);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             color: var(--text-main);
             font-family: var(--font-main);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: -20%;
+            left: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        body::after {
+            content: "";
+            position: fixed;
+            bottom: -20%;
+            right: -10%;
+            width: 70vw;
+            height: 70vw;
+            background: radial-gradient(circle, rgba(236,72,153,0.1) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            z-index: -1;
+            pointer-events: none;
         }
 
         /* LAYOUT & STRUCTURE */
@@ -71,7 +111,9 @@
         /* SIDEBAR (Desktop) */
         .sidebar {
             width: 260px;
-            background-color: var(--bg-card);
+            background: var(--bg-glass-heavy);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
@@ -94,14 +136,14 @@
         .brand-logo {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, var(--primary), #3B82F6);
+            background: var(--primary-gradient);
             border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-size: 1.25rem;
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+            box-shadow: var(--shadow-glow);
         }
 
         .brand-title {
@@ -176,11 +218,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: var(--bg-card);
+            background: var(--bg-glass);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             padding: 16px 28px;
             border-radius: var(--radius-lg);
             border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-glass);
         }
 
         .header-title h1 {
@@ -238,13 +282,16 @@
         /* MOBILE BOTTOM NAVIGATION BAR */
         .bottom-nav {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
             height: 70px;
-            background-color: var(--bg-card);
-            border-top: 1px solid var(--border-color);
-            box-shadow: 0 -4px 15px rgba(0,0,0,0.03);
+            background: var(--bg-glass-heavy);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-color);
+            border-radius: 35px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             display: none;
             justify-content: space-around;
             align-items: center;
@@ -299,11 +346,13 @@
 
         /* CARD STYLE */
         .card {
-            background-color: var(--bg-card);
+            background: var(--bg-glass);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
             padding: 28px;
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow-glass);
             position: relative;
             overflow: hidden;
             transition: var(--transition);
@@ -311,6 +360,8 @@
 
         .card:hover {
             box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.8);
         }
 
         .card-header {
@@ -338,10 +389,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: var(--bg-card);
+            background: var(--bg-glass);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             padding: 20px 30px;
             border-radius: var(--radius-md);
             border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-glass);
             margin-bottom: 10px;
         }
 
@@ -361,9 +415,11 @@
             left: 0;
             height: 100%;
             width: 16.66%;
-            background: linear-gradient(90deg, var(--primary), #3B82F6);
+            background: var(--primary-gradient);
+            background-size: 200% 200%;
+            animation: gradientBG 3s ease infinite;
             border-radius: 3px;
-            transition: width 0.4s ease;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .stepper-info {
@@ -429,8 +485,10 @@
         }
 
         .jenis-unit-card {
-            background-color: var(--bg-card);
-            border: 2px solid var(--border-color);
+            background: var(--bg-glass);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
             padding: 40px 20px;
             text-align: center;
@@ -444,15 +502,15 @@
         }
 
         .jenis-unit-card:hover {
-            border-color: var(--border-active);
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-lg);
+            border-color: rgba(255, 255, 255, 0.9);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: var(--shadow-glass);
         }
 
         .jenis-unit-card.selected {
             border-color: var(--primary);
-            background-color: var(--primary-light);
-            box-shadow: 0 0 20px rgba(37, 99, 235, 0.15);
+            background-color: var(--bg-glass-heavy);
+            box-shadow: var(--shadow-glow);
         }
 
         .jenis-unit-card.selected::after {
@@ -506,8 +564,10 @@
         }
 
         .type-unit-card {
-            background-color: var(--bg-card);
-            border: 2px solid var(--border-color);
+            background: var(--bg-glass);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             padding: 20px 10px;
             text-align: center;
@@ -523,14 +583,16 @@
         }
 
         .type-unit-card:hover {
-            border-color: var(--border-active);
-            transform: scale(1.03);
+            border-color: rgba(255, 255, 255, 0.9);
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: var(--shadow-glass);
         }
 
         .type-unit-card.selected {
             border-color: var(--primary);
-            background-color: var(--primary-light);
+            background: var(--bg-glass-heavy);
             color: var(--primary);
+            box-shadow: var(--shadow-glow);
         }
 
         /* STEP 3: KATEGORI KERUSAKAN */
@@ -543,8 +605,11 @@
         }
 
         .category-card {
+            background: var(--bg-glass);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border-radius: var(--radius-md);
-            border: 2px solid var(--border-color);
+            border: 1px solid var(--border-color);
             padding: 24px 16px;
             text-align: center;
             cursor: pointer;
@@ -556,7 +621,9 @@
         }
 
         .category-card:hover {
-            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.9);
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: var(--shadow-glass);
         }
 
         .category-icon {
@@ -634,7 +701,9 @@
         }
 
         .choice-item {
-            background-color: var(--bg-card);
+            background: var(--bg-glass);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             padding: 16px 20px;
@@ -646,13 +715,15 @@
         }
 
         .choice-item:hover {
-            border-color: var(--border-active);
-            background-color: var(--bg-page);
+            border-color: rgba(255, 255, 255, 0.9);
+            transform: translateX(6px);
+            box-shadow: var(--shadow-sm);
         }
 
         .choice-item.selected {
             border-color: var(--primary);
-            background-color: var(--primary-light);
+            background: var(--bg-glass-heavy);
+            box-shadow: var(--shadow-glow);
         }
 
         .choice-checkbox {
@@ -777,7 +848,7 @@
         }
 
         .btn {
-            background-color: var(--primary);
+            background: var(--primary-gradient);
             color: white;
             border: none;
             border-radius: var(--radius-md);
@@ -789,13 +860,28 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            box-shadow: var(--shadow-glow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-20deg);
+            transition: all 0.5s ease;
+        }
+
+        .btn:hover::after {
+            left: 150%;
         }
 
         .btn:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.5);
         }
 
         .btn:disabled {
@@ -807,15 +893,17 @@
         }
 
         .btn-secondary {
-            background-color: white;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             color: var(--text-main);
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow-sm);
         }
 
         .btn-secondary:hover {
-            background-color: #F8FAFC;
-            border-color: #CBD5E1;
+            background: rgba(255, 255, 255, 0.8);
+            border-color: rgba(255, 255, 255, 1);
             color: var(--text-main);
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
@@ -846,10 +934,12 @@
         }
 
         .modal-card {
-            background-color: var(--bg-card);
+            background: var(--bg-glass-heavy);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
             border-radius: var(--radius-lg);
             border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-lg);
+            box-shadow: var(--shadow-glass);
             width: 100%;
             max-width: 580px;
             overflow: hidden;
@@ -1696,9 +1786,6 @@
                     <p id="header-text-subtitle">Mulai pelaporan kerusakan armada lapangan secara terstruktur</p>
                 </div>
                 <div class="header-meta">
-                    <div id="db-badge" class="database-badge offline" onclick="openSettingsModal()">
-                        <i class="fa-solid fa-database"></i> <span id="db-badge-text">Cache Mode</span>
-                    </div>
                     <div class="meta-clock" id="digital-clock">10:09 WIB</div>
                 </div>
             </header>
@@ -2056,6 +2143,7 @@
                                     <th>Vendor</th>
                                     <th>Kategori Sistem</th>
                                     <th>Pilihan Kerusakan</th>
+                                    <th>Foto</th>
                                     <th>Durasi Total</th>
                                     <th>Status</th>
                                 </tr>
@@ -2494,7 +2582,7 @@
         let currentTab = "tab-catat";
         let activeWizardStep = 1;
         let dbMode = "online"; // "online" or "offline"
-        let appsScriptUrl = "https://script.google.com/macros/s/AKfycbwz49AxUt6Ujm4jnNbNUcVePD6ERvwqnFoymCeNqUD6oQoJ66cpkFHb270fTzngzR9-dQ/exec";
+        let appsScriptUrl = "https://script.google.com/macros/s/AKfycbz0RlTOKEtzek9FBrM0EyU0vNFSpGBQod_VXAJJmVpQPCpMVH14rQJYt_fFFFQpoZmbTg/exec";
         
         // Active Laporan Data State
         let formBreakdown = {
@@ -2561,46 +2649,20 @@
 
         // DATABASE CONNECTION STATE
         function initDatabaseConnectionSettings() {
-            const defaultUrl = "https://script.google.com/macros/s/AKfycbx0SV1apwjPp6q2RQBqNp1ig2RYkYzZf6mjUeEA08xzhu6pb0wCW2r8zo75XeJgzLBNLw/exec";
-            // Load saved settings
-            const savedUrl = localStorage.getItem("smart_bd_api_url");
-            const savedMode = localStorage.getItem("smart_bd_mode");
+            const defaultUrl = "https://script.google.com/macros/s/AKfycbz0RlTOKEtzek9FBrM0EyU0vNFSpGBQod_VXAJJmVpQPCpMVH14rQJYt_fFFFQpoZmbTg/exec";
             
-            if (savedUrl) {
-                appsScriptUrl = savedUrl;
-                document.getElementById("settings-api-url").value = savedUrl;
-            } else {
-                appsScriptUrl = defaultUrl;
-                document.getElementById("settings-api-url").value = defaultUrl;
-                localStorage.setItem("smart_bd_api_url", defaultUrl);
-            }
+            appsScriptUrl = defaultUrl;
+            document.getElementById("settings-api-url").value = defaultUrl;
+            localStorage.setItem("smart_bd_api_url", defaultUrl);
             
-            // Tentukan default jika running di ekosistem Apps Script
-            const isGoogleHost = window.google && google.script && google.script.run;
-            if (isGoogleHost) {
-                dbMode = "online";
-                localStorage.setItem("smart_bd_mode", "online");
-            } else if (savedMode) {
-                dbMode = savedMode;
-            } else {
-                dbMode = "online";
-                localStorage.setItem("smart_bd_mode", "online");
-            }
+            dbMode = "online";
+            localStorage.setItem("smart_bd_mode", "online");
 
             updateDatabaseBadgeUI();
         }
 
         function updateDatabaseBadgeUI() {
-            const badge = document.getElementById("db-badge");
-            const badgeText = document.getElementById("db-badge-text");
-            
-            if (dbMode === "online") {
-                badge.className = "database-badge online";
-                badgeText.textContent = "Google Sheets Mode";
-            } else {
-                badge.className = "database-badge offline";
-                badgeText.textContent = "Simulated Mode";
-            }
+            // UI badge dihapus sesuai permintaan
         }
 
         function openSettingsModal() {
@@ -4088,7 +4150,7 @@
             const totalRows = filteredRiwayat.length;
             
             if (totalRows === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 30px;">Tidak ada riwayat breakdown yang sesuai kriteria</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 30px;">Tidak ada riwayat breakdown yang sesuai kriteria</td></tr>`;
                 document.getElementById("pagination-status-text").textContent = `Menampilkan 0-0 dari 0 data`;
                 document.getElementById("btn-page-prev").disabled = true;
                 document.getElementById("btn-page-next").disabled = true;
@@ -4129,6 +4191,26 @@
                     durasiText = formatDurationString(liveMins) + " (Berjalan)";
                 }
 
+                // Render Photo column cell
+                let photoCell = `-`;
+                if (item.photoUrl) {
+                    photoCell = `
+                        <div style="display: flex; justify-content: center; align-items: center;">
+                            <img src="${item.photoUrl}" 
+                                 style="width: 45px; height: 35px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);" 
+                                 onclick="event.stopPropagation(); viewHistoryPhoto('${item.photoUrl}')" 
+                                 onmouseover="this.style.transform='scale(1.15)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.15)';" 
+                                 onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 5px rgba(0,0,0,0.1]';">
+                        </div>
+                    `;
+                } else {
+                    photoCell = `
+                        <div style="display: flex; justify-content: center; align-items: center; color: var(--text-muted); opacity: 0.4;">
+                            <i class="fa-solid fa-image-slash" style="font-size: 1.1rem;" title="Tidak ada foto"></i>
+                        </div>
+                    `;
+                }
+
                 tr.innerHTML = `
                     <td style="font-family: 'Orbitron', monospace; font-size: 0.8rem; font-weight: 700; color: var(--primary);">${item.idBreakdown}</td>
                     <td>${dateString}</td>
@@ -4137,6 +4219,7 @@
                     <td>${item.vendor}</td>
                     <td><span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">${item.kategoriKerusakan}</span></td>
                     <td style="white-space: normal; min-width: 150px;">${item.pilihanKerusakan}</td>
+                    <td>${photoCell}</td>
                     <td>${durasiText}</td>
                     <td><span class="table-status-badge ${statusClass}">${item.status}</span></td>
                 `;
@@ -4242,6 +4325,17 @@
             }
 
             toggleDetailModal(true);
+        }
+
+        function viewHistoryPhoto(url) {
+            Swal.fire({
+                imageUrl: url,
+                imageWidth: '100%',
+                imageAlt: 'Foto Bukti Breakdown',
+                borderRadius: '20px',
+                confirmButtonColor: 'var(--primary)',
+                confirmButtonText: 'Tutup'
+            });
         }
 
         // --- PHOTO PICKER & CLOUDINARY UPLOAD UTILITIES ---

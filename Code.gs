@@ -124,17 +124,27 @@ function getActiveSpreadsheet() {
 function initRiwayatSheet(ss) {
   var sheetName = "RIWAYAT_BREAKDOWN";
   var sheet = ss.getSheetByName(sheetName);
+  var headers = [
+    "ID_BREAKDOWN", "TIMESTAMP_INPUT", "JENIS_UNIT", "TYPE_UNIT", "VENDOR", 
+    "KATEGORI_KERUSAKAN", "PILHAN_KERUSAKAN", "DETAIL_KERUSAKAN", 
+    "OPERATOR_AWAL", "JAM_MULAI", "OPERATOR_AKHIR", "JAM_SELESAI", 
+    "DURASI_MENIT", "DURASI_JAM", "STATUS", "FOTO_URL", "KONDISI_OPERASIONAL"
+  ];
+  
   if (!sheet) {
     sheet = ss.insertSheet(sheetName);
-    var headers = [
-      "ID_BREAKDOWN", "TIMESTAMP_INPUT", "JENIS_UNIT", "TYPE_UNIT", "VENDOR", 
-      "KATEGORI_KERUSAKAN", "PILHAN_KERUSAKAN", "DETAIL_KERUSAKAN", 
-      "OPERATOR_AWAL", "JAM_MULAI", "OPERATOR_AKHIR", "JAM_SELESAI", 
-      "DURASI_MENIT", "DURASI_JAM", "STATUS", "FOTO_URL", "KONDISI_OPERASIONAL"
-    ];
     sheet.appendRow(headers);
     // Format header agar rapi
     var headerRange = sheet.getRange(1, 1, 1, headers.length);
+    headerRange.setFontWeight("bold")
+               .setBackground("#2563EB")
+               .setFontColor("#FFFFFF")
+               .setHorizontalAlignment("center");
+    sheet.setFrozenRows(1);
+  } else {
+    // Self-healing: Pastikan header di baris 1 selalu up-to-date dan kolom sinkron
+    var headerRange = sheet.getRange(1, 1, 1, headers.length);
+    headerRange.setValues([headers]);
     headerRange.setFontWeight("bold")
                .setBackground("#2563EB")
                .setFontColor("#FFFFFF")
