@@ -1519,6 +1519,32 @@
             color: var(--success);
         }
 
+        .btn-detail {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .btn-detail:hover {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+            transform: translateY(-1px);
+        }
+        .btn-detail:active {
+            transform: translateY(0);
+        }
+
         /* PAGINATION */
         .pagination-container {
             display: flex;
@@ -1741,11 +1767,126 @@
             .grid-actions {
                 justify-content: space-between;
             }
+
+            .hide-on-mobile {
+                display: none !important;
+            }
+            .show-on-mobile-inline {
+                display: inline-block !important;
+            }
+            .table-responsive-container {
+                overflow-x: hidden !important;
+            }
+            .data-table th, .data-table td {
+                padding: 10px 8px !important;
+                font-size: 0.8rem !important;
+            }
+
+            /* Detail Modal Mobile Optimizations */
+            #detail-modal-overlay .modal-card {
+                max-height: 98vh !important;
+                width: 96% !important;
+                margin: 1vh auto !important;
+                padding: 10px 14px !important;
+                border-radius: 12px !important;
+            }
+            #detail-modal-overlay .modal-header {
+                padding: 4px 0 8px 0 !important;
+                margin-bottom: 6px !important;
+                border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+            }
+            #detail-modal-overlay .modal-header h3 {
+                font-size: 1.05rem !important;
+            }
+            #detail-modal-overlay .modal-body {
+                padding: 0 !important;
+                gap: 6px !important;
+            }
+            #detail-modal-overlay .summary-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 6px 10px !important;
+            }
+            #detail-modal-overlay .summary-item {
+                padding: 2px 0 !important;
+            }
+            #detail-modal-overlay .summary-label {
+                font-size: 0.65rem !important;
+                margin-bottom: 1px !important;
+                color: var(--text-muted) !important;
+            }
+            #detail-modal-overlay .summary-value {
+                font-size: 0.78rem !important;
+                line-height: 1.15 !important;
+            }
+            #detail-modal-overlay #det-id {
+                font-size: 0.85rem !important;
+            }
+            #detail-modal-overlay #det-durasi-total {
+                font-size: 0.8rem !important;
+            }
+            #detail-modal-overlay #det-photo-img {
+                max-width: 140px !important;
+                border-radius: 8px !important;
+                margin-top: 2px !important;
+            }
+            #detail-modal-overlay #det-photo-item {
+                padding-top: 4px !important;
+            }
+            #detail-modal-overlay .modal-footer {
+                padding: 6px 0 0 0 !important;
+                margin-top: 6px !important;
+                border-top: 1px solid rgba(0,0,0,0.05) !important;
+            }
+            #detail-modal-overlay .modal-footer .btn {
+                padding: 6px 14px !important;
+                font-size: 0.8rem !important;
+            }
+        }
+
+        @keyframes startupGlowPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.5; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.85; }
+        }
+        @keyframes startupIconRotate {
+            0% { transform: rotate(0deg); }
+            30% { transform: rotate(0deg); }
+            70% { transform: rotate(360deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 
 <body>
+    <!-- STARTUP PREMIUM LOADING OVERLAY -->
+    <div id="startup-loading-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, rgba(17, 24, 39, 0.98) 0%, rgba(10, 15, 30, 0.99) 100%); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #ffffff; transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s;">
+        <div style="text-align: center; max-width: 420px; width: 90%; padding: 20px;">
+            <!-- Brand Logo Glow -->
+            <div style="position: relative; display: inline-block; margin-bottom: 24px;">
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90px; height: 90px; background: radial-gradient(circle, var(--primary) 0%, transparent 70%); filter: blur(12px); opacity: 0.7; animation: startupGlowPulse 2s infinite ease-in-out;"></div>
+                <div style="width: 76px; height: 76px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border-radius: 20px; display: flex; justify-content: center; align-items: center; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4); position: relative; border: 1px solid rgba(255,255,255,0.15);">
+                    <i class="fa-solid fa-screwdriver-wrench" style="font-size: 2.2rem; color: #ffffff; animation: startupIconRotate 3s infinite cubic-bezier(0.68, -0.6, 0.32, 1.6);"></i>
+                </div>
+            </div>
+            
+            <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; background: linear-gradient(to right, #ffffff, #c7d2fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                SMART BREAKDOWN
+            </h2>
+            <p style="font-size: 0.9rem; color: #a5b4fc; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px;">
+                Heavy Equipment System
+            </p>
+            
+            <!-- High Tech Loading Bar -->
+            <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.03); position: relative;">
+                <div id="startup-loading-bar" style="height: 100%; width: 5%; background: linear-gradient(to right, var(--primary) 0%, var(--accent) 100%); border-radius: 10px; box-shadow: 0 0 12px var(--primary); transition: width 0.3s ease;"></div>
+            </div>
+            
+            <!-- Loading Status Text -->
+            <div style="min-height: 24px;">
+                <span id="startup-loading-text" style="font-size: 0.85rem; color: #94a3b8; font-family: 'Outfit', sans-serif; font-weight: 500; letter-spacing: 0.5px;">Menghubungkan ke jaringan...</span>
+            </div>
+        </div>
+    </div>
+
     <div class="app-wrapper">
         <!-- SIDEBAR NAVIGATION (Desktop) -->
         <aside class="sidebar">
@@ -2107,16 +2248,17 @@
                         <table class="data-table" id="riwayat-table">
                             <thead>
                                 <tr>
-                                    <th>ID Laporan</th>
-                                    <th>Tanggal Mulai</th>
-                                    <th>Jenis</th>
+                                    <th class="hide-on-mobile">ID Laporan</th>
+                                    <th class="hide-on-mobile">Tanggal Mulai</th>
+                                    <th class="hide-on-mobile">Jenis</th>
                                     <th>Armada / Type</th>
-                                    <th>Vendor</th>
-                                    <th>Kategori Sistem</th>
-                                    <th>Pilihan Kerusakan</th>
-                                    <th>Foto</th>
-                                    <th>Durasi Total</th>
-                                    <th>Status</th>
+                                    <th class="hide-on-mobile">Vendor</th>
+                                    <th class="hide-on-mobile">Kategori Sistem</th>
+                                    <th>Jenis Kerusakan</th>
+                                    <th class="hide-on-mobile">Foto</th>
+                                    <th class="hide-on-mobile">Durasi Total</th>
+                                    <th class="hide-on-mobile">Status</th>
+                                    <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="table-data-tbody">
@@ -2272,15 +2414,9 @@
                         <span class="summary-label">Waktu Selesai</span>
                         <span class="summary-value" id="det-waktu-selesai">-</span>
                     </div>
-                    <div class="summary-item full-width" style="border-top: 1px solid var(--border-color); padding-top: 10px; display: flex; flex-direction: row; justify-content: space-between;">
-                        <div>
-                            <span class="summary-label">Durasi Terbuang (Menit)</span>
-                            <span class="summary-value" id="det-durasi-menit">-</span>
-                        </div>
-                        <div>
-                            <span class="summary-label">Durasi Terbuang (Jam Desimal)</span>
-                            <span class="summary-value" id="det-durasi-jam">-</span>
-                        </div>
+                    <div class="summary-item full-width" style="border-top: 1px dashed var(--border-color); padding-top: 10px;">
+                        <span class="summary-label">Total Durasi Terbuang</span>
+                        <span class="summary-value" id="det-durasi-total" style="font-weight: 700; color: var(--danger);">-</span>
                     </div>
                     <div class="summary-item full-width" id="det-photo-item" style="border-top: 1px solid var(--border-color); padding-top: 15px; text-align: center; display: none;">
                         <span class="summary-label" style="margin-bottom: 8px;">Foto Bukti Breakdown</span>
@@ -2964,9 +3100,33 @@
         // ==============================================
         // DATA ORCHESTRATION / ENGINE LAYERS
         // ==============================================
+        let isInitialLoad = true;
+
+        function updateStartupProgress(percentage, text) {
+            const bar = document.getElementById("startup-loading-bar");
+            const txt = document.getElementById("startup-loading-text");
+            if (bar) bar.style.width = percentage + "%";
+            if (txt) txt.textContent = text;
+        }
+        
+        function hideStartupLoader() {
+            const loader = document.getElementById("startup-loading-overlay");
+            if (loader) {
+                loader.style.opacity = "0";
+                loader.style.visibility = "hidden";
+                setTimeout(() => {
+                    loader.remove();
+                }, 600);
+            }
+        }
+
         async function syncDataWithMode() {
-            showToast("Menyelaraskan data...", "warning");
-            document.getElementById("pull-refresh-indicator").style.display = "flex";
+            if (isInitialLoad) {
+                updateStartupProgress(15, "Menghubungkan ke database Google Sheets...");
+            } else {
+                showToast("Menyelaraskan data...", "warning");
+                document.getElementById("pull-refresh-indicator").style.display = "flex";
+            }
             
             if (dbMode === "offline") {
                 // Initialize Offline LocalStorage
@@ -2977,20 +3137,33 @@
                     localStorage.setItem("smart_bd_riwayat", JSON.stringify(INITIAL_MOCK_RIWAYAT));
                 }
 
+                if (isInitialLoad) updateStartupProgress(45, "Membaca cache database offline...");
+
                 cachedJenisUnit = JSON.parse(localStorage.getItem("smart_bd_jenis_unit"));
                 cachedRiwayat = JSON.parse(localStorage.getItem("smart_bd_riwayat"));
                 
                 // Urutkan Riwayat descending
                 cachedRiwayat.sort((a, b) => b.idBreakdown.localeCompare(a.idBreakdown));
                 
+                if (isInitialLoad) updateStartupProgress(75, "Memproses riwayat perbaikan...");
+
                 setTimeout(() => {
-                    document.getElementById("pull-refresh-indicator").style.display = "none";
+                    if (isInitialLoad) {
+                        updateStartupProgress(100, "Sistem Siap! Membuka Portal...");
+                        setTimeout(() => {
+                            hideStartupLoader();
+                            isInitialLoad = false;
+                        }, 500);
+                    } else {
+                        document.getElementById("pull-refresh-indicator").style.display = "none";
+                    }
                     processLoadedData();
                     showToast("Penyelarasan offline selesai (Local Storage)", "success");
                 }, 800);
             } else {
                 // ONLINE DATABASE MODE
                 try {
+                    if (isInitialLoad) updateStartupProgress(35, "Mengunduh master data unit alat berat...");
                     // 1. Fetch Jenis Unit
                     const resJenis = await apiCall("getJenisUnit");
                     if (resJenis.success) {
@@ -2998,6 +3171,7 @@
                         localStorage.setItem("smart_bd_jenis_unit", JSON.stringify(cachedJenisUnit));
                     }
                     
+                    if (isInitialLoad) updateStartupProgress(65, "Sinkronisasi riwayat breakdown...");
                     // 2. Fetch Riwayat Breakdown (Semua)
                     const resRiwayat = await apiCall("getRiwayatBreakdown");
                     if (resRiwayat.success) {
@@ -3005,25 +3179,46 @@
                         localStorage.setItem("smart_bd_riwayat", JSON.stringify(cachedRiwayat));
                     }
                     
-                    document.getElementById("pull-refresh-indicator").style.display = "none";
+                    if (isInitialLoad) updateStartupProgress(85, "Menginisialisasi grafik visualisasi...");
+
+                    if (isInitialLoad) {
+                        updateStartupProgress(100, "Sistem Siap! Membuka Portal...");
+                        setTimeout(() => {
+                            hideStartupLoader();
+                            isInitialLoad = false;
+                        }, 500);
+                    } else {
+                        document.getElementById("pull-refresh-indicator").style.display = "none";
+                    }
                     processLoadedData();
                     showToast("Penyelarasan Google Sheets berhasil!", "success");
                 } catch (err) {
                     console.error(err);
-                    document.getElementById("pull-refresh-indicator").style.display = "none";
-                    showToast("Gagal memuat data dari server! Beralih ke Cache lokal.", "error");
+                    if (isInitialLoad) updateStartupProgress(80, "Server sibuk. Membaca cache lokal...");
                     
                     // Fallback to cache if exists
                     if (localStorage.getItem("smart_bd_jenis_unit") && localStorage.getItem("smart_bd_riwayat")) {
                         cachedJenisUnit = JSON.parse(localStorage.getItem("smart_bd_jenis_unit"));
                         cachedRiwayat = JSON.parse(localStorage.getItem("smart_bd_riwayat"));
-                        processLoadedData();
                     } else {
                         // Hard fallback to mock
                         cachedJenisUnit = MOCK_JENIS_UNIT;
                         cachedRiwayat = INITIAL_MOCK_RIWAYAT;
-                        processLoadedData();
                     }
+                    
+                    setTimeout(() => {
+                        if (isInitialLoad) {
+                            updateStartupProgress(100, "Sistem Siap! (Offline Mode)");
+                            setTimeout(() => {
+                                hideStartupLoader();
+                                isInitialLoad = false;
+                            }, 500);
+                        } else {
+                            document.getElementById("pull-refresh-indicator").style.display = "none";
+                        }
+                        processLoadedData();
+                        showToast("Gagal memuat data dari server! Beralih ke Cache lokal.", "error");
+                    }, 1000);
                 }
             }
         }
@@ -4557,16 +4752,27 @@
                 }
 
                 tr.innerHTML = `
-                    <td style="font-family: 'Orbitron', monospace; font-size: 0.8rem; font-weight: 700; color: var(--primary);">${item.idBreakdown}</td>
-                    <td>${dateString}</td>
-                    <td><span style="font-size: 0.7rem; font-weight: 700; padding: 2px 6px; background-color: var(--primary-light); color: var(--primary); border-radius: 4px;">${item.jenisUnit}</span></td>
-                    <td>${item.typeUnit}</td>
-                    <td>${item.vendor}</td>
-                    <td><span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">${item.kategoriKerusakan}</span></td>
-                    <td style="white-space: normal; min-width: 150px;">${item.pilihanKerusakan}</td>
-                    <td>${photoCell}</td>
-                    <td>${durasiText}</td>
-                    <td><span class="table-status-badge ${statusClass}">${item.status}</span></td>
+                    <td class="hide-on-mobile" style="font-family: 'Orbitron', monospace; font-size: 0.8rem; font-weight: 700; color: var(--primary);">${item.idBreakdown}</td>
+                    <td class="hide-on-mobile">${dateString}</td>
+                    <td class="hide-on-mobile"><span style="font-size: 0.7rem; font-weight: 700; padding: 2px 6px; background-color: var(--primary-light); color: var(--primary); border-radius: 4px;">${item.jenisUnit}</span></td>
+                    <td>
+                        <div style="font-weight: 700; color: var(--text-main);">${item.typeUnit}</div>
+                        <div class="show-on-mobile-inline" style="display: none; font-size: 0.7rem; font-weight: 700; padding: 1px 4px; background-color: var(--primary-light); color: var(--primary); border-radius: 4px; margin-top: 2px;">${item.jenisUnit}</div>
+                    </td>
+                    <td class="hide-on-mobile">${item.vendor}</td>
+                    <td class="hide-on-mobile"><span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">${item.kategoriKerusakan}</span></td>
+                    <td style="white-space: normal; min-width: 130px;">
+                        <span class="show-on-mobile-inline" style="display: none; font-size: 0.7rem; font-weight: 700; padding: 1px 4px; background-color: var(--accent-light); color: var(--accent); border-radius: 4px; margin-bottom: 2px; margin-right: 4px;">${item.kategoriKerusakan}</span>
+                        <div>${item.pilihanKerusakan}</div>
+                    </td>
+                    <td class="hide-on-mobile">${photoCell}</td>
+                    <td class="hide-on-mobile">${durasiText}</td>
+                    <td class="hide-on-mobile"><span class="table-status-badge ${statusClass}">${item.status}</span></td>
+                    <td>
+                        <button class="btn-detail" onclick="event.stopPropagation(); openHistoryDetailModal(item)">
+                            <i class="fa-solid fa-circle-info"></i> Detail
+                        </button>
+                    </td>
                 `;
 
                 tbody.appendChild(tr);
@@ -4615,6 +4821,25 @@
             document.body.style.overflow = show ? "hidden" : "";
         }
 
+        function formatElapsedDuration(minutes, isOngoing) {
+            if (minutes < 0) minutes = 0;
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            
+            let timeStr = "";
+            if (hours > 0) {
+                timeStr = `${hours}j ${mins}m`;
+            } else {
+                timeStr = `${mins}m`;
+            }
+            
+            if (isOngoing) {
+                return `${timeStr} (Waktu perbaikan masih berlanjut)`;
+            } else {
+                return timeStr;
+            }
+        }
+
         function openHistoryDetailModal(item) {
             document.getElementById("det-id").textContent = item.idBreakdown;
             
@@ -4645,8 +4870,14 @@
             const tSelesai = new Date(item.jamSelesai);
             document.getElementById("det-waktu-selesai").textContent = (isOngoing || isNaN(tSelesai.getTime())) ? "-" : tSelesai.toLocaleString("id-ID") + " WIB";
             
-            document.getElementById("det-durasi-menit").textContent = isOngoing ? "Sedang berjalan..." : (item.durasiMenit || "-") + " Menit";
-            document.getElementById("det-durasi-jam").textContent = isOngoing ? "Sedang berjalan..." : (item.durasiJam || "-") + " Jam";
+            let elapsedMins = 0;
+            if (isOngoing) {
+                const diffMs = new Date().getTime() - new Date(item.jamMulai).getTime();
+                elapsedMins = Math.max(0, Math.floor(diffMs / 60000));
+            } else {
+                elapsedMins = item.durasiMenit || 0;
+            }
+            document.getElementById("det-durasi-total").textContent = formatElapsedDuration(elapsedMins, isOngoing);
 
             const detPhotoItem = document.getElementById("det-photo-item");
             const detPhotoImg = document.getElementById("det-photo-img");
