@@ -1839,36 +1839,7 @@
                         <h2 class="step-title">Pilih Kategori Kerusakan</h2>
                         <p class="step-subtitle">Pilih sistem atau komponen utama yang mengalami kendala teknis</p>
                         <div class="category-grid">
-                            <div class="category-card cat-engine" onclick="selectCategory('ENGINE')">
-                                <div class="category-icon"><i class="fa-solid fa-gears"></i></div>
-                                <div class="category-name">ENGINE</div>
-                                <div class="category-desc">Mesin, starter, injector, turbo, fuel system, oli mesin</div>
-                            </div>
-                            <div class="category-card cat-transmission" onclick="selectCategory('TRANSMISSION')">
-                                <div class="category-icon"><i class="fa-solid fa-gear"></i></div>
-                                <div class="category-name">TRANSMISSION</div>
-                                <div class="category-desc">Gearbox, kopling, tenaga maju mundur</div>
-                            </div>
-                            <div class="category-card cat-hydraulic" onclick="selectCategory('HYDRAULIC')">
-                                <div class="category-icon"><i class="fa-solid fa-droplet"></i></div>
-                                <div class="category-name">HYDRAULIC</div>
-                                <div class="category-desc">Pompa hydraulic, hose, silinder, fork/bucket</div>
-                            </div>
-                            <div class="category-card cat-electrical" onclick="selectCategory('ELECTRICAL')">
-                                <div class="category-icon"><i class="fa-solid fa-bolt"></i></div>
-                                <div class="category-name">ELECTRICAL</div>
-                                <div class="category-desc">Aki, alternator, fuse, kabel, lampu</div>
-                            </div>
-                            <div class="category-card cat-tire" onclick="selectCategory('TIRE')">
-                                <div class="category-icon"><i class="fa-solid fa-circle"></i></div>
-                                <div class="category-name">TIRE</div>
-                                <div class="category-desc">Ban, velg, tekanan angin, roda</div>
-                            </div>
-                            <div class="category-card cat-brake" onclick="selectCategory('BRAKE')">
-                                <div class="category-icon"><i class="fa-solid fa-circle-stop"></i></div>
-                                <div class="category-name">BRAKE</div>
-                                <div class="category-desc">Sistem rem, kampas, minyak rem</div>
-                            </div>
+                            <!-- Populated dynamically based on selected unit type -->
                         </div>
                     </div>
 
@@ -2375,13 +2346,136 @@
             { jenisUnit: "LOADER", typeUnit: "SEM", vendor: "SEM HEAVY MACHINERY" }
         ];
 
+        const CATEGORY_CONFIG = {
+            "ENGINE": {
+                icon: "fa-solid fa-gears",
+                color: "#EF4444",
+                bg: "#FEE2E2",
+                desc: "Mesin, starter, injector, turbo, fuel system, oli mesin"
+            },
+            "TRANSMISSION": {
+                icon: "fa-solid fa-gear",
+                color: "#F97316",
+                bg: "#FFEDD5",
+                desc: "Gearbox, kopling, tenaga maju mundur"
+            },
+            "HYDRAULIC": {
+                icon: "fa-solid fa-droplet",
+                color: "#3B82F6",
+                bg: "#DBEAFE",
+                desc: "Pompa hydraulic, hose, silinder, bucket/fork"
+            },
+            "ELECTRICAL": {
+                icon: "fa-solid fa-bolt",
+                color: "#EAB308",
+                bg: "#FEF9C3",
+                desc: "Aki, alternator, fuse, kabel, lampu, sensor"
+            },
+            "TIRE": {
+                icon: "fa-solid fa-circle",
+                color: "#6B7280",
+                bg: "#F3F4F6",
+                desc: "Ban, velg, tekanan angin, roda, baut roda"
+            },
+            "BRAKE": {
+                icon: "fa-solid fa-circle-stop",
+                color: "#A855F7",
+                bg: "#F3E8FF",
+                desc: "Sistem rem, kampas, minyak rem, parking brake"
+            },
+            "STEERING": {
+                icon: "fa-solid fa-compass",
+                color: "#06B6D4",
+                bg: "#CFFAFE",
+                desc: "Setir, power steering, tie rod, oli steering"
+            },
+            "COOLING SYSTEM": {
+                icon: "fa-solid fa-snowflake",
+                color: "#0EA5E9",
+                bg: "#E0F2FE",
+                desc: "Radiator, coolant, fan belt, water pump"
+            },
+            "MAST": {
+                icon: "fa-solid fa-arrows-up-down",
+                color: "#10B981",
+                bg: "#D1FAE5",
+                desc: "Chain, roller, fork, tiang angkat (Forklift)"
+            },
+            "BUCKET": {
+                icon: "fa-solid fa-bucket",
+                color: "#F43F5E",
+                bg: "#FFE4E6",
+                desc: "Bucket, pin, linkage, cutting edge (Loader)"
+            },
+            "CABIN": {
+                icon: "fa-solid fa-couch",
+                color: "#84CC16",
+                bg: "#ECFCCB",
+                desc: "Jok, AC, wiper, panel operator, kaca"
+            },
+            "SAFETY": {
+                icon: "fa-solid fa-shield-halved",
+                color: "#10B981",
+                bg: "#D1FAE5",
+                desc: "Alarm mundur, rotary lamp, seatbelt, APAR"
+            },
+            "FUEL SYSTEM": {
+                icon: "fa-solid fa-gas-pump",
+                color: "#EA580C",
+                bg: "#FFEDD5",
+                desc: "Tangki solar, pompa solar, selang solar"
+            },
+            "AIR INTAKE": {
+                icon: "fa-solid fa-wind",
+                color: "#64748B",
+                bg: "#F1F5F9",
+                desc: "Filter udara, intake turbo, intake bocor"
+            },
+            "EXHAUST SYSTEM": {
+                icon: "fa-solid fa-smog",
+                color: "#475569",
+                bg: "#E2E8F0",
+                desc: "Knalpot dan saluran buang, asap"
+            },
+            "AXLE & DRIVETRAIN": {
+                icon: "fa-solid fa-road",
+                color: "#78350F",
+                bg: "#FEF3C7",
+                desc: "Axle, drive shaft, differential, hub reducer"
+            },
+            "FRAME & STRUCTURE": {
+                icon: "fa-solid fa-cubes",
+                color: "#4B5563",
+                bg: "#F3F4F6",
+                desc: "Frame, counterweight, boom, arm"
+            },
+            "ATTACHMENT": {
+                icon: "fa-solid fa-paperclip",
+                color: "#D946EF",
+                bg: "#FDF4FF",
+                desc: "Quick coupler, pin attachment"
+            },
+            "GET": {
+                icon: "fa-solid fa-screwdriver-wrench",
+                color: "#B45309",
+                bg: "#FEF3C7",
+                desc: "Ground engaging tools, tooth, shroud, side cutter"
+            },
+            "UNDERCARRIAGE": {
+                icon: "fa-solid fa-chain",
+                color: "#1E293B",
+                bg: "#F1F5F9",
+                desc: "Track, sprocket, idler, roller, track shoe"
+            }
+        };
+
         const MOCK_KERUSAKAN = {
             FORKLIFT: [
                 {
                     kategori: "ENGINE",
                     pilihanKerusakan: [
                         "Tidak Bisa Start", "Starter Rusak", "Overheat", "Oli Mesin Bocor",
-                        "Mesin Brebet", "Asap Hitam Pekat", "Fuel Pump Lemah", "Injector Bermasalah", "Filter Solar Kotor"
+                        "Mesin Brebet", "Asap Hitam", "Fuel Pump Lemah", "Injector Bermasalah", "Filter Solar Kotor"
                     ]
                 },
                 {
@@ -2411,7 +2505,55 @@
                 {
                     kategori: "BRAKE",
                     pilihanKerusakan: [
-                        "Rem Blong", "Kampas Rem Habis", "Minyak Rem Bocor"
+                        "Rem Blong", "Kampas Rem Habis", "Minyak Rem Bocor", "Rem Seret"
+                    ]
+                },
+                {
+                    kategori: "STEERING",
+                    pilihanKerusakan: [
+                        "Steering Berat", "Tie Rod Rusak", "Oli Steering Bocor"
+                    ]
+                },
+                {
+                    kategori: "COOLING SYSTEM",
+                    pilihanKerusakan: [
+                        "Radiator Bocor", "Fan Belt Putus", "Coolant Habis"
+                    ]
+                },
+                {
+                    kategori: "MAST",
+                    pilihanKerusakan: [
+                        "Chain Putus", "Roller Aus", "Mast Seret", "Fork Bengkok", "Fork Retak"
+                    ]
+                },
+                {
+                    kategori: "CABIN",
+                    pilihanKerusakan: [
+                        "AC Mati", "Wiper Mati", "Seat Rusak", "Panel Error"
+                    ]
+                },
+                {
+                    kategori: "SAFETY",
+                    pilihanKerusakan: [
+                        "Alarm Mundur Mati", "Rotary Lamp Mati", "Seatbelt Rusak", "APAR Tidak Ada"
+                    ]
+                },
+                {
+                    kategori: "FUEL SYSTEM",
+                    pilihanKerusakan: [
+                        "Tangki Bocor", "Selang Solar Bocor", "Filter Solar Kotor"
+                    ]
+                },
+                {
+                    kategori: "AIR INTAKE",
+                    pilihanKerusakan: [
+                        "Filter Udara Kotor", "Intake Bocor"
+                    ]
+                },
+                {
+                    kategori: "EXHAUST SYSTEM",
+                    pilihanKerusakan: [
+                        "Knalpot Bocor", "Asap Berlebihan"
                     ]
                 }
             ],
@@ -2420,37 +2562,131 @@
                     kategori: "ENGINE",
                     pilihanKerusakan: [
                         "Tidak Bisa Start", "Starter Rusak", "Overheat", "Oli Mesin Bocor",
-                        "Mesin Brebet", "Asap Hitam Pekat", "Fuel Pump Lemah", "Injector Bermasalah", "Filter Solar Kotor"
+                        "Oli Mesin Habis", "Mesin Brebet", "Mesin Knocking", "Mesin Mati Mendadak",
+                        "Tenaga Mesin Drop", "Idle Tidak Stabil", "Asap Hitam", "Turbo Rusak",
+                        "Fuel Pump Lemah", "Injector Bermasalah", "Filter Solar Kotor",
+                        "Timing Belt/Chain Rusak", "Konsumsi BBM Boros"
                     ]
                 },
                 {
                     kategori: "TRANSMISSION",
                     pilihanKerusakan: [
-                        "Tidak Bisa Maju", "Tidak Bisa Mundur", "Persneling Keras", "Transmisi Slip", "Gearbox Rusak", "Kopling Aus"
+                        "Tidak Bisa Maju", "Tidak Bisa Mundur", "Persneling Keras",
+                        "Perpindahan Gigi Kasar", "Transmisi Slip", "Gearbox Rusak",
+                        "Kopling Aus", "Oli Transmisi Bocor", "Oli Transmisi Habis", "Torque Converter Rusak"
                     ]
                 },
                 {
                     kategori: "HYDRAULIC",
                     pilihanKerusakan: [
-                        "Bucket Tidak Naik", "Bucket Tidak Turun", "Hose Hydraulic Bocor", "Silinder Bocor", "Pompa Lemah", "Oli Hydraulic Habis", "Valve Macet"
+                        "Bucket Tidak Naik", "Bucket Tidak Turun", "Hydraulic Drift (Bucket Turun Sendiri)",
+                        "Respon Bucket Lambat", "Hose Hydraulic Bocor", "Silinder Bocor",
+                        "Pompa Lemah", "Oli Hydraulic Habis", "Oli Hydraulic Kotor", "Valve Macet",
+                        "Relief Valve Bocor", "Filter Hydraulic Buntu"
                     ]
                 },
                 {
                     kategori: "ELECTRICAL",
                     pilihanKerusakan: [
-                        "Aki Soak", "Alternator Rusak", "Wiring Terbakar", "Fuse Putus", "Lampu Mati", "Klakson Mati", "Sensor Error"
+                        "Aki Soak", "Alternator Rusak", "Wiring Terbakar", "Kabel Putus/Korsleting",
+                        "Fuse Putus", "Relay Rusak", "Solenoid Rusak", "Lampu Mati",
+                        "Panel Instrument Mati", "ECU/ECM Error", "Sensor Error"
                     ]
                 },
                 {
                     kategori: "TIRE",
                     pilihanKerusakan: [
-                        "Ban Kempes", "Ban Bocor", "Ban Pecah", "Ban Aus", "Velg Retak"
+                        "Ban Kempes", "Ban Bocor", "Ban Pecah", "Ban Aus", "Ban Bergelombang",
+                        "Tekanan Angin Tidak Merata", "Velg Retak", "Baut Roda Kendor/Lepas"
                     ]
                 },
                 {
                     kategori: "BRAKE",
                     pilihanKerusakan: [
-                        "Rem Blong", "Kampas Rem Habis", "Minyak Rem Bocor"
+                        "Rem Blong", "Kampas Rem Habis", "Minyak Rem Bocor", "Rem Seret",
+                        "Pedal Rem Dalam/Amblas", "Parking Brake Tidak Berfungsi"
+                    ]
+                },
+                {
+                    kategori: "STEERING",
+                    pilihanKerusakan: [
+                        "Steering Berat", "Tie Rod Rusak", "Oli Steering Bocor"
+                    ]
+                },
+                {
+                    kategori: "COOLING SYSTEM",
+                    pilihanKerusakan: [
+                        "Radiator Bocor", "Selang Radiator Bocor", "Fan Belt Putus",
+                        "Coolant Habis", "Thermostat Rusak", "Water Pump Bocor", "Kipas Radiator Rusak"
+                    ]
+                },
+                {
+                    kategori: "BUCKET",
+                    pilihanKerusakan: [
+                        "Bucket Retak", "Pin Bucket Aus", "Linkage Aus", "Cutting Edge Aus"
+                    ]
+                },
+                {
+                    kategori: "CABIN",
+                    pilihanKerusakan: [
+                        "AC Mati", "AC Tidak Dingin", "AC Bocor", "Wiper Mati", "Kaca Retak/Pecah",
+                        "Kaca Spion Rusak", "Door Lock Rusak", "Handle Pintu Rusak",
+                        "Kebocoran Air Masuk Kabin", "Seat Rusak", "Panel Error"
+                    ]
+                },
+                {
+                    kategori: "SAFETY",
+                    pilihanKerusakan: [
+                        "Alarm Mundur Mati", "Rotary Lamp Mati", "Seatbelt Rusak", "APAR Tidak Ada",
+                        "Safety Lock Tidak Berfungsi", "Spion Tidak Ada/Rusak"
+                    ]
+                },
+                {
+                    kategori: "FUEL SYSTEM",
+                    pilihanKerusakan: [
+                        "Tangki Bocor", "Selang Solar Bocor", "Filter Solar Kotor"
+                    ]
+                },
+                {
+                    kategori: "AIR INTAKE",
+                    pilihanKerusakan: [
+                        "Filter Udara Kotor", "Intake Bocor"
+                    ]
+                },
+                {
+                    kategori: "EXHAUST SYSTEM",
+                    pilihanKerusakan: [
+                        "Knalpot Bocor", "Asap Berlebihan"
+                    ]
+                },
+                {
+                    kategori: "AXLE & DRIVETRAIN",
+                    pilihanKerusakan: [
+                        "Axle Bocor", "Drive Shaft Rusak", "Differential Rusak", "Hub Reducer Bocor"
+                    ]
+                },
+                {
+                    kategori: "FRAME & STRUCTURE",
+                    pilihanKerusakan: [
+                        "Frame Retak", "Counterweight Lepas/Rusak", "Boom/Arm Retak"
+                    ]
+                },
+                {
+                    kategori: "ATTACHMENT",
+                    pilihanKerusakan: [
+                        "Quick Coupler Macet", "Pin Attachment Aus", "Attachment Tidak Terkunci"
+                    ]
+                },
+                {
+                    kategori: "GET",
+                    pilihanKerusakan: [
+                        "Tooth Bucket Aus", "Tooth Bucket Lepas", "Shroud Aus", "Side Cutter Aus"
+                    ]
+                },
+                {
+                    kategori: "UNDERCARRIAGE",
+                    pilihanKerusakan: [
+                        "Track Putus", "Track Kendor", "Sprocket Aus", "Idler Aus", "Roller Aus", "Track Shoe Aus"
                     ]
                 }
             ]
@@ -2617,6 +2853,7 @@
         // ==============================================
         window.addEventListener("DOMContentLoaded", function () {
             initDatabaseConnectionSettings();
+            initDynamicCategoryFilter();
             updateDigitalClock();
             setInterval(updateDigitalClock, 1000);
             
@@ -2637,6 +2874,30 @@
             // Setup ongoing timer updating every minute
             setInterval(updateOngoingTimers, 60000);
         });
+
+        // INITIALIZE DYNAMIC CATEGORY FILTER DROPDOWN
+        function initDynamicCategoryFilter() {
+            const selectEl = document.getElementById("filter-kategori");
+            if (!selectEl) return;
+            
+            const allCats = new Set();
+            for (let unitType in MOCK_KERUSAKAN) {
+                MOCK_KERUSAKAN[unitType].forEach(catObj => {
+                    allCats.add(catObj.kategori);
+                });
+            }
+            
+            selectEl.innerHTML = '<option value="">Semua Kategori</option>';
+            
+            const sortedCats = Array.from(allCats).sort();
+            
+            sortedCats.forEach(catName => {
+                const opt = document.createElement("option");
+                opt.value = catName;
+                opt.textContent = catName;
+                selectEl.appendChild(opt);
+            });
+        }
 
         // DIGITAL REALTIME CLOCK FOR HEADER
         function updateDigitalClock() {
@@ -2953,6 +3214,10 @@
                 backBtn.style.visibility = "visible";
             }
 
+            if (activeWizardStep === 3) {
+                buildCategoryGrid();
+            }
+
             // Enable or disable next button based on step validation
             validateCurrentStep();
         }
@@ -3067,15 +3332,85 @@
             }, 300);
         }
 
+        // STEP 3: BUILD CATEGORIES GRID DYNAMICALLY
+        function buildCategoryGrid() {
+            const container = document.querySelector("#step-3 .category-grid");
+            if (!container) return;
+            
+            const unitTypeCat = MOCK_KERUSAKAN[formBreakdown.jenisUnit];
+            if (!unitTypeCat) return;
+
+            const existingCards = container.querySelectorAll(".category-card");
+            if (existingCards.length === unitTypeCat.length && container.dataset.jenis === formBreakdown.jenisUnit) {
+                existingCards.forEach(card => {
+                    const catName = card.querySelector(".category-name").textContent;
+                    const config = CATEGORY_CONFIG[catName] || { color: "#6B7280", bg: "#F3F4F6" };
+                    if (formBreakdown.kategoriKerusakan === catName) {
+                        card.classList.add("cat-active");
+                        card.querySelector(".category-icon").style.backgroundColor = config.color;
+                        card.querySelector(".category-icon").style.color = "#fff";
+                        card.querySelector(".category-desc").style.color = config.color;
+                    } else {
+                        card.classList.remove("cat-active");
+                        card.querySelector(".category-icon").style.backgroundColor = config.bg;
+                        card.querySelector(".category-icon").style.color = config.color;
+                        card.querySelector(".category-desc").style.color = "var(--text-muted)";
+                    }
+                });
+                return;
+            }
+
+            container.innerHTML = "";
+            container.dataset.jenis = formBreakdown.jenisUnit;
+
+            unitTypeCat.forEach(catObj => {
+                const catName = catObj.kategori;
+                const config = CATEGORY_CONFIG[catName] || {
+                    icon: "fa-solid fa-circle-question",
+                    color: "#6B7280",
+                    bg: "#F3F4F6",
+                    desc: "Kerusakan sistem / komponen lainnya"
+                };
+
+                const card = document.createElement("div");
+                card.className = "category-card";
+                
+                const isSelected = formBreakdown.kategoriKerusakan === catName;
+                if (isSelected) {
+                    card.classList.add("cat-active");
+                }
+
+                card.innerHTML = `
+                    <div class="category-icon" style="background-color: ${isSelected ? config.color : config.bg}; color: ${isSelected ? '#fff' : config.color};"><i class="${config.icon}"></i></div>
+                    <div class="category-name">${catName}</div>
+                    <div class="category-desc" style="color: ${isSelected ? config.color : 'var(--text-muted)'};">${config.desc}</div>
+                `;
+
+                card.onclick = function() {
+                    selectCategory(catName);
+                };
+
+                container.appendChild(card);
+            });
+        }
+
         // STEP 3: KATEGORI SELECTION
         function selectCategory(catName) {
             formBreakdown.kategoriKerusakan = catName;
             
             document.querySelectorAll(".category-card").forEach(c => {
-                if (c.querySelector(".category-name").textContent === catName) {
+                const name = c.querySelector(".category-name").textContent;
+                const config = CATEGORY_CONFIG[name] || { color: "#6B7280", bg: "#F3F4F6" };
+                if (name === catName) {
                     c.classList.add("cat-active");
+                    c.querySelector(".category-icon").style.backgroundColor = config.color;
+                    c.querySelector(".category-icon").style.color = "#fff";
+                    c.querySelector(".category-desc").style.color = config.color;
                 } else {
                     c.classList.remove("cat-active");
+                    c.querySelector(".category-icon").style.backgroundColor = config.bg;
+                    c.querySelector(".category-icon").style.color = config.color;
+                    c.querySelector(".category-desc").style.color = "var(--text-muted)";
                 }
             });
 
@@ -3885,14 +4220,35 @@
             renderJenisShareChart(forkliftCount, loaderCount);
 
             // 4. RENDER CHART 3: KATEGORI KERUSAKAN (HORIZONTAL BAR)
-            const catMap = { ENGINE: 0, TRANSMISSION: 0, HYDRAULIC: 0, ELECTRICAL: 0, TIRE: 0, BRAKE: 0 };
+            const catMap = {};
+            for (let unitType in MOCK_KERUSAKAN) {
+                MOCK_KERUSAKAN[unitType].forEach(catObj => {
+                    catMap[catObj.kategori] = 0;
+                });
+            }
             data.forEach(r => {
-                if (catMap[r.kategoriKerusakan] !== undefined) {
-                    catMap[r.kategoriKerusakan]++;
+                const catName = r.kategoriKerusakan ? r.kategoriKerusakan.toUpperCase() : "";
+                if (catMap[catName] !== undefined) {
+                    catMap[catName]++;
+                } else if (catName) {
+                    catMap[catName] = 1;
                 }
             });
 
-            renderCategoriesChart(Object.keys(catMap), Object.values(catMap));
+            const activeCats = [];
+            const activeCounts = [];
+            for (let cat in catMap) {
+                if (catMap[cat] > 0) {
+                    activeCats.push(cat);
+                    activeCounts.push(catMap[cat]);
+                }
+            }
+
+            if (activeCats.length === 0) {
+                renderCategoriesChart(["ENGINE", "TRANSMISSION", "HYDRAULIC", "ELECTRICAL", "TIRE", "BRAKE"], [0, 0, 0, 0, 0, 0]);
+            } else {
+                renderCategoriesChart(activeCats, activeCounts);
+            }
 
             // 5. RENDER SECTION: RANKING TOP BREAKDOWN UNITS (1,2,3 MEDALS)
             const unitBreakdowns = {};
@@ -4098,6 +4454,9 @@
                 chartCategoriesInstance.destroy();
             }
 
+            const bgs = labels.map(label => (CATEGORY_CONFIG[label] ? CATEGORY_CONFIG[label].bg : 'rgba(99, 102, 241, 0.15)'));
+            const borders = labels.map(label => (CATEGORY_CONFIG[label] ? CATEGORY_CONFIG[label].color : 'rgba(99, 102, 241, 1)'));
+
             chartCategoriesInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -4105,22 +4464,8 @@
                     datasets: [{
                         label: 'Jumlah Kerusakan',
                         data: counts,
-                        backgroundColor: [
-                            '#FCA5A5', // ENGINE
-                            '#FED7AA', // TRANSMISSION
-                            '#BFDBFE', // HYDRAULIC
-                            '#FEF08A', // ELECTRICAL
-                            '#E5E7EB', // TIRE
-                            '#E9D5FF'  // BRAKE
-                        ],
-                        borderColor: [
-                            '#EF4444',
-                            '#F97316',
-                            '#3B82F6',
-                            '#EAB308',
-                            '#6B7280',
-                            '#A855F7'
-                        ],
+                        backgroundColor: bgs,
+                        borderColor: borders,
                         borderWidth: 2
                     }]
                 },
