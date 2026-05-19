@@ -1493,6 +1493,34 @@
       .btn-action i, .btn-history i {
         font-size: 0.8rem;
       }
+      .modal-o {
+        padding: 10px;
+      }
+      .modal-box {
+        padding: 20px;
+      }
+      .rating-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .rating-options {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .rating-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.85rem;
+      }
+      .confirm-grid {
+        grid-template-columns: 1fr;
+      }
+      .decision-row {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
@@ -1679,8 +1707,7 @@
                   <th>Tipe Kontrak</th>
                   <th>Batas Kontrak</th>
                   <th>Sisa Hari</th>
-                  <th>Status</th>
-                  <th style="text-align: center;">Aksi</th>
+                  <th>Status & Aksi</th>
                 </tr>
               </thead>
               <tbody id="employeeTableBody">
@@ -2270,28 +2297,37 @@
       });
       
       // Update KPI views
-      document.getElementById("kpiTotalKaryawan").textContent = total;
-      document.getElementById("kpiKontrakAktif").textContent = aktif;
-      document.getElementById("kpiKontrakAkanBerakhir").textContent = expiring;
-      document.getElementById("kpiBelumDinilai").textContent = belum;
+      var elTotal = document.getElementById("kpiTotalKaryawan");
+      if (elTotal) elTotal.textContent = total;
+      
+      var elAktif = document.getElementById("kpiKontrakAktif");
+      if (elAktif) elAktif.textContent = aktif;
+      
+      var elExp = document.getElementById("kpiKontrakAkanBerakhir");
+      if (elExp) elExp.textContent = expiring;
+      
+      var elBelum = document.getElementById("kpiBelumDinilai");
+      if (elBelum) elBelum.textContent = belum;
       
       // Update Reminder Banner
       var banner = document.getElementById("reminderBanner");
       var list = document.getElementById("reminderList");
-      list.innerHTML = "";
       
-      if (reminderListItems.length > 0) {
-        banner.style.display = "block";
-        // Sort ascending by remaining days
-        reminderListItems.sort(function(a, b) { return a.sisa - b.sisa; });
-        reminderListItems.forEach(function(item) {
-          var li = document.createElement("li");
-          var warningClass = item.sisa <= 30 ? "style='color: #ef4444; font-weight: 700;'" : "";
-          li.innerHTML = `<span class="alert-bullet"></span><span ${warningClass}>Karyawan: <strong>${item.nama}</strong> (${item.nik}) &mdash; Kontrak berakhir dalam <strong>${item.sisa} hari</strong> (${formatIndoDate(item.tgl)})</span>`;
-          list.appendChild(li);
-        });
-      } else {
-        banner.style.display = "none";
+      if (banner && list) {
+        list.innerHTML = "";
+        if (reminderListItems.length > 0) {
+          banner.style.display = "block";
+          // Sort ascending by remaining days
+          reminderListItems.sort(function(a, b) { return a.sisa - b.sisa; });
+          reminderListItems.forEach(function(item) {
+            var li = document.createElement("li");
+            var warningClass = item.sisa <= 30 ? "style='color: #ef4444; font-weight: 700;'" : "";
+            li.innerHTML = `<span class="alert-bullet"></span><span ${warningClass}>Karyawan: <strong>${item.nama}</strong> (${item.nik}) &mdash; Kontrak berakhir dalam <strong>${item.sisa} hari</strong> (${formatIndoDate(item.tgl)})</span>`;
+            list.appendChild(li);
+          });
+        } else {
+          banner.style.display = "none";
+        }
       }
       
       renderTable();
@@ -2354,39 +2390,48 @@
           daysLeft = sisa !== null ? sisa + " Hari" : "-";
         }
         
-        // Status Badge styling
-        var status = getStatusKontrak(emp);
-        var badgeHtml = `<span class="badge ${status.color}">${status.label}</span>`;
-        
         // Determine contract type display
         var tipeKontrak = "PKWT";
         if (emp.sudahDinilai && emp.keputusan === "diperpanjang" && emp.satuanDurasi) {
           tipeKontrak = "PKWT (" + emp.durasiPerpanjang + " " + emp.satuanDurasi + ")";
         }
+
+        // Menyatukan Status & Aksi berdasarkan Role
+        var safeAtasan = emp.atasan ? String(emp.atasan).trim().toUpperCase() : "";
+        var safeCurrent = (typeof currentUser !== "undefined" && currentUser) ? String(currentUser).trim().toUpperCase() : "";
+        var isAtasanLangsung = (safeAtasan === safeCurrent);
         
-        // Tentukan HTML untuk kolom Aksi berdasarkan role
-        var isAtasanLangsung = emp.atasan && emp.atasan.toUpperCase() === currentUser.toUpperCase();
-        var aksiHtml = "";
+        var statusContent = "";
         
-        if (emp.sudahDinilai) {
-          // Sudah dinilai -> semua atasan (termasuk CECEP) bisa lihat history nilai orang lain
-          aksiHtml = `<button class="btn-history" onclick="viewHistory('${emp.nik}')"><i class="fas fa-history"></i> History</button>`;
-        } else {
-          // Belum dinilai
-          if (currentUser === "CECEP") {
-            if (isAtasanLangsung) {
-              aksiHtml = `<button class="btn-action" onclick="confirmAssessment('${emp.nik}')"><i class="fas fa-edit"></i> Nilai</button>`;
-            } else {
-              aksiHtml = `<span style="font-size:0.75rem; font-weight:800; color:var(--ts);">Belum Dinilai</span>`;
-            }
+        if (currentUser === "CECEP") {
+          if (emp.sudahDinilai) {
+            var st = getStatusKontrak(emp);
+            statusContent = `
+              <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
+                <span class="badge ${st.color}">${st.label}</span>
+                <button class="btn-history" onclick="viewHistory('${emp.nik}')"><i class="fas fa-history"></i> History</button>
+              </div>
+            `;
           } else {
-            // Untuk atasan selain CECEP, diasumsikan melihat data bawahannya saja sesuai fungsi search/filter (jika ada)
-            // Atau jika memang mereka melihat semua, mereka tetap hanya bisa menilai bawahan sendiri
             if (isAtasanLangsung) {
-              aksiHtml = `<button class="btn-action" onclick="confirmAssessment('${emp.nik}')"><i class="fas fa-edit"></i> Nilai</button>`;
+              statusContent = `<button class="btn-action" onclick="confirmAssessment('${emp.nik}')"><i class="fas fa-edit"></i> Nilai</button>`;
             } else {
-              aksiHtml = `<span style="font-size:0.75rem; font-weight:800; color:var(--ts);">Belum Dinilai</span>`;
+              statusContent = `<span class="badge gray">Belum Dinilai</span>`;
             }
+          }
+        } else {
+          // User Selain CECEP
+          if (emp.sudahDinilai) {
+            var st = getStatusKontrak(emp);
+            statusContent = `
+              <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-start;">
+                <span class="badge ${st.color}">${st.label}</span>
+                <button class="btn-history" onclick="viewHistory('${emp.nik}')"><i class="fas fa-history"></i> History</button>
+              </div>
+            `;
+          } else {
+            // Langsung input nilai, tidak usah tampilkan status Belum Dinilai
+            statusContent = `<button class="btn-action" onclick="confirmAssessment('${emp.nik}')"><i class="fas fa-edit"></i> Nilai</button>`;
           }
         }
 
@@ -2399,10 +2444,7 @@
           <td>${tipeKontrak}</td>
           <td>${expDate}</td>
           <td>${daysLeft}</td>
-          <td>${badgeHtml}</td>
-          <td style="text-align: center;">
-            ${aksiHtml}
-          </td>
+          <td>${statusContent}</td>
         `;
         
         body.appendChild(tr);
