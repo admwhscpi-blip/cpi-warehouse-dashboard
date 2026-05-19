@@ -262,19 +262,7 @@
         grid-template-columns: 1fr;
       }
       
-      /* Mobile Table Optimization */
-      .dtable thead th:nth-child(4),
-      .dtable tbody td:nth-child(4),
-      .dtable thead th:nth-child(5),
-      .dtable tbody td:nth-child(5),
-      .dtable thead th:nth-child(6),
-      .dtable tbody td:nth-child(6),
-      .dtable thead th:nth-child(7),
-      .dtable tbody td:nth-child(7),
-      .dtable thead th:nth-child(8),
-      .dtable tbody td:nth-child(8) {
-        display: none;
-      }
+      /* Mobile Table Optimization dihapus, dipindah ke bawah */
     }
 
     @keyframes spin {
@@ -1459,8 +1447,21 @@
       }
       .header-premium-v3 {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
+        align-items: stretch;
+        gap: 10px;
+        height: auto;
+        min-height: 80px;
+        padding: 10px 15px;
+        position: sticky;
+        top: 0;
+        z-index: 9000;
+        border-bottom: 4px solid #000000;
+      }
+      .header-left {
+        width: 100%;
+      }
+      .header-title-v3 h2 {
+        font-size: 1.1rem;
       }
       .header-user-actions {
         width: 100%;
@@ -1469,13 +1470,28 @@
       .content-area {
         padding: 15px;
       }
+      .dtable th:nth-child(1),
+      .dtable td:nth-child(1),
       .dtable th:nth-child(3),
       .dtable td:nth-child(3),
-      .dtable th:nth-child(4),
-      .dtable td:nth-child(4),
       .dtable th:nth-child(5),
-      .dtable td:nth-child(5) {
-        display: none; /* Hide NIK, Bagian, PT to prevent horizontal scroll */
+      .dtable td:nth-child(5),
+      .dtable th:nth-child(6),
+      .dtable td:nth-child(6),
+      .dtable th:nth-child(7),
+      .dtable td:nth-child(7),
+      .dtable th:nth-child(8),
+      .dtable td:nth-child(8) {
+        display: none; /* Hide No, NIK, PT, Tipe, Batas, Sisa Hari */
+      }
+      .btn-action, .btn-history {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        gap: 4px;
+        box-shadow: 2px 2px 0px #000000;
+      }
+      .btn-action i, .btn-history i {
+        font-size: 0.8rem;
       }
     }
   </style>
@@ -2348,6 +2364,32 @@
           tipeKontrak = "PKWT (" + emp.durasiPerpanjang + " " + emp.satuanDurasi + ")";
         }
         
+        // Tentukan HTML untuk kolom Aksi berdasarkan role
+        var isAtasanLangsung = emp.atasan && emp.atasan.toUpperCase() === currentUser.toUpperCase();
+        var aksiHtml = "";
+        
+        if (emp.sudahDinilai) {
+          // Sudah dinilai -> semua atasan (termasuk CECEP) bisa lihat history nilai orang lain
+          aksiHtml = `<button class="btn-history" onclick="viewHistory('${emp.nik}')"><i class="fas fa-history"></i> History</button>`;
+        } else {
+          // Belum dinilai
+          if (currentUser === "CECEP") {
+            if (isAtasanLangsung) {
+              aksiHtml = `<button class="btn-action" onclick="confirmAssessment('${emp.nik}')"><i class="fas fa-edit"></i> Nilai</button>`;
+            } else {
+              aksiHtml = `<span style="font-size:0.75rem; font-weight:800; color:var(--ts);">Belum Dinilai</span>`;
+            }
+          } else {
+            // Untuk atasan selain CECEP, diasumsikan melihat data bawahannya saja sesuai fungsi search/filter (jika ada)
+            // Atau jika memang mereka melihat semua, mereka tetap hanya bisa menilai bawahan sendiri
+            if (isAtasanLangsung) {
+              aksiHtml = `<button class="btn-action" onclick="confirmAssessment('${emp.nik}')"><i class="fas fa-edit"></i> Nilai</button>`;
+            } else {
+              aksiHtml = `<span style="font-size:0.75rem; font-weight:800; color:var(--ts);">Belum Dinilai</span>`;
+            }
+          }
+        }
+
         tr.innerHTML = `
           <td>${index + 1}</td>
           <td style="font-weight: 600; color: var(--tp);">${emp.nama}</td>
@@ -2359,8 +2401,7 @@
           <td>${daysLeft}</td>
           <td>${badgeHtml}</td>
           <td style="text-align: center;">
-            <button class="btn-action" onclick="confirmAssessment('${emp.nik}')"><i class="fas fa-edit"></i> Nilai</button>
-            ${emp.sudahDinilai ? `<button class="btn-history" onclick="viewHistory('${emp.nik}')"><i class="fas fa-history"></i> History</button>` : ''}
+            ${aksiHtml}
           </td>
         `;
         
