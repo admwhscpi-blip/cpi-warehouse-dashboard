@@ -1,0 +1,4411 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Breakdown — Alat Berat</title>
+    <!-- FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- ICON CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CHART JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- CANVAS CONFETTI -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- SWEETALERT2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #2563EB;
+            --primary-hover: #1D4ED8;
+            --primary-light: #EFF6FF;
+            --accent: #F59E0B;
+            --accent-hover: #D97706;
+            --accent-light: #FEF3C7;
+            --success: #10B981;
+            --success-light: #D1FAE5;
+            --danger: #EF4444;
+            --danger-light: #FEE2E2;
+            --bg-page: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --border-color: #E2E8F0;
+            --border-active: #BFDBFE;
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.03);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* LAYOUT & STRUCTURE */
+        .app-wrapper {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        /* SIDEBAR (Desktop) */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            transition: var(--transition);
+        }
+
+        .sidebar-brand {
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), #3B82F6);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+        }
+
+        .brand-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .brand-title span {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            display: block;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+        }
+
+        .menu-item a {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+        }
+
+        .menu-item.active a {
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .menu-item a:hover:not(.active a) {
+            background-color: #F1F5F9;
+            color: var(--text-main);
+            transform: translateX(4px);
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* MAIN CONTENT AREA */
+        .main-container {
+            flex-grow: 1;
+            margin-left: 260px;
+            padding: 40px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            padding-bottom: 100px; /* Space for bottom nav on mobile */
+        }
+
+        /* STICKY HEADER */
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-card);
+            padding: 16px 28px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-title h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .header-title p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .meta-clock {
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-active);
+        }
+
+        .database-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .database-badge.online {
+            background-color: var(--success-light);
+            color: var(--success);
+            border: 1px solid #A7F3D0;
+        }
+
+        .database-badge.offline {
+            background-color: var(--accent-light);
+            color: var(--accent-hover);
+            border: 1px solid #FDE68A;
+        }
+
+        /* MOBILE BOTTOM NAVIGATION BAR */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background-color: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.03);
+            display: none;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+            padding: 0 10px;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            font-weight: 600;
+            gap: 4px;
+            flex: 1;
+            height: 100%;
+            transition: var(--transition);
+        }
+
+        .bottom-nav-item i {
+            font-size: 1.25rem;
+            transition: var(--transition);
+        }
+
+        .bottom-nav-item.active {
+            color: var(--primary);
+        }
+
+        .bottom-nav-item.active i {
+            transform: translateY(-4px);
+        }
+
+        /* SCREEN CONTAINER */
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* CARD STYLE */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        /* TAB 1: CATAT BREAKDOWN - WIZARD FORM */
+        .stepper-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-card);
+            padding: 20px 30px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            margin-bottom: 10px;
+        }
+
+        .stepper-progress {
+            flex-grow: 1;
+            height: 6px;
+            background-color: #E2E8F0;
+            border-radius: 3px;
+            margin: 0 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stepper-progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 16.66%;
+            background: linear-gradient(90deg, var(--primary), #3B82F6);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+
+        .stepper-info {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+
+        .stepper-back-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: var(--transition);
+        }
+
+        .stepper-back-btn:hover {
+            color: var(--primary);
+        }
+
+        .wizard-step {
+            display: none;
+            animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .wizard-step.active {
+            display: block;
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .step-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .step-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        /* STEP 1: JENIS UNIT */
+        .jenis-unit-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .jenis-unit-card {
+            background-color: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            position: relative;
+        }
+
+        .jenis-unit-card:hover {
+            border-color: var(--border-active);
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .jenis-unit-card.selected {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.15);
+        }
+
+        .jenis-unit-card.selected::after {
+            content: "\f058";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: var(--primary);
+            font-size: 1.5rem;
+            animation: bounceIn 0.3s forwards;
+        }
+
+        .jenis-icon-circle {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background-color: #F1F5F9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 2.5rem;
+            transition: var(--transition);
+        }
+
+        .jenis-unit-card:hover .jenis-icon-circle {
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .jenis-unit-card.selected .jenis-icon-circle {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .jenis-unit-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        /* STEP 2: TYPE UNIT */
+        .type-unit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .type-unit-card {
+            background-color: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 20px 10px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70px;
+            word-break: break-word;
+        }
+
+        .type-unit-card:hover {
+            border-color: var(--border-active);
+            transform: scale(1.03);
+        }
+
+        .type-unit-card.selected {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        /* STEP 3: KATEGORI KERUSAKAN */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 850px;
+            margin: 0 auto;
+        }
+
+        .category-card {
+            border-radius: var(--radius-md);
+            border: 2px solid var(--border-color);
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .category-icon {
+            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .category-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+        }
+
+        .category-desc {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            line-height: 1.4;
+            margin-top: 4px;
+            max-width: 100%;
+            transition: var(--transition);
+        }
+
+        .category-card.cat-active .category-desc {
+            color: var(--cat-color);
+            opacity: 0.85;
+        }
+
+        /* KATEGORI COLOR SCHEME */
+        .cat-engine { --cat-color: #EF4444; --cat-bg: #FEE2E2; }
+        .cat-transmission { --cat-color: #F97316; --cat-bg: #FFEDD5; }
+        .cat-hydraulic { --cat-color: #3B82F6; --cat-bg: #DBEAFE; }
+        .cat-electrical { --cat-color: #EAB308; --cat-bg: #FEF9C3; }
+        .cat-tire { --cat-color: #6B7280; --cat-bg: #F3F4F6; }
+        .cat-brake { --cat-color: #A855F7; --cat-bg: #F3E8FF; }
+
+        .photo-btn {
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .photo-btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .category-card.cat-active {
+            border-color: var(--cat-color) !important;
+            background-color: var(--cat-bg) !important;
+            color: var(--cat-color) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .category-card.cat-active .category-icon {
+            background-color: var(--cat-color) !important;
+            color: white !important;
+        }
+
+        .category-card .category-icon {
+            background-color: var(--cat-bg);
+            color: var(--cat-color);
+        }
+
+        /* STEP 4: PILIHAN KERUSAKAN */
+        .choices-container {
+            max-width: 650px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .choice-item {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .choice-item:hover {
+            border-color: var(--border-active);
+            background-color: var(--bg-page);
+        }
+
+        .choice-item.selected {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .choice-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+
+        .choice-item.selected .choice-checkbox {
+            border-color: var(--primary);
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .choice-checkbox::before {
+            content: "\f00c";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .choice-item.selected .choice-checkbox::before {
+            opacity: 1;
+        }
+
+        .choice-text {
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+
+        /* STEP 5: DETAIL KERUSAKAN */
+        .detail-input-container {
+            max-width: 650px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .detail-textarea {
+            width: 100%;
+            height: 180px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-family: var(--font-main);
+            font-size: 1rem;
+            color: var(--text-main);
+            resize: none;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .detail-textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(37, 99, 235, 0.1);
+        }
+
+        .detail-counter {
+            text-align: right;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* STEP 6: WAKTU MULAI */
+        .waktu-mulai-form {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .form-control {
+            width: 100%;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            font-family: var(--font-main);
+            font-size: 0.95rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* NAV BUTTONS */
+        .wizard-nav-container {
+            margin-top: 35px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px 36px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn:disabled {
+            background-color: #E2E8F0;
+            color: #94A3B8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-secondary:hover {
+            background-color: #F8FAFC;
+            border-color: #CBD5E1;
+            color: var(--text-main);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* POPUP CONFIRMATION MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: flex-start; /* Mengizinkan scroll dari atas jika card terlalu tinggi di mobile */
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+            overflow-y: auto; /* Mengaktifkan scroll pada overlay agar card panjang bisa di-scroll */
+            -webkit-overflow-scrolling: touch;
+            animation: fadeInOverlay 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-card {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 580px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh; /* Membatasi tinggi kartu modal agar tidak melebihi layar peramban */
+            margin: auto 0; /* Vertically center if short, starts from top and scrolls if tall */
+            animation: slideUpModal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes slideUpModal {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 20px 28px;
+            background-color: var(--bg-page);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+
+        .modal-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .modal-close-btn:hover {
+            color: var(--danger);
+        }
+
+        .modal-body {
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto; /* Mengaktifkan scrollbar secara independen pada body modal jika konten melebihi batas */
+            flex: 1; /* Memastikan body modal meregang penuh mengisi ruang tersisa antara header & footer */
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px 20px;
+            background-color: var(--bg-page);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .summary-item.full-width {
+            grid-column: span 2;
+        }
+
+        .summary-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .modal-footer {
+            padding: 20px 28px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 14px;
+        }
+
+        /* SUCCESS SCREEN AFTER SUBMISSION */
+        .success-step-card {
+            text-align: center;
+            padding: 50px 30px;
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .success-icon-wrapper {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: var(--success-light);
+            color: var(--success);
+            font-size: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scalePulse 1.5s infinite alternate;
+        }
+
+        @keyframes scalePulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            100% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+        }
+
+        .success-id-badge {
+            background-color: var(--primary-light);
+            border: 1px dashed var(--primary);
+            color: var(--primary);
+            font-family: 'Orbitron', monospace;
+            font-size: 1.15rem;
+            font-weight: 700;
+            padding: 8px 20px;
+            border-radius: var(--radius-sm);
+            margin: 10px 0;
+            letter-spacing: 1px;
+        }
+
+        /* TAB 2: SELESAIKAN BREAKDOWN */
+        .ongoing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .ongoing-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-top: 4px solid var(--accent);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            transition: var(--transition);
+        }
+
+        .ongoing-card.expanding {
+            border-top-color: var(--primary);
+        }
+
+        .ongoing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .ongoing-id {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        .ongoing-badge {
+            background-color: var(--danger-light);
+            color: var(--danger);
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .ongoing-badge::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            background-color: var(--danger);
+            border-radius: 50%;
+            display: inline-block;
+            animation: blinker 1s linear infinite;
+        }
+
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+
+        .ongoing-body {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.85rem;
+        }
+
+        .ongoing-body-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .ongoing-body-label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .ongoing-body-val {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .ongoing-timer-row {
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ongoing-timer {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            color: var(--danger);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* INLINE RESOLVE FORM */
+        .ongoing-resolve-container {
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            animation: slideDownFade 0.3s ease-out forwards;
+        }
+
+        @keyframes slideDownFade {
+            from { opacity: 0; max-height: 0; }
+            to { opacity: 1; max-height: 250px; }
+        }
+
+        .empty-illustration {
+            text-align: center;
+            padding: 80px 40px;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .empty-illustration i {
+            font-size: 4rem;
+            color: #E2E8F0;
+        }
+
+        /* TAB 3: DASHBOARD ANALYTICS */
+        .dashboard-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .kpi-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .kpi-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .kpi-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .kpi-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1;
+        }
+
+        .kpi-blue { --kpi-c: var(--primary); --kpi-bg: var(--primary-light); }
+        .kpi-amber { --kpi-c: var(--accent); --kpi-bg: var(--accent-light); }
+        .kpi-red { --kpi-c: var(--danger); --kpi-bg: var(--danger-light); }
+        .kpi-green { --kpi-c: var(--success); --kpi-bg: var(--success-light); }
+
+        .kpi-card .kpi-icon {
+            background-color: var(--kpi-bg);
+            color: var(--kpi-c);
+        }
+
+        /* FILTER PANEL */
+        .filter-panel {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 14px;
+        }
+
+        /* CHART GRID LAYOUTS */
+        .chart-row-double {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .chart-row-triple {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        /* TOP UNIT BREAKDOWN RANKING */
+        .ranking-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            background-color: var(--bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            gap: 12px;
+            transition: var(--transition);
+        }
+
+        .ranking-item:hover {
+            transform: translateX(4px);
+            border-color: var(--border-active);
+        }
+
+        .ranking-position {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .rank-1 { background-color: #FEF3C7; color: #D97706; border: 1px solid #FCD34D; } /* Gold */
+        .rank-2 { background-color: #E2E8F0; color: #475569; border: 1px solid #CBD5E1; } /* Silver */
+        .rank-3 { background-color: #FFEDD5; color: #C2410C; border: 1px solid #FDBA74; } /* Bronze */
+        .rank-other { background-color: #F1F5F9; color: var(--text-muted); }
+
+        .ranking-details {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .ranking-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ranking-vendor {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .ranking-count-badge {
+            background-color: var(--danger-light);
+            color: var(--danger);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        /* TOP CHOICES LIST */
+        .choices-rank-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .choices-rank-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            background-color: #F8FAFC;
+            border-left: 3px solid var(--primary);
+        }
+
+        .choices-rank-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .choices-rank-count {
+            background-color: #E2E8F0;
+            color: var(--text-main);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* TAB 4: RIWAYAT BREAKDOWN - DATA GRID */
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .search-wrapper {
+            position: relative;
+            max-width: 320px;
+            width: 100%;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .search-control {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 10px 16px 10px 40px;
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .search-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(37, 99, 235, 0.08);
+        }
+
+        .grid-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* DATA TABLE STYLE */
+        .table-responsive-container {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background-color: var(--bg-card);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .data-table th {
+            background-color: var(--bg-page);
+            color: var(--text-muted);
+            font-weight: 700;
+            padding: 14px 20px;
+            border-bottom: 2px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .data-table tbody tr {
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #F8FAFC;
+        }
+
+        .table-status-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .table-status-badge.ongoing {
+            background-color: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .table-status-badge.selesai {
+            background-color: var(--success-light);
+            color: var(--success);
+        }
+
+        /* PAGINATION */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+        }
+
+        .pagination-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .page-btn {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background-color: #F1F5F9;
+            border-color: #CBD5E1;
+        }
+
+        .page-btn:disabled {
+            color: #94A3B8;
+            cursor: not-allowed;
+            background-color: #F8FAFC;
+        }
+
+        /* TOAST NOTIFICATION */
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background-color: var(--bg-card);
+            border-left: 4px solid var(--primary);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            padding: 16px 20px;
+            min-width: 300px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.88rem;
+            animation: slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast.toast-success { border-left-color: var(--success); }
+        .toast.toast-error { border-left-color: var(--danger); }
+        .toast.toast-warning { border-left-color: var(--accent); }
+
+        .toast i {
+            font-size: 1.25rem;
+        }
+
+        .toast.toast-success i { color: var(--success); }
+        .toast.toast-error i { color: var(--danger); }
+        .toast.toast-warning i { color: var(--accent); }
+
+        /* SKELETON LOADERS */
+        .shimmer-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+            background-size: 200% 100%;
+            animation: loading-shimmer 1.5s infinite;
+            border-radius: var(--radius-sm);
+        }
+
+        @keyframes loading-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* PULL TO REFRESH INDICATION */
+        .pull-refresh-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 8px;
+            border-radius: var(--radius-sm);
+            background-color: var(--primary-light);
+            border: 1px solid var(--border-active);
+            display: none;
+            animation: bounceIn 0.3s forwards;
+        }
+
+        /* RESPONSIVE DESIGN (BREAKPOINT: 768px & 1024px) */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%); /* Hide sidebar */
+            }
+
+            .main-container {
+                margin-left: 0;
+                padding: 20px;
+                padding-bottom: 90px;
+            }
+
+            .bottom-nav {
+                display: flex; /* Show bottom navigation */
+            }
+
+            .chart-row-double, .chart-row-triple {
+                grid-template-columns: 1fr; /* Stack charts */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+                padding: 16px 20px;
+            }
+
+            .header-meta {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .dashboard-kpi-grid {
+                grid-template-columns: repeat(2, 1fr); /* 2x2 grid for mobile KPIs */
+            }
+
+            .jenis-unit-container {
+                grid-template-columns: 1fr;
+            }
+
+            .type-unit-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .type-unit-card {
+                padding: 16px 8px;
+                font-size: 0.9rem;
+                min-height: 60px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                word-break: break-word;
+            }
+
+            .category-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .category-card {
+                padding: 16px 10px;
+                gap: 8px;
+            }
+
+            .category-desc {
+                font-size: 0.68rem;
+            }
+
+            .modal-card {
+                max-height: 90vh;
+            }
+
+            .modal-body {
+                padding: 16px 20px;
+                gap: 12px;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-item.full-width {
+                grid-column: span 1;
+            }
+
+            .table-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-wrapper {
+                max-width: 100%;
+            }
+
+            .grid-actions {
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- SIDEBAR NAVIGATION (Desktop) -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                </div>
+                <div class="brand-title">
+                    SMART BREAKDOWN
+                    <span>Alat Berat Portal</span>
+                </div>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="menu-item active" data-tab="tab-catat">
+                    <a href="#catat"><i class="fa-solid fa-wrench"></i> Catat Breakdown</a>
+                </li>
+                <li class="menu-item" data-tab="tab-selesaikan">
+                    <a href="#selesaikan"><i class="fa-solid fa-circle-check"></i> Selesaikan <span id="ongoing-badge-sidebar" style="background-color: var(--danger); color: white; border-radius: 50%; font-size: 0.65rem; width: 18px; height: 18px; display: none; align-items: center; justify-content: center; font-weight: 700;">0</span></a>
+                </li>
+                <li class="menu-item" data-tab="tab-dashboard">
+                    <a href="#dashboard"><i class="fa-solid fa-chart-simple"></i> Dashboard</a>
+                </li>
+                <li class="menu-item" data-tab="tab-riwayat">
+                    <a href="#riwayat"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Laporan</a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                Smart Warehouse Live<br>&copy; 2026 Developer Team
+            </div>
+        </aside>
+
+        <!-- MAIN LAYOUT AREA -->
+        <main class="main-container">
+            <!-- STICKY HEADER -->
+            <header class="main-header">
+                <div class="header-title">
+                    <h1 id="header-text-title">Pencatatan Breakdown Baru</h1>
+                    <p id="header-text-subtitle">Mulai pelaporan kerusakan armada lapangan secara terstruktur</p>
+                </div>
+                <div class="header-meta">
+                    <div id="db-badge" class="database-badge offline" onclick="openSettingsModal()">
+                        <i class="fa-solid fa-database"></i> <span id="db-badge-text">Cache Mode</span>
+                    </div>
+                    <div class="meta-clock" id="digital-clock">10:09 WIB</div>
+                </div>
+            </header>
+
+            <!-- ============================================== -->
+            <!-- TAB 1: CATAT BREAKDOWN                         -->
+            <!-- ============================================== -->
+            <section id="tab-catat" class="screen active">
+                <div class="stepper-header">
+                    <button class="stepper-back-btn" id="stepper-back-btn" onclick="prevWizardStep()" style="visibility: hidden;">
+                        <i class="fa-solid fa-arrow-left"></i> Kembali
+                    </button>
+                    <div class="stepper-progress">
+                        <div class="stepper-progress-bar" id="stepper-bar"></div>
+                    </div>
+                    <div class="stepper-info" id="stepper-step-indicator">LANGKAH 1 DARI 7</div>
+                </div>
+
+                <div class="card" style="padding: 40px 24px;">
+                    <!-- STEP 1: PILIH JENIS UNIT -->
+                    <div id="step-1" class="wizard-step active">
+                        <h2 class="step-title">Pilih Jenis Unit</h2>
+                        <p class="step-subtitle">Pilih kategori armada alat berat yang mengalami kendala breakdown</p>
+                        <div class="jenis-unit-container">
+                            <div class="jenis-unit-card" onclick="selectJenisUnit('FORKLIFT')">
+                                <div class="jenis-icon-circle">
+                                    <i class="fa-solid fa-truck-ramp-box"></i>
+                                </div>
+                                <div class="jenis-unit-title">FORKLIFT</div>
+                            </div>
+                            <div class="jenis-unit-card" onclick="selectJenisUnit('LOADER')">
+                                <div class="jenis-icon-circle">
+                                    <i class="fa-solid fa-truck-monster"></i>
+                                </div>
+                                <div class="jenis-unit-title">LOADER</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: PILIH TYPE UNIT -->
+                    <div id="step-2" class="wizard-step">
+                        <h2 class="step-title">Pilih Tipe Unit</h2>
+                        <p class="step-subtitle">Pilih nomor seri atau tipe spesifik alat berat yang breakdown</p>
+                        <div class="type-unit-grid" id="type-unit-grid">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: KATEGORI KERUSAKAN -->
+                    <div id="step-3" class="wizard-step">
+                        <h2 class="step-title">Pilih Kategori Kerusakan</h2>
+                        <p class="step-subtitle">Pilih sistem atau komponen utama yang mengalami kendala teknis</p>
+                        <div class="category-grid">
+                            <div class="category-card cat-engine" onclick="selectCategory('ENGINE')">
+                                <div class="category-icon"><i class="fa-solid fa-gears"></i></div>
+                                <div class="category-name">ENGINE</div>
+                                <div class="category-desc">Mesin, starter, injector, turbo, fuel system, oli mesin</div>
+                            </div>
+                            <div class="category-card cat-transmission" onclick="selectCategory('TRANSMISSION')">
+                                <div class="category-icon"><i class="fa-solid fa-gear"></i></div>
+                                <div class="category-name">TRANSMISSION</div>
+                                <div class="category-desc">Gearbox, kopling, tenaga maju mundur</div>
+                            </div>
+                            <div class="category-card cat-hydraulic" onclick="selectCategory('HYDRAULIC')">
+                                <div class="category-icon"><i class="fa-solid fa-droplet"></i></div>
+                                <div class="category-name">HYDRAULIC</div>
+                                <div class="category-desc">Pompa hydraulic, hose, silinder, fork/bucket</div>
+                            </div>
+                            <div class="category-card cat-electrical" onclick="selectCategory('ELECTRICAL')">
+                                <div class="category-icon"><i class="fa-solid fa-bolt"></i></div>
+                                <div class="category-name">ELECTRICAL</div>
+                                <div class="category-desc">Aki, alternator, fuse, kabel, lampu</div>
+                            </div>
+                            <div class="category-card cat-tire" onclick="selectCategory('TIRE')">
+                                <div class="category-icon"><i class="fa-solid fa-circle"></i></div>
+                                <div class="category-name">TIRE</div>
+                                <div class="category-desc">Ban, velg, tekanan angin, roda</div>
+                            </div>
+                            <div class="category-card cat-brake" onclick="selectCategory('BRAKE')">
+                                <div class="category-icon"><i class="fa-solid fa-circle-stop"></i></div>
+                                <div class="category-name">BRAKE</div>
+                                <div class="category-desc">Sistem rem, kampas, minyak rem</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: PILIH DETAIL KERUSAKAN -->
+                    <div id="step-4" class="wizard-step">
+                        <h2 class="step-title">Pilih Gejala / Detail Kerusakan</h2>
+                        <p class="step-subtitle">Pilih gejala kerusakan yang paling mencerminkan kondisi unit saat ini</p>
+                        <div class="choices-container" id="choices-list-container">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- STEP 5: DESKRIPSI DETAIL BEBAS -->
+                    <div id="step-5" class="wizard-step">
+                        <h2 class="step-title">Tambahkan Catatan Tambahan</h2>
+                        <p class="step-subtitle">Jelaskan kronologi kejadian secara bebas untuk memudahkan perbaikan (minimal 10 karakter)</p>
+                        
+                        <div class="form-group" style="max-width: 400px; margin: 0 auto 20px auto; text-align: left;">
+                            <label for="input-kondisi-operasional" style="font-weight: 700; font-size: 0.9rem; color: var(--text-main); display: block; margin-bottom: 8px;">Kondisi Operasional Unit saat Kendala:</label>
+                            <select class="form-control" id="input-kondisi-operasional" style="width: 100%; border-radius: 8px; border: 1px solid var(--border-color); padding: 10px 14px; font-weight: 600; color: var(--text-main); background-color: var(--bg-card); cursor: pointer;" onchange="updateKondisiOperasionalState()">
+                                <option value="BREAKDOWN" selected>🔴 BREAKDOWN (Unit Stop / Tidak Bisa Jalan)</option>
+                                <option value="RUNNING">🟡 RUNNING (Unit Tetap Bekerja dengan Kendala)</option>
+                            </select>
+                        </div>
+
+                        <div class="detail-input-container">
+                            <textarea class="detail-textarea" id="input-detail-kerusakan" placeholder="Deskripsikan kerusakan secara detail... (contoh: mesin tidak mau start, sudah dicoba 3 kali oleh operator, terdengar bunyi klik keras pada starter)" oninput="validateStep5()"></textarea>
+                            <div class="detail-counter" id="char-counter">0 / 250 karakter</div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 6: WAKTU MULAI & IDENTITAS -->
+                    <div id="step-6" class="wizard-step">
+                        <h2 class="step-title">Identitas Pelapor & Waktu Mulai</h2>
+                        <p class="step-subtitle">Lengkapi nama penanggung jawab awal dan waktu kejadian breakdown</p>
+                        <div class="waktu-mulai-form">
+                            <div class="form-group">
+                                <label for="input-operator-awal">Nama Operator Penanggung Jawab</label>
+                                <input type="text" class="form-control" id="input-operator-awal" placeholder="Masukkan nama lengkap Anda..." oninput="validateStep6()">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="input-tanggal-mulai">Tanggal Breakdown</label>
+                                    <input type="date" class="form-control" id="input-tanggal-mulai">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-jam-mulai">Jam Kejadian</label>
+                                    <input type="time" class="form-control" id="input-jam-mulai">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 7: UNGGHAH FOTO -->
+                    <div id="step-7" class="wizard-step">
+                        <h2 class="step-title">Unggah Foto Breakdown (Opsional)</h2>
+                        <p class="step-subtitle">Ambil foto kerusakan secara langsung menggunakan kamera atau unggah dari file</p>
+                        <div style="max-width: 400px; margin: 20px auto 0 auto; display: flex; flex-direction: column; gap: 15px;">
+                            <div class="photo-btn" onclick="openPhotoPicker('photo-cam', 'photo-gal')" style="background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px 25px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(37,99,235,0.2);">
+                                <i class="fa-solid fa-camera" style="font-size: 1.1rem;"></i>
+                                <span>AMBIL / UNGGAH FOTO</span>
+                            </div>
+                            <input type="file" id="photo-cam" accept="image/*" capture="environment" style="display:none" onchange="uploadBreakdownPhoto(this, 'input-photo-url', 'photo-preview')">
+                            <input type="file" id="photo-gal" accept="image/*" style="display:none" onchange="uploadBreakdownPhoto(this, 'input-photo-url', 'photo-preview')">
+                            <input type="hidden" id="input-photo-url" value="">
+                            
+                            <div id="photo-preview-wrap" style="display:none; position:relative; width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-top: 10px;">
+                                <img id="photo-preview" style="width:100%; display:block; aspect-ratio:4/3; object-fit:cover;">
+                                <div onclick="resetBreakdownPhoto('photo-cam', 'photo-gal', 'photo-preview-wrap', 'input-photo-url')" style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.9); color:#fff; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PROGRESS NAVIGATION BUTTONS -->
+                    <div class="wizard-nav-container">
+                        <button class="btn" id="wizard-next-btn" onclick="nextWizardStep()" disabled>Lanjut Langkah <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================== -->
+            <!-- TAB 2: SELESAIKAN BREAKDOWN                     -->
+            <!-- ============================================== -->
+            <section id="tab-selesaikan" class="screen">
+                <div id="ongoing-loading-container" class="shimmer-wrapper" style="display: none;">
+                    <div class="shimmer" style="height: 120px;"></div>
+                    <div class="shimmer" style="height: 120px;"></div>
+                </div>
+                <div class="ongoing-grid" id="ongoing-cards-grid">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- ============================================== -->
+            <!-- TAB 3: DASHBOARD ANALYTICS                     -->
+            <!-- ============================================== -->
+            <section id="tab-dashboard" class="screen">
+                <!-- PANEL FILTER LANJUTAN -->
+                <div class="filter-panel">
+                    <div style="font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-filter" style="color: var(--primary);"></i> Panel Analisis & Filter Data</div>
+                    <div class="filter-grid">
+                        <div class="form-group">
+                            <label>Rentang Tanggal Dari</label>
+                            <input type="date" class="form-control" id="filter-date-from">
+                        </div>
+                        <div class="form-group">
+                            <label>Sampai</label>
+                            <input type="date" class="form-control" id="filter-date-to">
+                        </div>
+                        <div class="form-group">
+                            <label>Jenis Unit</label>
+                            <select class="form-control" id="filter-jenis" onchange="updateFilterDropdownTypes()">
+                                <option value="">Semua Jenis</option>
+                                <option value="FORKLIFT">FORKLIFT</option>
+                                <option value="LOADER">LOADER</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipe Unit</label>
+                            <select class="form-control" id="filter-type">
+                                <option value="">Semua Tipe</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Kategori</label>
+                            <select class="form-control" id="filter-kategori">
+                                <option value="">Semua Kategori</option>
+                                <option value="ENGINE">ENGINE</option>
+                                <option value="TRANSMISSION">TRANSMISSION</option>
+                                <option value="HYDRAULIC">HYDRAULIC</option>
+                                <option value="ELECTRICAL">ELECTRICAL</option>
+                                <option value="TIRE">TIRE</option>
+                                <option value="BRAKE">BRAKE</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select class="form-control" id="filter-status">
+                                <option value="">Semua Status</option>
+                                <option value="ONGOING">ONGOING</option>
+                                <option value="SELESAI">SELESAI</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Kondisi Operasional</label>
+                            <select class="form-control" id="filter-kondisi-operasional">
+                                <option value="">Semua Kondisi</option>
+                                <option value="BREAKDOWN">🔴 BREAKDOWN</option>
+                                <option value="RUNNING">🟡 RUNNING</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn btn-secondary" onclick="resetFilters()"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
+                        <button class="btn" onclick="applyFilters()"><i class="fa-solid fa-check"></i> Terapkan Analisa</button>
+                    </div>
+                </div>
+
+                <!-- DASHBOARD KPI GRIDS -->
+                <div class="dashboard-kpi-grid">
+                    <div class="kpi-card kpi-blue">
+                        <div class="kpi-icon"><i class="fa-solid fa-wrench"></i></div>
+                        <div class="kpi-details">
+                            <div class="kpi-title">Total Kejadian</div>
+                            <div class="kpi-value" id="kpi-total-breakdowns">0</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-amber">
+                        <div class="kpi-icon"><i class="fa-solid fa-calendar-day"></i></div>
+                        <div class="kpi-details">
+                            <div class="kpi-title">Bulan Ini</div>
+                            <div class="kpi-value" id="kpi-month-breakdowns">0</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-red">
+                        <div class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="kpi-details">
+                            <div class="kpi-title">Armada Aktif BD</div>
+                            <div class="kpi-value" id="kpi-ongoing-count">0</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-green">
+                        <div class="kpi-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                        <div class="kpi-details">
+                            <div class="kpi-title">Rerata Durasi</div>
+                            <div class="kpi-value" id="kpi-avg-duration" style="font-size: 1.15rem; font-weight: 800;">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHARTS ROW 1 (TRENS & PROPORSI TYPE) -->
+                <div class="chart-row-double">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-chart-line"></i> Tren Durasi Breakdown per Minggu</div>
+                        </div>
+                        <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="chart-weekly-trend"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-chart-pie"></i> Proporsi Jenis Unit</div>
+                        </div>
+                        <div style="position: relative; height: 300px; width: 100%; display: flex; align-items: center; justify-content: center;">
+                            <canvas id="chart-jenis-share"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHARTS ROW 2 (TIPE UNIT & KATEGORI) -->
+                <div class="chart-row-double">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-chart-bar"></i> Jumlah Kasus per Kategori Sistem</div>
+                        </div>
+                        <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="chart-categories"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-medal"></i> Ranking Unit Sering Breakdown</div>
+                        </div>
+                        <div class="ranking-list" id="dashboard-ranking-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHARTS ROW 3 (TOP PILIHAN KERUSAKAN) -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fa-solid fa-list-ol"></i> Top 10 Gejala Pilihan Kerusakan Terbanyak</div>
+                    </div>
+                    <div class="choices-rank-list" id="dashboard-top-choices-list">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================== -->
+            <!-- TAB 4: RIWAYAT BREAKDOWN                       -->
+            <!-- ============================================== -->
+            <section id="tab-riwayat" class="screen">
+                <div id="pull-refresh-indicator" class="pull-refresh-bar">
+                    <i class="fa-solid fa-arrows-rotate fa-spin"></i> Menyelaraskan data dengan database server...
+                </div>
+
+                <div class="card">
+                    <div class="table-controls">
+                        <div class="search-wrapper">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" class="search-control" id="table-search-input" placeholder="Cari ID, type unit, operator..." oninput="handleTableSearchDebounced()">
+                        </div>
+                        <div class="grid-actions">
+                            <button class="btn btn-secondary" onclick="triggerManualSync()"><i class="fa-solid fa-rotate"></i> Sinkron Data</button>
+                            <button class="btn" onclick="exportToCSV()"><i class="fa-solid fa-file-csv"></i> Download CSV</button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive-container" style="margin-top: 20px;">
+                        <table class="data-table" id="riwayat-table">
+                            <thead>
+                                <tr>
+                                    <th>ID Laporan</th>
+                                    <th>Tanggal Mulai</th>
+                                    <th>Jenis</th>
+                                    <th>Armada / Type</th>
+                                    <th>Vendor</th>
+                                    <th>Kategori Sistem</th>
+                                    <th>Pilihan Kerusakan</th>
+                                    <th>Durasi Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-data-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination-container">
+                        <div class="pagination-info" id="pagination-status-text">Menampilkan 0-0 dari 0 data</div>
+                        <div class="pagination-buttons">
+                            <button class="page-btn" id="btn-page-prev" onclick="changeHistoryPage(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button class="page-btn" id="btn-page-next" onclick="changeHistoryPage(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MOBILE FLOATING BOTTOM BAR -->
+    <nav class="bottom-nav">
+        <a href="#catat" class="bottom-nav-item active" data-tab="tab-catat" onclick="switchTab('tab-catat')">
+            <i class="fa-solid fa-wrench"></i>
+            Catat
+        </a>
+        <a href="#selesaikan" class="bottom-nav-item" data-tab="tab-selesaikan" onclick="switchTab('tab-selesaikan')">
+            <i class="fa-solid fa-circle-check"></i>
+            Selesaikan
+        </a>
+        <a href="#dashboard" class="bottom-nav-item" data-tab="tab-dashboard" onclick="switchTab('tab-dashboard')">
+            <i class="fa-solid fa-chart-simple"></i>
+            Dashboard
+        </a>
+        <a href="#riwayat" class="bottom-nav-item" data-tab="tab-riwayat" onclick="switchTab('tab-riwayat')">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            Riwayat
+        </a>
+    </nav>
+
+    <!-- POPUP MODAL 1: RINGKASAN DATA LAPORAN (STEPS CONFIRMATION) -->
+    <div class="modal-overlay" id="confirm-modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Ringkasan Laporan Breakdown</h3>
+                <button class="modal-close-btn" onclick="toggleConfirmModal(false)"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <span class="summary-label">Jenis Unit</span>
+                        <span class="summary-value" id="summary-jenis-unit">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Nomor Seri / Type</span>
+                        <span class="summary-value" id="summary-type-unit">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Vendor Armada</span>
+                        <span class="summary-value" id="summary-vendor">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Kategori Sistem</span>
+                        <span class="summary-value" id="summary-kategori">-</span>
+                    </div>
+                    <div class="summary-item full-width">
+                        <span class="summary-label">Gejala Kerusakan</span>
+                        <span class="summary-value" id="summary-pilihan">-</span>
+                    </div>
+                    <div class="summary-item full-width">
+                        <span class="summary-label">Catatan Kronologi Lapangan</span>
+                        <span class="summary-value" style="font-style: italic; white-space: pre-line; color: var(--text-muted);" id="summary-detail">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Petugas Lapangan</span>
+                        <span class="summary-value" id="summary-operator-awal">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Waktu Mulai Kendala</span>
+                        <span class="summary-value" id="summary-waktu-mulai">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Kondisi Operasional</span>
+                        <span class="summary-value" id="summary-kondisi-operasional">-</span>
+                    </div>
+                    <div class="summary-item full-width" id="summary-photo-item" style="display: none; text-align: center; border-top: 1px dashed var(--border-color); padding-top: 15px; margin-top: 10px;">
+                        <span class="summary-label" style="margin-bottom: 8px;">Foto Bukti Breakdown</span>
+                        <img id="summary-photo-img" src="" style="width: 100%; max-width: 280px; border-radius: 12px; border: 1px solid var(--border-color); aspect-ratio: 4/3; object-fit: cover; margin: 0 auto; display: block;">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="toggleConfirmModal(false)"><i class="fa-solid fa-pen-to-square"></i> Koreksi Ulang</button>
+                <button class="btn" id="modal-submit-btn" onclick="submitLaporanAwal()"><i class="fa-solid fa-paper-plane"></i> Kirim Laporan Resmi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP MODAL 2: DETAIL DATA COMPLETE (HISTORY CLICK ROW) -->
+    <div class="modal-overlay" id="detail-modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Rincian Riwayat Kerja</h3>
+                <button class="modal-close-btn" onclick="toggleDetailModal(false)"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="summary-grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="summary-item">
+                        <span class="summary-label">Nomor ID Tiket</span>
+                        <span class="summary-value" id="det-id" style="font-family: 'Orbitron', monospace; font-size: 1rem; color: var(--primary);">BD-20260519-0001</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Status Tiket</span>
+                        <span class="summary-value" id="det-status">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Armada / Type</span>
+                        <span class="summary-value" id="det-type">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Vendor Unit</span>
+                        <span class="summary-value" id="det-vendor">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Komponen / Sistem</span>
+                        <span class="summary-value" id="det-kategori">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Kondisi Operasional</span>
+                        <span class="summary-value" id="det-kondisi-operasional">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Pilihan Kerusakan</span>
+                        <span class="summary-value" id="det-pilihan">-</span>
+                    </div>
+                    <div class="summary-item full-width">
+                        <span class="summary-label">Deskripsi Kejadian</span>
+                        <span class="summary-value" style="font-weight: 500;" id="det-detail">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Operator Awal (Pelapor)</span>
+                        <span class="summary-value" id="det-op-awal">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Waktu Mulai</span>
+                        <span class="summary-value" id="det-waktu-mulai">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Operator Akhir (Penyelesai)</span>
+                        <span class="summary-value" id="det-op-akhir">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Waktu Selesai</span>
+                        <span class="summary-value" id="det-waktu-selesai">-</span>
+                    </div>
+                    <div class="summary-item full-width" style="border-top: 1px solid var(--border-color); padding-top: 10px; display: flex; flex-direction: row; justify-content: space-between;">
+                        <div>
+                            <span class="summary-label">Durasi Terbuang (Menit)</span>
+                            <span class="summary-value" id="det-durasi-menit">-</span>
+                        </div>
+                        <div>
+                            <span class="summary-label">Durasi Terbuang (Jam Desimal)</span>
+                            <span class="summary-value" id="det-durasi-jam">-</span>
+                        </div>
+                    </div>
+                    <div class="summary-item full-width" id="det-photo-item" style="border-top: 1px solid var(--border-color); padding-top: 15px; text-align: center; display: none;">
+                        <span class="summary-label" style="margin-bottom: 8px;">Foto Bukti Breakdown</span>
+                        <img id="det-photo-img" src="" style="width: 100%; max-width: 280px; border-radius: 12px; border: 1px solid var(--border-color); aspect-ratio: 4/3; object-fit: cover; cursor: pointer; margin: 0 auto; display: block;">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="toggleDetailModal(false)">Tutup Rincian</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP MODAL 3: SETTINGS PORTAL (APPS SCRIPT URL CONFIG) -->
+    <div class="modal-overlay" id="settings-modal-overlay">
+        <div class="modal-card" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3>Konfigurasi Koneksi Database</h3>
+                <button class="modal-close-btn" onclick="toggleSettingsModal(false)"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">Atur URL Web App Google Apps Script untuk menghubungkan data client-side langsung dengan Google Sheets.</p>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label for="settings-api-url">Apps Script Web App Deploy URL</label>
+                    <input type="text" class="form-control" id="settings-api-url" placeholder="https://script.google.com/macros/s/.../exec">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Mode Aplikasi Aktif</label>
+                    <div style="display: flex; gap: 14px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                            <input type="radio" name="settings-mode" value="online"> Database Mode
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                            <input type="radio" name="settings-mode" value="offline" checked> Offline Simulation
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="toggleSettingsModal(false)">Batal</button>
+                <button class="btn" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i> Simpan Setelan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- ======================================================= -->
+    <!-- JAVASCRIPT APPLICATION CORE                             -->
+    <!-- ======================================================= -->
+    <script>
+        // MASTER MOCK DATABASE (INITIALIZED TO LOCAL STORAGE IF NOT EXISTS)
+        const MOCK_JENIS_UNIT = [
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 02", vendor: "TIGER PARTNER" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 03", vendor: "TIGER PARTNER" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 08", vendor: "MITSUBISHIINDO" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 11", vendor: "MITSUBISHIINDO" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 16", vendor: "BULL RENTAL" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MITSUBISHI 11.5", vendor: "BULL RENTAL" },
+            { jenisUnit: "LOADER", typeUnit: "JGM", vendor: "JGM INDONESIA" },
+            { jenisUnit: "LOADER", typeUnit: "LIUGONG", vendor: "LIUGONG RENTAL" },
+            { jenisUnit: "LOADER", typeUnit: "SEM", vendor: "SEM HEAVY MACHINERY" }
+        ];
+
+        const MOCK_KERUSAKAN = {
+            FORKLIFT: [
+                {
+                    kategori: "ENGINE",
+                    pilihanKerusakan: [
+                        "Tidak Bisa Start", "Starter Rusak", "Overheat", "Oli Mesin Bocor",
+                        "Mesin Brebet", "Asap Hitam Pekat", "Fuel Pump Lemah", "Injector Bermasalah", "Filter Solar Kotor"
+                    ]
+                },
+                {
+                    kategori: "TRANSMISSION",
+                    pilihanKerusakan: [
+                        "Tidak Bisa Maju", "Tidak Bisa Mundur", "Persneling Keras", "Transmisi Slip", "Gearbox Rusak", "Kopling Aus"
+                    ]
+                },
+                {
+                    kategori: "HYDRAULIC",
+                    pilihanKerusakan: [
+                        "Fork Tidak Naik", "Fork Tidak Turun", "Hose Hydraulic Bocor", "Silinder Bocor", "Pompa Lemah", "Oli Hydraulic Habis", "Valve Macet"
+                    ]
+                },
+                {
+                    kategori: "ELECTRICAL",
+                    pilihanKerusakan: [
+                        "Aki Soak", "Alternator Rusak", "Wiring Terbakar", "Fuse Putus", "Lampu Mati", "Klakson Mati", "Sensor Error"
+                    ]
+                },
+                {
+                    kategori: "TIRE",
+                    pilihanKerusakan: [
+                        "Ban Kempes", "Ban Bocor", "Ban Pecah", "Ban Aus", "Velg Retak"
+                    ]
+                },
+                {
+                    kategori: "BRAKE",
+                    pilihanKerusakan: [
+                        "Rem Blong", "Kampas Rem Habis", "Minyak Rem Bocor"
+                    ]
+                }
+            ],
+            LOADER: [
+                {
+                    kategori: "ENGINE",
+                    pilihanKerusakan: [
+                        "Tidak Bisa Start", "Starter Rusak", "Overheat", "Oli Mesin Bocor",
+                        "Mesin Brebet", "Asap Hitam Pekat", "Fuel Pump Lemah", "Injector Bermasalah", "Filter Solar Kotor"
+                    ]
+                },
+                {
+                    kategori: "TRANSMISSION",
+                    pilihanKerusakan: [
+                        "Tidak Bisa Maju", "Tidak Bisa Mundur", "Persneling Keras", "Transmisi Slip", "Gearbox Rusak", "Kopling Aus"
+                    ]
+                },
+                {
+                    kategori: "HYDRAULIC",
+                    pilihanKerusakan: [
+                        "Bucket Tidak Naik", "Bucket Tidak Turun", "Hose Hydraulic Bocor", "Silinder Bocor", "Pompa Lemah", "Oli Hydraulic Habis", "Valve Macet"
+                    ]
+                },
+                {
+                    kategori: "ELECTRICAL",
+                    pilihanKerusakan: [
+                        "Aki Soak", "Alternator Rusak", "Wiring Terbakar", "Fuse Putus", "Lampu Mati", "Klakson Mati", "Sensor Error"
+                    ]
+                },
+                {
+                    kategori: "TIRE",
+                    pilihanKerusakan: [
+                        "Ban Kempes", "Ban Bocor", "Ban Pecah", "Ban Aus", "Velg Retak"
+                    ]
+                },
+                {
+                    kategori: "BRAKE",
+                    pilihanKerusakan: [
+                        "Rem Blong", "Kampas Rem Habis", "Minyak Rem Bocor"
+                    ]
+                }
+            ]
+        };
+
+        const INITIAL_MOCK_RIWAYAT = [
+            {
+                idBreakdown: "BD-20260515-0001",
+                timestamp: "2026-05-15 08:30:00",
+                jenisUnit: "FORKLIFT",
+                typeUnit: "MHE 02",
+                vendor: "TIGER PARTNER",
+                kategoriKerusakan: "ENGINE",
+                pilihanKerusakan: "Tidak Bisa Start",
+                detailKerusakan: "Sudah di-stater berulang kali tapi mesin tetap tidak menyala, hanya terdengar suara dinamo berputar pelan.",
+                operatorAwal: "Ahmad Subarjo",
+                jamMulai: "2026-05-15T08:30",
+                operatorAkhir: "Dedi Setiawan",
+                jamSelesai: "2026-05-15T11:45",
+                durasiMenit: 195,
+                durasiJam: 3.25,
+                status: "SELESAI"
+            },
+            {
+                idBreakdown: "BD-20260516-0001",
+                timestamp: "2026-05-16 13:10:00",
+                jenisUnit: "FORKLIFT",
+                typeUnit: "MHE 16",
+                vendor: "BULL RENTAL",
+                kategoriKerusakan: "HYDRAULIC",
+                pilihanKerusakan: "Hose Hydraulic Bocor",
+                detailKerusakan: "Hose utama bocor menyemburkan oli ke bagian lantai selang forklift saat digunakan mengangkat beban 2 ton.",
+                operatorAwal: "Budi Cahyono",
+                jamMulai: "2026-05-16T13:00",
+                operatorAkhir: "Dedi Setiawan",
+                jamSelesai: "2026-05-16T15:20",
+                durasiMenit: 140,
+                durasiJam: 2.33,
+                status: "SELESAI"
+            },
+            {
+                idBreakdown: "BD-20260517-0001",
+                timestamp: "2026-05-17 09:15:00",
+                jenisUnit: "LOADER",
+                typeUnit: "JGM",
+                vendor: "JGM INDONESIA",
+                kategoriKerusakan: "TRANSMISSION",
+                pilihanKerusakan: "Tidak Bisa Mundur",
+                detailKerusakan: "Gigi transmisi keras, loader lancar melaju maju namun saat dimasukkan gigi mundur tidak mau bergerak sama sekali.",
+                operatorAwal: "Wawan Hermawan",
+                jamMulai: "2026-05-17T09:00",
+                operatorAkhir: "M. Yamin",
+                jamSelesai: "2026-05-17T14:45",
+                durasiMenit: 345,
+                durasiJam: 5.75,
+                status: "SELESAI"
+            },
+            {
+                idBreakdown: "BD-20260517-0002",
+                timestamp: "2026-05-17 22:45:00",
+                jenisUnit: "FORKLIFT",
+                typeUnit: "MHE 08",
+                vendor: "MITSUBISHIINDO",
+                kategoriKerusakan: "ELECTRICAL",
+                pilihanKerusakan: "Aki Soak",
+                detailKerusakan: "Aki drop tiba-tiba di shift malam. Tegangan dicek hanya 9V. Butuh jumper segera.",
+                operatorAwal: "Riko Pambudi",
+                jamMulai: "2026-05-17T22:30",
+                operatorAkhir: "Taufik H.",
+                jamSelesai: "2026-05-18T00:15", // cross midnight
+                durasiMenit: 105,
+                durasiJam: 1.75,
+                status: "SELESAI"
+            },
+            {
+                idBreakdown: "BD-20260518-0001",
+                timestamp: "2026-05-18 10:00:00",
+                jenisUnit: "LOADER",
+                typeUnit: "SEM",
+                vendor: "SEM HEAVY MACHINERY",
+                kategoriKerusakan: "TIRE",
+                pilihanKerusakan: "Ban Bocor",
+                detailKerusakan: "Ban loader depan kanan robek terkena tumpukan besi scraper tajam di area penimbunan material.",
+                operatorAwal: "Wawan Hermawan",
+                jamMulai: "2026-05-18T09:45",
+                operatorAkhir: "M. Yamin",
+                jamSelesai: "2026-05-18T13:30",
+                durasiMenit: 225,
+                durasiJam: 3.75,
+                status: "SELESAI"
+            },
+            {
+                idBreakdown: "BD-20260518-0002",
+                timestamp: "2026-05-18 15:40:00",
+                jenisUnit: "FORKLIFT",
+                typeUnit: "MHE 03",
+                vendor: "TIGER PARTNER",
+                kategoriKerusakan: "BRAKE",
+                pilihanKerusakan: "Minyak Rem Bocor",
+                detailKerusakan: "Pedal rem amblas saat diinjak, ditemukan genangan minyak rem bocor di dekat silinder master roda kanan belakang.",
+                operatorAwal: "Ahmad Subarjo",
+                jamMulai: "2026-05-18T15:30",
+                operatorAkhir: "-",
+                jamSelesai: "-",
+                durasiMenit: null,
+                durasiJam: null,
+                status: "ONGOING"
+            },
+            {
+                idBreakdown: "BD-20260519-0001",
+                timestamp: "2026-05-19 08:20:00",
+                jenisUnit: "LOADER",
+                typeUnit: "LIUGONG",
+                vendor: "LIUGONG RENTAL",
+                kategoriKerusakan: "HYDRAULIC",
+                pilihanKerusakan: "Bucket Tidak Naik",
+                detailKerusakan: "Silinder lift hydraulic utama tersumbat atau seal pecah. Bucket tidak mau terangkat walau throttle gas penuh.",
+                operatorAwal: "Wawan Hermawan",
+                jamMulai: "2026-05-19T08:15",
+                operatorAkhir: "-",
+                jamSelesai: "-",
+                durasiMenit: null,
+                durasiJam: null,
+                status: "ONGOING"
+            }
+        ];
+
+        // GLOBAL CONFIG & STATES
+        let currentTab = "tab-catat";
+        let activeWizardStep = 1;
+        let dbMode = "online"; // "online" or "offline"
+        let appsScriptUrl = "https://script.google.com/macros/s/AKfycbwz49AxUt6Ujm4jnNbNUcVePD6ERvwqnFoymCeNqUD6oQoJ66cpkFHb270fTzngzR9-dQ/exec";
+        
+        // Active Laporan Data State
+        let formBreakdown = {
+            jenisUnit: "",
+            typeUnit: "",
+            vendor: "-",
+            kategoriKerusakan: "",
+            pilihanKerusakan: "",
+            detailKerusakan: "",
+            operatorAwal: "",
+            jamMulai: "",
+            photoUrl: "",
+            kondisiOperasional: "BREAKDOWN"
+        };
+
+        // Cache Master Data
+        let cachedJenisUnit = [];
+        let cachedRiwayat = [];
+        let filteredRiwayat = [];
+        
+        // Pagination State
+        let historyCurrentPage = 1;
+        const historyRowsPerPage = 20;
+
+        // Chart Instances for Dashboard
+        let chartWeeklyTrendInstance = null;
+        let chartJenisShareInstance = null;
+        let chartCategoriesInstance = null;
+
+        // ==============================================
+        // CORE INITIALIZER
+        // ==============================================
+        window.addEventListener("DOMContentLoaded", function () {
+            initDatabaseConnectionSettings();
+            updateDigitalClock();
+            setInterval(updateDigitalClock, 1000);
+            
+            // Set default date/time fields in Step 6
+            resetWaktuMulaiInputs();
+            
+            // Add sidebar listeners
+            document.querySelectorAll(".sidebar-menu .menu-item").forEach(item => {
+                item.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    switchTab(this.getAttribute("data-tab"));
+                });
+            });
+
+            // Initial Data load
+            syncDataWithMode();
+
+            // Setup ongoing timer updating every minute
+            setInterval(updateOngoingTimers, 60000);
+        });
+
+        // DIGITAL REALTIME CLOCK FOR HEADER
+        function updateDigitalClock() {
+            const clockEl = document.getElementById("digital-clock");
+            const now = new Date();
+            const hours = ("0" + now.getHours()).slice(-2);
+            const minutes = ("0" + now.getMinutes()).slice(-2);
+            clockEl.textContent = `${hours}:${minutes} WIB`;
+        }
+
+        // DATABASE CONNECTION STATE
+        function initDatabaseConnectionSettings() {
+            const defaultUrl = "https://script.google.com/macros/s/AKfycbx0SV1apwjPp6q2RQBqNp1ig2RYkYzZf6mjUeEA08xzhu6pb0wCW2r8zo75XeJgzLBNLw/exec";
+            // Load saved settings
+            const savedUrl = localStorage.getItem("smart_bd_api_url");
+            const savedMode = localStorage.getItem("smart_bd_mode");
+            
+            if (savedUrl) {
+                appsScriptUrl = savedUrl;
+                document.getElementById("settings-api-url").value = savedUrl;
+            } else {
+                appsScriptUrl = defaultUrl;
+                document.getElementById("settings-api-url").value = defaultUrl;
+                localStorage.setItem("smart_bd_api_url", defaultUrl);
+            }
+            
+            // Tentukan default jika running di ekosistem Apps Script
+            const isGoogleHost = window.google && google.script && google.script.run;
+            if (isGoogleHost) {
+                dbMode = "online";
+                localStorage.setItem("smart_bd_mode", "online");
+            } else if (savedMode) {
+                dbMode = savedMode;
+            } else {
+                dbMode = "online";
+                localStorage.setItem("smart_bd_mode", "online");
+            }
+
+            updateDatabaseBadgeUI();
+        }
+
+        function updateDatabaseBadgeUI() {
+            const badge = document.getElementById("db-badge");
+            const badgeText = document.getElementById("db-badge-text");
+            
+            if (dbMode === "online") {
+                badge.className = "database-badge online";
+                badgeText.textContent = "Google Sheets Mode";
+            } else {
+                badge.className = "database-badge offline";
+                badgeText.textContent = "Simulated Mode";
+            }
+        }
+
+        function openSettingsModal() {
+            toggleSettingsModal(true);
+        }
+
+        function toggleSettingsModal(show) {
+            document.getElementById("settings-modal-overlay").style.display = show ? "flex" : "none";
+            if (show) {
+                document.querySelector(`input[name="settings-mode"][value="${dbMode}"]`).checked = true;
+            }
+        }
+
+        function saveSettings() {
+            const urlVal = document.getElementById("settings-api-url").value.trim();
+            const modeVal = document.querySelector('input[name="settings-mode"]:checked').value;
+            
+            if (modeVal === "online" && !urlVal && !(window.google && google.script && google.script.run)) {
+                showToast("URL Web App wajib diisi jika memilih Google Sheets Mode!", "error");
+                return;
+            }
+
+            appsScriptUrl = urlVal;
+            dbMode = modeVal;
+            
+            localStorage.setItem("smart_bd_api_url", urlVal);
+            localStorage.setItem("smart_bd_mode", modeVal);
+            
+            updateDatabaseBadgeUI();
+            toggleSettingsModal(false);
+            
+            showToast("Konfigurasi database berhasil disimpan!", "success");
+            
+            // Reload all data
+            syncDataWithMode();
+        }
+
+        // ==============================================
+        // DATA ORCHESTRATION / ENGINE LAYERS
+        // ==============================================
+        async function syncDataWithMode() {
+            showToast("Menyelaraskan data...", "warning");
+            document.getElementById("pull-refresh-indicator").style.display = "flex";
+            
+            if (dbMode === "offline") {
+                // Initialize Offline LocalStorage
+                if (!localStorage.getItem("smart_bd_jenis_unit")) {
+                    localStorage.setItem("smart_bd_jenis_unit", JSON.stringify(MOCK_JENIS_UNIT));
+                }
+                if (!localStorage.getItem("smart_bd_riwayat")) {
+                    localStorage.setItem("smart_bd_riwayat", JSON.stringify(INITIAL_MOCK_RIWAYAT));
+                }
+
+                cachedJenisUnit = JSON.parse(localStorage.getItem("smart_bd_jenis_unit"));
+                cachedRiwayat = JSON.parse(localStorage.getItem("smart_bd_riwayat"));
+                
+                // Urutkan Riwayat descending
+                cachedRiwayat.sort((a, b) => b.idBreakdown.localeCompare(a.idBreakdown));
+                
+                setTimeout(() => {
+                    document.getElementById("pull-refresh-indicator").style.display = "none";
+                    processLoadedData();
+                    showToast("Penyelarasan offline selesai (Local Storage)", "success");
+                }, 800);
+            } else {
+                // ONLINE DATABASE MODE
+                try {
+                    // 1. Fetch Jenis Unit
+                    const resJenis = await apiCall("getJenisUnit");
+                    if (resJenis.success) {
+                        cachedJenisUnit = resJenis.data;
+                        localStorage.setItem("smart_bd_jenis_unit", JSON.stringify(cachedJenisUnit));
+                    }
+                    
+                    // 2. Fetch Riwayat Breakdown (Semua)
+                    const resRiwayat = await apiCall("getRiwayatBreakdown");
+                    if (resRiwayat.success) {
+                        cachedRiwayat = resRiwayat.data;
+                        localStorage.setItem("smart_bd_riwayat", JSON.stringify(cachedRiwayat));
+                    }
+                    
+                    document.getElementById("pull-refresh-indicator").style.display = "none";
+                    processLoadedData();
+                    showToast("Penyelarasan Google Sheets berhasil!", "success");
+                } catch (err) {
+                    console.error(err);
+                    document.getElementById("pull-refresh-indicator").style.display = "none";
+                    showToast("Gagal memuat data dari server! Beralih ke Cache lokal.", "error");
+                    
+                    // Fallback to cache if exists
+                    if (localStorage.getItem("smart_bd_jenis_unit") && localStorage.getItem("smart_bd_riwayat")) {
+                        cachedJenisUnit = JSON.parse(localStorage.getItem("smart_bd_jenis_unit"));
+                        cachedRiwayat = JSON.parse(localStorage.getItem("smart_bd_riwayat"));
+                        processLoadedData();
+                    } else {
+                        // Hard fallback to mock
+                        cachedJenisUnit = MOCK_JENIS_UNIT;
+                        cachedRiwayat = INITIAL_MOCK_RIWAYAT;
+                        processLoadedData();
+                    }
+                }
+            }
+        }
+
+        // DUAL-MODE API ROUTER
+        function apiCall(action, payload = {}) {
+            return new Promise((resolve, reject) => {
+                // Case A: Running inside Google Web App Frame
+                if (window.google && google.script && google.script.run) {
+                    if (action === "getJenisUnit") {
+                        google.script.run
+                            .withSuccessHandler(data => resolve({ success: true, data: data }))
+                            .withFailureHandler(err => reject(err))
+                            .getJenisUnit();
+                    } else if (action === "getKategoriKerusakan") {
+                        google.script.run
+                            .withSuccessHandler(data => resolve({ success: true, data: data }))
+                            .withFailureHandler(err => reject(err))
+                            .getKategoriKerusakan(payload.jenisUnit);
+                    } else if (action === "getRiwayatBreakdown") {
+                        google.script.run
+                            .withSuccessHandler(data => resolve({ success: true, data: data }))
+                            .withFailureHandler(err => reject(err))
+                            .getRiwayatBreakdown(payload);
+                    } else if (action === "getDashboardStats") {
+                        google.script.run
+                            .withSuccessHandler(data => resolve({ success: true, data: data }))
+                            .withFailureHandler(err => reject(err))
+                            .getDashboardStats(payload);
+                    } else if (action === "simpanBreakdownAwal") {
+                        google.script.run
+                            .withSuccessHandler(data => resolve({ success: true, data: data }))
+                            .withFailureHandler(err => reject(err))
+                            .simpanBreakdownAwal(payload);
+                    } else if (action === "lengkapiBreakdownAkhir") {
+                        google.script.run
+                            .withSuccessHandler(data => resolve({ success: true, data: data }))
+                            .withFailureHandler(err => reject(err))
+                            .lengkapiBreakdownAkhir(payload.idBreakdown, payload.operatorAkhir, payload.jamSelesaiStr);
+                    } else {
+                        reject(new Error("Action tidak disupport via google.script.run"));
+                    }
+                } 
+                // Case B: Standalone Web Page calling REST API Web App Deploy URL
+                else if (appsScriptUrl) {
+                    // Untuk memotong CORS issue, biasakan layani POST untuk mutasi dan GET untuk query
+                    let url = appsScriptUrl;
+                    let options = {};
+                    
+                    if (action === "simpanBreakdownAwal" || action === "lengkapiBreakdownAkhir") {
+                        options = {
+                            method: "POST",
+                            body: JSON.stringify({ action: action, payload: payload }),
+                            headers: {
+                                "Content-Type": "text/plain;charset=utf-8"
+                            }
+                        };
+                    } else {
+                        // GET query string
+                        let qParams = `?action=${action}`;
+                        for (let k in payload) {
+                            qParams += `&${k}=${encodeURIComponent(payload[k])}`;
+                        }
+                        url += qParams;
+                        options = { method: "GET" };
+                    }
+                    
+                    fetch(url, options)
+                        .then(res => res.json())
+                        .then(data => resolve(data))
+                        .catch(err => reject(err));
+                } else {
+                    reject(new Error("Database offline dan URL API Google Sheets belum dikonfigurasi."));
+                }
+            });
+        }
+
+        // Process data once loaded
+        function processLoadedData() {
+            filteredRiwayat = [...cachedRiwayat];
+            
+            // Update Tab Selesaikan Badge Count
+            const ongoingCount = cachedRiwayat.filter(r => r.status.toLowerCase() === "ongoing").length;
+            const badgeS = document.getElementById("ongoing-badge-sidebar");
+            if (ongoingCount > 0) {
+                badgeS.textContent = ongoingCount;
+                badgeS.style.display = "flex";
+            } else {
+                badgeS.style.display = "none";
+            }
+
+            // Refresh UI depending on active tab
+            if (currentTab === "tab-selesaikan") {
+                renderOngoingBreakdowns();
+            } else if (currentTab === "tab-dashboard") {
+                calculateAndRenderDashboard();
+            } else if (currentTab === "tab-riwayat") {
+                renderHistoryTable();
+            }
+        }
+
+        // MANUAL RE-SYNC BUTTON
+        function triggerManualSync() {
+            syncDataWithMode();
+        }
+
+        // ==============================================
+        // NAV TAB CONTROLLER
+        // ==============================================
+        function switchTab(tabId) {
+            currentTab = tabId;
+            
+            // Update active menu markers
+            document.querySelectorAll(".sidebar-menu .menu-item").forEach(item => {
+                if (item.getAttribute("data-tab") === tabId) {
+                    item.classList.add("active");
+                } else {
+                    item.classList.remove("active");
+                }
+            });
+
+            document.querySelectorAll(".bottom-nav-item").forEach(item => {
+                if (item.getAttribute("data-tab") === tabId) {
+                    item.classList.add("active");
+                } else {
+                    item.classList.remove("active");
+                }
+            });
+
+            // Update active screens
+            document.querySelectorAll(".screen").forEach(screen => {
+                if (screen.id === tabId) {
+                    screen.classList.add("active");
+                } else {
+                    screen.classList.remove("active");
+                }
+            });
+
+            // Dynamic header texts
+            const textTitle = document.getElementById("header-text-title");
+            const textSubtitle = document.getElementById("header-text-subtitle");
+            
+            if (tabId === "tab-catat") {
+                textTitle.textContent = "Pencatatan Breakdown Baru";
+                textSubtitle.textContent = "Mulai pelaporan kerusakan armada lapangan secara terstruktur";
+            } else if (tabId === "tab-selesaikan") {
+                textTitle.textContent = "Penyelesaian Kerja Breakdown";
+                textSubtitle.textContent = "Daftar unit yang sedang diperbaiki di workshop lapangan";
+                renderOngoingBreakdowns();
+            } else if (tabId === "tab-dashboard") {
+                textTitle.textContent = "Dashboard Analisis Downtime";
+                textSubtitle.textContent = "Statistik performa, durasi, dan tren breakdown alat berat";
+                calculateAndRenderDashboard();
+            } else if (tabId === "tab-riwayat") {
+                textTitle.textContent = "Riwayat Laporan Terdaftar";
+                textSubtitle.textContent = "Arsip rekaman perbaikan dan durasi breakdown alat berat";
+                renderHistoryTable();
+            }
+        }
+
+        // ==============================================
+        // TAB 1: STEPS WIZARD CONTROLLER
+        // ==============================================
+        function updateWizardUI() {
+            // Update active step class
+            document.querySelectorAll(".wizard-step").forEach((step, idx) => {
+                if (idx + 1 === activeWizardStep) {
+                    step.classList.add("active");
+                } else {
+                    step.classList.remove("active");
+                }
+            });
+
+            // Update stepper bar width and back button visibility
+            const bar = document.getElementById("stepper-bar");
+            const backBtn = document.getElementById("stepper-back-btn");
+            const indicatorText = document.getElementById("stepper-step-indicator");
+            
+            const stepsCount = 7;
+            const pct = (activeWizardStep / stepsCount) * 100;
+            bar.style.width = `${pct}%`;
+            
+            indicatorText.textContent = `LANGKAH ${activeWizardStep} DARI ${stepsCount}`;
+            
+            if (activeWizardStep === 1) {
+                backBtn.style.visibility = "hidden";
+            } else {
+                backBtn.style.visibility = "visible";
+            }
+
+            // Enable or disable next button based on step validation
+            validateCurrentStep();
+        }
+
+        function nextWizardStep() {
+            if (activeWizardStep < 7) {
+                activeWizardStep++;
+                updateWizardUI();
+            } else {
+                // Open confirmation dialog
+                prepareSummaryData();
+                toggleConfirmModal(true);
+            }
+        }
+
+        function prevWizardStep() {
+            if (activeWizardStep > 1) {
+                activeWizardStep--;
+                updateWizardUI();
+            }
+        }
+
+        function validateCurrentStep() {
+            const nextBtn = document.getElementById("wizard-next-btn");
+            let isValid = false;
+
+            if (activeWizardStep === 1) {
+                isValid = formBreakdown.jenisUnit !== "";
+                nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
+            } else if (activeWizardStep === 2) {
+                isValid = formBreakdown.typeUnit !== "";
+                nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
+            } else if (activeWizardStep === 3) {
+                isValid = formBreakdown.kategoriKerusakan !== "";
+                nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
+            } else if (activeWizardStep === 4) {
+                isValid = formBreakdown.pilihanKerusakan !== "";
+                nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
+            } else if (activeWizardStep === 5) {
+                isValid = formBreakdown.detailKerusakan.trim().length >= 10;
+                nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
+            } else if (activeWizardStep === 6) {
+                isValid = formBreakdown.operatorAwal.trim().length >= 2;
+                nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
+            } else if (activeWizardStep === 7) {
+                isValid = true; // Optional step
+                const pUrl = document.getElementById("input-photo-url") ? document.getElementById("input-photo-url").value : "";
+                if (pUrl) {
+                    nextBtn.innerHTML = `Lihat Ringkasan <i class="fa-solid fa-file-invoice"></i>`;
+                } else {
+                    nextBtn.innerHTML = `Lewati & Lihat Ringkasan <i class="fa-solid fa-file-invoice"></i>`;
+                }
+            }
+
+            nextBtn.disabled = !isValid;
+        }
+
+        // STEP 1 SELECTION
+        function selectJenisUnit(jenis) {
+            formBreakdown.jenisUnit = jenis;
+            
+            // Visual active border
+            document.querySelectorAll(".jenis-unit-card").forEach(c => {
+                if (c.textContent.indexOf(jenis) > -1) {
+                    c.classList.add("selected");
+                } else {
+                    c.classList.remove("selected");
+                }
+            });
+
+            // Reset downstream data
+            formBreakdown.typeUnit = "";
+            formBreakdown.vendor = "-";
+            formBreakdown.kategoriKerusakan = "";
+            formBreakdown.pilihanKerusakan = "";
+            
+            // Build dynamically step 2 and step 4 content
+            buildTypeUnitCards();
+            
+            setTimeout(() => {
+                nextWizardStep();
+            }, 300);
+        }
+
+        // STEP 2: BUILD TYPE CARDS DYNAMICALLY
+        function buildTypeUnitCards() {
+            const container = document.getElementById("type-unit-grid");
+            container.innerHTML = "";
+            
+            const filtered = cachedJenisUnit.filter(u => u.jenisUnit === formBreakdown.jenisUnit);
+            
+            filtered.forEach(unit => {
+                const card = document.createElement("div");
+                card.className = "type-unit-card";
+                card.textContent = unit.typeUnit;
+                card.onclick = function() {
+                    selectTypeUnit(unit.typeUnit, unit.vendor, card);
+                };
+                container.appendChild(card);
+            });
+        }
+
+        function selectTypeUnit(type, vendor, cardEl) {
+            formBreakdown.typeUnit = type;
+            formBreakdown.vendor = vendor || "-";
+            
+            document.querySelectorAll(".type-unit-card").forEach(c => c.classList.remove("selected"));
+            cardEl.classList.add("selected");
+            
+            setTimeout(() => {
+                nextWizardStep();
+            }, 300);
+        }
+
+        // STEP 3: KATEGORI SELECTION
+        function selectCategory(catName) {
+            formBreakdown.kategoriKerusakan = catName;
+            
+            document.querySelectorAll(".category-card").forEach(c => {
+                if (c.querySelector(".category-name").textContent === catName) {
+                    c.classList.add("cat-active");
+                } else {
+                    c.classList.remove("cat-active");
+                }
+            });
+
+            // Reset step 4 choices
+            formBreakdown.pilihanKerusakan = "";
+
+            // Build dynamic Choices list in Step 4
+            buildChoicesList();
+
+            setTimeout(() => {
+                nextWizardStep();
+            }, 300);
+        }
+
+        // STEP 4: BUILD DETAIL CHOICES DYNAMICALLY
+        function buildChoicesList() {
+            const container = document.getElementById("choices-list-container");
+            container.innerHTML = "";
+            
+            const unitTypeCat = MOCK_KERUSAKAN[formBreakdown.jenisUnit];
+            if (!unitTypeCat) return;
+            
+            const foundCat = unitTypeCat.find(c => c.kategori === formBreakdown.kategoriKerusakan);
+            if (!foundCat) return;
+
+            foundCat.pilihanKerusakan.forEach(pilihan => {
+                const item = document.createElement("div");
+                item.className = "choice-item";
+                item.innerHTML = `
+                    <div class="choice-checkbox"></div>
+                    <div class="choice-text">${pilihan}</div>
+                `;
+                item.onclick = function() {
+                    selectChoice(pilihan, item);
+                };
+                container.appendChild(item);
+            });
+        }
+
+        function selectChoice(pilihan, itemEl) {
+            formBreakdown.pilihanKerusakan = pilihan;
+            
+            document.querySelectorAll(".choice-item").forEach(c => c.classList.remove("selected"));
+            itemEl.classList.add("selected");
+            
+            setTimeout(() => {
+                nextWizardStep();
+            }, 300);
+        }
+
+        // STATE UPDATER FOR OPERATIONAL STATUS
+        function updateKondisiOperasionalState() {
+            const opEl = document.getElementById("input-kondisi-operasional");
+            if (opEl) {
+                formBreakdown.kondisiOperasional = opEl.value;
+            }
+        }
+
+        // STEP 5: TEXTAREA VALIDATION
+        function validateStep5() {
+            const input = document.getElementById("input-detail-kerusakan");
+            const counter = document.getElementById("char-counter");
+            const val = input.value;
+            
+            formBreakdown.detailKerusakan = val;
+            counter.textContent = `${val.length} / 250 karakter`;
+            
+            if (val.length < 10) {
+                counter.style.color = "var(--danger)";
+            } else {
+                counter.style.color = "var(--text-muted)";
+            }
+
+            validateCurrentStep();
+        }
+
+        // STEP 6: DYNAMIC CONTROLS & DEFAULTS
+        function resetWaktuMulaiInputs() {
+            const now = new Date();
+            // WIB Format (Local)
+            const dateStr = now.getFullYear() + "-" + ("0" + (now.getMonth() + 1)).slice(-2) + "-" + ("0" + now.getDate()).slice(-2);
+            const timeStr = ("0" + now.getHours()).slice(-2) + ":" + ("0" + now.getMinutes()).slice(-2);
+            
+            document.getElementById("input-tanggal-mulai").value = dateStr;
+            document.getElementById("input-jam-mulai").value = timeStr;
+            document.getElementById("input-operator-awal").value = "";
+            
+            formBreakdown.operatorAwal = "";
+        }
+
+        function validateStep6() {
+            formBreakdown.operatorAwal = document.getElementById("input-operator-awal").value;
+            validateCurrentStep();
+        }
+
+        // ==============================================
+        // POPUP CONFIRMATION & SAVE LAPORAN AWAL
+        // ==============================================
+        function toggleConfirmModal(show) {
+            document.getElementById("confirm-modal-overlay").style.display = show ? "flex" : "none";
+            document.body.style.overflow = show ? "hidden" : "";
+        }
+
+        function prepareSummaryData() {
+            const tDate = document.getElementById("input-tanggal-mulai").value;
+            const tTime = document.getElementById("input-jam-mulai").value;
+            formBreakdown.jamMulai = `${tDate}T${tTime}`;
+            
+            const pUrl = document.getElementById("input-photo-url") ? document.getElementById("input-photo-url").value : "";
+            formBreakdown.photoUrl = pUrl;
+
+            document.getElementById("summary-jenis-unit").textContent = formBreakdown.jenisUnit;
+            document.getElementById("summary-type-unit").textContent = formBreakdown.typeUnit;
+            document.getElementById("summary-vendor").textContent = formBreakdown.vendor;
+            document.getElementById("summary-kategori").textContent = formBreakdown.kategoriKerusakan;
+            document.getElementById("summary-pilihan").textContent = formBreakdown.pilihanKerusakan;
+            document.getElementById("summary-detail").textContent = formBreakdown.detailKerusakan;
+            document.getElementById("summary-operator-awal").textContent = formBreakdown.operatorAwal;
+            
+            // Format waktu human friendly
+            const timeFormatted = new Date(formBreakdown.jamMulai).toLocaleString("id-ID", {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            document.getElementById("summary-waktu-mulai").textContent = timeFormatted + " WIB";
+
+            const opCond = formBreakdown.kondisiOperasional || "BREAKDOWN";
+            const opCondBadge = opCond === "BREAKDOWN" 
+                ? '<span style="color:var(--danger); font-weight:800;">🔴 BREAKDOWN (Stop Total)</span>' 
+                : '<span style="color:var(--accent); font-weight:800;">🟡 RUNNING (Kerusakan Kerja)</span>';
+            document.getElementById("summary-kondisi-operasional").innerHTML = opCondBadge;
+
+            const photoItem = document.getElementById("summary-photo-item");
+            const photoImg = document.getElementById("summary-photo-img");
+            if (pUrl) {
+                photoImg.src = pUrl;
+                photoItem.style.display = "block";
+            } else {
+                photoImg.src = "";
+                photoItem.style.display = "none";
+            }
+        }
+
+        async function submitLaporanAwal() {
+            const submitBtn = document.getElementById("modal-submit-btn");
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Mengirim Laporan...`;
+            
+            if (dbMode === "offline") {
+                // Simpan offline ke localStorage
+                setTimeout(() => {
+                    const now = new Date();
+                    const datePart = now.getFullYear() + ("0" + (now.getMonth() + 1)).slice(-2) + ("0" + now.getDate()).slice(-2);
+                    
+                    const localData = JSON.parse(localStorage.getItem("smart_bd_riwayat")) || [];
+                    
+                    // Generate ID BD-YYYYMMDD-XXXX
+                    const prefix = `BD-${datePart}-`;
+                    let maxSeq = 0;
+                    localData.forEach(item => {
+                        if (item.idBreakdown.startsWith(prefix)) {
+                            const seqPart = parseInt(item.idBreakdown.substring(prefix.length), 10);
+                            if (seqPart > maxSeq) maxSeq = seqPart;
+                        }
+                    });
+                    const seq = ("0000" + (maxSeq + 1)).slice(-4);
+                    const newId = prefix + seq;
+
+                    const newItem = {
+                        idBreakdown: newId,
+                        timestamp: now.getFullYear() + "-" + ("0" + (now.getMonth() + 1)).slice(-2) + "-" + ("0" + now.getDate()).slice(-2) + " " + ("0" + now.getHours()).slice(-2) + ":" + ("0" + now.getMinutes()).slice(-2) + ":" + ("0" + now.getSeconds()).slice(-2),
+                        jenisUnit: formBreakdown.jenisUnit,
+                        typeUnit: formBreakdown.typeUnit,
+                        vendor: formBreakdown.vendor,
+                        kategoriKerusakan: formBreakdown.kategoriKerusakan,
+                        pilihanKerusakan: formBreakdown.pilihanKerusakan,
+                        detailKerusakan: formBreakdown.detailKerusakan,
+                        operatorAwal: formBreakdown.operatorAwal,
+                        jamMulai: formBreakdown.jamMulai,
+                        operatorAkhir: "-",
+                        jamSelesai: "-",
+                        durasiMenit: null,
+                        durasiJam: null,
+                        status: "ONGOING",
+                        photoUrl: formBreakdown.photoUrl || "",
+                        kondisiOperasional: formBreakdown.kondisiOperasional || "BREAKDOWN"
+                    };
+
+                    localData.push(newItem);
+                    localStorage.setItem("smart_bd_riwayat", JSON.stringify(localData));
+
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Kirim Laporan Resmi`;
+                    
+                    toggleConfirmModal(false);
+                    triggerSuccessScreen(newId);
+                }, 1000);
+            } else {
+                // KIRIM ONLINE KE APPS SCRIPT
+                try {
+                    const res = await apiCall("simpanBreakdownAwal", formBreakdown);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Kirim Laporan Resmi`;
+                    
+                    if (res.success) {
+                        toggleConfirmModal(false);
+                        triggerSuccessScreen(res.data);
+                    } else {
+                        showToast(`Gagal: ${res.error}`, "error");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Kirim Laporan Resmi`;
+                    showToast("Koneksi gagal! Silakan periksa jaringan dan setelan API Anda.", "error");
+                }
+            }
+        }
+
+        // CONFETTI ANIMATION & SUCCESS DISPLAY
+        function triggerSuccessScreen(newId) {
+            // Trigger Confetti
+            confetti({
+                particleCount: 150,
+                spread: 80,
+                origin: { y: 0.6 },
+                colors: ["#2563EB", "#F59E0B", "#10B981"]
+            });
+
+            // Ubah total wizard card menjadi halaman sukses
+            const cardEl = document.querySelector("#tab-catat .card");
+            cardEl.innerHTML = `
+                <div class="success-step-card">
+                    <div class="success-icon-wrapper">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <h2 style="font-weight: 800; font-size: 1.6rem; color: var(--text-main);">Laporan Sukses Terdaftar!</h2>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">Dokumen breakdown armada Anda telah dimasukkan ke dalam database pengawasan workshop secara real-time.</p>
+                    <div class="success-id-badge">${newId}</div>
+                    <button class="btn" style="margin-top: 15px;" onclick="resetWizardForm()"><i class="fa-solid fa-rotate-left"></i> Catat Laporan Lain</button>
+                </div>
+            `;
+
+            // Reload data in background
+            syncDataWithMode();
+        }
+
+        function resetWizardForm() {
+            // Reset state
+            activeWizardStep = 1;
+            formBreakdown = {
+                jenisUnit: "",
+                typeUnit: "",
+                vendor: "-",
+                kategoriKerusakan: "",
+                pilihanKerusakan: "",
+                detailKerusakan: "",
+                operatorAwal: "",
+                jamMulai: "",
+                photoUrl: "",
+                kondisiOperasional: "BREAKDOWN"
+            };
+
+            // Restore Stepper template
+            const tabEl = document.getElementById("tab-catat");
+            tabEl.innerHTML = `
+                <div class="stepper-header">
+                    <button class="stepper-back-btn" id="stepper-back-btn" onclick="prevWizardStep()" style="visibility: hidden;">
+                        <i class="fa-solid fa-arrow-left"></i> Kembali
+                    </button>
+                    <div class="stepper-progress">
+                        <div class="stepper-progress-bar" id="stepper-bar"></div>
+                    </div>
+                    <div class="stepper-info" id="stepper-step-indicator">LANGKAH 1 DARI 7</div>
+                </div>
+
+                <div class="card" style="padding: 40px 24px;">
+                    <!-- STEP 1: PILIH JENIS UNIT -->
+                    <div id="step-1" class="wizard-step active">
+                        <h2 class="step-title">Pilih Jenis Unit</h2>
+                        <p class="step-subtitle">Pilih kategori armada alat berat yang mengalami kendala breakdown</p>
+                        <div class="jenis-unit-container">
+                            <div class="jenis-unit-card" onclick="selectJenisUnit('FORKLIFT')">
+                                <div class="jenis-icon-circle">
+                                    <i class="fa-solid fa-truck-ramp-box"></i>
+                                </div>
+                                <div class="jenis-unit-title">FORKLIFT</div>
+                            </div>
+                            <div class="jenis-unit-card" onclick="selectJenisUnit('LOADER')">
+                                <div class="jenis-icon-circle">
+                                    <i class="fa-solid fa-truck-monster"></i>
+                                </div>
+                                <div class="jenis-unit-title">LOADER</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: PILIH TYPE UNIT -->
+                    <div id="step-2" class="wizard-step">
+                        <h2 class="step-title">Pilih Tipe Unit</h2>
+                        <p class="step-subtitle">Pilih nomor seri atau tipe spesifik alat berat yang breakdown</p>
+                        <div class="type-unit-grid" id="type-unit-grid"></div>
+                    </div>
+
+                    <!-- STEP 3: KATEGORI KERUSAKAN -->
+                    <div id="step-3" class="wizard-step">
+                        <h2 class="step-title">Pilih Kategori Kerusakan</h2>
+                        <p class="step-subtitle">Pilih sistem atau komponen utama yang mengalami kendala teknis</p>
+                        <div class="category-grid">
+                            <div class="category-card cat-engine" onclick="selectCategory('ENGINE')">
+                                <div class="category-icon"><i class="fa-solid fa-gears"></i></div>
+                                <div class="category-name">ENGINE</div>
+                                <div class="category-desc">Mesin, starter, injector, turbo, fuel system, oli mesin</div>
+                            </div>
+                            <div class="category-card cat-transmission" onclick="selectCategory('TRANSMISSION')">
+                                <div class="category-icon"><i class="fa-solid fa-gear"></i></div>
+                                <div class="category-name">TRANSMISSION</div>
+                                <div class="category-desc">Gearbox, kopling, tenaga maju mundur</div>
+                            </div>
+                            <div class="category-card cat-hydraulic" onclick="selectCategory('HYDRAULIC')">
+                                <div class="category-icon"><i class="fa-solid fa-droplet"></i></div>
+                                <div class="category-name">HYDRAULIC</div>
+                                <div class="category-desc">Pompa hydraulic, hose, silinder, fork/bucket</div>
+                            </div>
+                            <div class="category-card cat-electrical" onclick="selectCategory('ELECTRICAL')">
+                                <div class="category-icon"><i class="fa-solid fa-bolt"></i></div>
+                                <div class="category-name">ELECTRICAL</div>
+                                <div class="category-desc">Aki, alternator, fuse, kabel, lampu</div>
+                            </div>
+                            <div class="category-card cat-tire" onclick="selectCategory('TIRE')">
+                                <div class="category-icon"><i class="fa-solid fa-circle"></i></div>
+                                <div class="category-name">TIRE</div>
+                                <div class="category-desc">Ban, velg, tekanan angin, roda</div>
+                            </div>
+                            <div class="category-card cat-brake" onclick="selectCategory('BRAKE')">
+                                <div class="category-icon"><i class="fa-solid fa-circle-stop"></i></div>
+                                <div class="category-name">BRAKE</div>
+                                <div class="category-desc">Sistem rem, kampas, minyak rem</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 4: PILIH DETAIL KERUSAKAN -->
+                    <div id="step-4" class="wizard-step">
+                        <h2 class="step-title">Pilih Gejala / Detail Kerusakan</h2>
+                        <p class="step-subtitle">Pilih gejala kerusakan yang paling mencerminkan kondisi unit saat ini</p>
+                        <div class="choices-container" id="choices-list-container"></div>
+                    </div>
+
+                    <!-- STEP 5: DESKRIPSI DETAIL BEBAS -->
+                    <div id="step-5" class="wizard-step">
+                        <h2 class="step-title">Tambahkan Catatan Tambahan</h2>
+                        <p class="step-subtitle">Jelaskan kronologi kejadian secara bebas untuk memudahkan perbaikan (minimal 10 karakter)</p>
+                        
+                        <div class="form-group" style="max-width: 400px; margin: 0 auto 20px auto; text-align: left;">
+                            <label for="input-kondisi-operasional" style="font-weight: 700; font-size: 0.9rem; color: var(--text-main); display: block; margin-bottom: 8px;">Kondisi Operasional Unit saat Kendala:</label>
+                            <select class="form-control" id="input-kondisi-operasional" style="width: 100%; border-radius: 8px; border: 1px solid var(--border-color); padding: 10px 14px; font-weight: 600; color: var(--text-main); background-color: var(--bg-card); cursor: pointer;" onchange="updateKondisiOperasionalState()">
+                                <option value="BREAKDOWN" selected>🔴 BREAKDOWN (Unit Stop / Tidak Bisa Jalan)</option>
+                                <option value="RUNNING">🟡 RUNNING (Unit Tetap Bekerja dengan Kendala)</option>
+                            </select>
+                        </div>
+
+                        <div class="detail-input-container">
+                            <textarea class="detail-textarea" id="input-detail-kerusakan" placeholder="Deskripsikan kerusakan secara detail..." oninput="validateStep5()"></textarea>
+                            <div class="detail-counter" id="char-counter">0 / 250 karakter</div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 6: WAKTU MULAI & IDENTITAS -->
+                    <div id="step-6" class="wizard-step">
+                        <h2 class="step-title">Identitas Pelapor & Waktu Mulai</h2>
+                        <p class="step-subtitle">Lengkapi nama penanggung jawab awal dan waktu kejadian breakdown</p>
+                        <div class="waktu-mulai-form">
+                            <div class="form-group">
+                                <label for="input-operator-awal">Nama Operator Penanggung Jawab</label>
+                                <input type="text" class="form-control" id="input-operator-awal" placeholder="Masukkan nama lengkap Anda..." oninput="validateStep6()">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="input-tanggal-mulai">Tanggal Breakdown</label>
+                                    <input type="date" class="form-control" id="input-tanggal-mulai">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-jam-mulai">Jam Kejadian</label>
+                                    <input type="time" class="form-control" id="input-jam-mulai">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 7: UNGGHAH FOTO -->
+                    <div id="step-7" class="wizard-step">
+                        <h2 class="step-title">Unggah Foto Breakdown (Opsional)</h2>
+                        <p class="step-subtitle">Ambil foto kerusakan secara langsung menggunakan kamera atau unggah dari file</p>
+                        <div style="max-width: 400px; margin: 20px auto 0 auto; display: flex; flex-direction: column; gap: 15px;">
+                            <div class="photo-btn" onclick="openPhotoPicker('photo-cam', 'photo-gal')" style="background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px 25px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(37,99,235,0.2);">
+                                <i class="fa-solid fa-camera" style="font-size: 1.1rem;"></i>
+                                <span>AMBIL / UNGGAH FOTO</span>
+                            </div>
+                            <input type="file" id="photo-cam" accept="image/*" capture="environment" style="display:none" onchange="uploadBreakdownPhoto(this, 'input-photo-url', 'photo-preview')">
+                            <input type="file" id="photo-gal" accept="image/*" style="display:none" onchange="uploadBreakdownPhoto(this, 'input-photo-url', 'photo-preview')">
+                            <input type="hidden" id="input-photo-url" value="">
+                            
+                            <div id="photo-preview-wrap" style="display:none; position:relative; width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-top: 10px;">
+                                <img id="photo-preview" style="width:100%; display:block; aspect-ratio:4/3; object-fit:cover;">
+                                <div onclick="resetBreakdownPhoto('photo-cam', 'photo-gal', 'photo-preview-wrap', 'input-photo-url')" style="position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.9); color:#fff; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PROGRESS NAVIGATION BUTTONS -->
+                    <div class="wizard-nav-container">
+                        <button class="btn" id="wizard-next-btn" onclick="nextWizardStep()" disabled>Lanjut Langkah <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+            `;
+
+            resetWaktuMulaiInputs();
+            updateWizardUI();
+        }
+
+        // ==============================================
+        // TAB 2: SELESAIKAN BREAKDOWN (ONGOING LIST)
+        // ==============================================
+        function renderOngoingBreakdowns() {
+            const grid = document.getElementById("ongoing-cards-grid");
+            grid.innerHTML = "";
+            
+            const ongoingList = cachedRiwayat.filter(r => r.status.toLowerCase() === "ongoing");
+            
+            if (ongoingList.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-illustration" style="grid-column: 1 / -1;">
+                        <i class="fa-solid fa-circle-check" style="color: var(--success-light); font-size: 5rem;"></i>
+                        <h2>Tidak ada breakdown aktif!</h2>
+                        <p>Seluruh unit armada di lapangan dalam kondisi aman dan siap beroperasi penuh.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            ongoingList.forEach(item => {
+                const card = document.createElement("div");
+                card.className = "ongoing-card";
+                card.id = `ongoing-card-${item.idBreakdown}`;
+                
+                // Calculate dynamic ongoing minutes
+                const startMs = new Date(item.jamMulai).getTime();
+                const nowMs = new Date().getTime();
+                const activeMins = Math.max(0, Math.floor((nowMs - startMs) / 60000));
+                
+                const timeString = formatOngoingDuration(startMs);
+
+                card.innerHTML = `
+                    <div class="ongoing-header">
+                        <div class="ongoing-id">${item.idBreakdown}</div>
+                        <div class="ongoing-badge">ONGOING</div>
+                    </div>
+                    <div class="ongoing-body">
+                        <div class="ongoing-body-row">
+                            <span class="ongoing-body-label">Unit / Armada:</span>
+                            <span class="ongoing-body-val">${item.jenisUnit} - ${item.typeUnit}</span>
+                        </div>
+                        <div class="ongoing-body-row">
+                            <span class="ongoing-body-label">Vendor Unit:</span>
+                            <span class="ongoing-body-val">${item.vendor}</span>
+                        </div>
+                        <div class="ongoing-body-row">
+                            <span class="ongoing-body-label">Kerusakan:</span>
+                            <span class="ongoing-body-val" style="color: var(--danger); font-weight: 700;">${item.kategoriKerusakan} (${item.pilihanKerusakan})</span>
+                        </div>
+                        <div class="ongoing-body-row">
+                            <span class="ongoing-body-label">Pelapor Awal:</span>
+                            <span class="ongoing-body-val">${item.operatorAwal}</span>
+                        </div>
+                        <div class="ongoing-body-row" style="margin-top: 6px;">
+                            <span class="ongoing-body-label">Catatan Lapangan:</span>
+                            <span class="ongoing-body-val" style="font-weight: 500; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">"${item.detailKerusakan}"</span>
+                        </div>
+                    </div>
+                    <div class="ongoing-timer-row" id="timer-row-${item.idBreakdown}">
+                        <div class="ongoing-timer" data-start="${startMs}">
+                            <i class="fa-solid fa-clock fa-spin" style="animation-duration: 4s;"></i> ${timeString}
+                        </div>
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem;" onclick="expandResolveForm('${item.idBreakdown}')">
+                            <i class="fa-solid fa-check"></i> Selesaikan
+                        </button>
+                    </div>
+                    
+                    <!-- Form Selesaikan (Dinamis Expand) -->
+                    <div class="ongoing-resolve-container" id="resolve-container-${item.idBreakdown}">
+                        <div class="form-group">
+                            <label style="font-size: 0.75rem;">Nama Operator Penyelesai</label>
+                            <input type="text" class="form-control" style="padding: 8px 12px; font-size: 0.85rem;" id="res-operator-${item.idBreakdown}" placeholder="Nama operator workshop...">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div class="form-group">
+                                <label style="font-size: 0.75rem;">Tanggal Selesai</label>
+                                <input type="date" class="form-control" style="padding: 8px 12px; font-size: 0.85rem;" id="res-date-${item.idBreakdown}">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size: 0.75rem;">Jam Selesai</label>
+                                <input type="time" class="form-control" style="padding: 8px 12px; font-size: 0.85rem;" id="res-time-${item.idBreakdown}">
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 4px;">
+                            <button class="btn btn-secondary" style="flex: 1; padding: 8px; font-size: 0.8rem;" onclick="expandResolveForm('${item.idBreakdown}', false)">Batal</button>
+                            <button class="btn" style="flex: 2; padding: 8px; font-size: 0.8rem;" onclick="submitLaporanAkhir('${item.idBreakdown}')">Kirim Penyelesaian</button>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+                
+                // Pre-populate resolve date/time to now
+                const now = new Date();
+                document.getElementById(`res-date-${item.idBreakdown}`).value = now.getFullYear() + "-" + ("0" + (now.getMonth() + 1)).slice(-2) + "-" + ("0" + now.getDate()).slice(-2);
+                document.getElementById(`res-time-${item.idBreakdown}`).value = ("0" + now.getHours()).slice(-2) + ":" + ("0" + now.getMinutes()).slice(-2);
+            });
+        }
+
+        // TIMERS TICKER ENGINE
+        function updateOngoingTimers() {
+            document.querySelectorAll(".ongoing-timer").forEach(timerEl => {
+                const startMs = parseInt(timerEl.getAttribute("data-start"), 10);
+                if (startMs) {
+                    timerEl.innerHTML = `<i class="fa-solid fa-clock fa-spin" style="animation-duration: 4s;"></i> ${formatOngoingDuration(startMs)}`;
+                }
+            });
+        }
+
+        function formatOngoingDuration(startMs) {
+            const diffMs = new Date().getTime() - startMs;
+            if (diffMs < 0) return "0m";
+            const minutes = Math.floor(diffMs / 60000);
+            
+            const days = Math.floor(minutes / (24 * 60));
+            const hours = Math.floor((minutes % (24 * 60)) / 60);
+            const mins = minutes % 60;
+            
+            let parts = [];
+            if (days > 0) parts.push(days + "h");
+            if (hours > 0) parts.push(hours + "j");
+            parts.push(mins + "m");
+            
+            return `Sudah berjalan: ${parts.join(" ")}`;
+        }
+
+        // EXPAND RESOLVE FORM IN CARD
+        function expandResolveForm(id, expand = true) {
+            const container = document.getElementById(`resolve-container-${id}`);
+            const timerRow = document.getElementById(`timer-row-${id}`);
+            const card = document.getElementById(`ongoing-card-${id}`);
+            
+            if (expand) {
+                container.style.display = "flex";
+                timerRow.style.display = "none";
+                card.classList.add("expanding");
+            } else {
+                container.style.display = "none";
+                timerRow.style.display = "flex";
+                card.classList.remove("expanding");
+            }
+        }
+
+        // SUBMIT RESOLVE FORM
+        async function submitLaporanAkhir(id) {
+            const operator = document.getElementById(`res-operator-${id}`).value.trim();
+            const date = document.getElementById(`res-date-${id}`).value;
+            const time = document.getElementById(`res-time-${id}`).value;
+            
+            if (operator.length < 2) {
+                showToast("Nama operator penyelesai harus diisi!", "error");
+                return;
+            }
+            if (!date || !time) {
+                showToast("Tanggal dan jam penyelesaian wajib diisi!", "error");
+                return;
+            }
+
+            const jamSelesaiStr = `${date}T${time}`;
+            
+            // Periksa agar Waktu Selesai tidak melompati Waktu Mulai
+            const item = cachedRiwayat.find(r => r.idBreakdown === id);
+            const tMulai = new Date(item.jamMulai).getTime();
+            const tSelesai = new Date(jamSelesaiStr).getTime();
+            
+            if (tSelesai < tMulai) {
+                showToast("Waktu selesai tidak boleh mendahului waktu mulai breakdown!", "error");
+                return;
+            }
+
+            // HITUNG DURASI
+            const diffMs = tSelesai - tMulai;
+            const durasiMenit = Math.round(diffMs / 60000);
+            const durasiJam = Number((durasiMenit / 60).toFixed(2));
+            
+            const formattedDuration = formatDurationString(durasiMenit);
+
+            if (dbMode === "offline") {
+                // Simpan offline ke localStorage
+                setTimeout(() => {
+                    const localData = JSON.parse(localStorage.getItem("smart_bd_riwayat")) || [];
+                    const foundIdx = localData.findIndex(r => r.idBreakdown === id);
+                    
+                    if (foundIdx > -1) {
+                        localData[foundIdx].operatorAkhir = operator;
+                        localData[foundIdx].jamSelesai = jamSelesaiStr;
+                        localData[foundIdx].durasiMenit = durasiMenit;
+                        localData[foundIdx].durasiJam = durasiJam;
+                        localData[foundIdx].status = "SELESAI";
+                        
+                        localStorage.setItem("smart_bd_riwayat", JSON.stringify(localData));
+                        
+                        showToast(`Breakdown ${id} diselesaikan!`, "success");
+                        syncDataWithMode();
+                    }
+                }, 800);
+            } else {
+                // ONLINE DATABASE SUBMIT
+                try {
+                    const payload = {
+                        idBreakdown: id,
+                        operatorAkhir: operator,
+                        jamSelesaiStr: jamSelesaiStr
+                    };
+                    const res = await apiCall("lengkapiBreakdownAkhir", payload);
+                    
+                    if (res.success) {
+                        showToast(`Tiket ${id} sukses diselesaikan. Durasi: ${formattedDuration}`, "success");
+                        syncDataWithMode();
+                    } else {
+                        showToast(`Gagal: ${res.error}`, "error");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showToast("Gagal tersambung dengan server Google Sheets!", "error");
+                }
+            }
+        }
+
+        function formatDurationString(minutes) {
+            if (minutes < 0) minutes = 0;
+            const days = Math.floor(minutes / (24 * 60));
+            const hours = Math.floor((minutes % (24 * 60)) / 60);
+            const mins = minutes % 60;
+            
+            let parts = [];
+            if (days > 0) parts.push(days + " hari");
+            if (hours > 0) parts.push(hours + " jam");
+            if (mins > 0 || parts.length === 0) parts.push(mins + " menit");
+            
+            return parts.join(" ");
+        }
+
+        // ==============================================
+        // TAB 3: DASHBOARD ANALYTICS (CALCULATIONS & CHART rendering)
+        // ==============================================
+        // Update model units dropdown based on selected jenis unit in filter panel
+        function updateFilterDropdownTypes() {
+            const filterJenis = document.getElementById("filter-jenis").value;
+            const typeDropdown = document.getElementById("filter-type");
+            typeDropdown.innerHTML = '<option value="">Semua Tipe</option>';
+
+            const uniqueTypes = [...new Set(cachedJenisUnit
+                .filter(u => !filterJenis || u.jenisUnit === filterJenis)
+                .map(u => u.typeUnit)
+            )];
+
+            uniqueTypes.forEach(t => {
+                const opt = document.createElement("option");
+                opt.value = t;
+                opt.textContent = t;
+                typeDropdown.appendChild(opt);
+            });
+        }
+
+        function applyFilters() {
+            calculateAndRenderDashboard();
+            showToast("Filter analisis berhasil diterapkan!", "success");
+        }
+
+        function resetFilters() {
+            document.getElementById("filter-date-from").value = "";
+            document.getElementById("filter-date-to").value = "";
+            document.getElementById("filter-jenis").value = "";
+            document.getElementById("filter-type").value = "";
+            document.getElementById("filter-kategori").value = "";
+            document.getElementById("filter-status").value = "";
+            if (document.getElementById("filter-kondisi-operasional")) {
+                document.getElementById("filter-kondisi-operasional").value = "";
+            }
+            
+            updateFilterDropdownTypes();
+            calculateAndRenderDashboard();
+            showToast("Filter disetel ulang!", "warning");
+        }
+
+        function getFilteredDataset() {
+            const fFrom = document.getElementById("filter-date-from").value;
+            const fTo = document.getElementById("filter-date-to").value;
+            const fJenis = document.getElementById("filter-jenis").value;
+            const fType = document.getElementById("filter-type").value;
+            const fKategori = document.getElementById("filter-kategori").value;
+            const fStatus = document.getElementById("filter-status").value;
+            const fKondisi = document.getElementById("filter-kondisi-operasional") ? document.getElementById("filter-kondisi-operasional").value : "";
+
+            return cachedRiwayat.filter(item => {
+                let match = true;
+                
+                // Filter tanggal (berdasarkan Jam Mulai)
+                if (fFrom) {
+                    const dFrom = new Date(fFrom + "T00:00:00");
+                    const dMulai = new Date(item.jamMulai);
+                    if (!isNaN(dFrom.getTime()) && !isNaN(dMulai.getTime()) && dMulai < dFrom) match = false;
+                }
+                if (fTo) {
+                    const dTo = new Date(fTo + "T23:59:59");
+                    const dMulai = new Date(item.jamMulai);
+                    if (!isNaN(dTo.getTime()) && !isNaN(dMulai.getTime()) && dMulai > dTo) match = false;
+                }
+                
+                // Dropdown filters
+                if (fJenis && item.jenisUnit !== fJenis) match = false;
+                if (fType && item.typeUnit !== fType) match = false;
+                if (fKategori && item.kategoriKerusakan !== fKategori) match = false;
+                if (fStatus && item.status !== fStatus) match = false;
+                if (fKondisi && (item.kondisiOperasional || "BREAKDOWN") !== fKondisi) match = false;
+
+                return match;
+            });
+        }
+
+        function calculateAndRenderDashboard() {
+            const data = getFilteredDataset();
+            
+            // 1. HITUNG KPI CARD VALUES
+            const total = data.length;
+            const ongoing = data.filter(r => r.status.toLowerCase() === "ongoing").length;
+            const completed = data.filter(r => r.status.toLowerCase() === "selesai").length;
+            
+            // Bulan Ini MTD
+            const now = new Date();
+            const currentMonthYear = now.getFullYear() + "-" + ("0" + (now.getMonth() + 1)).slice(-2);
+            const mtd = data.filter(r => {
+                if (r.jamMulai && r.jamMulai.length >= 7) {
+                    return r.jamMulai.substring(0, 7) === currentMonthYear;
+                }
+                return false;
+            }).length;
+
+            // Rata-rata Durasi
+            let totalDurasiMin = 0;
+            data.forEach(r => {
+                if (r.status.toLowerCase() === "selesai" && r.durasiMenit) {
+                    totalDurasiMin += r.durasiMenit;
+                }
+            });
+            const avgMin = completed > 0 ? Math.round(totalDurasiMin / completed) : 0;
+            
+            // Update DOM KPIs
+            document.getElementById("kpi-total-breakdowns").textContent = total;
+            document.getElementById("kpi-month-breakdowns").textContent = mtd;
+            document.getElementById("kpi-ongoing-count").textContent = ongoing;
+            
+            const avgDurText = document.getElementById("kpi-avg-duration");
+            if (avgMin > 0) {
+                const h = Math.floor(avgMin / 60);
+                const m = avgMin % 60;
+                avgDurText.textContent = h > 0 ? `${h}j ${m}m` : `${m}m`;
+            } else {
+                avgDurText.textContent = "-";
+            }
+
+            // 2. RENDER CHART 1: WEEKLY DURATION TRENDS (LINE)
+            const weeklyStats = {};
+            data.forEach(r => {
+                const dObj = new Date(r.jamMulai);
+                if (!isNaN(dObj.getTime())) {
+                    const label = getWeekString(dObj);
+                    if (!weeklyStats[label]) {
+                        weeklyStats[label] = { totalMins: 0, compCount: 0, totalCount: 0 };
+                    }
+                    weeklyStats[label].totalCount++;
+                    if (r.status.toLowerCase() === "selesai" && r.durasiMenit) {
+                        weeklyStats[label].totalMins += r.durasiMenit;
+                        weeklyStats[label].compCount++;
+                    }
+                }
+            });
+
+            const sortedWeeks = Object.keys(weeklyStats).sort();
+            const weekLabels = sortedWeeks;
+            const weekCounts = sortedWeeks.map(w => weeklyStats[w].totalCount);
+            const weekAvgHours = sortedWeeks.map(w => {
+                const wObj = weeklyStats[w];
+                return wObj.compCount > 0 ? Number((wObj.totalMins / wObj.compCount / 60).toFixed(1)) : 0;
+            });
+
+            renderWeeklyTrendChart(weekLabels, weekCounts, weekAvgHours);
+
+            // 3. RENDER CHART 2: PROPORSI JENIS (DONUT)
+            const forkliftCount = data.filter(r => r.jenisUnit === "FORKLIFT").length;
+            const loaderCount = data.filter(r => r.jenisUnit === "LOADER").length;
+            
+            renderJenisShareChart(forkliftCount, loaderCount);
+
+            // 4. RENDER CHART 3: KATEGORI KERUSAKAN (HORIZONTAL BAR)
+            const catMap = { ENGINE: 0, TRANSMISSION: 0, HYDRAULIC: 0, ELECTRICAL: 0, TIRE: 0, BRAKE: 0 };
+            data.forEach(r => {
+                if (catMap[r.kategoriKerusakan] !== undefined) {
+                    catMap[r.kategoriKerusakan]++;
+                }
+            });
+
+            renderCategoriesChart(Object.keys(catMap), Object.values(catMap));
+
+            // 5. RENDER SECTION: RANKING TOP BREAKDOWN UNITS (1,2,3 MEDALS)
+            const unitBreakdowns = {};
+            data.forEach(r => {
+                const uKey = r.typeUnit;
+                if (!unitBreakdowns[uKey]) {
+                    unitBreakdowns[uKey] = {
+                        typeUnit: uKey,
+                        jenisUnit: r.jenisUnit,
+                        vendor: r.vendor,
+                        count: 0,
+                        totalMins: 0,
+                        compCount: 0
+                    };
+                }
+                unitBreakdowns[uKey].count++;
+                if (r.status.toLowerCase() === "selesai" && r.durasiMenit) {
+                    unitBreakdowns[uKey].totalMins += r.durasiMenit;
+                    unitBreakdowns[uKey].compCount++;
+                }
+            });
+
+            const sortedUnits = Object.values(unitBreakdowns).sort((a,b) => b.count - a.count);
+            
+            const rankingList = document.getElementById("dashboard-ranking-list");
+            rankingList.innerHTML = "";
+            
+            if (sortedUnits.length === 0) {
+                rankingList.innerHTML = `<div style="text-align: center; font-size: 0.85rem; color: var(--text-muted); padding: 20px;">Tidak ada data unit yang breakdown</div>`;
+            } else {
+                sortedUnits.slice(0, 5).forEach((unit, idx) => {
+                    const item = document.createElement("div");
+                    item.className = "ranking-item";
+                    
+                    const rankClass = idx === 0 ? "rank-1" : idx === 1 ? "rank-2" : idx === 2 ? "rank-3" : "rank-other";
+                    const medalIcon = idx === 0 ? '<i class="fa-solid fa-medal"></i>' : idx === 1 ? '<i class="fa-solid fa-medal"></i>' : idx === 2 ? '<i class="fa-solid fa-medal"></i>' : (idx + 1);
+                    
+                    const avgUnitMin = unit.compCount > 0 ? Math.round(unit.totalMins / unit.compCount) : 0;
+                    const avgUnitStr = formatDurationShort(avgUnitMin);
+
+                    item.innerHTML = `
+                        <div class="ranking-position ${rankClass}">${medalIcon}</div>
+                        <div class="ranking-details">
+                            <span class="ranking-name">${unit.typeUnit} <span style="font-size: 0.65rem; padding: 2px 6px; background-color: var(--primary-light); color: var(--primary); border-radius: 10px;">${unit.jenisUnit}</span></span>
+                            <span class="ranking-vendor">Vendor: ${unit.vendor} | Rerata BD: ${avgUnitStr}</span>
+                        </div>
+                        <div class="ranking-count-badge">${unit.count} Kasus</div>
+                    `;
+                    rankingList.appendChild(item);
+                });
+            }
+
+            // 6. RENDER SECTION: TOP 10 PILIHAN KERUSAKAN
+            const choiceCounts = {};
+            data.forEach(r => {
+                const cKey = r.pilihanKerusakan;
+                choiceCounts[cKey] = (choiceCounts[cKey] || 0) + 1;
+            });
+
+            const sortedChoices = Object.entries(choiceCounts)
+                .map(([name, count]) => ({ name, count }))
+                .sort((a,b) => b.count - a.count);
+
+            const topChoicesList = document.getElementById("dashboard-top-choices-list");
+            topChoicesList.innerHTML = "";
+            
+            if (sortedChoices.length === 0) {
+                topChoicesList.innerHTML = `<div style="text-align: center; font-size: 0.85rem; color: var(--text-muted); padding: 15px;">Tidak ada data gejala kerusakan</div>`;
+            } else {
+                sortedChoices.slice(0, 10).forEach(item => {
+                    const el = document.createElement("div");
+                    el.className = "choices-rank-item";
+                    el.innerHTML = `
+                        <span class="choices-rank-title">${item.name}</span>
+                        <span class="choices-rank-count">${item.count} Kasus</span>
+                    `;
+                    topChoicesList.appendChild(el);
+                });
+            }
+        }
+
+        // DURATION HELPER FOR RANKING
+        function formatDurationShort(minutes) {
+            if (minutes === 0) return "-";
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            return h > 0 ? `${h}j ${m}m` : `${m}m`;
+        }
+
+        function getWeekString(date) {
+            const year = date.getFullYear();
+            const month = ("0" + (date.getMonth() + 1)).slice(-2);
+            const day = date.getDate();
+            const wNum = Math.ceil(day / 7) > 4 ? 4 : Math.ceil(day / 7);
+            return `W${wNum} ${year}-${month}`;
+        }
+
+        // CHART CONTEXT RENDERERS
+        function renderWeeklyTrendChart(labels, counts, avgHours) {
+            const ctx = document.getElementById("chart-weekly-trend").getContext("2d");
+            
+            if (chartWeeklyTrendInstance) {
+                chartWeeklyTrendInstance.destroy();
+            }
+
+            chartWeeklyTrendInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Jumlah Breakdown (Kasus)',
+                            data: counts,
+                            backgroundColor: 'rgba(37, 99, 235, 0.15)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 2,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Rerata Durasi (Jam)',
+                            data: avgHours,
+                            type: 'line',
+                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                            borderColor: 'rgba(245, 158, 11, 1)',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            fill: false,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'Jumlah Kasus', font: { weight: 'bold' } },
+                            grid: { drawOnChartArea: true }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { display: true, text: 'Rerata Durasi (Jam)', font: { weight: 'bold' } },
+                            grid: { drawOnChartArea: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { family: 'Plus Jakarta Sans', weight: 'bold' } } }
+                    }
+                }
+            });
+        }
+
+        function renderJenisShareChart(forklift, loader) {
+            const ctx = document.getElementById("chart-jenis-share").getContext("2d");
+
+            if (chartJenisShareInstance) {
+                chartJenisShareInstance.destroy();
+            }
+
+            if (forklift === 0 && loader === 0) {
+                // Return clear empty text on canvas if no data
+                ctx.clearRect(0,0,300,300);
+                return;
+            }
+
+            chartJenisShareInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['FORKLIFT', 'LOADER'],
+                    datasets: [{
+                        data: [forklift, loader],
+                        backgroundColor: ['#2563EB', '#F59E0B'],
+                        borderWidth: 2,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: { family: 'Plus Jakarta Sans', weight: 'bold' }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        function renderCategoriesChart(labels, counts) {
+            const ctx = document.getElementById("chart-categories").getContext("2d");
+
+            if (chartCategoriesInstance) {
+                chartCategoriesInstance.destroy();
+            }
+
+            chartCategoriesInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Jumlah Kerusakan',
+                        data: counts,
+                        backgroundColor: [
+                            '#FCA5A5', // ENGINE
+                            '#FED7AA', // TRANSMISSION
+                            '#BFDBFE', // HYDRAULIC
+                            '#FEF08A', // ELECTRICAL
+                            '#E5E7EB', // TIRE
+                            '#E9D5FF'  // BRAKE
+                        ],
+                        borderColor: [
+                            '#EF4444',
+                            '#F97316',
+                            '#3B82F6',
+                            '#EAB308',
+                            '#6B7280',
+                            '#A855F7'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Horizontal bar chart
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { beginAtZero: true, grid: { display: false } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // ==============================================
+        // TAB 4: RIWAYAT BREAKDOWN (DATA GRID CONTROLLER)
+        // ==============================================
+        function renderHistoryTable() {
+            const tbody = document.getElementById("table-data-tbody");
+            tbody.innerHTML = "";
+            
+            // Hitung baris pagination
+            const totalRows = filteredRiwayat.length;
+            
+            if (totalRows === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 30px;">Tidak ada riwayat breakdown yang sesuai kriteria</td></tr>`;
+                document.getElementById("pagination-status-text").textContent = `Menampilkan 0-0 dari 0 data`;
+                document.getElementById("btn-page-prev").disabled = true;
+                document.getElementById("btn-page-next").disabled = true;
+                return;
+            }
+
+            const totalPages = Math.ceil(totalRows / historyRowsPerPage);
+            if (historyCurrentPage > totalPages) historyCurrentPage = totalPages;
+            if (historyCurrentPage < 1) historyCurrentPage = 1;
+
+            const startIndex = (historyCurrentPage - 1) * historyRowsPerPage;
+            const endIndex = Math.min(startIndex + historyRowsPerPage, totalRows);
+            
+            const paginatedData = filteredRiwayat.slice(startIndex, endIndex);
+
+            paginatedData.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.onclick = function() {
+                    openHistoryDetailModal(item);
+                };
+
+                const statusClass = item.status.toLowerCase() === "ongoing" ? "ongoing" : "selesai";
+                const isOngoing = item.status.toLowerCase() === "ongoing";
+                
+                // Format waktu human friendly
+                const dateObj = new Date(item.jamMulai);
+                const dateString = isNaN(dateObj.getTime()) ? item.jamMulai : dateObj.toLocaleDateString("id-ID", {
+                    day: '2-digit', month: 'short', year: 'numeric'
+                });
+
+                // Format durasi
+                let durasiText = "-";
+                if (!isOngoing && item.durasiMenit) {
+                    durasiText = formatDurationString(item.durasiMenit);
+                } else if (isOngoing) {
+                    const diffMs = new Date().getTime() - new Date(item.jamMulai).getTime();
+                    const liveMins = Math.max(0, Math.floor(diffMs / 60000));
+                    durasiText = formatDurationString(liveMins) + " (Berjalan)";
+                }
+
+                tr.innerHTML = `
+                    <td style="font-family: 'Orbitron', monospace; font-size: 0.8rem; font-weight: 700; color: var(--primary);">${item.idBreakdown}</td>
+                    <td>${dateString}</td>
+                    <td><span style="font-size: 0.7rem; font-weight: 700; padding: 2px 6px; background-color: var(--primary-light); color: var(--primary); border-radius: 4px;">${item.jenisUnit}</span></td>
+                    <td>${item.typeUnit}</td>
+                    <td>${item.vendor}</td>
+                    <td><span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">${item.kategoriKerusakan}</span></td>
+                    <td style="white-space: normal; min-width: 150px;">${item.pilihanKerusakan}</td>
+                    <td>${durasiText}</td>
+                    <td><span class="table-status-badge ${statusClass}">${item.status}</span></td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+
+            // Update status & buttons
+            document.getElementById("pagination-status-text").textContent = `Menampilkan ${startIndex + 1}-${endIndex} dari ${totalRows} data`;
+            document.getElementById("btn-page-prev").disabled = historyCurrentPage === 1;
+            document.getElementById("btn-page-next").disabled = historyCurrentPage === totalPages;
+        }
+
+        // DEBOUNCED SEARCH FILTER
+        let searchTimeout = null;
+        function handleTableSearchDebounced() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchVal = document.getElementById("table-search-input").value.toLowerCase().trim();
+                
+                if (searchVal === "") {
+                    filteredRiwayat = [...cachedRiwayat];
+                } else {
+                    filteredRiwayat = cachedRiwayat.filter(item => {
+                        return item.idBreakdown.toLowerCase().includes(searchVal) ||
+                               item.typeUnit.toLowerCase().includes(searchVal) ||
+                               item.operatorAwal.toLowerCase().includes(searchVal) ||
+                               item.operatorAkhir.toLowerCase().includes(searchVal) ||
+                               item.kategoriKerusakan.toLowerCase().includes(searchVal) ||
+                               item.pilihanKerusakan.toLowerCase().includes(searchVal) ||
+                               item.detailKerusakan.toLowerCase().includes(searchVal);
+                    });
+                }
+                
+                historyCurrentPage = 1; // Reset to page 1 on new search
+                renderHistoryTable();
+            }, 300);
+        }
+
+        function changeHistoryPage(direction) {
+            historyCurrentPage += direction;
+            renderHistoryTable();
+        }
+
+        // VIEW COMPLETED BREAKDOWN MODAL (ON ROW CLICK)
+        function toggleDetailModal(show) {
+            document.getElementById("detail-modal-overlay").style.display = show ? "flex" : "none";
+            document.body.style.overflow = show ? "hidden" : "";
+        }
+
+        function openHistoryDetailModal(item) {
+            document.getElementById("det-id").textContent = item.idBreakdown;
+            
+            const isOngoing = item.status.toLowerCase() === "ongoing";
+            const badge = document.getElementById("det-status");
+            badge.className = `table-status-badge ${isOngoing ? 'ongoing' : 'selesai'}`;
+            badge.textContent = item.status;
+            
+            document.getElementById("det-type").textContent = `${item.jenisUnit} - ${item.typeUnit}`;
+            document.getElementById("det-vendor").textContent = item.vendor;
+            document.getElementById("det-kategori").textContent = item.kategoriKerusakan;
+            
+            const opCond = item.kondisiOperasional || "BREAKDOWN";
+            const opCondBadge = opCond === "BREAKDOWN" 
+                ? '<span style="color:var(--danger); font-weight:800;">🔴 BREAKDOWN (Stop Total)</span>' 
+                : '<span style="color:var(--accent); font-weight:800;">🟡 RUNNING (Kerusakan Kerja)</span>';
+            document.getElementById("det-kondisi-operasional").innerHTML = opCondBadge;
+            
+            document.getElementById("det-pilihan").textContent = item.pilihanKerusakan;
+            document.getElementById("det-detail").textContent = item.detailKerusakan;
+            document.getElementById("det-op-awal").textContent = item.operatorAwal;
+            
+            const tMulai = new Date(item.jamMulai);
+            document.getElementById("det-waktu-mulai").textContent = isNaN(tMulai.getTime()) ? item.jamMulai : tMulai.toLocaleString("id-ID") + " WIB";
+            
+            document.getElementById("det-op-akhir").textContent = item.operatorAkhir || "-";
+            
+            const tSelesai = new Date(item.jamSelesai);
+            document.getElementById("det-waktu-selesai").textContent = (isOngoing || isNaN(tSelesai.getTime())) ? "-" : tSelesai.toLocaleString("id-ID") + " WIB";
+            
+            document.getElementById("det-durasi-menit").textContent = isOngoing ? "Sedang berjalan..." : (item.durasiMenit || "-") + " Menit";
+            document.getElementById("det-durasi-jam").textContent = isOngoing ? "Sedang berjalan..." : (item.durasiJam || "-") + " Jam";
+
+            const detPhotoItem = document.getElementById("det-photo-item");
+            const detPhotoImg = document.getElementById("det-photo-img");
+            if (item.photoUrl) {
+                detPhotoImg.src = item.photoUrl;
+                detPhotoItem.style.display = "block";
+                detPhotoImg.onclick = function() {
+                    Swal.fire({
+                        imageUrl: item.photoUrl,
+                        imageWidth: '100%',
+                        imageAlt: 'Foto Breakdown',
+                        borderRadius: '20px',
+                        confirmButtonColor: 'var(--primary)',
+                        confirmButtonText: 'Tutup'
+                    });
+                };
+            } else {
+                detPhotoImg.src = "";
+                detPhotoItem.style.display = "none";
+                detPhotoImg.onclick = null;
+            }
+
+            toggleDetailModal(true);
+        }
+
+        // --- PHOTO PICKER & CLOUDINARY UPLOAD UTILITIES ---
+        async function openPhotoPicker(camId, galId) {
+            const { value: source } = await Swal.fire({
+                title: 'SUMBER FOTO',
+                text: 'Pilih metode pengambilan gambar:',
+                icon: 'question',
+                showDenyButton: true,
+                confirmButtonText: '<i class="fa-solid fa-camera"></i> KAMERA',
+                denyButtonText: '<i class="fa-solid fa-images"></i> DARI FILE',
+                confirmButtonColor: 'var(--primary)',
+                denyButtonColor: '#64748b'
+            });
+            if (source === true) document.getElementById(camId).click();
+            else if (source === false) document.getElementById(galId).click();
+        }
+
+        async function uploadBreakdownPhoto(input, urlId, prevId) {
+            const file = input.files[0]; 
+            if (!file) return;
+            
+            Swal.fire({
+                title: 'Mengunggah Foto...',
+                text: 'Harap tunggu, media sedang disimpan ke cloud.',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+            
+            try {
+                const fd = new FormData(); 
+                fd.append('file', file); 
+                fd.append('upload_preset', 'wh_cleaning'); 
+                
+                const r = await fetch('https://api.cloudinary.com/v1_1/doxv3khr7/image/upload', {
+                    method: 'POST', 
+                    body: fd
+                });
+                
+                if (!r.ok) throw new Error('Cloud upload error');
+                
+                const d = await r.json();
+                
+                document.getElementById(urlId).value = d.secure_url;
+                document.getElementById(prevId).src = d.secure_url;
+                document.getElementById(prevId + '-wrap').style.display = 'block';
+                
+                // update wizard next button state
+                validateCurrentStep();
+                
+                Swal.fire({
+                    title: 'Cloud Ready ☁️',
+                    text: 'Foto berhasil disimpan di Cloudinary!',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } catch (e) {
+                console.error(e);
+                Swal.fire('Error', 'Gagal mengunggah foto ke Cloudinary!', 'error');
+            }
+        }
+
+        function resetBreakdownPhoto(camId, galId, wrapId, urlId) {
+            document.getElementById(camId).value = '';
+            document.getElementById(galId).value = '';
+            document.getElementById(wrapId).style.display = 'none';
+            document.getElementById(urlId).value = '';
+            validateCurrentStep();
+        }
+
+        // CSV EXPORTER ENGINE
+        function exportToCSV() {
+            if (filteredRiwayat.length === 0) {
+                showToast("Tidak ada data yang dapat diekspor!", "error");
+                return;
+            }
+
+            showToast("Mempersiapkan download file CSV...", "warning");
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Header
+            const headers = [
+                "ID_BREAKDOWN", "TIMESTAMP_INPUT", "JENIS_UNIT", "TYPE_UNIT", "VENDOR",
+                "KATEGORI_KERUSAKAN", "PILHAN_KERUSAKAN", "DETAIL_KERUSAKAN",
+                "OPERATOR_AWAL", "JAM_MULAI", "OPERATOR_AKHIR", "JAM_SELESAI",
+                "DURASI_MENIT", "DURASI_JAM", "STATUS"
+            ];
+            csvContent += headers.join(",") + "\r\n";
+
+            // Rows
+            filteredRiwayat.forEach(item => {
+                const row = [
+                    item.idBreakdown,
+                    item.timestamp,
+                    item.jenisUnit,
+                    item.typeUnit,
+                    item.vendor,
+                    item.kategoriKerusakan,
+                    `"${item.pilihanKerusakan.replace(/"/g, '""')}"`,
+                    `"${item.detailKerusakan.replace(/"/g, '""')}"`,
+                    `"${item.operatorAwal.replace(/"/g, '""')}"`,
+                    item.jamMulai,
+                    `"${item.operatorAkhir.replace(/"/g, '""')}"`,
+                    item.jamSelesai,
+                    item.durasiMenit !== null ? item.durasiMenit : "",
+                    item.durasiJam !== null ? item.durasiJam : "",
+                    item.status
+                ];
+                csvContent += row.join(",") + "\r\n";
+            });
+
+            // Trigger Download
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            
+            const timestampFile = new Date().toISOString().substring(0, 10);
+            link.setAttribute("download", `Riwayat_Breakdown_Alat_Berat_${timestampFile}.csv`);
+            document.body.appendChild(link); // Required for FF
+            
+            link.click();
+            document.body.removeChild(link);
+
+            showToast("Sukses mendownload file CSV!", "success");
+        }
+
+        // ==============================================
+        // TOAST NOTIFICATIONS POPUP
+        // ==============================================
+        function showToast(message, type = "success") {
+            const container = document.getElementById("toast-container");
+            
+            const toast = document.createElement("div");
+            toast.className = `toast toast-${type}`;
+            
+            const icon = type === "success" ? "fa-circle-check" : type === "error" ? "fa-circle-xmark" : "fa-triangle-exclamation";
+            
+            toast.innerHTML = `
+                <i class="fa-solid ${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Auto remove after 3.5s
+            setTimeout(() => {
+                toast.style.animation = "slideOutRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards";
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        container.removeChild(toast);
+                    }
+                }, 300);
+            }, 3500);
+        }
+    </script>
+    <style>
+        /* Extra slide out style for toast */
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    </style>
+</body>
+
+</html>
