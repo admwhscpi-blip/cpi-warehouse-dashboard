@@ -664,32 +664,81 @@
             margin-bottom: 24px;
         }
 
-        .kpi-card {
-            background: var(--bg-glass-card);
-            border: 1px solid var(--border-color);
-            border-left: 4px solid var(--accent-cyan);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            box-shadow: var(--shadow-cyber);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
-            cursor: pointer;
+        @keyframes spinSlow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fa-spin-slow {
+            animation: spinSlow 12s linear infinite;
         }
 
+        .kpi-icon {
+            position: absolute;
+            right: 18px;
+            bottom: 12px;
+            font-size: 2.2rem;
+            opacity: 0.08;
+            color: var(--text-primary);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .kpi-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.2) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-left: 5px solid var(--accent-cyan);
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 8px 32px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        /* Ambient glowing background on hover */
         .kpi-card::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, transparent 60%);
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, transparent 60%);
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.4s ease;
+            z-index: -1;
+        }
+
+        /* Dynamic neon bottom accent line */
+        .kpi-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background: var(--accent-cyan);
+            transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border-radius: 99px;
+            box-shadow: 0 0 8px var(--accent-cyan);
         }
 
         .kpi-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--border-color-glow);
-            box-shadow: var(--shadow-cyber-glowing);
+            transform: translateY(-6px);
+            border-color: rgba(6, 182, 212, 0.4);
+            box-shadow: 0 12px 30px rgba(14, 165, 233, 0.15), 0 0 12px rgba(14, 165, 233, 0.1);
+        }
+
+        .kpi-card:hover::after {
+            width: 80%;
+            left: 10%;
+        }
+
+        .kpi-card:hover .kpi-icon {
+            opacity: 0.25;
+            transform: scale(1.18) rotate(-6deg);
         }
 
         .kpi-card:hover::before {
@@ -697,30 +746,192 @@
         }
 
         .kpi-label {
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             font-weight: 800;
             color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 6px;
+            letter-spacing: 1.2px;
+            margin-bottom: 8px;
+            z-index: 2;
+            position: relative;
         }
 
         .kpi-value {
             font-family: var(--font-title);
             font-size: 1.7rem;
             font-weight: 900;
-            color: var(--text-primary);
-            line-height: 1;
+            color: var(--accent-cyan);
+            line-height: 1.1;
+            z-index: 2;
+            position: relative;
+            text-shadow: 0 0 8px rgba(6, 182, 212, 0.25);
+            transition: text-shadow 0.3s ease, transform 0.3s ease;
         }
 
-        .kpi-card.kpi-open { border-left-color: var(--accent-rose); }
-        .kpi-card.kpi-open .kpi-value { color: var(--accent-rose); }
-        .kpi-card.kpi-proses { border-left-color: var(--accent-amber); }
-        .kpi-card.kpi-proses .kpi-value { color: var(--accent-amber); }
-        .kpi-card.kpi-selesai { border-left-color: var(--accent-emerald); }
-        .kpi-card.kpi-selesai .kpi-value { color: var(--accent-emerald); }
-        .kpi-card.kpi-duration { border-left-color: var(--accent-purple); }
-        .kpi-card.kpi-duration .kpi-value { color: var(--accent-purple); }
+        .kpi-card:hover .kpi-value {
+            text-shadow: 0 0 12px rgba(6, 182, 212, 0.45);
+        }
+
+        /* Glowing Pulse Signal Dot */
+        .kpi-pulse-dot {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+            animation: pulse-cyan 2s infinite;
+            z-index: 3;
+        }
+
+        @keyframes pulse-cyan {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(2, 132, 199, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
+        }
+
+        @keyframes pulse-rose {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+
+        @keyframes pulse-amber {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(217, 119, 6, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+        }
+
+        @keyframes pulse-emerald {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes pulse-purple {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(124, 58, 237, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+        }
+
+        /* Specialized card category adjustments */
+        .kpi-card.kpi-open { 
+            border-left-color: var(--accent-rose); 
+        }
+        .kpi-card.kpi-open::before {
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.15) 0%, transparent 60%);
+        }
+        .kpi-card.kpi-open::after {
+            background: var(--accent-rose);
+            box-shadow: 0 0 8px var(--accent-rose);
+        }
+        .kpi-card.kpi-open .kpi-value { 
+            color: var(--accent-rose); 
+            text-shadow: 0 0 8px rgba(220, 38, 38, 0.25);
+        }
+        .kpi-card.kpi-open:hover {
+            border-color: rgba(220, 38, 38, 0.4);
+            box-shadow: 0 12px 30px rgba(220, 38, 38, 0.15), 0 0 12px rgba(220, 38, 38, 0.1);
+        }
+        .kpi-card.kpi-open:hover .kpi-value {
+            text-shadow: 0 0 12px rgba(220, 38, 38, 0.45);
+        }
+        .kpi-card.kpi-open .kpi-icon {
+            color: var(--accent-rose);
+        }
+        .kpi-card.kpi-open .kpi-pulse-dot {
+            background-color: var(--accent-rose);
+            animation: pulse-rose 2s infinite;
+        }
+
+        .kpi-card.kpi-proses { 
+            border-left-color: var(--accent-amber); 
+        }
+        .kpi-card.kpi-proses::before {
+            background: linear-gradient(135deg, rgba(217, 119, 6, 0.15) 0%, transparent 60%);
+        }
+        .kpi-card.kpi-proses::after {
+            background: var(--accent-amber);
+            box-shadow: 0 0 8px var(--accent-amber);
+        }
+        .kpi-card.kpi-proses .kpi-value { 
+            color: var(--accent-amber); 
+            text-shadow: 0 0 8px rgba(217, 119, 6, 0.25);
+        }
+        .kpi-card.kpi-proses:hover {
+            border-color: rgba(217, 119, 6, 0.4);
+            box-shadow: 0 12px 30px rgba(217, 119, 6, 0.15), 0 0 12px rgba(217, 119, 6, 0.1);
+        }
+        .kpi-card.kpi-proses:hover .kpi-value {
+            text-shadow: 0 0 12px rgba(217, 119, 6, 0.45);
+        }
+        .kpi-card.kpi-proses .kpi-icon {
+            color: var(--accent-amber);
+        }
+        .kpi-card.kpi-proses .kpi-pulse-dot {
+            background-color: var(--accent-amber);
+            animation: pulse-amber 2s infinite;
+        }
+
+        .kpi-card.kpi-selesai { 
+            border-left-color: var(--accent-emerald); 
+        }
+        .kpi-card.kpi-selesai::before {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, transparent 60%);
+        }
+        .kpi-card.kpi-selesai::after {
+            background: var(--accent-emerald);
+            box-shadow: 0 0 8px var(--accent-emerald);
+        }
+        .kpi-card.kpi-selesai .kpi-value { 
+            color: var(--accent-emerald); 
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.25);
+        }
+        .kpi-card.kpi-selesai:hover {
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 12px 30px rgba(16, 185, 129, 0.15), 0 0 12px rgba(16, 185, 129, 0.1);
+        }
+        .kpi-card.kpi-selesai:hover .kpi-value {
+            text-shadow: 0 0 12px rgba(16, 185, 129, 0.45);
+        }
+        .kpi-card.kpi-selesai .kpi-icon {
+            color: var(--accent-emerald);
+        }
+        .kpi-card.kpi-selesai .kpi-pulse-dot {
+            background-color: var(--accent-emerald);
+            animation: pulse-emerald 2s infinite;
+        }
+
+        .kpi-card.kpi-duration { 
+            border-left-color: var(--accent-purple); 
+        }
+        .kpi-card.kpi-duration::before {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, transparent 60%);
+        }
+        .kpi-card.kpi-duration::after {
+            background: var(--accent-purple);
+            box-shadow: 0 0 8px var(--accent-purple);
+        }
+        .kpi-card.kpi-duration .kpi-value { 
+            color: var(--accent-purple); 
+            text-shadow: 0 0 8px rgba(124, 58, 237, 0.25);
+        }
+        .kpi-card.kpi-duration:hover {
+            border-color: rgba(124, 58, 237, 0.4);
+            box-shadow: 0 12px 30px rgba(124, 58, 237, 0.15), 0 0 12px rgba(124, 58, 237, 0.1);
+        }
+        .kpi-card.kpi-duration:hover .kpi-value {
+            text-shadow: 0 0 12px rgba(124, 58, 237, 0.45);
+        }
+        .kpi-card.kpi-duration .kpi-icon {
+            color: var(--accent-purple);
+        }
+        .kpi-card.kpi-duration .kpi-pulse-dot {
+            background-color: var(--accent-purple);
+            animation: pulse-purple 2s infinite;
+        }
 
         /* ═══════════════════════════════════════════
            GRID LAYOUTS
@@ -2098,24 +2309,34 @@
                     <!-- KPI counters -->
                     <div class="kpi-grid">
                         <div class="kpi-card" onclick="switchPage('riwayat')">
+                            <span class="kpi-pulse-dot"></span>
                             <div class="kpi-label">Total Laporan</div>
                             <div class="kpi-value" id="kpi-total">0</div>
+                            <i class="fas fa-clipboard-list kpi-icon"></i>
                         </div>
                         <div class="kpi-card kpi-open" onclick="filterByStatusAndGo('Dilaporkan')">
+                            <span class="kpi-pulse-dot"></span>
                             <div class="kpi-label">Open / Dilaporkan</div>
                             <div class="kpi-value" id="kpi-open">0</div>
+                            <i class="fas fa-exclamation-circle kpi-icon"></i>
                         </div>
                         <div class="kpi-card kpi-proses" onclick="filterByStatusAndGo('Proses')">
+                            <span class="kpi-pulse-dot"></span>
                             <div class="kpi-label">Sedang Proses</div>
                             <div class="kpi-value" id="kpi-proses">0</div>
+                            <i class="fas fa-spinner fa-spin-slow kpi-icon"></i>
                         </div>
                         <div class="kpi-card kpi-selesai" onclick="filterByStatusAndGo('Selesai')">
+                            <span class="kpi-pulse-dot"></span>
                             <div class="kpi-label">Selesai</div>
                             <div class="kpi-value" id="kpi-selesai">0</div>
+                            <i class="fas fa-check-double kpi-icon"></i>
                         </div>
                         <div class="kpi-card kpi-duration">
-                            <div class="kpi-label">Avg Durasi (Jam)</div>
-                            <div class="kpi-value" id="kpi-duration">0</div>
+                            <span class="kpi-pulse-dot"></span>
+                            <div class="kpi-label">Gudang Paling Banyak Mengalami Kerusakan</div>
+                            <div class="kpi-value" id="kpi-duration">-</div>
+                            <i class="fas fa-warehouse kpi-icon"></i>
                         </div>
                     </div>
 
@@ -2438,24 +2659,34 @@
                     <!-- KPI row again -->
                     <div class="kpi-grid">
                         <div class="kpi-card">
+                            <span class="kpi-pulse-dot"></span>
                             <div class="kpi-label">Total Audit</div>
                             <div class="kpi-value" id="stats-total">0</div>
+                            <i class="fas fa-clipboard-list kpi-icon"></i>
                         </div>
                         <div class="kpi-card kpi-open">
+                            <span class="kpi-pulse-dot"></span>
                             <div class="kpi-label">Open / Dilaporkan</div>
                             <div class="kpi-value" id="stats-open">0</div>
+                            <i class="fas fa-exclamation-circle kpi-icon"></i>
                         </div>
                         <div class="kpi-card kpi-proses">
+                            <span class="kpi-pulse-dot"></span>
                             <div class="kpi-label">Dalam Proses</div>
                             <div class="kpi-value" id="stats-proses">0</div>
+                            <i class="fas fa-spinner fa-spin-slow kpi-icon"></i>
                         </div>
                         <div class="kpi-card kpi-selesai">
+                            <span class="kpi-pulse-dot"></span>
                             <div class="kpi-label">Dibereskan</div>
                             <div class="kpi-value" id="stats-selesai">0</div>
+                            <i class="fas fa-check-double kpi-icon"></i>
                         </div>
                         <div class="kpi-card kpi-duration">
-                            <div class="kpi-label">Rata-rata Durasi (Hari)</div>
-                            <div class="kpi-value" id="stats-duration">0</div>
+                            <span class="kpi-pulse-dot"></span>
+                            <div class="kpi-label">Gudang Paling Banyak Mengalami Kerusakan</div>
+                            <div class="kpi-value" id="stats-duration">-</div>
+                            <i class="fas fa-warehouse kpi-icon"></i>
                         </div>
                     </div>
 
@@ -2597,7 +2828,6 @@
                         <b>Pelaksana:</b> <span id="dt-team" style="font-weight:700; color:var(--accent-emerald);">-</span>
                         <b>Teknisi/Petugas:</b> <span id="dt-teknisi">-</span>
                         <b>Tanggal Selesai:</b> <span id="dt-date-selesai">-</span>
-                        <b>Waktu Selesai:</b> <span id="dt-time-selesai">-</span>
                         <b>Durasi Kerja:</b> <span id="dt-duration" style="font-weight:700; color:var(--accent-cyan);">-</span>
                         <b>Catatan Selesai:</b> <span id="dt-notes-selesai" style="color:var(--text-secondary); font-style:italic;">-</span>
                     </div>
@@ -3538,34 +3768,38 @@
             const proses = records.filter(r => r.Status === 'Proses').length;
             const selesai = records.filter(r => r.Status === 'Selesai').length;
             
-            // Hitung rata-rata durasi penanganan (dalam jam)
-            let totalMins = 0;
-            let durationCount = 0;
-            
+            // Hitung gudang yang paling banyak mengalami kerusakan secara dinamis
+            let gudangCount = {};
             records.forEach(r => {
-                if (r.Status === 'Selesai' && r.Durasi_Penanganan) {
-                    const mins = parseDurationToMinutes(r.Durasi_Penanganan);
-                    if (mins > 0) {
-                        totalMins += mins;
-                        durationCount++;
-                    }
+                const wh = r.Gudang;
+                if (wh) {
+                    gudangCount[wh] = (gudangCount[wh] || 0) + 1;
                 }
             });
             
-            const avgHours = durationCount > 0 ? (totalMins / 60 / durationCount).toFixed(1) : "0.0";
+            let maxGudang = "-";
+            let maxCount = 0;
+            for (const wh in gudangCount) {
+                if (gudangCount[wh] > maxCount) {
+                    maxCount = gudangCount[wh];
+                    maxGudang = wh;
+                }
+            }
+            
+            const gudangTerdampak = maxCount > 0 ? `${maxGudang} (${maxCount})` : "-";
 
             document.getElementById('kpi-total').innerText = total;
             document.getElementById('kpi-open').innerText = open;
             document.getElementById('kpi-proses').innerText = proses;
             document.getElementById('kpi-selesai').innerText = selesai;
-            document.getElementById('kpi-duration').innerText = avgHours;
+            document.getElementById('kpi-duration').innerText = gudangTerdampak;
 
             // Page Analisis KPIs
             document.getElementById('stats-total').innerText = total;
             document.getElementById('stats-open').innerText = open;
             document.getElementById('stats-proses').innerText = proses;
             document.getElementById('stats-selesai').innerText = selesai;
-            document.getElementById('stats-duration').innerText = durationCount > 0 ? (totalMins / 60 / 24 / durationCount).toFixed(1) : "0.0";
+            document.getElementById('stats-duration').innerText = gudangTerdampak;
         }
 
         function renderLatestTable() {
@@ -4242,9 +4476,18 @@
                 resolvedSec.style.display = 'grid';
                 document.getElementById('dt-team').innerText = r.Tim_Pengerjaan;
                 document.getElementById('dt-teknisi').innerText = r.Nama_Teknisi;
-                document.getElementById('dt-date-selesai').innerText = r.Tanggal_Selesai;
-                document.getElementById('dt-time-selesai').innerText = r.Waktu_Selesai;
-                document.getElementById('dt-duration').innerText = r.Durasi_Penanganan;
+                document.getElementById('dt-date-selesai').innerText = formatOnlyDate(r.Tanggal_Selesai);
+                
+                // Rescue calculation jika data tersimpan di database terlanjur bernilai "NaN"
+                let durasiVal = r.Durasi_Penanganan;
+                if (!durasiVal || String(durasiVal).includes('NaN')) {
+                    if (r.Tanggal_Laporan && r.Tanggal_Selesai) {
+                        const tLapor = r.Waktu_Laporan || "00:00";
+                        const tSelesai = r.Waktu_Selesai || "00:00";
+                        durasiVal = calculateDurationStr(r.Tanggal_Laporan, tLapor, r.Tanggal_Selesai, tSelesai);
+                    }
+                }
+                document.getElementById('dt-duration').innerText = durasiVal || "-";
                 document.getElementById('dt-notes-selesai').innerText = r.Catatan_Selesai || "-";
 
                 // After Photos
@@ -4606,12 +4849,29 @@
             return dateStr;
         }
 
-        // Parse date string like DD/MM/YYYY into Date object
+        // Parse date string like DD/MM/YYYY or ISO into Date object
         function parseDateStrToDateObj(str) {
             if (!str) return null;
-            const parts = str.split('/');
-            if (parts.length !== 3) return null;
-            return new Date(parts[2], parts[1] - 1, parts[0]);
+            const cleaned = String(str).trim();
+            if (cleaned.includes('T')) {
+                const d = new Date(cleaned);
+                if (!isNaN(d.getTime())) {
+                    d.setHours(0,0,0,0);
+                    return d;
+                }
+            }
+            if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+                const d = new Date(cleaned + "T00:00:00");
+                if (!isNaN(d.getTime())) return d;
+            }
+            if (cleaned.includes('/')) {
+                const parts = cleaned.split('/');
+                if (parts.length === 3) {
+                    return new Date(parts[2], parts[1] - 1, parts[0]);
+                }
+            }
+            const d = new Date(cleaned);
+            return isNaN(d.getTime()) ? null : d;
         }
 
         function parseDateAndTimeToComparable(record) {
@@ -4661,9 +4921,54 @@
         }
 
         function parseDateTimeStringsToDate(dateStr, timeStr) {
-            const [d, m, y] = dateStr.split('/').map(Number);
-            const [hr, min] = timeStr.split(':').map(Number);
-            return new Date(y, m - 1, d, hr, min);
+            if (!dateStr) return new Date();
+            let dObj;
+            const cleanedDate = String(dateStr).trim();
+
+            // Case 1: Jika format ISO (e.g. 2026-05-21T17:00:00.000Z)
+            if (cleanedDate.includes('T')) {
+                dObj = new Date(cleanedDate);
+            } 
+            // Case 2: Jika format YYYY-MM-DD
+            else if (/^\d{4}-\d{2}-\d{2}$/.test(cleanedDate)) {
+                dObj = new Date(cleanedDate + "T00:00:00");
+            } 
+            // Case 3: Jika format DD/MM/YYYY
+            else if (cleanedDate.includes('/')) {
+                const parts = cleanedDate.split('/').map(Number);
+                if (parts.length === 3) {
+                    dObj = new Date(parts[2], parts[1] - 1, parts[0]);
+                } else {
+                    dObj = new Date(cleanedDate);
+                }
+            } 
+            // Fallback
+            else {
+                dObj = new Date(cleanedDate);
+            }
+
+            // Atur jam dan menit dari timeStr jika valid
+            if (timeStr && dObj && !isNaN(dObj.getTime())) {
+                let hr = 0, min = 0;
+                const cleanedTime = String(timeStr).trim();
+                if (cleanedTime.includes('T')) {
+                    const timePart = cleanedTime.split('T')[1];
+                    const parts = timePart.split(':').map(Number);
+                    if (parts.length >= 2) {
+                        hr = parts[0];
+                        min = parts[1];
+                    }
+                } else {
+                    const parts = cleanedTime.split(':').map(Number);
+                    if (parts.length >= 2) {
+                        hr = parts[0];
+                        min = parts[1];
+                    }
+                }
+                dObj.setHours(hr, min, 0, 0);
+            }
+
+            return isNaN(dObj.getTime()) ? new Date() : dObj;
         }
     </script>
 </body>
