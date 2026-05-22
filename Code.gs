@@ -264,8 +264,8 @@ function simpanBreakdownAwal(data) {
       throw new Error("Data input breakdown awal tidak lengkap.");
     }
     
-    // 1. Generate ID Unik: BD-[NAMAUNIT]/[3_DIGIT_SEQ]
-    var unitClean = String(data.typeUnit).replace(/\s+/g, '').toUpperCase();
+    // 1. Generate ID Unik: BD-[NAMA UNIT]/[3_DIGIT_SEQ]
+    var unitClean = String(data.typeUnit).trim().toUpperCase();
     var idPrefix = "BD-" + unitClean + "/";
     
     var lastRow = sheet.getLastRow();
@@ -531,9 +531,9 @@ function getRiwayatBreakdown(filter) {
       }
     }
     
-    // Urutkan berdasarkan ID secara descending (terbaru dulu)
+    // Urutkan berdasarkan timestamp secara descending (terbaru dulu)
     list.sort(function(a, b) {
-      return b.idBreakdown.localeCompare(a.idBreakdown);
+      return b.timestamp.localeCompare(a.timestamp);
     });
     
     return list;
@@ -579,19 +579,14 @@ function getDashboardStats(filter) {
         }
       }
       
-      // Ambil timestamp dari ID (BD-YYYYMMDD-XXXX) atau parse jamMulai
-      var datePart = "";
-      if (item.idBreakdown && item.idBreakdown.length >= 11) {
-        datePart = item.idBreakdown.substring(3, 11); // "20260519"
+      // Ambil timestamp dari item.timestamp
+      var itemMonthYear = "";
+      if (item.timestamp && item.timestamp.length >= 7) {
+        itemMonthYear = item.timestamp.substring(0, 7); // "yyyy-MM"
       }
       
-      if (datePart) {
-        var year = datePart.substring(0, 4);
-        var month = datePart.substring(4, 6);
-        var itemMonthYear = year + "-" + month;
-        if (itemMonthYear === currentMonthYear) {
-          breakdownBulanIni++;
-        }
+      if (itemMonthYear === currentMonthYear) {
+        breakdownBulanIni++;
       }
       
       // Agregasi Type Unit (Forklift / Loader)

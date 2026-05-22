@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Breakdown — Alat Berat</title>
+    <title>HEAVIX v2.0 — Pusat Komando Alat Berat</title>
     <!-- FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -111,9 +111,9 @@
         /* SIDEBAR (Desktop) */
         .sidebar {
             width: 280px;
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
-            border-right: 1px solid rgba(79, 70, 229, 0.15);
-            box-shadow: 6px 0 25px rgba(15, 23, 42, 0.03);
+            background: linear-gradient(180deg, #0b0f19 0%, #1e293b 100%) !important;
+            border-right: 1.5px solid rgba(79, 70, 229, 0.3) !important;
+            box-shadow: 6px 0 35px rgba(0, 0, 0, 0.4);
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
@@ -128,16 +128,16 @@
 
         .sidebar-logo {
             padding: 30px 20px 15px 20px;
-            border-bottom: 1px solid rgba(79, 70, 229, 0.12);
+            border-bottom: 1px solid rgba(79, 70, 229, 0.2);
         }
 
         .sidebar-logo h2 {
             font-family: 'Orbitron', sans-serif;
             font-size: 1.45rem;
-            color: var(--primary);
+            color: #ffffff;
             letter-spacing: 2px;
             line-height: 1.2;
-            text-shadow: 0 2px 10px rgba(79, 70, 229, 0.15);
+            text-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
         }
 
         .sidebar-logo span.v-badge {
@@ -151,12 +151,13 @@
             margin-left: 6px;
             letter-spacing: 0.5px;
             vertical-align: middle;
-            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.25);
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .sidebar-logo p {
             font-size: 0.65rem;
-            color: var(--text-muted);
+            color: #64748b;
             margin-top: 35px;
             font-weight: 700;
             text-transform: uppercase;
@@ -177,20 +178,20 @@
             align-items: center;
             gap: 15px;
             padding: 10px 20px;
-            background: #0f172a;
-            border: 1.5px solid rgba(79, 70, 229, 0.35);
+            background: rgba(15, 23, 42, 0.8) !important;
+            border: 1.5px solid rgba(79, 70, 229, 0.45) !important;
             border-radius: 40px;
             font-family: 'Orbitron', sans-serif;
             color: #ffffff;
             min-width: 300px;
             height: 65px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15), inset 0 0 12px rgba(79, 70, 229, 0.15);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35), inset 0 0 15px rgba(79, 70, 229, 0.2) !important;
             transition: all 0.3s;
         }
 
         .clock-container:hover {
-            border-color: var(--primary);
-            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.25), inset 0 0 15px rgba(79, 70, 229, 0.25);
+            border-color: #06B6D4 !important;
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.25), inset 0 0 20px rgba(6, 182, 212, 0.15) !important;
         }
 
         .clock-date-group {
@@ -203,10 +204,10 @@
 
         .clock-day {
             font-size: 0.65rem;
-            color: #818CF8 !important; /* Indigo light */
+            color: #06B6D4 !important; /* Cyan glow */
             letter-spacing: 2px;
             font-weight: 700;
-            text-shadow: 0 0 6px rgba(129, 140, 248, 0.3);
+            text-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
         }
 
         .clock-date {
@@ -229,7 +230,7 @@
         .clock-circle {
             position: absolute;
             inset: 0;
-            border: 2px solid rgba(129, 140, 248, 0.15);
+            border: 2px solid rgba(99, 102, 241, 0.25);
             border-radius: 50%;
         }
 
@@ -237,10 +238,10 @@
             position: absolute;
             inset: 0;
             border: 2px solid transparent;
-            border-top: 2px solid #818CF8;
+            border-top: 2px solid #06B6D4;
             border-radius: 50%;
             transition: transform 1s linear;
-            filter: drop-shadow(0 0 6px #818CF8);
+            filter: drop-shadow(0 0 8px #06B6D4);
         }
 
         .clock-time-group {
@@ -253,9 +254,9 @@
         .clock-ampm {
             font-size: 0.42rem;
             font-weight: 900;
-            color: #818CF8 !important;
+            color: #06B6D4 !important;
             text-transform: uppercase;
-            text-shadow: 0 0 6px rgba(129, 140, 248, 0.3);
+            text-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
         }
 
         .clock-time {
@@ -279,7 +280,7 @@
             padding: 13px 18px;
             background: transparent;
             border: 1px solid transparent;
-            color: var(--text-muted);
+            color: #94a3b8;
             font-family: 'Rajdhani', sans-serif;
             font-weight: 700;
             font-size: 0.95rem;
@@ -298,29 +299,30 @@
             font-size: 1.1rem;
             width: 20px;
             text-align: center;
-            color: var(--primary);
+            color: #818CF8;
             transition: transform 0.3s, filter 0.3s;
         }
 
         .nav-item:hover {
-            color: var(--primary);
-            background: rgba(79, 70, 229, 0.06);
+            color: #ffffff;
+            background: rgba(99, 102, 241, 0.12);
             transform: translateX(6px);
-            border-left: 4px solid var(--primary);
+            border-left: 4px solid #06B6D4;
             border-top-left-radius: 4px;
             border-bottom-left-radius: 4px;
         }
 
         .nav-item:hover i {
             transform: scale(1.2);
-            filter: drop-shadow(0 0 5px rgba(79, 70, 229, 0.5));
+            color: #06B6D4;
+            filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.8));
         }
 
         .nav-item.active {
-            color: #fff !important;
+            color: #ffffff !important;
             font-weight: 800;
-            background: var(--primary-gradient) !important;
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.8), rgba(6, 182, 212, 0.8)) !important;
+            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.35), 0 0 15px rgba(79, 70, 229, 0.25);
             transform: scale(1.02) translateX(6px);
             border-left: 4px solid #06B6D4;
             border-top-left-radius: 4px;
@@ -328,35 +330,35 @@
         }
 
         .nav-item.active i {
-            color: #fff !important;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+            color: #ffffff !important;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
         }
 
         .nav-divider {
             margin: 10px 12px;
             height: 1px;
-            background: rgba(79, 70, 229, 0.1);
+            background: rgba(79, 70, 229, 0.2);
         }
 
         .sidebar-footer-brand {
             padding: 14px 10px 18px;
-            border-top: 1px solid rgba(79, 70, 229, 0.15);
-            background: #ffffff;
+            border-top: 1px solid rgba(79, 70, 229, 0.25) !important;
+            background: rgba(9, 13, 22, 0.95) !important;
         }
 
         .sidebar-brand-lines {
             text-align: center;
-            background: #f8fafc;
-            border: 1px solid rgba(79, 70, 229, 0.15);
+            background: rgba(17, 24, 39, 0.6) !important;
+            border: 1px solid rgba(79, 70, 229, 0.3) !important;
             border-radius: 12px;
             padding: 12px 8px 10px;
-            box-shadow: inset 0 0 10px rgba(79, 70, 229, 0.02);
+            box-shadow: inset 0 0 12px rgba(79, 70, 229, 0.05);
             transition: border-color 0.3s, box-shadow 0.3s;
         }
 
         .sidebar-brand-lines:hover {
-            border-color: var(--primary);
-            box-shadow: inset 0 0 12px rgba(79, 70, 229, 0.06);
+            border-color: #06B6D4 !important;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.25) !important;
         }
 
         .sidebar-brand-main {
@@ -364,7 +366,7 @@
             font-size: 0.62rem;
             font-weight: 700;
             line-height: 1.5;
-            color: var(--text-main);
+            color: #e2e8f0;
         }
 
         .sidebar-brand-tag {
@@ -372,7 +374,7 @@
             margin-top: 6px;
             font-size: 0.58rem;
             font-weight: 700;
-            color: var(--primary);
+            color: #06B6D4;
             letter-spacing: 0.05em;
             text-transform: uppercase;
         }
@@ -380,12 +382,12 @@
         .sidebar-brand-values {
             margin: 10px 0 0;
             padding: 8px 4px 0;
-            border-top: 1px solid rgba(79, 70, 229, 0.1);
+            border-top: 1px solid rgba(79, 70, 229, 0.2);
             font-size: 0.5rem;
             font-weight: 700;
             letter-spacing: 0.05em;
             text-transform: uppercase;
-            color: var(--text-muted);
+            color: #94a3b8;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -393,7 +395,7 @@
         }
 
         .sidebar-values-sep {
-            color: rgba(79, 70, 229, 0.4);
+            color: rgba(79, 70, 229, 0.5);
         }
 
         /* Sidebar Overlay for Mobile */
@@ -666,14 +668,48 @@
             border-left: 5px solid var(--success);
         }
         .fleet-unit-card.status-running {
-            border-left: 5px solid var(--accent);
-            background: linear-gradient(135deg, rgba(254, 243, 199, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%);
-            border-color: rgba(245, 158, 11, 0.2);
+            border-left: 5px solid #F59E0B;
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 40%, #FCD34D 100%);
+            border: 2px solid rgba(245, 158, 11, 0.5);
+            border-left: 5px solid #F59E0B;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.2), inset 0 0 30px rgba(245, 158, 11, 0.06);
+            position: relative;
+        }
+        .fleet-unit-card.status-running::after {
+            content: "";
+            position: absolute;
+            top: 0; right: 0;
+            width: 60px; height: 60px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, transparent 70%);
+            border-radius: 0 var(--radius-md) 0 100%;
+            pointer-events: none;
+        }
+        .fleet-unit-card.status-running:hover {
+            box-shadow: 0 8px 30px rgba(245, 158, 11, 0.35), inset 0 0 30px rgba(245, 158, 11, 0.08);
         }
         .fleet-unit-card.status-breakdown {
-            border-left: 5px solid var(--danger);
-            background: linear-gradient(135deg, rgba(254, 226, 226, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%);
-            border-color: rgba(239, 68, 68, 0.2);
+            border-left: 5px solid #EF4444;
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 40%, #FCA5A5 100%);
+            border: 2px solid rgba(239, 68, 68, 0.45);
+            border-left: 5px solid #EF4444;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2), inset 0 0 30px rgba(239, 68, 68, 0.06);
+            animation: breakdown-card-pulse 3s ease-in-out infinite;
+            position: relative;
+        }
+        .fleet-unit-card.status-breakdown::after {
+            content: "⚠";
+            position: absolute;
+            top: 8px; right: 12px;
+            font-size: 1.2rem;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+        .fleet-unit-card.status-breakdown:hover {
+            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.35), inset 0 0 30px rgba(239, 68, 68, 0.08);
+        }
+        @keyframes breakdown-card-pulse {
+            0%, 100% { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2), inset 0 0 30px rgba(239, 68, 68, 0.06); }
+            50% { box-shadow: 0 4px 25px rgba(239, 68, 68, 0.4), inset 0 0 35px rgba(239, 68, 68, 0.1); }
         }
         .fleet-unit-header {
             display: flex;
@@ -713,14 +749,18 @@
             color: var(--success);
         }
         .fleet-unit-status-badge.badge-running {
-            background-color: var(--accent-light);
-            color: var(--accent-hover);
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: #ffffff;
+            font-weight: 800;
+            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
+            border: 1px solid rgba(217, 119, 6, 0.3);
         }
         .fleet-unit-status-badge.badge-breakdown {
-            background-color: var(--danger-light);
-            color: var(--danger);
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: #ffffff;
+            font-weight: 800;
+            box-shadow: 0 2px 10px rgba(239, 68, 68, 0.4);
+            border: 1px solid rgba(220, 38, 38, 0.3);
             animation: pulse-border 2s infinite;
         }
         @keyframes pulse-border {
@@ -2493,7 +2533,7 @@
         <!-- ===== SIDEBAR PREMIUM ===== -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <h2>SMART BD <span class="v-badge">V1.0</span></h2>
+                <h2>HEAVIX <span class="v-badge">v2.0</span></h2>
                 <div class="mini-clock-wrapper">
                     <div class="clock-container" id="clock-widget">
                         <div class="clock-date-group">
@@ -2548,9 +2588,9 @@
                     <div class="header-left-inner">
                         <button class="mobile-toggle-v2" id="mobileToggle" type="button" aria-label="Menu" onclick="toggleMobileSidebar()"><i class="fas fa-bars"></i></button>
                         <div class="header-title-v3">
-                            <h2 class="header-logo-title" id="header-text-title">Dashboard Analisis Downtime</h2>
+                            <h2 class="header-logo-title" id="header-text-title">PUSAT KOMANDO ALAT BERAT</h2>
                             <div class="header-meta-row">
-                                <span class="header-tagline" id="header-text-subtitle">Statistik performa, durasi, dan tren breakdown alat berat</span>
+                                <span class="header-tagline" id="header-text-subtitle">Intelijen Armada & Analitik Downtime Secara Real-Time</span>
                                 <span class="header-meta-divider" aria-hidden="true"></span>
                                 <div class="header-site-block">
                                     <span class="header-site-title">PT CPI FEEDMILL CIREBON</span>
@@ -2562,8 +2602,8 @@
                 </div>
                 <div class="header-right header-user-actions">
                     <div class="header-user-chip">
-                        <span class="header-user-avatar" aria-hidden="true">HE</span>
-                        <span class="header-user-name">HEAVY EQUIPMENT LEADER</span>
+                        <span class="header-user-avatar" aria-hidden="true">KA</span>
+                        <span class="header-user-name">KOMANDAN ARMADA</span>
                     </div>
                     <button type="button" class="header-logout-btn" onclick="window.location.href='index.html'"><i class="fas fa-arrow-left"></i><span>Kembali</span></button>
                 </div>
@@ -2729,8 +2769,8 @@
                         </div>
                         <div style="display: flex; gap: 10px; font-size: 0.72rem; font-weight: 700; font-family: 'Rajdhani', sans-serif; flex-wrap: wrap;">
                             <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--success); display: inline-block;"></span> AMAN</span>
-                            <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--accent); display: inline-block;"></span> RUNNING</span>
-                            <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--danger); display: inline-block;"></span> BREAKDOWN</span>
+                            <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--accent); display: inline-block;"></span> MAINTENANCE - RUNNING</span>
+                            <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--danger); display: inline-block;"></span> MAINTENANCE - BREAKDOWN</span>
                         </div>
                     </div>
                     <div class="fleet-grid" id="fleet-monitoring-grid"></div>
@@ -3610,7 +3650,7 @@
         let currentTab = "tab-dashboard";
         let activeWizardStep = 1;
         let dbMode = "online"; // "online" or "offline"
-        let appsScriptUrl = "https://script.google.com/macros/s/AKfycbz0RlTOKEtzek9FBrM0EyU0vNFSpGBQod_VXAJJmVpQPCpMVH14rQJYt_fFFFQpoZmbTg/exec";
+        let appsScriptUrl = "https://script.google.com/macros/s/AKfycbyV2hqCNVs3UbKIU0TSEKxE9SQjj6W0F9RiDGQmacLwvNYYb27AGwVqK_GJwSsX3lbG/exec";
         
         // Active Laporan Data State
         let formBreakdown = {
@@ -3704,7 +3744,7 @@
 
         // DATABASE CONNECTION STATE
         function initDatabaseConnectionSettings() {
-            const defaultUrl = "https://script.google.com/macros/s/AKfycbz0RlTOKEtzek9FBrM0EyU0vNFSpGBQod_VXAJJmVpQPCpMVH14rQJYt_fFFFQpoZmbTg/exec";
+            const defaultUrl = "https://script.google.com/macros/s/AKfycbyV2hqCNVs3UbKIU0TSEKxE9SQjj6W0F9RiDGQmacLwvNYYb27AGwVqK_GJwSsX3lbG/exec";
             
             appsScriptUrl = defaultUrl;
             document.getElementById("settings-api-url").value = defaultUrl;
@@ -4027,8 +4067,8 @@
                 textSubtitle.textContent = "Daftar unit yang sedang diperbaiki di workshop lapangan";
                 renderOngoingBreakdowns();
             } else if (tabId === "tab-dashboard") {
-                textTitle.textContent = "Dashboard Analisis Downtime";
-                textSubtitle.textContent = "Statistik performa, durasi, dan tren breakdown alat berat";
+                textTitle.textContent = "PUSAT KOMANDO ALAT BERAT";
+                textSubtitle.textContent = "Intelijen Armada & Analitik Downtime Secara Real-Time";
                 calculateAndRenderDashboard();
             } else if (tabId === "tab-riwayat") {
                 textTitle.textContent = "Riwayat Laporan Terdaftar";
@@ -5546,6 +5586,26 @@
             return `${year}-${month}-${day}`;
         }
 
+        function getDaysAgo(dateVal) {
+            const targetDate = parseDateString(dateVal);
+            if (isNaN(targetDate.getTime())) return "";
+            
+            const today = new Date();
+            const d1 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const d2 = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+            
+            const diffTime = d1 - d2;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) {
+                return " (Mendatang)";
+            } else if (diffDays === 0) {
+                return " (Hari ini)";
+            } else {
+                return ` (${diffDays} hari lalu)`;
+            }
+        }
+
         function initClockWidget() {
             const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
             function update() {
@@ -5597,11 +5657,11 @@
                     if (cond === "RUNNING") {
                         statusClass = "status-running";
                         badgeClass = "badge-running";
-                        badgeText = "🟡 RUNNING";
+                        badgeText = "🟡 MAINTENANCE - RUNNING";
                     } else {
                         statusClass = "status-breakdown";
                         badgeClass = "badge-breakdown";
-                        badgeText = "🔴 BREAKDOWN";
+                        badgeText = "🔴 MAINTENANCE - BREAKDOWN";
                     }
                 }
                 
@@ -5611,7 +5671,9 @@
                     const sortedHistory = [...unitHistory].sort((a, b) => b.jamMulai.localeCompare(a.jamMulai));
                     const latest = sortedHistory[0];
                     if (latest.jamMulai) {
-                        lastBdText = formatDateOnly(latest.jamMulai);
+                        const formatted = formatDateOnly(latest.jamMulai);
+                        const daysAgo = getDaysAgo(latest.jamMulai);
+                        lastBdText = `${formatted}${daysAgo}`;
                     }
                 }
                 
@@ -5630,6 +5692,18 @@
                     </div>
                     <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Vendor: ${unit.vendor}</div>
                     <div style="margin-top: 4px;">${badgeHtml}</div>
+                    ${activeTicket ? `
+                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(15, 23, 42, 0.1); display: flex; flex-direction: column; gap: 4px;">
+                        <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; justify-content: space-between;">
+                            <span>Kategori:</span>
+                            <span style="font-weight: 600; color: var(--text-muted); background: rgba(79, 70, 229, 0.08); padding: 2px 6px; border-radius: 4px;">${activeTicket.kategoriKerusakan || '-'}</span>
+                        </div>
+                        <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; justify-content: space-between;">
+                            <span>Sub-Kategori:</span>
+                            <span style="font-weight: 600; color: var(--text-muted); background: rgba(15, 23, 42, 0.05); padding: 2px 6px; border-radius: 4px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${activeTicket.pilihanKerusakan || '-'}">${activeTicket.pilihanKerusakan || '-'}</span>
+                        </div>
+                    </div>
+                    ` : ''}
                     <div class="fleet-unit-last-bd">Terakhir Breakdown: <span>${lastBdText}</span></div>
                 `;
                 grid.appendChild(card);
