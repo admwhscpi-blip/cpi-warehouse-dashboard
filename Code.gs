@@ -264,33 +264,22 @@ function simpanBreakdownAwal(data) {
       throw new Error("Data input breakdown awal tidak lengkap.");
     }
     
-    // 1. Generate ID Unik: BD-YYYYMMDD-XXXX
-    var now = new Date();
-    // Gunakan zona waktu GMT+7 (WIB)
-    var dateString = Utilities.formatDate(now, "GMT+7", "yyyyMMdd");
-    var idPrefix = "BD-" + dateString + "-";
+    // 1. Generate ID Unik: BD-[NAMAUNIT]/[3_DIGIT_SEQ]
+    var unitClean = String(data.typeUnit).replace(/\s+/g, '').toUpperCase();
+    var idPrefix = "BD-" + unitClean + "/";
     
-    // Ambil semua ID di kolom A untuk mencari nomor urut hari ini
     var lastRow = sheet.getLastRow();
-    var sequence = 1;
+    var count = 0;
     if (lastRow > 1) {
-      var ids = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-      var maxSeq = 0;
-      for (var i = 0; i < ids.length; i++) {
-        var idStr = String(ids[i][0]);
-        if (idStr.indexOf(idPrefix) === 0) {
-          var seqPart = idStr.substring(idPrefix.length);
-          var seqNum = parseInt(seqPart, 10);
-          if (!isNaN(seqNum) && seqNum > maxSeq) {
-            maxSeq = seqNum;
-          }
+      // Kolom D (index 4) adalah TYPE_UNIT
+      var typeUnits = sheet.getRange(2, 4, lastRow - 1, 1).getValues();
+      for (var i = 0; i < typeUnits.length; i++) {
+        if (String(typeUnits[i][0]).trim().toLowerCase() === String(data.typeUnit).trim().toLowerCase()) {
+          count++;
         }
       }
-      sequence = maxSeq + 1;
     }
-    
-    // Format sequence menjadi 4 digit dengan leading zero (contoh: 0042)
-    var seqString = ("0000" + sequence).slice(-4);
+    var seqString = ("000" + (count + 1)).slice(-3);
     var breakdownId = idPrefix + seqString;
     
     // 2. Tentukan Vendor dari master data jika tidak dikirim dari client
@@ -312,6 +301,7 @@ function simpanBreakdownAwal(data) {
     }
     
     // 4. Susun baris baru
+    var now = new Date();
     // A: ID_BREAKDOWN | B: TIMESTAMP_INPUT | C: JENIS_UNIT | D: TYPE_UNIT | E: VENDOR 
     // F: KATEGORI_KERUSAKAN | G: PILIHAN_KERUSAKAN | H: DETAIL_KERUSAKAN | I: OPERATOR_AWAL | J: JAM_MULAI
     // K: OPERATOR_AKHIR | L: JAM_SELESAI | M: DURASI_MENIT | N: DURASI_JAM | O: STATUS

@@ -68,10 +68,10 @@
             animation: gradientBG 15s ease infinite;
             color: var(--text-main);
             font-family: var(--font-main);
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
+            overflow: hidden;
             position: relative;
         }
 
@@ -110,150 +110,637 @@
 
         /* SIDEBAR (Desktop) */
         .sidebar {
-            width: 260px;
-            background: var(--bg-glass-heavy);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            border-right: 1px solid var(--border-color);
+            width: 280px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+            border-right: 1px solid rgba(79, 70, 229, 0.15);
+            box-shadow: 6px 0 25px rgba(15, 23, 42, 0.03);
             display: flex;
             flex-direction: column;
+            flex-shrink: 0;
+            height: 100vh;
+            z-index: 2000;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: fixed;
-            top: 0;
-            bottom: 0;
             left: 0;
-            z-index: 100;
-            transition: var(--transition);
+            top: 0;
+            overflow-y: auto;
         }
 
-        .sidebar-brand {
-            padding: 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid var(--border-color);
+        .sidebar-logo {
+            padding: 30px 20px 15px 20px;
+            border-bottom: 1px solid rgba(79, 70, 229, 0.12);
         }
 
-        .brand-logo {
-            width: 40px;
-            height: 40px;
-            background: var(--primary-gradient);
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.25rem;
-            box-shadow: var(--shadow-glow);
+        .sidebar-logo h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.45rem;
+            color: var(--primary);
+            letter-spacing: 2px;
+            line-height: 1.2;
+            text-shadow: 0 2px 10px rgba(79, 70, 229, 0.15);
         }
 
-        .brand-title {
-            font-size: 1.1rem;
+        .sidebar-logo span.v-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.58rem;
+            color: #fff;
             font-weight: 800;
-            color: var(--text-main);
+            background: var(--primary-gradient);
+            padding: 3px 8px;
+            border-radius: 6px;
+            margin-left: 6px;
+            letter-spacing: 0.5px;
+            vertical-align: middle;
+            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.25);
+        }
+
+        .sidebar-logo p {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 35px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+
+        /* Clock Widget */
+        .mini-clock-wrapper {
+            margin-top: 15px;
+            transform: scale(0.85);
+            transform-origin: left top;
+            width: 115%;
+            margin-bottom: -10px;
+        }
+
+        .clock-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 20px;
+            background: #0f172a;
+            border: 1.5px solid rgba(79, 70, 229, 0.35);
+            border-radius: 40px;
+            font-family: 'Orbitron', sans-serif;
+            color: #ffffff;
+            min-width: 300px;
+            height: 65px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15), inset 0 0 12px rgba(79, 70, 229, 0.15);
+            transition: all 0.3s;
+        }
+
+        .clock-container:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.25), inset 0 0 15px rgba(79, 70, 229, 0.25);
+        }
+
+        .clock-date-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 110px;
             line-height: 1.2;
         }
 
-        .brand-title span {
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            display: block;
+        .clock-day {
+            font-size: 0.65rem;
+            color: #818CF8 !important; /* Indigo light */
+            letter-spacing: 2px;
+            font-weight: 700;
+            text-shadow: 0 0 6px rgba(129, 140, 248, 0.3);
         }
 
-        .sidebar-menu {
-            list-style: none;
-            padding: 24px 16px;
+        .clock-date {
+            font-size: 1.05rem;
+            font-weight: 800;
+            white-space: nowrap;
+            color: #ffffff;
+        }
+
+        .clock-visual {
+            position: relative;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .clock-circle {
+            position: absolute;
+            inset: 0;
+            border: 2px solid rgba(129, 140, 248, 0.15);
+            border-radius: 50%;
+        }
+
+        .clock-progress {
+            position: absolute;
+            inset: 0;
+            border: 2px solid transparent;
+            border-top: 2px solid #818CF8;
+            border-radius: 50%;
+            transition: transform 1s linear;
+            filter: drop-shadow(0 0 6px #818CF8);
+        }
+
+        .clock-time-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            flex-grow: 1;
+            align-items: center;
+            z-index: 5;
         }
 
-        .menu-item a {
+        .clock-ampm {
+            font-size: 0.42rem;
+            font-weight: 900;
+            color: #818CF8 !important;
+            text-transform: uppercase;
+            text-shadow: 0 0 6px rgba(129, 140, 248, 0.3);
+        }
+
+        .clock-time {
+            font-size: 1.05rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #ffffff;
+        }
+
+        /* Sidebar Nav */
+        .sidebar-nav {
+            padding: 20px 12px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            position: relative;
+            width: 100%;
+            text-align: left;
+            padding: 13px 18px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-muted);
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 12px 16px;
+            gap: 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-item i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+            color: var(--primary);
+            transition: transform 0.3s, filter 0.3s;
+        }
+
+        .nav-item:hover {
+            color: var(--primary);
+            background: rgba(79, 70, 229, 0.06);
+            transform: translateX(6px);
+            border-left: 4px solid var(--primary);
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+
+        .nav-item:hover i {
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 5px rgba(79, 70, 229, 0.5));
+        }
+
+        .nav-item.active {
+            color: #fff !important;
+            font-weight: 800;
+            background: var(--primary-gradient) !important;
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+            transform: scale(1.02) translateX(6px);
+            border-left: 4px solid #06B6D4;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+
+        .nav-item.active i {
+            color: #fff !important;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+        }
+
+        .nav-divider {
+            margin: 10px 12px;
+            height: 1px;
+            background: rgba(79, 70, 229, 0.1);
+        }
+
+        .sidebar-footer-brand {
+            padding: 14px 10px 18px;
+            border-top: 1px solid rgba(79, 70, 229, 0.15);
+            background: #ffffff;
+        }
+
+        .sidebar-brand-lines {
+            text-align: center;
+            background: #f8fafc;
+            border: 1px solid rgba(79, 70, 229, 0.15);
+            border-radius: 12px;
+            padding: 12px 8px 10px;
+            box-shadow: inset 0 0 10px rgba(79, 70, 229, 0.02);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .sidebar-brand-lines:hover {
+            border-color: var(--primary);
+            box-shadow: inset 0 0 12px rgba(79, 70, 229, 0.06);
+        }
+
+        .sidebar-brand-main {
+            margin: 0;
+            font-size: 0.62rem;
+            font-weight: 700;
+            line-height: 1.5;
+            color: var(--text-main);
+        }
+
+        .sidebar-brand-tag {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.58rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .sidebar-brand-values {
+            margin: 10px 0 0;
+            padding: 8px 4px 0;
+            border-top: 1px solid rgba(79, 70, 229, 0.1);
+            font-size: 0.5rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
             color: var(--text-muted);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.95rem;
-            border-radius: var(--radius-md);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .sidebar-values-sep {
+            color: rgba(79, 70, 229, 0.4);
+        }
+
+        /* Sidebar Overlay for Mobile */
+        .sovl {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.3);
+            backdrop-filter: blur(4px);
+            z-index: 1999;
+            display: none;
+        }
+        .sovl.open {
+            display: block;
+        }
+        .sidebar.open {
+            transform: translateX(0) !important;
+        }
+
+        /* MAIN LAYOUT STRUCTURE */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            min-width: 0;
+            padding: 0;
+            margin-left: 280px;
             transition: var(--transition);
         }
 
-        .menu-item.active a {
-            background-color: var(--primary-light);
-            color: var(--primary);
+        /* HEADER PREMIUM V3 STYLE */
+        .header.header-premium-v3 {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            min-height: 75px;
+            padding: 14px 30px;
+            background: linear-gradient(135deg, #0b0f19 0%, #1e293b 100%);
+            border-bottom: 1.5px solid rgba(79, 70, 229, 0.3);
+            box-shadow: 0 4px 25px rgba(79, 70, 229, 0.15);
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
         }
 
-        .menu-item a:hover:not(.active a) {
-            background-color: #F1F5F9;
-            color: var(--text-main);
-            transform: translateX(4px);
+        .header-premium-v3 .header-left {
+            display: flex;
+            align-items: center;
+            flex: 1;
         }
 
-        .sidebar-footer {
-            padding: 20px;
-            border-top: 1px solid var(--border-color);
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-align: center;
+        .header-premium-v3 .header-left-inner {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            padding: 8px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(79, 70, 229, 0.25);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(15, 23, 42, 0.6) 100%);
+            position: relative;
+            overflow: hidden;
         }
 
-        /* MAIN CONTENT AREA */
-        .main-container {
-            flex-grow: 1;
-            margin-left: 260px;
-            padding: 40px;
-            min-height: 100vh;
+        .header-premium-v3 .header-left-inner::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(110deg, transparent 0%, rgba(79, 70, 229, 0.12) 40%, transparent 80%);
+            background-size: 200% 100%;
+            animation: header-sweep 6.5s ease-in-out infinite;
+        }
+
+        @keyframes header-sweep {
+            0% { background-position: 150% 0; }
+            100% { background-position: -50% 0; }
+        }
+
+        .mobile-toggle-v2 {
+            display: none;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 10px;
+            font-size: 1.2rem;
+            color: #818CF8;
+            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .mobile-toggle-v2:hover {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.5);
+        }
+
+        .header-title-v3 {
+            min-width: 0;
+        }
+
+        .header-logo-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin: 0;
+            line-height: 1.1;
+            color: #ffffff;
+            text-shadow: 0 0 12px rgba(129, 140, 248, 0.6);
+        }
+
+        .header-meta-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 4px;
+        }
+
+        .header-tagline {
+            font-size: clamp(0.7rem, 1.4vw, 0.8rem);
+            color: #94a3b8;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .header-meta-divider {
+            width: 1px;
+            height: 18px;
+            background: rgba(79, 70, 229, 0.4);
+        }
+
+        .header-site-block {
             display: flex;
             flex-direction: column;
-            gap: 30px;
-            padding-bottom: 100px; /* Space for bottom nav on mobile */
+            gap: 1px;
         }
 
-        /* STICKY HEADER */
-        .main-header {
+        .header-site-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 800;
+            font-size: 0.72rem;
+            letter-spacing: 0.1em;
+            color: #818CF8;
+            text-shadow: 0 0 8px rgba(129, 140, 248, 0.3);
+        }
+
+        .header-site-address {
+            font-size: 0.58rem;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .header-user-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            padding: 8px 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(79, 70, 229, 0.25);
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+        }
+
+        .header-user-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px 6px 8px;
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid rgba(79, 70, 229, 0.25);
+            border-radius: 999px;
+        }
+
+        .header-user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 0.8rem;
+            color: #fff;
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
+            box-shadow: 0 0 10px rgba(129, 140, 248, 0.4);
+        }
+
+        .header-user-name {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 800;
+            font-size: 0.85rem;
+            letter-spacing: 0.04em;
+            color: #ffffff;
+        }
+
+        .header-logout-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 800;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #ffffff;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(79, 70, 229, 0.25);
+            transition: 0.2s;
+        }
+
+        .header-logout-btn:hover {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .header-logout-btn:active {
+            transform: translateY(0);
+        }
+
+        /* CONTENT SCROLLABLE AREA */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 30px;
+            position: relative;
+        }
+
+        /* REAL-TIME FLEET GRID SYSTEM */
+        .fleet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 10px;
+        }
+        .fleet-unit-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.7) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .fleet-unit-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.1);
+        }
+        .fleet-unit-card.status-aman {
+            border-left: 5px solid var(--success);
+        }
+        .fleet-unit-card.status-running {
+            border-left: 5px solid var(--accent);
+            background: linear-gradient(135deg, rgba(254, 243, 199, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%);
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+        .fleet-unit-card.status-breakdown {
+            border-left: 5px solid var(--danger);
+            background: linear-gradient(135deg, rgba(254, 226, 226, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+        .fleet-unit-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--bg-glass);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            padding: 16px 28px;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-glass);
+            margin-bottom: 8px;
         }
-
-        .header-title h1 {
-            font-size: 1.5rem;
+        .fleet-unit-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.05rem;
             font-weight: 800;
             color: var(--text-main);
         }
-
-        .header-title p {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        .header-meta {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .meta-clock {
-            font-family: 'Orbitron', monospace;
-            font-size: 1rem;
+        .fleet-unit-type-tag {
+            font-size: 0.65rem;
             font-weight: 700;
-            color: var(--primary);
-            background: var(--primary-light);
-            padding: 6px 14px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border-active);
+            padding: 3px 8px;
+            background: rgba(15, 23, 42, 0.05);
+            color: var(--text-muted);
+            border-radius: 99px;
+            text-transform: uppercase;
         }
+        .fleet-unit-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 99px;
+            margin-top: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .fleet-unit-status-badge.badge-aman {
+            background-color: var(--success-light);
+            color: var(--success);
+        }
+        .fleet-unit-status-badge.badge-running {
+            background-color: var(--accent-light);
+            color: var(--accent-hover);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+        }
+        .fleet-unit-status-badge.badge-breakdown {
+            background-color: var(--danger-light);
+            color: var(--danger);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .fleet-unit-last-bd {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+            border-top: 1px dashed rgba(15, 23, 42, 0.08);
+            padding-top: 8px;
+            font-weight: 600;
+        }
+        .fleet-unit-last-bd span {
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
 
         .database-badge {
             display: flex;
@@ -1224,7 +1711,29 @@
             align-items: center;
             gap: 18px;
             box-shadow: var(--shadow-sm);
-            transition: var(--transition);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--kpi-c);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12), 0 0 15px rgba(var(--kpi-c-rgb, 37, 99, 235), 0.2);
+        }
+
+        .kpi-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.15), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+            pointer-events: none;
+        }
+
+        .kpi-card:hover::after {
+            transform: translateX(100%);
         }
 
         .kpi-icon {
@@ -1236,12 +1745,14 @@
             justify-content: center;
             font-size: 1.5rem;
             flex-shrink: 0;
+            z-index: 2;
         }
 
         .kpi-details {
             display: flex;
             flex-direction: column;
             gap: 4px;
+            z-index: 2;
         }
 
         .kpi-title {
@@ -1259,10 +1770,10 @@
             line-height: 1;
         }
 
-        .kpi-blue { --kpi-c: var(--primary); --kpi-bg: var(--primary-light); }
-        .kpi-amber { --kpi-c: var(--accent); --kpi-bg: var(--accent-light); }
-        .kpi-red { --kpi-c: var(--danger); --kpi-bg: var(--danger-light); }
-        .kpi-green { --kpi-c: var(--success); --kpi-bg: var(--success-light); }
+        .kpi-blue { --kpi-c: var(--primary); --kpi-bg: var(--primary-light); --kpi-c-rgb: 37, 99, 235; }
+        .kpi-amber { --kpi-c: var(--accent); --kpi-bg: var(--accent-light); --kpi-c-rgb: 245, 158, 11; }
+        .kpi-red { --kpi-c: var(--danger); --kpi-bg: var(--danger-light); --kpi-c-rgb: 239, 68, 68; }
+        .kpi-green { --kpi-c: var(--success); --kpi-bg: var(--success-light); --kpi-c-rgb: 16, 185, 129; }
 
         .kpi-card .kpi-icon {
             background-color: var(--kpi-bg);
@@ -1671,103 +2182,180 @@
         /* RESPONSIVE DESIGN (BREAKPOINT: 768px & 1024px) */
         @media (max-width: 1024px) {
             .sidebar {
-                transform: translateX(-100%); /* Hide sidebar */
+                transform: translateX(-100%);
             }
 
             .main-container {
                 margin-left: 0;
-                padding: 20px;
                 padding-bottom: 90px;
             }
 
+            .mobile-toggle-v2 {
+                display: inline-flex !important;
+            }
+
             .bottom-nav {
-                display: flex; /* Show bottom navigation */
+                display: flex;
             }
 
             .chart-row-double, .chart-row-triple {
-                grid-template-columns: 1fr; /* Stack charts */
+                grid-template-columns: 1fr;
+            }
+
+            .mini-clock-wrapper {
+                width: 100%;
+                transform: scale(0.8);
             }
         }
 
         @media (max-width: 768px) {
-            .main-header {
-                flex-direction: column;
-                gap: 12px;
-                align-items: flex-start;
-                padding: 16px 20px;
+            .header.header-premium-v3 {
+                padding: 8px 12px;
+                min-height: 60px;
+                gap: 8px;
+            }
+            .header-premium-v3 .header-left-inner {
+                padding: 6px 10px;
+                gap: 8px;
+            }
+            .header-logo-title {
+                font-size: 0.95rem !important;
+                letter-spacing: 1px;
+            }
+            .header-tagline {
+                display: none !important;
+            }
+            .header-meta-divider {
+                display: none !important;
+            }
+            .header-site-address {
+                display: none !important;
+            }
+            .header-site-title {
+                font-size: 0.62rem;
+            }
+            .header-user-name {
+                display: none !important;
+            }
+            .header-user-actions {
+                padding: 4px 6px;
+                gap: 6px;
+            }
+            .header-user-chip {
+                padding: 4px;
+            }
+            .header-logout-btn span {
+                display: none;
+            }
+            .header-logout-btn {
+                padding: 8px;
+                border-radius: 50%;
+                width: 36px;
+                height: 36px;
+            }
+            .content-area {
+                padding: 14px 12px;
             }
 
-            .header-meta {
-                width: 100%;
-                justify-content: space-between;
+            /* Dashboard Fleet Grid */
+            .fleet-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 10px;
+            }
+            .fleet-unit-card {
+                padding: 12px;
+            }
+            .fleet-unit-name {
+                font-size: 0.85rem;
+            }
+            .fleet-unit-type-tag {
+                font-size: 0.55rem;
+                padding: 2px 6px;
+            }
+            .fleet-unit-last-bd {
+                font-size: 0.6rem;
             }
 
+            /* KPI Grid */
             .dashboard-kpi-grid {
-                grid-template-columns: repeat(2, 1fr); /* 2x2 grid for mobile KPIs */
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .kpi-card {
+                padding: 14px;
+                gap: 10px;
+            }
+            .kpi-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.1rem;
+            }
+            .kpi-title {
+                font-size: 0.65rem;
+            }
+            .kpi-value {
+                font-size: 1.2rem;
             }
 
+            /* Filter Panel */
+            .filter-grid {
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+                gap: 10px;
+            }
+            .filter-panel {
+                padding: 14px;
+            }
+
+            /* Form elements */
             .jenis-unit-container {
                 grid-template-columns: 1fr;
             }
-
             .type-unit-grid {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 12px;
             }
-
             .type-unit-card {
                 padding: 16px 8px;
                 font-size: 0.9rem;
                 min-height: 60px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                word-break: break-word;
             }
-
             .category-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-
             .category-card {
                 padding: 16px 10px;
                 gap: 8px;
             }
-
             .category-desc {
                 font-size: 0.68rem;
             }
 
+            /* Modal */
             .modal-card {
                 max-height: 90vh;
             }
-
             .modal-body {
                 padding: 16px 20px;
                 gap: 12px;
             }
-
             .summary-grid {
                 grid-template-columns: 1fr;
             }
-
             .summary-item.full-width {
                 grid-column: span 1;
             }
 
+            /* Table */
             .table-controls {
                 flex-direction: column;
                 align-items: stretch;
             }
-
             .search-wrapper {
                 max-width: 100%;
             }
-
             .grid-actions {
                 justify-content: space-between;
             }
-
             .hide-on-mobile {
                 display: none !important;
             }
@@ -1775,14 +2363,19 @@
                 display: inline-block !important;
             }
             .table-responsive-container {
-                overflow-x: hidden !important;
+                overflow-x: auto !important;
             }
             .data-table th, .data-table td {
                 padding: 10px 8px !important;
                 font-size: 0.8rem !important;
             }
 
-            /* Detail Modal Mobile Optimizations */
+            /* Ongoing Cards */
+            .ongoing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            /* Detail Modal Mobile */
             #detail-modal-overlay .modal-card {
                 max-height: 98vh !important;
                 width: 96% !important;
@@ -1812,11 +2405,9 @@
             #detail-modal-overlay .summary-label {
                 font-size: 0.65rem !important;
                 margin-bottom: 1px !important;
-                color: var(--text-muted) !important;
             }
             #detail-modal-overlay .summary-value {
                 font-size: 0.78rem !important;
-                line-height: 1.15 !important;
             }
             #detail-modal-overlay #det-id {
                 font-size: 0.85rem !important;
@@ -1827,10 +2418,6 @@
             #detail-modal-overlay #det-photo-img {
                 max-width: 140px !important;
                 border-radius: 8px !important;
-                margin-top: 2px !important;
-            }
-            #detail-modal-overlay #det-photo-item {
-                padding-top: 4px !important;
             }
             #detail-modal-overlay .modal-footer {
                 padding: 6px 0 0 0 !important;
@@ -1840,6 +2427,18 @@
             #detail-modal-overlay .modal-footer .btn {
                 padding: 6px 14px !important;
                 font-size: 0.8rem !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .fleet-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .dashboard-kpi-grid {
+                grid-template-columns: 1fr;
+            }
+            .header-site-block {
+                display: none !important;
             }
         }
 
@@ -1887,54 +2486,96 @@
         </div>
     </div>
 
+    <!-- MOBILE SIDEBAR OVERLAY -->
+    <div class="sovl" id="sidebarOvl" onclick="toggleMobileSidebar()"></div>
+
     <div class="app-wrapper">
-        <!-- SIDEBAR NAVIGATION (Desktop) -->
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <div class="brand-logo">
-                    <i class="fa-solid fa-screwdriver-wrench"></i>
+        <!-- ===== SIDEBAR PREMIUM ===== -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <h2>SMART BD <span class="v-badge">V1.0</span></h2>
+                <div class="mini-clock-wrapper">
+                    <div class="clock-container" id="clock-widget">
+                        <div class="clock-date-group">
+                            <div class="clock-day" id="widget-day">DAY</div>
+                            <div class="clock-date" id="widget-date">DATE</div>
+                        </div>
+                        <div class="clock-visual">
+                            <div class="clock-circle"></div>
+                            <div class="clock-progress" id="widget-sec-progress"></div>
+                            <div class="clock-time-group">
+                                <div class="clock-ampm" id="widget-ampm">AM</div>
+                                <div class="clock-time" id="widget-time">00:00</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="brand-title">
-                    SMART BREAKDOWN
-                    <span>Alat Berat Portal</span>
+                <p>ALAT BERAT PORTAL</p>
+            </div>
+            
+            <div class="sidebar-nav">
+                <div class="nav-item active" data-tab="tab-dashboard" onclick="switchTab('tab-dashboard')">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </div>
+                <div class="nav-item" data-tab="tab-catat" onclick="switchTab('tab-catat')">
+                    <i class="fas fa-edit"></i> Catat Breakdown
+                </div>
+                <div class="nav-item" data-tab="tab-selesaikan" onclick="switchTab('tab-selesaikan')">
+                    <i class="fas fa-check-circle"></i> Selesaikan WO <span id="ongoing-badge-sidebar" style="background-color: var(--danger); color: white; border-radius: 50%; font-size: 0.65rem; padding: 2px 6px; margin-left: 8px; display: none; font-weight: 700;">0</span>
+                </div>
+                <div class="nav-item" data-tab="tab-riwayat" onclick="switchTab('tab-riwayat')">
+                    <i class="fas fa-history"></i> Riwayat Laporan
                 </div>
             </div>
-            <ul class="sidebar-menu">
-                <li class="menu-item active" data-tab="tab-catat">
-                    <a href="#catat"><i class="fa-solid fa-wrench"></i> Catat Breakdown</a>
-                </li>
-                <li class="menu-item" data-tab="tab-selesaikan">
-                    <a href="#selesaikan"><i class="fa-solid fa-circle-check"></i> Selesaikan <span id="ongoing-badge-sidebar" style="background-color: var(--danger); color: white; border-radius: 50%; font-size: 0.65rem; width: 18px; height: 18px; display: none; align-items: center; justify-content: center; font-weight: 700;">0</span></a>
-                </li>
-                <li class="menu-item" data-tab="tab-dashboard">
-                    <a href="#dashboard"><i class="fa-solid fa-chart-simple"></i> Dashboard</a>
-                </li>
-                <li class="menu-item" data-tab="tab-riwayat">
-                    <a href="#riwayat"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Laporan</a>
-                </li>
-            </ul>
-            <div class="sidebar-footer">
-                Smart Warehouse Live<br>&copy; 2026 Developer Team
+            <div class="sidebar-footer-brand">
+                <div class="sidebar-brand-lines">
+                    <p class="sidebar-brand-main">
+                        Smart Warehouse Live
+                        <span class="sidebar-brand-tag">[Integrated Infrastructure Suite]</span>
+                    </p>
+                    <p class="sidebar-brand-values">
+                        Accuracy<span class="sidebar-values-sep">|</span>Safety<span class="sidebar-values-sep">|</span>Efficiency
+                    </p>
+                </div>
             </div>
-        </aside>
+        </nav>
 
         <!-- MAIN LAYOUT AREA -->
         <main class="main-container">
-            <!-- STICKY HEADER -->
-            <header class="main-header">
-                <div class="header-title">
-                    <h1 id="header-text-title">Pencatatan Breakdown Baru</h1>
-                    <p id="header-text-subtitle">Mulai pelaporan kerusakan armada lapangan secara terstruktur</p>
+            <!-- HEADER PREMIUM -->
+            <header class="header header-premium-v3">
+                <div class="header-left">
+                    <div class="header-left-inner">
+                        <button class="mobile-toggle-v2" id="mobileToggle" type="button" aria-label="Menu" onclick="toggleMobileSidebar()"><i class="fas fa-bars"></i></button>
+                        <div class="header-title-v3">
+                            <h2 class="header-logo-title" id="header-text-title">Dashboard Analisis Downtime</h2>
+                            <div class="header-meta-row">
+                                <span class="header-tagline" id="header-text-subtitle">Statistik performa, durasi, dan tren breakdown alat berat</span>
+                                <span class="header-meta-divider" aria-hidden="true"></span>
+                                <div class="header-site-block">
+                                    <span class="header-site-title">PT CPI FEEDMILL CIREBON</span>
+                                    <span class="header-site-address">Jl. Cirebon-Brebes No.Km. 11, Astanajapura</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="header-meta">
-                    <div class="meta-clock" id="digital-clock">10:09 WIB</div>
+                <div class="header-right header-user-actions">
+                    <div class="header-user-chip">
+                        <span class="header-user-avatar" aria-hidden="true">HE</span>
+                        <span class="header-user-name">HEAVY EQUIPMENT LEADER</span>
+                    </div>
+                    <button type="button" class="header-logout-btn" onclick="window.location.href='index.html'"><i class="fas fa-arrow-left"></i><span>Kembali</span></button>
                 </div>
             </header>
+
+            <!-- WRAP CONTENT IN SCROLLABLE AREA -->
+            <div class="content-area" id="contentArea">
 
             <!-- ============================================== -->
             <!-- TAB 1: CATAT BREAKDOWN                         -->
             <!-- ============================================== -->
-            <section id="tab-catat" class="screen active">
+            <section id="tab-catat" class="screen">
                 <div class="stepper-header">
                     <button class="stepper-back-btn" id="stepper-back-btn" onclick="prevWizardStep()" style="visibility: hidden;">
                         <i class="fa-solid fa-arrow-left"></i> Kembali
@@ -2079,7 +2720,21 @@
             <!-- ============================================== -->
             <!-- TAB 3: DASHBOARD ANALYTICS                     -->
             <!-- ============================================== -->
-            <section id="tab-dashboard" class="screen">
+            <section id="tab-dashboard" class="screen active">
+                <!-- REAL-TIME FLEET MONITORING GRID -->
+                <div class="card" style="margin-bottom: 24px; background: rgba(255, 255, 255, 0.85); border-radius: var(--radius-lg); padding: 20px 24px;">
+                    <div class="card-header" style="margin-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div class="card-title" style="font-size: clamp(0.9rem, 2vw, 1.25rem); font-weight: 800; font-family: 'Orbitron', sans-serif;">
+                            <i class="fa-solid fa-gauge-high" style="color: var(--primary); margin-right: 6px;"></i> STATUS ARMADA
+                        </div>
+                        <div style="display: flex; gap: 10px; font-size: 0.72rem; font-weight: 700; font-family: 'Rajdhani', sans-serif; flex-wrap: wrap;">
+                            <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--success); display: inline-block;"></span> AMAN</span>
+                            <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--accent); display: inline-block;"></span> RUNNING</span>
+                            <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background-color: var(--danger); display: inline-block;"></span> BREAKDOWN</span>
+                        </div>
+                    </div>
+                    <div class="fleet-grid" id="fleet-monitoring-grid"></div>
+                </div>
                 <!-- PANEL FILTER LANJUTAN -->
                 <div class="filter-panel">
                     <div style="font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-filter" style="color: var(--primary);"></i> Panel Analisis & Filter Data</div>
@@ -2164,11 +2819,11 @@
                             <div class="kpi-value" id="kpi-ongoing-count">0</div>
                         </div>
                     </div>
-                    <div class="kpi-card kpi-green">
-                        <div class="kpi-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                    <div class="kpi-card kpi-green" onclick="switchTab('tab-riwayat')" style="cursor: pointer;">
+                        <div class="kpi-icon"><i class="fa-solid fa-truck-pickup"></i></div>
                         <div class="kpi-details">
-                            <div class="kpi-title">Rerata Durasi</div>
-                            <div class="kpi-value" id="kpi-avg-duration" style="font-size: 1.15rem; font-weight: 800;">-</div>
+                            <div class="kpi-title" style="font-size: 0.8rem;">Unit Terbanyak BD</div>
+                            <div class="kpi-value" id="kpi-worst-unit" style="font-size: 1.15rem; font-weight: 800;">-</div>
                         </div>
                     </div>
                 </div>
@@ -2276,22 +2931,23 @@
                     </div>
                 </div>
             </section>
-        </main>
-    </div>
+        </div>
+    </main>
+</div>
 
     <!-- MOBILE FLOATING BOTTOM BAR -->
     <nav class="bottom-nav">
-        <a href="#catat" class="bottom-nav-item active" data-tab="tab-catat" onclick="switchTab('tab-catat')">
+        <a href="#dashboard" class="bottom-nav-item active" data-tab="tab-dashboard" onclick="switchTab('tab-dashboard')">
+            <i class="fa-solid fa-chart-simple"></i>
+            Dashboard
+        </a>
+        <a href="#catat" class="bottom-nav-item" data-tab="tab-catat" onclick="switchTab('tab-catat')">
             <i class="fa-solid fa-wrench"></i>
             Catat
         </a>
         <a href="#selesaikan" class="bottom-nav-item" data-tab="tab-selesaikan" onclick="switchTab('tab-selesaikan')">
             <i class="fa-solid fa-circle-check"></i>
             Selesaikan
-        </a>
-        <a href="#dashboard" class="bottom-nav-item" data-tab="tab-dashboard" onclick="switchTab('tab-dashboard')">
-            <i class="fa-solid fa-chart-simple"></i>
-            Dashboard
         </a>
         <a href="#riwayat" class="bottom-nav-item" data-tab="tab-riwayat" onclick="switchTab('tab-riwayat')">
             <i class="fa-solid fa-clock-rotate-left"></i>
@@ -2951,7 +3607,7 @@
         ];
 
         // GLOBAL CONFIG & STATES
-        let currentTab = "tab-catat";
+        let currentTab = "tab-dashboard";
         let activeWizardStep = 1;
         let dbMode = "online"; // "online" or "offline"
         let appsScriptUrl = "https://script.google.com/macros/s/AKfycbz0RlTOKEtzek9FBrM0EyU0vNFSpGBQod_VXAJJmVpQPCpMVH14rQJYt_fFFFQpoZmbTg/exec";
@@ -2992,12 +3648,13 @@
             initDynamicCategoryFilter();
             updateDigitalClock();
             setInterval(updateDigitalClock, 1000);
+            initClockWidget();
             
             // Set default date/time fields in Step 6
             resetWaktuMulaiInputs();
             
             // Add sidebar listeners
-            document.querySelectorAll(".sidebar-menu .menu-item").forEach(item => {
+            document.querySelectorAll(".sidebar-nav .nav-item").forEach(item => {
                 item.addEventListener("click", function (e) {
                     e.preventDefault();
                     switchTab(this.getAttribute("data-tab"));
@@ -3038,6 +3695,7 @@
         // DIGITAL REALTIME CLOCK FOR HEADER
         function updateDigitalClock() {
             const clockEl = document.getElementById("digital-clock");
+            if (!clockEl) return;
             const now = new Date();
             const hours = ("0" + now.getHours()).slice(-2);
             const minutes = ("0" + now.getMinutes()).slice(-2);
@@ -3332,7 +3990,7 @@
             currentTab = tabId;
             
             // Update active menu markers
-            document.querySelectorAll(".sidebar-menu .menu-item").forEach(item => {
+            document.querySelectorAll(".sidebar-nav .nav-item").forEach(item => {
                 if (item.getAttribute("data-tab") === tabId) {
                     item.classList.add("active");
                 } else {
@@ -3725,11 +4383,9 @@
             document.getElementById("summary-detail").textContent = formBreakdown.detailKerusakan;
             document.getElementById("summary-operator-awal").textContent = formBreakdown.operatorAwal;
             
-            // Format waktu human friendly
-            const timeFormatted = new Date(formBreakdown.jamMulai).toLocaleString("id-ID", {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-            });
-            document.getElementById("summary-waktu-mulai").textContent = timeFormatted + " WIB";
+            // Format waktu human friendly (Date component only in YYYY-MM-DD format)
+            const tMulai = parseDateString(formBreakdown.jamMulai);
+            document.getElementById("summary-waktu-mulai").textContent = formatDateOnly(tMulai);
 
             const opCond = formBreakdown.kondisiOperasional || "BREAKDOWN";
             const opCondBadge = opCond === "BREAKDOWN" 
@@ -3757,20 +4413,16 @@
                 // Simpan offline ke localStorage
                 setTimeout(() => {
                     const now = new Date();
-                    const datePart = now.getFullYear() + ("0" + (now.getMonth() + 1)).slice(-2) + ("0" + now.getDate()).slice(-2);
-                    
                     const localData = JSON.parse(localStorage.getItem("smart_bd_riwayat")) || [];
                     
-                    // Generate ID BD-YYYYMMDD-XXXX
-                    const prefix = `BD-${datePart}-`;
-                    let maxSeq = 0;
+                    // Generate ID BD-[NAMAUNIT]/[3_DIGIT_SEQ]
+                    const unitClean = String(formBreakdown.typeUnit).replace(/\s+/g, '').toUpperCase();
+                    const prefix = `BD-${unitClean}/`;
+                    let count = 0;
                     localData.forEach(item => {
-                        if (item.idBreakdown.startsWith(prefix)) {
-                            const seqPart = parseInt(item.idBreakdown.substring(prefix.length), 10);
-                            if (seqPart > maxSeq) maxSeq = seqPart;
-                        }
+                        if (String(item.typeUnit).trim().toLowerCase() === String(formBreakdown.typeUnit).trim().toLowerCase()) count++;
                     });
-                    const seq = ("0000" + (maxSeq + 1)).slice(-4);
+                    const seq = ("000" + (count + 1)).slice(-3);
                     const newId = prefix + seq;
 
                     const newItem = {
@@ -4054,7 +4706,8 @@
                 card.id = `ongoing-card-${item.idBreakdown}`;
                 
                 // Calculate dynamic ongoing minutes
-                const startMs = new Date(item.jamMulai).getTime();
+                const tMulai = parseDateString(item.jamMulai);
+                const startMs = !isNaN(tMulai.getTime()) ? tMulai.getTime() : new Date().getTime();
                 const nowMs = new Date().getTime();
                 const activeMins = Math.max(0, Math.floor((nowMs - startMs) / 60000));
                 
@@ -4062,7 +4715,7 @@
 
                 card.innerHTML = `
                     <div class="ongoing-header">
-                        <div class="ongoing-id">${item.idBreakdown}</div>
+                        <div class="ongoing-id" onclick="openActiveTicketDetail('${item.idBreakdown}')" style="cursor: pointer; text-decoration: underline; color: var(--primary); font-weight: 800;">${item.idBreakdown}</div>
                         <div class="ongoing-badge">ONGOING</div>
                     </div>
                     <div class="ongoing-body">
@@ -4077,6 +4730,12 @@
                         <div class="ongoing-body-row">
                             <span class="ongoing-body-label">Kerusakan:</span>
                             <span class="ongoing-body-val" style="color: var(--danger); font-weight: 700;">${item.kategoriKerusakan} (${item.pilihanKerusakan})</span>
+                        </div>
+                        <div class="ongoing-body-row">
+                            <span class="ongoing-body-label">Kondisi Operasional:</span>
+                            <span class="ongoing-body-val" style="font-weight: 700; color: ${item.kondisiOperasional === 'RUNNING' ? 'var(--accent)' : 'var(--danger)'};">
+                                ${item.kondisiOperasional === 'RUNNING' ? '🟡 RUNNING' : '🔴 BREAKDOWN'}
+                            </span>
                         </div>
                         <div class="ongoing-body-row">
                             <span class="ongoing-body-label">Pelapor Awal:</span>
@@ -4191,8 +4850,8 @@
             
             // Periksa agar Waktu Selesai tidak melompati Waktu Mulai
             const item = cachedRiwayat.find(r => r.idBreakdown === id);
-            const tMulai = new Date(item.jamMulai).getTime();
-            const tSelesai = new Date(jamSelesaiStr).getTime();
+            const tMulai = parseDateString(item.jamMulai).getTime();
+            const tSelesai = parseDateString(jamSelesaiStr).getTime();
             
             if (tSelesai < tMulai) {
                 showToast("Waktu selesai tidak boleh mendahului waktu mulai breakdown!", "error");
@@ -4320,12 +4979,12 @@
                 // Filter tanggal (berdasarkan Jam Mulai)
                 if (fFrom) {
                     const dFrom = new Date(fFrom + "T00:00:00");
-                    const dMulai = new Date(item.jamMulai);
+                    const dMulai = parseDateString(item.jamMulai);
                     if (!isNaN(dFrom.getTime()) && !isNaN(dMulai.getTime()) && dMulai < dFrom) match = false;
                 }
                 if (fTo) {
                     const dTo = new Date(fTo + "T23:59:59");
-                    const dMulai = new Date(item.jamMulai);
+                    const dMulai = parseDateString(item.jamMulai);
                     if (!isNaN(dTo.getTime()) && !isNaN(dMulai.getTime()) && dMulai > dTo) match = false;
                 }
                 
@@ -4372,19 +5031,31 @@
             document.getElementById("kpi-month-breakdowns").textContent = mtd;
             document.getElementById("kpi-ongoing-count").textContent = ongoing;
             
-            const avgDurText = document.getElementById("kpi-avg-duration");
-            if (avgMin > 0) {
-                const h = Math.floor(avgMin / 60);
-                const m = avgMin % 60;
-                avgDurText.textContent = h > 0 ? `${h}j ${m}m` : `${m}m`;
-            } else {
-                avgDurText.textContent = "-";
+            // Calculate Worst Unit
+            const unitBreakdownsAll = {};
+            data.forEach(r => {
+                const uKey = r.typeUnit;
+                if (!unitBreakdownsAll[uKey]) unitBreakdownsAll[uKey] = 0;
+                unitBreakdownsAll[uKey]++;
+            });
+            let worstUnitName = "-";
+            let worstUnitCount = 0;
+            for (let uKey in unitBreakdownsAll) {
+                if (unitBreakdownsAll[uKey] > worstUnitCount) {
+                    worstUnitCount = unitBreakdownsAll[uKey];
+                    worstUnitName = uKey;
+                }
+            }
+            const worstUnitText = worstUnitCount > 0 ? `${worstUnitName} (${worstUnitCount} BD)` : "-";
+            const worstUnitEl = document.getElementById("kpi-worst-unit");
+            if (worstUnitEl) {
+                worstUnitEl.textContent = worstUnitText;
             }
 
             // 2. RENDER CHART 1: WEEKLY DURATION TRENDS (LINE)
             const weeklyStats = {};
             data.forEach(r => {
-                const dObj = new Date(r.jamMulai);
+                const dObj = parseDateString(r.jamMulai);
                 if (!isNaN(dObj.getTime())) {
                     const label = getWeekString(dObj);
                     if (!weeklyStats[label]) {
@@ -4523,6 +5194,9 @@
                     topChoicesList.appendChild(el);
                 });
             }
+            
+            // Invoke fleet monitoring grid
+            renderUnitStatusMonitoring();
         }
 
         // DURATION HELPER FOR RANKING
@@ -4715,18 +5389,16 @@
                 const statusClass = item.status.toLowerCase() === "ongoing" ? "ongoing" : "selesai";
                 const isOngoing = item.status.toLowerCase() === "ongoing";
                 
-                // Format waktu human friendly
-                const dateObj = new Date(item.jamMulai);
-                const dateString = isNaN(dateObj.getTime()) ? item.jamMulai : dateObj.toLocaleDateString("id-ID", {
-                    day: '2-digit', month: 'short', year: 'numeric'
-                });
+                // Format waktu human friendly (Date component only in YYYY-MM-DD format)
+                const dateString = formatDateOnly(item.jamMulai);
 
                 // Format durasi
                 let durasiText = "-";
                 if (!isOngoing && item.durasiMenit) {
                     durasiText = formatDurationString(item.durasiMenit);
                 } else if (isOngoing) {
-                    const diffMs = new Date().getTime() - new Date(item.jamMulai).getTime();
+                    const tMulai = parseDateString(item.jamMulai);
+                    const diffMs = new Date().getTime() - (!isNaN(tMulai.getTime()) ? tMulai.getTime() : new Date().getTime());
                     const liveMins = Math.max(0, Math.floor(diffMs / 60000));
                     durasiText = formatDurationString(liveMins) + " (Berjalan)";
                 }
@@ -4840,6 +5512,135 @@
             }
         }
 
+        // ==============================================
+        // FUTURISTIC CLOCK & PLATFORM HELPER UTILS
+        // ==============================================
+        function parseDateString(dateStr) {
+            if (!dateStr || dateStr === "-") return new Date(NaN);
+            if (dateStr instanceof Date) return dateStr;
+            let s = String(dateStr).trim();
+            let d = new Date(s);
+            if (!isNaN(d.getTime())) return d;
+            let isoStr = s.replace(" ", "T");
+            d = new Date(isoStr);
+            if (!isNaN(d.getTime())) return d;
+            let slashMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2})[\.\:](\d{1,2})(?:[\.\:](\d{1,2}))?)?$/);
+            if (slashMatch) {
+                let day = parseInt(slashMatch[1], 10);
+                let month = parseInt(slashMatch[2], 10) - 1;
+                let year = parseInt(slashMatch[3], 10);
+                let hour = slashMatch[4] ? parseInt(slashMatch[4], 10) : 0;
+                let min = slashMatch[5] ? parseInt(slashMatch[5], 10) : 0;
+                let sec = slashMatch[6] ? parseInt(slashMatch[6], 10) : 0;
+                return new Date(year, month, day, hour, min, sec);
+            }
+            return new Date(NaN);
+        }
+
+        function formatDateOnly(dateVal) {
+            const d = parseDateString(dateVal);
+            if (isNaN(d.getTime())) return "-";
+            const year = d.getFullYear();
+            const month = ("0" + (d.getMonth() + 1)).slice(-2);
+            const day = ("0" + d.getDate()).slice(-2);
+            return `${year}-${month}-${day}`;
+        }
+
+        function initClockWidget() {
+            const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+            function update() {
+                const now = new Date();
+                const day = days[now.getDay()];
+                const date = now.getDate() + ' ' + now.toLocaleString('en-US', { month: 'short' }) + ' ' + now.getFullYear();
+                const hours = now.getHours();
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                const hours12 = hours % 12 || 12;
+                const timeStr = ('0' + hours12).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
+                
+                const elDay = document.getElementById('widget-day');
+                const elDate = document.getElementById('widget-date');
+                const elAmpm = document.getElementById('widget-ampm');
+                const elTime = document.getElementById('widget-time');
+                
+                if (elDay) elDay.textContent = day;
+                if (elDate) elDate.textContent = date;
+                if (elAmpm) elAmpm.textContent = ampm;
+                if (elTime) elTime.textContent = timeStr;
+                
+                const secPct = (now.getSeconds() / 60) * 360;
+                const progress = document.getElementById('widget-sec-progress');
+                if (progress) progress.style.transform = `rotate(${secPct}deg)`;
+            }
+            update();
+            setInterval(update, 1000);
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            const ovl = document.getElementById("sidebarOvl");
+            if (sidebar) sidebar.classList.toggle("open");
+            if (ovl) ovl.classList.toggle("open");
+        }
+
+        function renderUnitStatusMonitoring() {
+            const grid = document.getElementById("fleet-monitoring-grid");
+            if (!grid) return;
+            grid.innerHTML = "";
+            const units = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+            
+            units.forEach(unit => {
+                const activeTicket = cachedRiwayat.find(r => r.typeUnit === unit.typeUnit && r.status.toLowerCase() === "ongoing");
+                let statusClass = "status-aman", badgeClass = "badge-aman", badgeText = "🟢 AMAN";
+                
+                if (activeTicket) {
+                    const cond = (activeTicket.kondisiOperasional || "BREAKDOWN").toUpperCase();
+                    if (cond === "RUNNING") {
+                        statusClass = "status-running";
+                        badgeClass = "badge-running";
+                        badgeText = "🟡 RUNNING";
+                    } else {
+                        statusClass = "status-breakdown";
+                        badgeClass = "badge-breakdown";
+                        badgeText = "🔴 BREAKDOWN";
+                    }
+                }
+                
+                const unitHistory = cachedRiwayat.filter(r => r.typeUnit === unit.typeUnit);
+                let lastBdText = "Belum pernah mengalami kendala";
+                if (unitHistory.length > 0) {
+                    const sortedHistory = [...unitHistory].sort((a, b) => b.jamMulai.localeCompare(a.jamMulai));
+                    const latest = sortedHistory[0];
+                    if (latest.jamMulai) {
+                        lastBdText = formatDateOnly(latest.jamMulai);
+                    }
+                }
+                
+                const card = document.createElement("div");
+                card.className = `fleet-unit-card ${statusClass}`;
+                
+                let badgeHtml = `<span class="fleet-unit-status-badge ${badgeClass}">${badgeText}</span>`;
+                if (activeTicket) {
+                    badgeHtml = `<span class="fleet-unit-status-badge ${badgeClass}" onclick="openActiveTicketDetail('${activeTicket.idBreakdown}')" title="Klik untuk lihat rincian aktif">${badgeText}</span>`;
+                }
+                
+                card.innerHTML = `
+                    <div class="fleet-unit-header">
+                        <span class="fleet-unit-name">${unit.typeUnit}</span>
+                        <span class="fleet-unit-type-tag">${unit.jenisUnit}</span>
+                    </div>
+                    <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Vendor: ${unit.vendor}</div>
+                    <div style="margin-top: 4px;">${badgeHtml}</div>
+                    <div class="fleet-unit-last-bd">Terakhir Breakdown: <span>${lastBdText}</span></div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openActiveTicketDetail(id) {
+            const item = cachedRiwayat.find(r => r.idBreakdown === id);
+            if (item) openHistoryDetailModal(item);
+        }
+
         function openHistoryDetailModal(item) {
             document.getElementById("det-id").textContent = item.idBreakdown;
             
@@ -4862,20 +5663,21 @@
             document.getElementById("det-detail").textContent = item.detailKerusakan;
             document.getElementById("det-op-awal").textContent = item.operatorAwal;
             
-            const tMulai = new Date(item.jamMulai);
-            document.getElementById("det-waktu-mulai").textContent = isNaN(tMulai.getTime()) ? item.jamMulai : tMulai.toLocaleString("id-ID") + " WIB";
+            document.getElementById("det-waktu-mulai").textContent = formatDateOnly(item.jamMulai);
             
             document.getElementById("det-op-akhir").textContent = item.operatorAkhir || "-";
             
-            const tSelesai = new Date(item.jamSelesai);
-            document.getElementById("det-waktu-selesai").textContent = (isOngoing || isNaN(tSelesai.getTime())) ? "-" : tSelesai.toLocaleString("id-ID") + " WIB";
+            document.getElementById("det-waktu-selesai").textContent = (isOngoing || !item.jamSelesai || item.jamSelesai === "-") ? "-" : formatDateOnly(item.jamSelesai);
             
             let elapsedMins = 0;
             if (isOngoing) {
-                const diffMs = new Date().getTime() - new Date(item.jamMulai).getTime();
-                elapsedMins = Math.max(0, Math.floor(diffMs / 60000));
+                const tMulai = parseDateString(item.jamMulai);
+                if (!isNaN(tMulai.getTime())) {
+                    const diffMs = new Date().getTime() - tMulai.getTime();
+                    elapsedMins = Math.max(0, Math.floor(diffMs / 60000));
+                }
             } else {
-                elapsedMins = item.durasiMenit || 0;
+                elapsedMins = item.durasiMenit !== null ? item.durasiMenit : 0;
             }
             document.getElementById("det-durasi-total").textContent = formatElapsedDuration(elapsedMins, isOngoing);
 
