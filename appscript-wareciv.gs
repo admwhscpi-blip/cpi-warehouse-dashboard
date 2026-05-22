@@ -89,7 +89,8 @@ function handleRequest(e) {
 }
 
 function doSubmit(sheet, params) {
-  var id = generateId(sheet);
+  var gudang = params.gudang || "GUDANG";
+  var id = generateId(sheet, gudang);
   var rowData = [
     id,
     params.tanggal_laporan || "",
@@ -166,11 +167,10 @@ function doUpdateStatus(sheet, params) {
   return { success: true };
 }
 
-function generateId(sheet) {
-  var todayStr = getFormattedDate();
+function generateId(sheet, gudang) {
   var data = sheet.getDataRange().getValues();
   var maxNum = 0;
-  var prefix = "WCV-" + todayStr + "-";
+  var prefix = "WHSCV-" + gudang + "/";
   for (var i = 1; i < data.length; i++) {
     var id = data[i][0];
     if (id && id.indexOf(prefix) === 0) {
