@@ -3377,6 +3377,54 @@
                 color: "#1E293B",
                 bg: "#F1F5F9",
                 desc: "Track, sprocket, idler, roller, track shoe"
+            },
+            "FORKS & BACKREST": {
+                icon: "fa-solid fa-align-justify",
+                color: "#10B981",
+                bg: "#D1FAE5",
+                desc: "Garpu, backrest, pelindung beban, fork positioning"
+            },
+            "OVERHEAD GUARD": {
+                icon: "fa-solid fa-shield",
+                color: "#F59E0B",
+                bg: "#FEF3C7",
+                desc: "Pelindung atap operator dari benda jatuh"
+            },
+            "COUNTERWEIGHT & CHASSIS": {
+                icon: "fa-solid fa-weight-hanging",
+                color: "#4B5563",
+                bg: "#F3F4F6",
+                desc: "Pemberat belakang, rangka utama, bodi, axle mounting"
+            },
+            "OPERATOR CONTROLS": {
+                icon: "fa-solid fa-sliders",
+                color: "#EC4899",
+                bg: "#FCE7F3",
+                desc: "Kontrol operator, joystick, pedal gas/rem, tuas lift/tilt"
+            },
+            "ATTACHMENT & ACCESSORIES": {
+                icon: "fa-solid fa-puzzle-piece",
+                color: "#8B5CF6",
+                bg: "#EDE9FE",
+                desc: "Attachment tambahan: side shifter, rotator, clamp, push-pull"
+            },
+            "BATTERY SYSTEM - ELECTRIC FL": {
+                icon: "fa-solid fa-car-battery",
+                color: "#06B6D4",
+                bg: "#CFFAFE",
+                desc: "Sistem aki elektrik, charger, kabel baterai, air aki"
+            },
+            "MOTOR SYSTEM - ELECTRIC FL": {
+                icon: "fa-solid fa-bolt-lightning",
+                color: "#6366F1",
+                bg: "#E0E7FF",
+                desc: "Motor traksi, motor lift, controller motor, brush"
+            },
+            "LPG SYSTEM - LPG FL": {
+                icon: "fa-solid fa-fire",
+                color: "#EF4444",
+                bg: "#FEE2E2",
+                desc: "Sistem gas LPG, tabung, regulator, vaporizer, mixer"
             }
         };
 
@@ -3386,85 +3434,187 @@
                     kategori: "ENGINE",
                     pilihanKerusakan: [
                         "Tidak Bisa Start", "Starter Rusak", "Overheat", "Oli Mesin Bocor",
-                        "Mesin Brebet", "Asap Hitam", "Fuel Pump Lemah", "Injector Bermasalah", "Filter Solar Kotor"
+                        "Mesin Brebet", "Asap Hitam", "Fuel Pump Lemah", "Injector Bermasalah",
+                        "Filter Solar Kotor", "Mesin Mati Mendadak", "RPM Tidak Stabil",
+                        "Tenaga Mesin Drop", "Turbo Bocor", "Turbo Mati", "Packing Cylinder Head Bocor",
+                        "Knocking Engine", "Kompresi Rendah", "Timing Belt Rusak", "Water Pump Bocor",
+                        "Piston Ring Aus"
                     ]
                 },
                 {
                     kategori: "TRANSMISSION",
                     pilihanKerusakan: [
-                        "Tidak Bisa Maju", "Tidak Bisa Mundur", "Persneling Keras", "Transmisi Slip", "Gearbox Rusak", "Kopling Aus"
+                        "Tidak Bisa Maju", "Tidak Bisa Mundur", "Persneling Keras", "Transmisi Slip",
+                        "Gearbox Rusak", "Kopling Aus", "Oli Transmisi Bocor", "Oli Transmisi Habis",
+                        "Kopling Selip", "Master Kopling Bocor", "Slave Cylinder Bocor",
+                        "Gear Bunyi Kasar", "Torque Converter Rusak", "Clutch Plate Habis"
                     ]
                 },
                 {
                     kategori: "HYDRAULIC",
                     pilihanKerusakan: [
-                        "Fork Tidak Naik", "Fork Tidak Turun", "Hose Hydraulic Bocor", "Silinder Bocor", "Pompa Lemah", "Oli Hydraulic Habis", "Valve Macet"
+                        "Fork Tidak Naik", "Fork Tidak Turun", "Hose Hydraulic Bocor", "Silinder Bocor",
+                        "Pompa Lemah", "Oli Hydraulic Habis", "Valve Macet", "Fork Naik Lambat",
+                        "Fork Turun Sendiri", "Lift Cylinder Bocor", "Tilt Cylinder Bocor",
+                        "Seal Silinder Rusak", "Control Valve Rusak", "Relief Valve Macet",
+                        "Hydraulic Filter Kotor", "Hydraulic Tank Bocor", "Fitting Hose Longgar",
+                        "Quick Coupler Bocor", "Side Shift Tidak Berfungsi", "Tilt Tidak Berfungsi"
                     ]
                 },
                 {
                     kategori: "ELECTRICAL",
                     pilihanKerusakan: [
-                        "Aki Soak", "Alternator Rusak", "Wiring Terbakar", "Fuse Putus", "Lampu Mati", "Klakson Mati", "Sensor Error"
+                        "Aki Soak", "Alternator Rusak", "Wiring Terbakar", "Fuse Putus",
+                        "Lampu Mati", "Klakson Mati", "Sensor Error", "Aki Tekor",
+                        "Kabel Ground Kendor", "Relay Rusak", "Solenoid Start Rusak",
+                        "Ignition Switch Rusak", "Headlight Putus", "Tail Light Mati",
+                        "Work Light Mati", "Hour Meter Mati", "Gauge Cluster Mati",
+                        "Temperature Sensor Rusak", "Oil Pressure Sensor Rusak", "Battery Connector Korosi"
                     ]
                 },
                 {
                     kategori: "TIRE",
                     pilihanKerusakan: [
-                        "Ban Kempes", "Ban Bocor", "Ban Pecah", "Ban Aus", "Velg Retak"
+                        "Ban Kempes", "Ban Bocor", "Ban Pecah", "Ban Aus", "Velg Retak",
+                        "Ban Gundul", "Valve Ban Rusak", "Ban Tidak Seimbang", "Bearing Roda Aus",
+                        "Axle Bearing Rusak", "Wheel Hub Aus", "Lug Nut Kendor", "Velg Bengkok", "Ban Sobek"
                     ]
                 },
                 {
                     kategori: "BRAKE",
                     pilihanKerusakan: [
-                        "Rem Blong", "Kampas Rem Habis", "Minyak Rem Bocor", "Rem Seret"
+                        "Rem Blong", "Kampas Rem Habis", "Minyak Rem Bocor", "Rem Seret",
+                        "Master Rem Bocor", "Wheel Cylinder Bocor", "Brake Drum Aus",
+                        "Brake Disc Aus", "Brake Pad Habis", "Brake Hose Bocor", "Parking Brake Macet",
+                        "Brake Caliper Macet", "Brake Pedal Keras", "Brake Pedal Empuk"
                     ]
                 },
                 {
                     kategori: "STEERING",
                     pilihanKerusakan: [
-                        "Steering Berat", "Tie Rod Rusak", "Oli Steering Bocor"
+                        "Steering Berat", "Tie Rod Rusak", "Oli Steering Bocor", "Power Steering Pump Rusak",
+                        "Steering Gear Box Bocor", "Steering Column Aus", "Steering Wheel Longgar",
+                        "Ball Joint Aus", "Tie Rod End Aus", "Steering Hose Bocor", "King Pin Aus",
+                        "Steering Knuckle Retak", "Steering Arm Bengkok"
                     ]
                 },
                 {
                     kategori: "COOLING SYSTEM",
                     pilihanKerusakan: [
-                        "Radiator Bocor", "Fan Belt Putus", "Coolant Habis"
+                        "Radiator Bocor", "Fan Belt Putus", "Coolant Habis", "Thermostat Macet",
+                        "Radiator Cap Rusak", "Cooling Fan Mati", "Radiator Hose Bocor",
+                        "Water Pump Aus", "Radiator Core Tersumbat", "Fan Shroud Rusak", "Coolant Keruh"
                     ]
                 },
                 {
                     kategori: "MAST",
                     pilihanKerusakan: [
-                        "Chain Putus", "Roller Aus", "Mast Seret", "Fork Bengkok", "Fork Retak"
+                        "Chain Putus", "Roller Aus", "Mast Seret", "Fork Bengkok", "Fork Retak",
+                        "Chain Kendor", "Chain Aus", "Mast Channel Aus", "Mast Bearing Aus",
+                        "Chain Anchor Lepas", "Carriage Aus", "Roller Bearing Macet", "Mast Tidak Lurus",
+                        "Inner Mast Aus", "Outer Mast Bengkok"
+                    ]
+                },
+                {
+                    kategori: "FORKS & BACKREST",
+                    pilihanKerusakan: [
+                        "Fork Aus", "Fork Patah", "Fork Bengkok", "Fork Hook Retak", "Fork Heel Aus",
+                        "Fork Blade Retak", "Backrest Bengkok", "Backrest Retak", "Backrest Bar Lepas",
+                        "Backrest Extension Rusak", "Fork Positioner Macet", "Fork Lock Pin Hilang",
+                        "Fork Spacing Tidak Rata", "Fork Carriage Bolt Kendor"
+                    ]
+                },
+                {
+                    kategori: "OVERHEAD GUARD",
+                    pilihanKerusakan: [
+                        "Overhead Guard Retak", "Overhead Guard Bengkok", "OHG Mounting Kendor",
+                        "OHG Post Bengkok", "OHG Mesh Rusak", "OHG Roof Bocor", "OHG Struktur Lemah"
+                    ]
+                },
+                {
+                    kategori: "COUNTERWEIGHT & CHASSIS",
+                    pilihanKerusakan: [
+                        "Counterweight Kendor", "Counterweight Retak", "Chassis Retak", "Chassis Bengkok",
+                        "Frame Korosi", "Body Panel Rusak", "Mounting Bracket Patah", "Rear Axle Retak",
+                        "Front Axle Bengkok"
                     ]
                 },
                 {
                     kategori: "CABIN",
                     pilihanKerusakan: [
-                        "AC Mati", "Wiper Mati", "Seat Rusak", "Panel Error"
+                        "AC Mati", "Wiper Mati", "Seat Rusak", "Panel Error", "Seat Belt Rusak",
+                        "Seat Adjustment Macet", "Dashboard Retak", "Speedometer Mati", "Tachometer Rusak",
+                        "Fuel Gauge Tidak Akurat", "Temperature Gauge Mati", "Wiper Blade Aus",
+                        "Washer Pump Mati", "AC Compressor Rusak", "AC Blower Mati", "Cabin Door Rusak",
+                        "Mirror Pecah", "Floor Mat Rusak"
+                    ]
+                },
+                {
+                    kategori: "OPERATOR CONTROLS",
+                    pilihanKerusakan: [
+                        "Control Lever Macet", "Joystick Rusak", "Pedal Gas Macet", "Pedal Rem Longgar",
+                        "Hand Brake Macet", "Tilt Lever Rusak", "Lift Lever Macet", "Inching Pedal Rusak",
+                        "Direction Lever Macet", "Control Linkage Aus"
                     ]
                 },
                 {
                     kategori: "SAFETY",
                     pilihanKerusakan: [
-                        "Alarm Mundur Mati", "Rotary Lamp Mati", "Seatbelt Rusak", "APAR Tidak Ada"
+                        "Alarm Mundur Mati", "Rotary Lamp Mati", "Seatbelt Rusak", "APAR Tidak Ada",
+                        "APAR Kadaluarsa", "Blue Light Mati", "Strobe Light Rusak", "Safety Cone Hilang",
+                        "Safety Flag Rusak", "Load Chart Hilang", "Capacity Plate Rusak",
+                        "Warning Decal Hilang", "Emergency Stop Rusak"
                     ]
                 },
                 {
                     kategori: "FUEL SYSTEM",
                     pilihanKerusakan: [
-                        "Tangki Bocor", "Selang Solar Bocor", "Filter Solar Kotor"
+                        "Tangki Bocor", "Selang Solar Bocor", "Filter Solar Kotor", "Fuel Cap Hilang",
+                        "Fuel Sender Rusak", "Fuel Line Retak", "Fuel Injector Mampet", "Water Separator Penuh"
                     ]
                 },
                 {
                     kategori: "AIR INTAKE",
                     pilihanKerusakan: [
-                        "Filter Udara Kotor", "Intake Bocor"
+                        "Filter Udara Kotor", "Intake Bocor", "Air Filter Housing Retak", "Intake Hose Robek",
+                        "Pre-Cleaner Rusak", "Air Intake Tersumbat"
                     ]
                 },
                 {
                     kategori: "EXHAUST SYSTEM",
                     pilihanKerusakan: [
-                        "Knalpot Bocor", "Asap Berlebihan"
+                        "Knalpot Bocor", "Asap Berlebihan", "Muffler Rusak", "Exhaust Pipe Patah",
+                        "Exhaust Manifold Retak", "Exhaust Gasket Bocor", "Exhaust Clamp Kendor"
+                    ]
+                },
+                {
+                    kategori: "ATTACHMENT & ACCESSORIES",
+                    pilihanKerusakan: [
+                        "Attachment Tidak Berfungsi", "Side Shifter Rusak", "Fork Positioner Macet",
+                        "Paper Roll Clamp Bocor", "Rotator Tidak Putar", "Push Pull Macet",
+                        "Clamp Cylinder Bocor", "Attachment Mounting Kendor"
+                    ]
+                },
+                {
+                    kategori: "BATTERY SYSTEM - ELECTRIC FL",
+                    pilihanKerusakan: [
+                        "Battery Soak", "Battery Cell Mati", "Charger Rusak", "Battery Connector Korosi",
+                        "Battery Cable Putus", "Battery Water Level Rendah", "Battery Tidak Charge",
+                        "Charger Plug Rusak"
+                    ]
+                },
+                {
+                    kategori: "MOTOR SYSTEM - ELECTRIC FL",
+                    pilihanKerusakan: [
+                        "Traction Motor Rusak", "Lift Motor Mati", "Motor Bearing Aus", "Motor Overheat",
+                        "Motor Controller Error", "Motor Brush Aus", "Motor Winding Putus"
+                    ]
+                },
+                {
+                    kategori: "LPG SYSTEM - LPG FL",
+                    pilihanKerusakan: [
+                        "Tabung LPG Bocor", "Regulator LPG Rusak", "Hose LPG Bocor", "Mixer LPG Mampet",
+                        "Solenoid Valve Macet", "Vaporizer Rusak", "LPG Filter Kotor"
                     ]
                 }
             ],
