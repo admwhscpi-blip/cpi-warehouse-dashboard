@@ -2761,8 +2761,21 @@
             <!-- TAB 3: DASHBOARD ANALYTICS                     -->
             <!-- ============================================== -->
             <section id="tab-dashboard" class="screen active">
+                <!-- DASHBOARD SUB-MENU FILTER / NAVIGATION -->
+                <div class="dashboard-submenu-container">
+                    <button class="submenu-btn active" data-subtab="status" onclick="switchDashboardSubtab('status')">
+                        <i class="fa-solid fa-gauge-high"></i> Status
+                    </button>
+                    <button class="submenu-btn" data-subtab="analisa" onclick="switchDashboardSubtab('analisa')">
+                        <i class="fa-solid fa-chart-line"></i> Analisa
+                    </button>
+                    <button class="submenu-btn" data-subtab="filter" onclick="switchDashboardSubtab('filter')">
+                        <i class="fa-solid fa-filter"></i> Filter
+                    </button>
+                </div>
+
                 <!-- REAL-TIME FLEET MONITORING GRID -->
-                <div class="card" style="margin-bottom: 24px; background: rgba(255, 255, 255, 0.85); border-radius: var(--radius-lg); padding: 20px 24px;">
+                <div class="card" id="dashboard-status-section" style="margin-bottom: 24px; background: rgba(255, 255, 255, 0.85); border-radius: var(--radius-lg); padding: 20px 24px;">
                     <div class="card-header" style="margin-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <div class="card-title" style="font-size: clamp(0.9rem, 2vw, 1.25rem); font-weight: 800; font-family: 'Orbitron', sans-serif;">
                             <i class="fa-solid fa-gauge-high" style="color: var(--primary); margin-right: 6px;"></i> STATUS ARMADA
@@ -2775,146 +2788,211 @@
                     </div>
                     <div class="fleet-grid" id="fleet-monitoring-grid"></div>
                 </div>
-                <!-- PANEL FILTER LANJUTAN -->
-                <div class="filter-panel">
-                    <div style="font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-filter" style="color: var(--primary);"></i> Panel Analisis & Filter Data</div>
-                    <div class="filter-grid">
-                        <div class="form-group">
-                            <label>Rentang Tanggal Dari</label>
-                            <input type="date" class="form-control" id="filter-date-from">
-                        </div>
-                        <div class="form-group">
-                            <label>Sampai</label>
-                            <input type="date" class="form-control" id="filter-date-to">
-                        </div>
-                        <div class="form-group">
-                            <label>Jenis Unit</label>
-                            <select class="form-control" id="filter-jenis" onchange="updateFilterDropdownTypes()">
-                                <option value="">Semua Jenis</option>
-                                <option value="FORKLIFT">FORKLIFT</option>
-                                <option value="LOADER">LOADER</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Tipe Unit</label>
-                            <select class="form-control" id="filter-type">
-                                <option value="">Semua Tipe</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Kategori</label>
-                            <select class="form-control" id="filter-kategori">
-                                <option value="">Semua Kategori</option>
-                                <option value="ENGINE">ENGINE</option>
-                                <option value="TRANSMISSION">TRANSMISSION</option>
-                                <option value="HYDRAULIC">HYDRAULIC</option>
-                                <option value="ELECTRICAL">ELECTRICAL</option>
-                                <option value="TIRE">TIRE</option>
-                                <option value="BRAKE">BRAKE</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select class="form-control" id="filter-status">
-                                <option value="">Semua Status</option>
-                                <option value="ONGOING">ONGOING</option>
-                                <option value="SELESAI">SELESAI</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Kondisi Operasional</label>
-                            <select class="form-control" id="filter-kondisi-operasional">
-                                <option value="">Semua Kondisi</option>
-                                <option value="BREAKDOWN">🔴 BREAKDOWN</option>
-                                <option value="RUNNING">🟡 RUNNING</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="filter-actions">
-                        <button class="btn btn-secondary" onclick="resetFilters()"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
-                        <button class="btn" onclick="applyFilters()"><i class="fa-solid fa-check"></i> Terapkan Analisa</button>
-                    </div>
-                </div>
 
-                <!-- DASHBOARD KPI GRIDS -->
-                <div class="dashboard-kpi-grid">
-                    <div class="kpi-card kpi-blue">
-                        <div class="kpi-icon"><i class="fa-solid fa-wrench"></i></div>
-                        <div class="kpi-details">
-                            <div class="kpi-title">Total Kejadian</div>
-                            <div class="kpi-value" id="kpi-total-breakdowns">0</div>
+                <!-- PANEL FILTER LANJUTAN WRAPPER -->
+                <div id="dashboard-filter-section" style="display: none; flex-direction: column; gap: 24px;">
+                    <!-- PANEL FILTER LANJUTAN -->
+                    <div class="filter-panel" style="margin-top: 0;">
+                        <div style="font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-filter" style="color: var(--primary);"></i> Panel Analisis & Filter Data</div>
+                        <div class="filter-grid">
+                            <div class="form-group">
+                                <label>Rentang Tanggal Dari</label>
+                                <input type="date" class="form-control" id="filter-date-from">
+                            </div>
+                            <div class="form-group">
+                                <label>Sampai</label>
+                                <input type="date" class="form-control" id="filter-date-to">
+                            </div>
+                            <div class="form-group">
+                                <label>Jenis Unit</label>
+                                <select class="form-control" id="filter-jenis" onchange="updateFilterDropdownTypes()">
+                                    <option value="">Semua Jenis</option>
+                                    <option value="FORKLIFT">FORKLIFT</option>
+                                    <option value="LOADER">LOADER</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipe Unit</label>
+                                <select class="form-control" id="filter-type">
+                                    <option value="">Semua Tipe</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Kategori</label>
+                                <select class="form-control" id="filter-kategori">
+                                    <option value="">Semua Kategori</option>
+                                    <option value="ENGINE">ENGINE</option>
+                                    <option value="TRANSMISSION">TRANSMISSION</option>
+                                    <option value="HYDRAULIC">HYDRAULIC</option>
+                                    <option value="ELECTRICAL">ELECTRICAL</option>
+                                    <option value="TIRE">TIRE</option>
+                                    <option value="BRAKE">BRAKE</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select class="form-control" id="filter-status">
+                                    <option value="">Semua Status</option>
+                                    <option value="ONGOING">ONGOING</option>
+                                    <option value="SELESAI">SELESAI</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Kondisi Operasional</label>
+                                <select class="form-control" id="filter-kondisi-operasional">
+                                    <option value="">Semua Kondisi</option>
+                                    <option value="BREAKDOWN">🔴 BREAKDOWN</option>
+                                    <option value="RUNNING">🟡 RUNNING</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="filter-actions">
+                            <button class="btn btn-secondary" onclick="resetFilters()"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
+                            <button class="btn" onclick="applyFilters()"><i class="fa-solid fa-check"></i> Terapkan Analisa</button>
                         </div>
                     </div>
-                    <div class="kpi-card kpi-amber">
-                        <div class="kpi-icon"><i class="fa-solid fa-calendar-day"></i></div>
-                        <div class="kpi-details">
-                            <div class="kpi-title">Bulan Ini</div>
-                            <div class="kpi-value" id="kpi-month-breakdowns">0</div>
-                        </div>
-                    </div>
-                    <div class="kpi-card kpi-red">
-                        <div class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                        <div class="kpi-details">
-                            <div class="kpi-title">Armada Aktif BD</div>
-                            <div class="kpi-value" id="kpi-ongoing-count">0</div>
-                        </div>
-                    </div>
-                    <div class="kpi-card kpi-green" onclick="switchTab('tab-riwayat')" style="cursor: pointer;">
-                        <div class="kpi-icon"><i class="fa-solid fa-truck-pickup"></i></div>
-                        <div class="kpi-details">
-                            <div class="kpi-title" style="font-size: 0.8rem;">Unit Terbanyak BD</div>
-                            <div class="kpi-value" id="kpi-worst-unit" style="font-size: 1.15rem; font-weight: 800;">-</div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- CHARTS ROW 1 (TRENS & PROPORSI TYPE) -->
-                <div class="chart-row-double">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title"><i class="fa-solid fa-chart-line"></i> Tren Durasi Breakdown per Minggu</div>
+                    <!-- DASHBOARD KPI GRIDS -->
+                    <div class="dashboard-kpi-grid">
+                        <div class="kpi-card kpi-blue">
+                            <div class="kpi-icon"><i class="fa-solid fa-wrench"></i></div>
+                            <div class="kpi-details">
+                                <div class="kpi-title">Total Kejadian</div>
+                                <div class="kpi-value" id="kpi-total-breakdowns">0</div>
+                            </div>
                         </div>
-                        <div style="position: relative; height: 300px; width: 100%;">
-                            <canvas id="chart-weekly-trend"></canvas>
+                        <div class="kpi-card kpi-amber">
+                            <div class="kpi-icon"><i class="fa-solid fa-calendar-day"></i></div>
+                            <div class="kpi-details">
+                                <div class="kpi-title">Bulan Ini</div>
+                                <div class="kpi-value" id="kpi-month-breakdowns">0</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card kpi-red">
+                            <div class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="kpi-details">
+                                <div class="kpi-title">Armada Aktif BD</div>
+                                <div class="kpi-value" id="kpi-ongoing-count">0</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card kpi-green" onclick="switchTab('tab-riwayat')" style="cursor: pointer;">
+                            <div class="kpi-icon"><i class="fa-solid fa-truck-pickup"></i></div>
+                            <div class="kpi-details">
+                                <div class="kpi-title" style="font-size: 0.8rem;">Unit Terbanyak BD</div>
+                                <div class="kpi-value" id="kpi-worst-unit" style="font-size: 1.15rem; font-weight: 800;">-</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title"><i class="fa-solid fa-chart-pie"></i> Proporsi Jenis Unit</div>
-                        </div>
-                        <div style="position: relative; height: 300px; width: 100%; display: flex; align-items: center; justify-content: center;">
-                            <canvas id="chart-jenis-share"></canvas>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- CHARTS ROW 2 (TIPE UNIT & KATEGORI) -->
-                <div class="chart-row-double">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title"><i class="fa-solid fa-chart-bar"></i> Jumlah Kasus per Kategori Sistem</div>
+                    <!-- CHARTS ROW 1 (TRENS & PROPORSI TYPE) -->
+                    <div class="chart-row-double">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title"><i class="fa-solid fa-chart-line"></i> Tren Durasi Breakdown per Minggu</div>
+                            </div>
+                            <div style="position: relative; height: 300px; width: 100%;">
+                                <canvas id="chart-weekly-trend"></canvas>
+                            </div>
                         </div>
-                        <div style="position: relative; height: 300px; width: 100%;">
-                            <canvas id="chart-categories"></canvas>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title"><i class="fa-solid fa-chart-pie"></i> Proporsi Jenis Unit</div>
+                            </div>
+                            <div style="position: relative; height: 300px; width: 100%; display: flex; align-items: center; justify-content: center;">
+                                <canvas id="chart-jenis-share"></canvas>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- CHARTS ROW 2 (TIPE UNIT & KATEGORI) -->
+                    <div class="chart-row-double">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title"><i class="fa-solid fa-chart-bar"></i> Jumlah Kasus per Kategori Sistem</div>
+                            </div>
+                            <div style="position: relative; height: 300px; width: 100%;">
+                                <canvas id="chart-categories"></canvas>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title"><i class="fa-solid fa-medal"></i> Ranking Unit Sering Breakdown</div>
+                            </div>
+                            <div class="ranking-list" id="dashboard-ranking-list">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CHARTS ROW 3 (TOP PILIHAN KERUSAKAN) -->
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title"><i class="fa-solid fa-medal"></i> Ranking Unit Sering Breakdown</div>
+                            <div class="card-title"><i class="fa-solid fa-list-ol"></i> Top 10 Gejala Pilihan Kerusakan Terbanyak</div>
                         </div>
-                        <div class="ranking-list" id="dashboard-ranking-list">
+                        <div class="choices-rank-list" id="dashboard-top-choices-list">
                             <!-- Populated dynamically -->
                         </div>
                     </div>
                 </div>
 
-                <!-- CHARTS ROW 3 (TOP PILIHAN KERUSAKAN) -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title"><i class="fa-solid fa-list-ol"></i> Top 10 Gejala Pilihan Kerusakan Terbanyak</div>
+                <!-- ============================================== -->
+                <!-- SECTION ANALISA UTILISASI                      -->
+                <!-- ============================================== -->
+                <div id="dashboard-analisa-section" style="display: none; flex-direction: column; gap: 24px;">
+                    <!-- KPI UTILISASI ARMADA (GRID) -->
+                    <div class="card" style="background: rgba(255, 255, 255, 0.85); border-radius: var(--radius-lg); padding: 24px;">
+                        <div class="card-header" style="margin-bottom: 20px;">
+                            <div class="card-title" style="font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 1.25rem;">
+                                <i class="fa-solid fa-chart-pie" style="color: var(--primary); margin-right: 8px;"></i> KPI UTILISASI ARMADA (30 HARI TERAKHIR)
+                            </div>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-top: 4px;">
+                                Persentase Uptime dihitung berdasarkan (720 Jam Tersedia - Durasi Breakdown)
+                            </p>
+                        </div>
+                        <div class="utilization-grid" id="analisa-utilization-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                            <!-- Rendered dynamically in JS -->
+                        </div>
                     </div>
-                    <div class="choices-rank-list" id="dashboard-top-choices-list">
-                        <!-- Populated dynamically -->
+
+                    <!-- DAILY BREAKDOWN ANALYSIS -->
+                    <div class="card" style="background: rgba(255, 255, 255, 0.85); border-radius: var(--radius-lg); padding: 24px;">
+                        <div class="card-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <div class="card-title" style="font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 1.25rem;">
+                                    <i class="fa-solid fa-calendar-days" style="color: var(--primary); margin-right: 8px;"></i> BREAKDOWN DAILY & LOG HARIAN
+                                </div>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-top: 4px;">
+                                    Pilih unit untuk melihat tren downtime harian dan rincian log aktivitas perbaikan.
+                                </p>
+                            </div>
+                            <!-- Interactive Selector -->
+                            <div>
+                                <select class="form-control" id="analisa-unit-selector" onchange="updateAnalisaDailyView()" style="min-width: 180px; font-weight: 700; border-radius: 10px; cursor: pointer; border-color: var(--border-active);">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 24px; min-height: 320px;" id="analisa-daily-content">
+                            <!-- Chart Left -->
+                            <div style="background: rgba(15, 23, 42, 0.02); border-radius: var(--radius-md); padding: 20px; border: 1px solid rgba(0,0,0,0.03);">
+                                <h4 style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700; margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-chart-column" style="color: var(--primary);"></i> TREN DOWNTIME HARIAN (JAM)
+                                </h4>
+                                <div style="position: relative; height: 260px; width: 100%;">
+                                    <canvas id="chart-analisa-daily"></canvas>
+                                </div>
+                            </div>
+                            <!-- Log Right -->
+                            <div style="background: rgba(15, 23, 42, 0.02); border-radius: var(--radius-md); padding: 20px; border: 1px solid rgba(0,0,0,0.03); display: flex; flex-direction: column;">
+                                <h4 style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700; margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> LOG PERBAIKAN HARIAN
+                                </h4>
+                                <div id="analisa-daily-log-list" style="flex: 1; overflow-y: auto; max-height: 260px; display: flex; flex-direction: column; gap: 10px;">
+                                    <!-- Rendered dynamically -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -3055,71 +3133,71 @@
 
     <!-- POPUP MODAL 2: DETAIL DATA COMPLETE (HISTORY CLICK ROW) -->
     <div class="modal-overlay" id="detail-modal-overlay">
-        <div class="modal-card">
+                <div class="modal-card">
             <div class="modal-header">
                 <h3>Rincian Riwayat Kerja</h3>
                 <button class="modal-close-btn" onclick="toggleDetailModal(false)"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
-                <div class="summary-grid" style="grid-template-columns: 1fr 1fr;">
-                    <div class="summary-item">
-                        <span class="summary-label">Nomor ID Tiket</span>
-                        <span class="summary-value" id="det-id" style="font-family: 'Orbitron', monospace; font-size: 1rem; color: var(--primary);">BD-20260519-0001</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Status Tiket</span>
-                        <span class="summary-value" id="det-status">-</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Armada / Type</span>
-                        <span class="summary-value" id="det-type">-</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Vendor Unit</span>
-                        <span class="summary-value" id="det-vendor">-</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Komponen / Sistem</span>
-                        <span class="summary-value" id="det-kategori">-</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Kondisi Operasional</span>
-                        <span class="summary-value" id="det-kondisi-operasional">-</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Pilihan Kerusakan</span>
-                        <span class="summary-value" id="det-pilihan">-</span>
-                    </div>
-                    <div class="summary-item full-width">
-                        <span class="summary-label">Deskripsi Kejadian</span>
-                        <span class="summary-value" style="font-weight: 500;" id="det-detail">-</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Operator Awal (Pelapor)</span>
-                        <span class="summary-value" id="det-op-awal">-</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Waktu Mulai</span>
-                        <span class="summary-value" id="det-waktu-mulai">-</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Operator Akhir (Penyelesai)</span>
-                        <span class="summary-value" id="det-op-akhir">-</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Waktu Selesai</span>
-                        <span class="summary-value" id="det-waktu-selesai">-</span>
-                    </div>
-                    <div class="summary-item full-width" style="border-top: 1px dashed var(--border-color); padding-top: 10px;">
-                        <span class="summary-label">Total Durasi Terbuang</span>
-                        <span class="summary-value" id="det-durasi-total" style="font-weight: 700; color: var(--danger);">-</span>
-                    </div>
-                    <div class="summary-item full-width" id="det-photo-item" style="border-top: 1px solid var(--border-color); padding-top: 15px; text-align: center; display: none;">
-                        <span class="summary-label" style="margin-bottom: 8px;">Foto Bukti Breakdown</span>
-                        <img id="det-photo-img" src="" style="width: 100%; max-width: 280px; border-radius: 12px; border: 1px solid var(--border-color); aspect-ratio: 4/3; object-fit: cover; cursor: pointer; margin: 0 auto; display: block;">
-                    </div>
-                </div>
-            </div>
+                 <div class="summary-grid" style="grid-template-columns: 1fr 1fr;">
+                     <div class="summary-item">
+                         <span class="summary-label">Nomor ID</span>
+                         <span class="summary-value" id="det-id" style="font-family: 'Orbitron', monospace; font-size: 1rem; color: var(--primary);">BD-20260519-0001</span>
+                     </div>
+                     <div class="summary-item">
+                         <span class="summary-label">Status</span>
+                         <span class="summary-value" id="det-status">-</span>
+                     </div>
+                     <div class="summary-item">
+                         <span class="summary-label">Armada / Type</span>
+                         <span class="summary-value" id="det-type">-</span>
+                     </div>
+                     <div class="summary-item">
+                         <span class="summary-label">Vendor Unit</span>
+                         <span class="summary-value" id="det-vendor">-</span>
+                     </div>
+                     <div class="summary-item">
+                         <span class="summary-label">Komponen / Sistem</span>
+                         <span class="summary-value" id="det-kategori">-</span>
+                     </div>
+                     <div class="summary-item">
+                         <span class="summary-label">Kondisi Operasional</span>
+                         <span class="summary-value" id="det-kondisi-operasional">-</span>
+                     </div>
+                     <div class="summary-item">
+                         <span class="summary-label">Pilihan Kerusakan</span>
+                         <span class="summary-value" id="det-pilihan">-</span>
+                     </div>
+                     <div class="summary-item">
+                         <span class="summary-label">Waktu Mulai</span>
+                         <span class="summary-value" id="det-waktu-mulai">-</span>
+                     </div>
+                     <div class="summary-item full-width" style="border-bottom: 1px dashed var(--border-color); padding-bottom: 8px; margin-bottom: 4px;">
+                         <span class="summary-label">Deskripsi Kejadian</span>
+                         <span class="summary-value" style="font-weight: 500;" id="det-detail">-</span>
+                     </div>
+                     <div class="summary-item">
+                         <span class="summary-label">Operator Awal (Pelapor)</span>
+                         <span class="summary-value" id="det-op-awal">-</span>
+                     </div>
+                     <div class="summary-item">
+                         <span class="summary-label">Operator Akhir (Penyelesai)</span>
+                         <span class="summary-value" id="det-op-akhir">-</span>
+                     </div>
+                     <div class="summary-item">
+                         <span class="summary-label">Waktu Selesai</span>
+                         <span class="summary-value" id="det-waktu-selesai">-</span>
+                     </div>
+                     <div class="summary-item" style="background: rgba(239, 68, 68, 0.04); padding: 8px 12px; border-radius: 8px; border: 1px dashed rgba(239, 68, 68, 0.15);">
+                         <span class="summary-label" style="color: rgba(239, 68, 68, 0.85); font-weight: 700;">Total Durasi Terbuang</span>
+                         <span class="summary-value" id="det-durasi-total" style="font-weight: 700; color: var(--danger); font-size: 0.82rem;">-</span>
+                     </div>
+                     <div class="summary-item" id="det-photo-item" style="grid-column: 2; grid-row: 6 / span 4; display: none; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; border-left: 1.5px dashed var(--border-color); padding-left: 20px; padding-top: 4px; margin-top: 10px;">
+                         <span class="summary-label" style="margin-bottom: 6px;">Foto Bukti Breakdown</span>
+                         <img id="det-photo-img" src="" style="width: 100%; max-width: 100%; height: 170px; object-fit: cover; border-radius: 12px; border: 1px solid var(--border-color); cursor: pointer; display: block; transition: var(--transition);">
+                     </div>
+                 </div>
+             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="toggleDetailModal(false)">Tutup Rincian</button>
             </div>
@@ -3170,6 +3248,7 @@
             { jenisUnit: "FORKLIFT", typeUnit: "MHE 02", vendor: "TIGER PARTNER" },
             { jenisUnit: "FORKLIFT", typeUnit: "MHE 03", vendor: "TIGER PARTNER" },
             { jenisUnit: "FORKLIFT", typeUnit: "MHE 08", vendor: "MITSUBISHIINDO" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 09", vendor: "MITSUBISHIINDO" },
             { jenisUnit: "FORKLIFT", typeUnit: "MHE 11", vendor: "MITSUBISHIINDO" },
             { jenisUnit: "FORKLIFT", typeUnit: "MHE 16", vendor: "BULL RENTAL" },
             { jenisUnit: "FORKLIFT", typeUnit: "MITSUBISHI 11.5", vendor: "BULL RENTAL" },
@@ -3828,7 +3907,7 @@
             
             if (dbMode === "offline") {
                 // Initialize Offline LocalStorage
-                if (!localStorage.getItem("smart_bd_jenis_unit")) {
+                if (!localStorage.getItem("smart_bd_jenis_unit") || !localStorage.getItem("smart_bd_jenis_unit").includes("MHE 09")) {
                     localStorage.setItem("smart_bd_jenis_unit", JSON.stringify(MOCK_JENIS_UNIT));
                 }
                 if (!localStorage.getItem("smart_bd_riwayat")) {
@@ -4070,6 +4149,7 @@
                 textTitle.textContent = "PUSAT KOMANDO ALAT BERAT";
                 textSubtitle.textContent = "Intelijen Armada & Analitik Downtime Secara Real-Time";
                 calculateAndRenderDashboard();
+                switchDashboardSubtab(activeDashboardSubtab);
             } else if (tabId === "tab-riwayat") {
                 textTitle.textContent = "Riwayat Laporan Terdaftar";
                 textSubtitle.textContent = "Arsip rekaman perbaikan dan durasi breakdown alat berat";
@@ -4425,7 +4505,7 @@
             
             // Format waktu human friendly (Date component only in YYYY-MM-DD format)
             const tMulai = parseDateString(formBreakdown.jamMulai);
-            document.getElementById("summary-waktu-mulai").textContent = formatDateOnly(tMulai);
+            document.getElementById("summary-waktu-mulai").textContent = formatDateTimeIndo(tMulai);
 
             const opCond = formBreakdown.kondisiOperasional || "BREAKDOWN";
             const opCondBadge = opCond === "BREAKDOWN" 
@@ -5237,6 +5317,9 @@
             
             // Invoke fleet monitoring grid
             renderUnitStatusMonitoring();
+            
+            // Render Analisa Section (Utilization Uptime KPIs)
+            renderAnalisaSection();
         }
 
         // DURATION HELPER FOR RANKING
@@ -5586,6 +5669,19 @@
             return `${year}-${month}-${day}`;
         }
 
+        function formatDateTimeIndo(dateVal) {
+            const d = parseDateString(dateVal);
+            if (isNaN(d.getTime())) return "-";
+            const daysIndo = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            const dayName = daysIndo[d.getDay()];
+            const year = d.getFullYear();
+            const month = ("0" + (d.getMonth() + 1)).slice(-2);
+            const day = ("0" + d.getDate()).slice(-2);
+            const hours = ("0" + d.getHours()).slice(-2);
+            const minutes = ("0" + d.getMinutes()).slice(-2);
+            return `${dayName}, ${year}-${month}-${day}, ${hours}:${minutes} WIB`;
+        }
+
         function getDaysAgo(dateVal) {
             const targetDate = parseDateString(dateVal);
             if (isNaN(targetDate.getTime())) return "";
@@ -5737,11 +5833,11 @@
             document.getElementById("det-detail").textContent = item.detailKerusakan;
             document.getElementById("det-op-awal").textContent = item.operatorAwal;
             
-            document.getElementById("det-waktu-mulai").textContent = formatDateOnly(item.jamMulai);
+            document.getElementById("det-waktu-mulai").textContent = formatDateTimeIndo(item.jamMulai);
             
             document.getElementById("det-op-akhir").textContent = item.operatorAkhir || "-";
             
-            document.getElementById("det-waktu-selesai").textContent = (isOngoing || !item.jamSelesai || item.jamSelesai === "-") ? "-" : formatDateOnly(item.jamSelesai);
+            document.getElementById("det-waktu-selesai").textContent = (isOngoing || !item.jamSelesai || item.jamSelesai === "-") ? "-" : formatDateTimeIndo(item.jamSelesai);
             
             let elapsedMins = 0;
             if (isOngoing) {
@@ -5917,6 +6013,294 @@
         }
 
         // ==============================================
+        // DASHBOARD SUBTAB NAVIGATION & ANALISA ENGINE
+        // ==============================================
+        let activeDashboardSubtab = "status"; // default
+        let chartAnalisaDailyInstance = null;
+
+        function switchDashboardSubtab(subtab) {
+            activeDashboardSubtab = subtab;
+            
+            // Toggle active class on buttons
+            document.querySelectorAll(".submenu-btn").forEach(btn => {
+                if (btn.getAttribute("data-subtab") === subtab) {
+                    btn.classList.add("active");
+                } else {
+                    btn.classList.remove("active");
+                }
+            });
+            
+            // Toggle display of sections
+            const statusSec = document.getElementById("dashboard-status-section");
+            const filterSec = document.getElementById("dashboard-filter-section");
+            const analisaSec = document.getElementById("dashboard-analisa-section");
+            
+            if (statusSec) statusSec.style.display = (subtab === "status") ? "block" : "none";
+            if (filterSec) filterSec.style.display = (subtab === "filter") ? "block" : "none";
+            if (analisaSec) {
+                analisaSec.style.display = (subtab === "analisa") ? "flex" : "none";
+                if (subtab === "analisa") {
+                    renderAnalisaSection();
+                }
+            }
+        }
+
+        function getDailyDowntimeData(unitType, daysToLookback = 10) {
+            const dailyData = {};
+            const labels = [];
+            const now = new Date();
+            
+            // Generate labels for past N days
+            for (let i = daysToLookback - 1; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(now.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
+                labels.push(dateStr);
+                dailyData[dateStr] = 0;
+            }
+            
+            // Fill with downtime duration
+            const unitCases = cachedRiwayat.filter(r => r.typeUnit === unitType);
+            unitCases.forEach(c => {
+                if (c.jamMulai) {
+                    const dateOnly = c.jamMulai.split('T')[0];
+                    if (dailyData[dateOnly] !== undefined) {
+                        if (c.status.toLowerCase() === "selesai" && c.durasiJam) {
+                            dailyData[dateOnly] += c.durasiJam;
+                        } else if (c.status.toLowerCase() === "ongoing") {
+                            // Estimate ongoing time on that date
+                            const start = new Date(c.jamMulai.replace(' ', 'T'));
+                            const end = new Date();
+                            const diffMs = end - start;
+                            const diffHrs = Math.max(0, diffMs / (1000 * 60 * 60));
+                            dailyData[dateOnly] += diffHrs;
+                        }
+                    }
+                }
+            });
+            
+            const datasets = labels.map(lbl => Number(dailyData[lbl].toFixed(2)));
+            return { labels, datasets };
+        }
+
+        function renderDailyDowntimeChart(unitType) {
+            const ctx = document.getElementById('chart-analisa-daily');
+            if (!ctx) return;
+            
+            const { labels, datasets } = getDailyDowntimeData(unitType, 10);
+            
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            const formattedLabels = labels.map(lbl => {
+                const parts = lbl.split('-');
+                if (parts.length === 3) {
+                    const day = parseInt(parts[2]);
+                    const monthIdx = parseInt(parts[1]) - 1;
+                    return `${day} ${months[monthIdx]}`;
+                }
+                return lbl;
+            });
+
+            if (chartAnalisaDailyInstance) {
+                chartAnalisaDailyInstance.destroy();
+            }
+            
+            chartAnalisaDailyInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: formattedLabels,
+                    datasets: [{
+                        label: 'Downtime (Jam)',
+                        data: datasets,
+                        backgroundColor: 'rgba(79, 70, 229, 0.75)',
+                        borderColor: '#4F46E5',
+                        borderWidth: 1.5,
+                        borderRadius: 6,
+                        hoverBackgroundColor: 'rgba(6, 182, 212, 0.85)',
+                        hoverBorderColor: '#06B6D4'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Downtime: ${context.parsed.y} Jam`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Durasi (Jam)',
+                                font: {
+                                    family: "'Plus Jakarta Sans', sans-serif",
+                                    weight: '700',
+                                    size: 10
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderDailyLogs(unitType) {
+            const listEl = document.getElementById('analisa-daily-log-list');
+            if (!listEl) return;
+            listEl.innerHTML = "";
+            
+            const unitCases = cachedRiwayat.filter(r => r.typeUnit === unitType);
+            if (unitCases.length === 0) {
+                listEl.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 0.8rem; font-weight: 600;">
+                        <i class="fa-solid fa-circle-info" style="font-size: 1.5rem; color: var(--primary); opacity: 0.5; margin-bottom: 8px; display: block;"></i>
+                        Tidak ada riwayat perbaikan untuk unit ini.
+                    </div>
+                `;
+                return;
+            }
+            
+            const sortedCases = [...unitCases].sort((a, b) => b.jamMulai.localeCompare(a.jamMulai));
+            
+            sortedCases.forEach(c => {
+                const dateStr = formatDateOnly(c.jamMulai);
+                const statusHtml = c.status.toLowerCase() === 'selesai' 
+                    ? `<span style="background: var(--success-light); color: var(--success); font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">SELESAI</span>`
+                    : `<span style="background: var(--danger-light); color: var(--danger); font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; animation: pulse-border 2s infinite;">AKTIF</span>`;
+                    
+                const durationText = c.status.toLowerCase() === 'selesai'
+                    ? `${c.durasiJam} Jam`
+                    : 'Sedang Berjalan';
+                    
+                const item = document.createElement('div');
+                item.style.cssText = "background: #ffffff; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm); transition: var(--transition);";
+                item.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted);">${dateStr}</span>
+                        ${statusHtml}
+                    </div>
+                    <div style="font-size: 0.85rem; font-weight: 800; color: var(--text-main);">${c.kategoriKerusakan} — <span style="font-weight: 600; color: var(--text-muted);">${c.pilihanKerusakan}</span></div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); line-height: 1.4; max-height: 40px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${c.detailKerusakan || ''}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed rgba(0,0,0,0.05); padding-top: 6px; margin-top: 2px; font-size: 0.68rem; font-weight: 600; color: var(--text-muted);">
+                        <span>Durasi: <strong style="color: var(--text-main); font-weight: 700;">${durationText}</strong></span>
+                        <span>Pelapor: <strong style="color: var(--text-main); font-weight: 700;">${c.operatorAwal || '-'}</strong></span>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        function updateAnalisaDailyView() {
+            const selector = document.getElementById('analisa-unit-selector');
+            if (!selector) return;
+            const selectedUnit = selector.value;
+            renderDailyDowntimeChart(selectedUnit);
+            renderDailyLogs(selectedUnit);
+        }
+
+        function renderAnalisaSection() {
+            const gridEl = document.getElementById('analisa-utilization-grid');
+            if (!gridEl) return;
+            gridEl.innerHTML = "";
+            
+            const units = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+            
+            const selector = document.getElementById('analisa-unit-selector');
+            const previousVal = selector ? selector.value : "";
+            if (selector) {
+                selector.innerHTML = "";
+            }
+            
+            units.forEach((unit, idx) => {
+                if (selector) {
+                    const opt = document.createElement('option');
+                    opt.value = unit.typeUnit;
+                    opt.textContent = `${unit.typeUnit} (${unit.jenisUnit})`;
+                    selector.appendChild(opt);
+                }
+                
+                const unitCases = cachedRiwayat.filter(r => r.typeUnit === unit.typeUnit);
+                let totalDowntimeHours = 0;
+                let casesCount = 0;
+                
+                unitCases.forEach(c => {
+                    if (c.status.toLowerCase() === "selesai" && c.durasiJam) {
+                        totalDowntimeHours += c.durasiJam;
+                        casesCount++;
+                    } else if (c.status.toLowerCase() === "ongoing" && c.jamMulai) {
+                        const start = new Date(c.jamMulai.replace(' ', 'T'));
+                        const now = new Date();
+                        const diffMs = now - start;
+                        const diffHrs = Math.max(0, diffMs / (1000 * 60 * 60));
+                        totalDowntimeHours += diffHrs;
+                        casesCount++;
+                    }
+                });
+                
+                const totalAvailableHours = 30 * 24;
+                const uptimePercent = Math.max(0, Math.min(100, ((totalAvailableHours - totalDowntimeHours) / totalAvailableHours) * 100));
+                
+                const radius = 32;
+                const circumference = 2 * Math.PI * radius;
+                const offset = circumference - (uptimePercent / 100) * circumference;
+                
+                let strokeColor = '#10B981';
+                if (uptimePercent < 90) {
+                    strokeColor = '#EF4444';
+                } else if (uptimePercent < 95) {
+                    strokeColor = '#F59E0B';
+                }
+                
+                const card = document.createElement('div');
+                card.className = 'util-card';
+                card.innerHTML = `
+                    <div class="util-left">
+                        <span class="util-tag">${unit.jenisUnit}</span>
+                        <span class="util-name">${unit.typeUnit}</span>
+                        <div class="util-stat">Downtime: <span>${totalDowntimeHours.toFixed(1)} Jam</span></div>
+                        <div class="util-stat">Total Kasus: <span>${casesCount} Kasus</span></div>
+                    </div>
+                    <div class="util-right">
+                        <svg width="80" height="80" viewBox="0 0 80 80">
+                            <circle cx="40" cy="40" r="32" stroke="rgba(79, 70, 229, 0.08)" stroke-width="6" fill="transparent"></circle>
+                            <circle cx="40" cy="40" r="32" stroke="${strokeColor}" stroke-width="6" fill="transparent"
+                                    stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+                                    stroke-linecap="round" transform="rotate(-90 40 40)"
+                                    style="transition: stroke-dashoffset 0.8s ease-in-out; filter: drop-shadow(0 0 4px ${strokeColor}40);"></circle>
+                            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="'Orbitron', sans-serif" font-weight="800" font-size="12" fill="var(--text-main)">${uptimePercent.toFixed(1)}%</text>
+                        </svg>
+                    </div>
+                `;
+                gridEl.appendChild(card);
+            });
+            
+            if (selector) {
+                if (previousVal && units.some(u => u.typeUnit === previousVal)) {
+                    selector.value = previousVal;
+                } else if (units.length > 0) {
+                    selector.value = units[0].typeUnit;
+                }
+                updateAnalisaDailyView();
+            }
+        }
+
+        // ==============================================
         // TOAST NOTIFICATIONS POPUP
         // ==============================================
         function showToast(message, type = "success") {
@@ -5950,6 +6334,199 @@
         @keyframes slideOutRight {
             from { transform: translateX(0); opacity: 1; }
             to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* DASHBOARD SUB-NAVBAR TABS */
+        .dashboard-submenu-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-glass);
+            width: fit-content;
+        }
+
+        .submenu-btn {
+            padding: 10px 22px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .submenu-btn i {
+            font-size: 0.95rem;
+            color: var(--primary);
+            transition: var(--transition);
+        }
+
+        .submenu-btn:hover {
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .submenu-btn.active {
+            color: #ffffff !important;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.85), rgba(6, 182, 212, 0.85)) !important;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.25), 0 0 10px rgba(79, 70, 229, 0.2);
+        }
+
+        .submenu-btn.active i {
+            color: #ffffff !important;
+        }
+
+        /* UTILIZATION PAGE CARDS */
+        .util-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.85) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .util-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: rgba(99, 102, 241, 0.25);
+        }
+
+        .util-left {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .util-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .util-tag {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            background: rgba(15,23,42,0.05);
+            color: var(--text-muted);
+            border-radius: 99px;
+            width: fit-content;
+            text-transform: uppercase;
+        }
+
+        .util-stat {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .util-stat span {
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .util-right {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Custom scrollbar for repair log list */
+        #analisa-daily-log-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        #analisa-daily-log-list::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 4px;
+        }
+        #analisa-daily-log-list::-webkit-scrollbar-thumb {
+            background: rgba(79, 70, 229, 0.15);
+            border-radius: 4px;
+        }
+        #analisa-daily-log-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(79, 70, 229, 0.3);
+        }
+
+        /* CUSTOM SPACING TO MAKE DETAIL MODAL COMPACT ON DESKTOP */
+        #detail-modal-overlay .modal-card {
+            max-width: 660px !important;
+            max-height: 85vh !important;
+        }
+        #detail-modal-overlay .modal-body {
+            padding: 16px 24px !important;
+            gap: 12px !important;
+        }
+        #detail-modal-overlay .summary-grid {
+            padding: 14px 18px !important;
+            gap: 8px 16px !important;
+        }
+        #detail-modal-overlay .summary-item {
+            gap: 2px !important;
+        }
+        #detail-modal-overlay .summary-label {
+            font-size: 0.72rem !important;
+            margin-bottom: 2px !important;
+        }
+        #detail-modal-overlay .summary-value {
+            font-size: 0.88rem !important;
+        }
+        #detail-modal-overlay #det-photo-item {
+            grid-column: 2 !important;
+            grid-row: 6 / span 4 !important;
+            border-left: 1.5px dashed rgba(79, 70, 229, 0.18) !important;
+            padding-left: 20px !important;
+            padding-top: 4px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            margin-top: 10px !important;
+        }
+        #detail-modal-overlay #det-photo-img {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 170px !important;
+            object-fit: cover !important;
+            border-radius: 12px !important;
+            box-shadow: var(--shadow-sm) !important;
+            transition: var(--transition) !important;
+        }
+        #detail-modal-overlay #det-photo-img:hover {
+            transform: scale(1.03) !important;
+            box-shadow: var(--shadow-md) !important;
+        }
+        #detail-modal-overlay .summary-item.full-width {
+            padding-top: 4px !important;
+            padding-bottom: 4px !important;
+        }
+
+        /* Fix SweetAlert2 popup z-index to appear in front of our modals */
+        .swal2-container {
+            z-index: 99999 !important;
         }
     </style>
 </body>
