@@ -1,11 +1,11 @@
 const CONFIG = {
-    API_URL: "https://script.google.com/macros/s/AKfycbweoWk0DYHv66ul3jkfLck7QAKRH718nDfKmajadVNYrATxlIrWsiusDwxmMXGNg_g/exec",
+    API_URL: "https://script.google.com/macros/s/AKfycbw4YYjbx8T6q2weIPMD8F5j_oq02sTIMFuoa3vokxLlpMyQHqpHgg_gzEr5hShmTjUt/exec",
     BIN_SWEEPING_API_URL: "https://script.google.com/macros/s/AKfycbynVL7SFG8TBeTbu2PjO2eGIgM1JkQcV8nT3zsoi6zWc4cArJ23VQfTgjtLyyTZCQFM/exec",
     DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbw89miuaaa3UY7IxQbqLqHy2yzk0yQ63AEiZn018qO0g0MEsGwm_2Z2wfZM4nqlUY85/exec",
     CPO_DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbxIvYIvhLNvjIcyz1RbCYbGw22UbkOznHOujfq6u7vzt6NzQVk5FmNGIZVz2689Lj0X/exec",
     // v20.2.0: Analytics V2 URL (uses Entry Bongkar Sheet)
-    ANALYTICS_V2_URL: "https://script.google.com/macros/s/AKfycbzntaHSU52NwHWbNwg6tKYV2AGVxlV2SJAufnqUTN-4pyQuZ9I-Ejk1PnwebBpoikr3/exec?action=getAnalyticsV2",
-    ENTRY_BONGKAR_API_URL: "https://script.google.com/macros/s/AKfycbzntaHSU52NwHWbNwg6tKYV2AGVxlV2SJAufnqUTN-4pyQuZ9I-Ejk1PnwebBpoikr3/exec",
+    ANALYTICS_V2_URL: "https://script.google.com/macros/s/AKfycbw4YYjbx8T6q2weIPMD8F5j_oq02sTIMFuoa3vokxLlpMyQHqpHgg_gzEr5hShmTjUt/exec?action=getAnalyticsV2",
+    ENTRY_BONGKAR_API_URL: "https://script.google.com/macros/s/AKfycbw4YYjbx8T6q2weIPMD8F5j_oq02sTIMFuoa3vokxLlpMyQHqpHgg_gzEr5hShmTjUt/exec",
     BKK_API_URL: "https://script.google.com/macros/s/AKfycbxxraeW-Sv0zZEc8uogQ04Z2FKHt9jPhnTNZFDpRnTdPCI3o5_iNeXYUandFk5h3NVJ/exec?action=getData",
     BKK_DOWNTIME_API_URL: "https://script.google.com/macros/s/AKfycbxlr7oTe5pD6psW9DC4gKMdLH2XqWHcK3E-cBYvzQrml1-7-U-JKH-5JoyBMBBjuL3W/exec?action=getDowntimeQuery",
     OVERTIME_API_URL: "https://script.google.com/macros/s/AKfycbwjxJVAhHSpYY9taTQ5SR7A00M3pQfHdm9lXO33Zr88EDS1awbrFj2xkpeN0rOGomaI/exec",

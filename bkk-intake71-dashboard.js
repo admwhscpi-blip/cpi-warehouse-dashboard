@@ -649,6 +649,7 @@
         endMin: endMin,
         nettoKg: nettoKg,
         nettoTon: nettoKg / 1000,
+        sourceRow: r,
         durations: {
           pbSampaiStart: d1,
           pbStartHold: d2,
@@ -1587,7 +1588,7 @@
         var botY1 = margin.top + plotH + 16;
         var botY2 = margin.top + plotH + 28;
         barsSvg +=
-          '<text x="' + cx + '" y="' + botY1 + '" text-anchor="middle" fill="#dbeafe" font-family="Rajdhani,Orbitron,sans-serif" font-size="10" font-weight="700">' + i71EscHtml(String(op.nopol || '-')) + '</text>' +
+          '<text x="' + cx + '" y="' + botY1 + '" class="i71-stepop-nopol-lbl" data-nopol="' + i71EscHtml(String(op.nopol || '-')) + '" text-anchor="middle" fill="#dbeafe" font-family="Rajdhani,Orbitron,sans-serif" font-size="10" font-weight="700" style="cursor:pointer;">' + i71EscHtml(String(op.nopol || '-')) + '</text>' +
           '<text x="' + cx + '" y="' + botY2 + '" text-anchor="middle" fill="#2dd4bf" font-family="Rajdhani,Orbitron,sans-serif" font-size="10" font-weight="700">' + Number(op.nettoTon || 0).toFixed(2) + 't</text>';
 
         // === Idle connector: DI ATAS, nempel dari puncak bar sebelumnya ke puncak bar ini ===
@@ -1669,7 +1670,22 @@
             tip.style.opacity = '1';
           });
           hit.addEventListener('mouseleave', function() { tip.style.opacity = '0'; });
+          hit.addEventListener('click', function() {
+            if (typeof window.showTruckJourneyPopup === 'function') {
+              window.showTruckJourneyPopup(op.sourceRow || op.nopol);
+            }
+          });
           svg.appendChild(hit);
+        });
+
+        var lbls = stepPerOpWrap.querySelectorAll('.i71-stepop-nopol-lbl');
+        lbls.forEach(function(lbl) {
+          lbl.addEventListener('click', function() {
+            var nopol = lbl.getAttribute('data-nopol');
+            if (typeof window.showTruckJourneyPopup === 'function' && nopol) {
+              window.showTruckJourneyPopup(nopol);
+            }
+          });
         });
       }
       var lg = document.getElementById('i71_step_per_op_legend');
@@ -1867,6 +1883,16 @@
         '</div>';
     })();
   }
+
+  window.i71GetRawRowByNopol = function(nopol) {
+    if (!i71State || !i71State.allRows) return null;
+    var cleanNopol = String(nopol || '').trim().toUpperCase();
+    var found = i71State.allRows.find(function(r) {
+      var np = String(r.NO_POLISI || r.no_polisi || '').trim().toUpperCase();
+      return np === cleanNopol;
+    });
+    return found || null;
+  };
 
   window.loadIntake71Page = function() {
     var dateEl = document.getElementById('i71_date');

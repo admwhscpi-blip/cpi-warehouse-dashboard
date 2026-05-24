@@ -5434,7 +5434,8 @@
                     total:         null,
                     totalValid:    false,
                     breakdownJson: row.BREAKDOWN_DURASI || '{}',
-                    kg: Number(row.REAL_BONGKAR_MT || row.REAL_BONGKAR_KG || 0)
+                    kg: Number(row.REAL_BONGKAR_MT || row.REAL_BONGKAR_KG || 0),
+                    sourceRow:     row
                 };
                 let rowTotal = 0;
                 let hasAny   = false;
@@ -5814,6 +5815,7 @@
         }
 
         function renderDbTable(selected, tableData, isMuatMode = false) {
+            window._bkkDbTableRows = tableData;
             if (_dbSortCol !== null) {
                 tableData.sort((a, b) => {
                     let va, vb;
@@ -5862,7 +5864,7 @@
                     else                   badge = '<span class="db-badge db-badge-lama">Lama</span>';
                 }
                 tbodyHtml += `<tr class="fade-in-item" style="animation-delay:${Math.min(idx, 20) * 0.02}s;">`;
-                tbodyHtml += `<td style="font-weight:700; color:var(--text-primary); font-family:'Inter',sans-serif; font-size:0.8rem;">${entry.nopol}</td>`;
+                tbodyHtml += `<td class="tjp-nopol-cell" style="font-weight:700; color:#3b82f6; cursor:pointer; text-decoration:underline; text-decoration-style:dotted; font-family:'Inter',sans-serif; font-size:0.8rem;" onclick="event.stopPropagation(); showTruckJourneyPopup(${idx})" title="Klik untuk lihat perjalanan truck">${entry.nopol}</td>`;
                 tbodyHtml += `<td style="color:var(--text-secondary);">${entry.tanggal}</td>`;
                 selected.forEach(t => {
                     const v = entry.durations[t.key];
@@ -6604,7 +6606,629 @@
                 }
             });
         }
+
+        /* ===== TRUCK JOURNEY POPUP — SELF-CONTAINED SCRIPT ===== */
+        (function() {
+            'use strict';
+
+            /* ---------- helpers ---------- */
+            function _tjpEsc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+            
+            function _tjpNormHM(v) {
+                if (v == null || v === '') return '';
+                if (typeof v === 'object' && v instanceof Date && !isNaN(v.getTime())) {
+                    return String(v.getHours()).padStart(2,'0')+':'+String(v.getMinutes()).padStart(2,'0');
+                }
+                var s = String(v).trim();
+                if (s.indexOf('T') !== -1) {
+                    try {
+                        var d = new Date(s);
+                        if (!isNaN(d.getTime())) return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+                    } catch(e){}
+                }
+                if (/^\d{1,2}:\d{2}/.test(s)) return s.substring(0,5);
+                return s.length >= 5 ? s.substring(0,5) : s;
+            }
+
+            function _tjpYmd(v) {
+                if (v == null || v === '') return '';
+                if (typeof v === 'object' && v instanceof Date && !isNaN(v.getTime())) {
+                    try {
+                        return v.toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'});
+                    } catch(e) {
+                        return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');
+                    }
+                }
+                var s = String(v).trim();
+                if (s.indexOf('T') !== -1) {
+                    try {
+                        var d = new Date(s);
+                        if (!isNaN(d.getTime())) {
+                            try {
+                                return d.toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'});
+                            } catch(e) {
+                                return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+                            }
+                        }
+                    } catch(e){}
+                }
+                return s.length >= 10 ? s.substring(0,10) : s;
+            }
+
+            function _tjpDiffLabel(ms1, ms2) {
+                if (isNaN(ms1)||isNaN(ms2)) return '-';
+                var diff = Math.round(Math.abs(ms2-ms1)/60000);
+                if (diff === 0) return '0m';
+                if (diff < 60) return diff + 'm';
+                var h = Math.floor(diff/60), mm = diff%60;
+                return h + 'j ' + mm + 'm';
+            }
+
+            function _tjpNodeHtml(id, label, dateStr, timeStr, extraCls, extraHtml) {
+                var hasData = (timeStr && timeStr !== '-' && timeStr !== '');
+                var cls = 'tjp-node ' + extraCls + (hasData ? ' tjp-node-active' : ' tjp-node-inactive tjp-node-empty');
+                var display = hasData ? ('📅 ' + _tjpEsc(dateStr||'') + '  ' + _tjpEsc(timeStr)) : '—';
+                return '<div class="'+cls+'" id="tjp-n-'+id+'">' +
+                    '<div class="tjp-node-label"><i class="fas fa-map-marker-alt"></i> '+_tjpEsc(label)+'</div>' +
+                    '<div class="tjp-node-time"><i class="far fa-clock"></i> '+display+'</div>' +
+                    (extraHtml||'') +
+                '</div>';
+            }
+
+            function _tjpGetBreakdownHtml(bd, key) {
+                var items = bd[key] || [];
+                if (!items || items.length === 0) {
+                    for (var k in bd) {
+                        if (k.startsWith(key) && Array.isArray(bd[k])) {
+                            items = bd[k];
+                            break;
+                        }
+                    }
+                }
+                if (!items || items.length === 0) return '';
+                
+                var html = '<span class="tjp-bd-indicator" title="Arahkan kursor untuk melihat rincian breakdown"><i class="fas fa-info-circle"></i></span>';
+                html += '<div class="tjp-connector-bd-list">';
+                items.forEach(function(item) {
+                    var ket = item.keterangan || item.ket || item.alasan || 'Lainnya';
+                    var min = parseInt(item.waktu || item.min || item.durasi) || 0;
+                    var formattedMin = min < 60 ? min + 'm' : Math.floor(min/60) + 'j ' + (min%60) + 'm';
+                    html += '<div class="tjp-connector-bd-item">' +
+                                '<span class="tjp-bd-dot"></span>' +
+                                '<span class="tjp-bd-text" title="' + _tjpEsc(ket) + '">' + _tjpEsc(ket) + '</span>' +
+                                '<span class="tjp-bd-time">' + formattedMin + '</span>' +
+                            '</div>';
+                });
+                html += '</div>';
+                return html;
+            }
+
+            function _tjpGetCombinedBreakdownHtml(bd, keys) {
+                var allItems = [];
+                keys.forEach(function(key) {
+                    var items = bd[key] || [];
+                    if (!items || items.length === 0) {
+                        for (var k in bd) {
+                            if (k.startsWith(key) && Array.isArray(bd[k])) {
+                                items = bd[k];
+                                break;
+                            }
+                        }
+                    }
+                    if (items && items.length > 0) {
+                        items.forEach(function(it) {
+                            allItems.push(it);
+                        });
+                    }
+                });
+                
+                if (allItems.length === 0) return '';
+                
+                allItems.sort(function(a, b) {
+                    var minA = parseInt(a.waktu || a.min || a.durasi) || 0;
+                    var minB = parseInt(b.waktu || b.min || b.durasi) || 0;
+                    return minB - minA;
+                });
+
+                var html = '<span class="tjp-bd-indicator" title="Arahkan kursor untuk melihat rincian breakdown"><i class="fas fa-info-circle"></i></span>';
+                html += '<div class="tjp-connector-bd-list">';
+                allItems.forEach(function(item) {
+                    var ket = item.keterangan || item.ket || item.alasan || 'Lainnya';
+                    var min = parseInt(item.waktu || item.min || item.durasi) || 0;
+                    var formattedMin = min < 60 ? min + 'm' : Math.floor(min/60) + 'j ' + (min%60) + 'm';
+                    html += '<div class="tjp-connector-bd-item">' +
+                                '<span class="tjp-bd-dot"></span>' +
+                                '<span class="tjp-bd-text" title="' + _tjpEsc(ket) + '">' + _tjpEsc(ket) + '</span>' +
+                                '<span class="tjp-bd-time">' + formattedMin + '</span>' +
+                            '</div>';
+                });
+                html += '</div>';
+                return html;
+            }
+
+            function _tjpExtract(row) {
+                var tanggal = _tjpYmd(row.TANGGAL);
+                
+                var abBaseDateStr  = row.TANGGAL;
+                var pbBaseDateStr  = row.TANGGAL_PB || row.TANGGAL;
+
+                var arrDateStr     = row.ARRIVAL_DATE    || row.AB_ARRIVAL_DATE   || abBaseDateStr;
+                var qcDateStr      = row.QC_DATE         || row.AB_QC_DATE        || abBaseDateStr;
+                var sampaiDateStr  = row.SAMPAI_DATE     || row.PB_SAMPAI_DATE    || pbBaseDateStr;
+                var startDateStr   = row.START_DATE      || row.PB_START_DATE     || pbBaseDateStr;
+                var holdDateStr    = row.HOLD_DATE       || row.PB_HOLD_DATE      || pbBaseDateStr;
+                var restartDateStr = row.RESTART_DATE    || row.PB_RESTART_DATE   || pbBaseDateStr;
+                var finishDateStr  = row.FINISH_DATE     || row.PB_FINISH_DATE    || pbBaseDateStr;
+
+                var tO = row.ARRIVAL_TIME;
+                var tP = row.QC_SAMPLING_1;
+                var tR = row.SAMPAI_GUDANG || row.START_PANGGIL;
+                var tS = row.START_BONGKAR;
+                var tT = row.HOLD_QC;
+                var tU = row.RESTART_QC;
+                var tV = row.FINISH_TIME;
+
+                var dtO = buildDateTime(parseFlexDate(arrDateStr),     parseFlexTime(tO));
+                var dtP = buildDateTime(parseFlexDate(qcDateStr),      parseFlexTime(tP));
+                var dtR = buildDateTime(parseFlexDate(sampaiDateStr),  parseFlexTime(tR));
+                var dtS = buildDateTime(parseFlexDate(startDateStr),   parseFlexTime(tS));
+                var dtT = buildDateTime(parseFlexDate(holdDateStr),    parseFlexTime(tT));
+                var dtU = buildDateTime(parseFlexDate(restartDateStr), parseFlexTime(tU));
+                var dtV = buildDateTime(parseFlexDate(finishDateStr),  parseFlexTime(tV));
+
+                var hasQcDate     = !!(row.QC_DATE      || row.AB_QC_DATE);
+                var hasSampaiDate = !!(row.SAMPAI_DATE  || row.PB_SAMPAI_DATE);
+                var hasStartDate  = !!(row.START_DATE   || row.PB_START_DATE);
+                var hasHoldDate   = !!(row.HOLD_DATE    || row.PB_HOLD_DATE);
+                var hasRestartDate= !!(row.RESTART_DATE || row.PB_RESTART_DATE);
+                var hasFinishDate = !!(row.FINISH_DATE  || row.PB_FINISH_DATE);
+
+                if (dtO && dtP) dtP = autoFixMidnightCrossing(dtO, dtP, hasQcDate);
+                if (dtP && dtR) dtR = autoFixMidnightCrossing(dtP, dtR, hasSampaiDate);
+                else if (dtO && dtR) dtR = autoFixMidnightCrossing(dtO, dtR, hasSampaiDate);
+                if (dtR && dtS) dtS = autoFixMidnightCrossing(dtR, dtS, hasStartDate);
+                else if (dtP && dtS) dtS = autoFixMidnightCrossing(dtP, dtS, hasStartDate);
+                if (dtS && dtT) dtT = autoFixMidnightCrossing(dtS, dtT, hasHoldDate);
+                if (dtT && dtU) dtU = autoFixMidnightCrossing(dtT, dtU, hasRestartDate);
+                else if (dtS && dtU) dtU = autoFixMidnightCrossing(dtS, dtU, hasRestartDate);
+                if (dtU && dtV) dtV = autoFixMidnightCrossing(dtU, dtV, hasFinishDate);
+                else if (dtS && dtV) dtV = autoFixMidnightCrossing(dtS, dtV, hasFinishDate);
+
+                var msAbArr = dtO ? dtO.getTime() : NaN;
+                var msAbQc = dtP ? dtP.getTime() : NaN;
+                var msPbSampai = dtR ? dtR.getTime() : NaN;
+                var msPbStart = dtS ? dtS.getTime() : NaN;
+                var msPbHold = dtT ? dtT.getTime() : NaN;
+                var msPbRestart = dtU ? dtU.getTime() : NaN;
+                var msPbFinish = dtV ? dtV.getTime() : NaN;
+
+                var bd = {};
+                try {
+                    if (typeof row.breakdownJson === 'object' && row.breakdownJson !== null) {
+                        bd = row.breakdownJson;
+                    } else if (typeof row.BREAKDOWN_DURASI === 'object' && row.BREAKDOWN_DURASI !== null) {
+                        bd = row.BREAKDOWN_DURASI;
+                    } else {
+                        var rawBd = row.BREAKDOWN_DURASI || row.breakdownJson || '{}';
+                        if (typeof rawBd === 'string') {
+                            if (rawBd.startsWith("'")) rawBd = rawBd.substring(1);
+                            if (rawBd.endsWith("'")) rawBd = rawBd.substring(0, rawBd.length - 1);
+                            bd = JSON.parse(rawBd);
+                        }
+                    }
+                } catch(e) {
+                    console.error("Gagal parse breakdown data", e);
+                }
+
+                return {
+                    nopol: String(row.NOPOL || '-'),
+                    sloc: String(row.LOKASI || 'RM'),
+                    material: String(row.MATERIAL || row.JENIS_RM || '-'),
+                    netto: Number(row.REAL_BONGKAR_MT || row.REAL_BONGKAR_KG || 0),
+                    tanggal: tanggal,
+                    jenisTruck: String(row.JENIS_TRUCK || row.Jenis_Truck || row.jenis_truck || row.jenisTruck || row.TRUCK || row.truck || '-'),
+                    namaKrani: String(row.NAMA_KRANI || row.Nama_Krani || row.nama_krani || row.namaKrani || row.KRANI || row.krani || '-'),
+                    kuliPenggarap: String(row.KULI_PENGGARAP || row.Kuli_Penggarap || row.kuli_penggarap || row.kuliPenggarap || row['Kuli Penggarap'] || row['kuli penggarap'] || '-'),
+                    jumlahKuli: String(row.JUMLAH_KULI || row.Jumlah_Kuli || row.jumlah_kuli || row.jumlahKuli || row['Jumlah Kuli'] || row['jumlah kuli'] || '-'),
+                    bd: bd,
+                    abTgl: _tjpYmd(arrDateStr), abArr: _tjpNormHM(tO), abQc: _tjpNormHM(tP),
+                    pbTgl: _tjpYmd(sampaiDateStr), pbSampai: _tjpNormHM(tR), pbStart: _tjpNormHM(tS), pbHold: _tjpNormHM(tT), pbRestart: _tjpNormHM(tU), pbFinish: _tjpNormHM(tV),
+                    msAbArr: msAbArr, msAbQc: msAbQc, msPbSampai: msPbSampai, msPbStart: msPbStart,
+                    msPbHold: msPbHold, msPbRestart: msPbRestart, msPbFinish: msPbFinish
+                };
+            }
+
+            function _tjpRenderCanvas(d) {
+                var sloc = String(d.sloc || '').trim().toUpperCase();
+                var isRM = (sloc === 'RM01');
+                var isGebang = (sloc === 'RW01' || sloc === 'RW08');
+                var isSamping = (sloc === 'RW03');
+                var isHino = (sloc === 'RW06');
+
+                var activeGudang = '';
+                if (isRM) activeGudang = 'RM';
+                else if (isGebang) activeGudang = 'GEBANG';
+                else if (isSamping) activeGudang = 'GUDANG SAMPING';
+                else if (isHino) activeGudang = 'HINO';
+
+                var preX = 260, preY = 320; 
+                if (isHino) { preX = 20; preY = 320; }
+                else if (isRM) { preX = 260; preY = 320; }
+                else if (isSamping) { preX = 560; preY = 460; }
+                else if (isGebang) { preX = 780; preY = 240; }
+
+                var holdHtml = '';
+                if (d.pbHold || d.pbRestart) {
+                    holdHtml = '<table class="tjp-hold-table"><tr><td>Hold</td><td>'+(d.pbHold||'—')+'</td></tr><tr><td>Restart</td><td>'+(d.pbRestart||'—')+'</td></tr></table>';
+                }
+
+                var html = '';
+
+                // 1. Parkir Pre-Timbang
+                html += '<div style="position:absolute;left:260px;top:20px;">';
+                html += _tjpNodeHtml('pretimbang', 'Parkir Pre-Timbang', d.abTgl, d.abArr, 'tjp-node-pretimbang', '');
+                html += '</div>';
+
+                // 2. Shelter QC
+                html += '<div style="position:absolute;left:520px;top:20px;">';
+                html += _tjpNodeHtml('qc', 'Shelter QC', d.abTgl, d.abQc, 'tjp-node-qc', '');
+                html += '</div>';
+
+                // 3. Truck Scale In
+                var scaleInCls = 'tjp-node-scalein';
+                html += '<div style="position:absolute;left:520px;top:140px;">';
+                html += _tjpNodeHtml('scalein', 'Truck Scale In', '', d.abQc ? '→' : '', scaleInCls, '');
+                html += '</div>';
+
+                // 4. Dynamic "Parkir Pre-Bongkar"
+                var hasPreB = (d.pbSampai);
+                var preBCls = hasPreB ? 'tjp-node-prebongkar' : 'tjp-node-prebongkar tjp-node-inactive';
+                html += '<div style="position:absolute;left:'+preX+'px;top:'+preY+'px;">';
+                html += '<div class="tjp-node '+preBCls+'" id="tjp-n-prebongkar" style="min-width:180px;">' +
+                    '<div class="tjp-node-label"><i class="fas fa-map-marker-alt"></i> Parkir Pre-Bongkar</div>' +
+                    (hasPreB ? '<div class="tjp-node-time"><i class="far fa-clock"></i> 📅 '+_tjpEsc(d.pbTgl||'')+' '+_tjpEsc(d.pbSampai||'—')+'</div>' : '<div class="tjp-node-time tjp-node-empty">—</div>') +
+                '</div>';
+                html += '</div>';
+
+                // 5a. GEBANG Gudang Node
+                html += '<div style="position:absolute;left:780px;top:20px;">';
+                html += '<div class="tjp-node '+(isGebang?'tjp-node-bongkar tjp-node-active':'tjp-node-bongkar tjp-node-inactive')+'" id="tjp-n-gebang" style="min-width:180px;min-height:100px;">' +
+                    '<div class="tjp-node-label"><i class="fas fa-warehouse"></i> GEBANG</div>' +
+                    (isGebang ? '<div class="tjp-node-time"><i class="far fa-clock"></i> Start: '+_tjpEsc(d.pbStart||'—')+'</div>'+holdHtml : '<div class="tjp-node-time tjp-node-empty">—</div>') +
+                '</div>';
+                html += '</div>';
+
+                // 5b. GUDANG SAMPING Node
+                html += '<div style="position:absolute;left:560px;top:240px;">';
+                html += '<div class="tjp-node '+(isSamping?'tjp-node-bongkar tjp-node-active':'tjp-node-bongkar tjp-node-inactive')+'" id="tjp-n-samping" style="min-width:180px;min-height:100px;">' +
+                    '<div class="tjp-node-label"><i class="fas fa-warehouse"></i> GUDANG SAMPING</div>' +
+                    (isSamping ? '<div class="tjp-node-time"><i class="far fa-clock"></i> Start: '+_tjpEsc(d.pbStart||'—')+'</div>'+holdHtml : '<div class="tjp-node-time tjp-node-empty">—</div>') +
+                '</div>';
+                html += '</div>';
+
+                // 5c. RM Node
+                html += '<div style="position:absolute;left:260px;top:460px;">';
+                html += '<div class="tjp-node '+(isRM?'tjp-node-bongkar tjp-node-active':'tjp-node-bongkar tjp-node-inactive')+'" id="tjp-n-rm" style="min-width:180px;min-height:100px;">' +
+                    '<div class="tjp-node-label"><i class="fas fa-warehouse"></i> RM</div>' +
+                    (isRM ? '<div class="tjp-node-time"><i class="far fa-clock"></i> Start: '+_tjpEsc(d.pbStart||'—')+'</div>'+holdHtml : '<div class="tjp-node-time tjp-node-empty">—</div>') +
+                '</div>';
+                html += '</div>';
+
+                // 5d. HINO Node
+                html += '<div style="position:absolute;left:20px;top:460px;">';
+                html += '<div class="tjp-node '+(isHino?'tjp-node-bongkar tjp-node-active':'tjp-node-bongkar tjp-node-inactive')+'" id="tjp-n-hino" style="min-width:180px;min-height:100px;">' +
+                    '<div class="tjp-node-label"><i class="fas fa-warehouse"></i> HINO</div>' +
+                    (isHino ? '<div class="tjp-node-time"><i class="far fa-clock"></i> Start: '+_tjpEsc(d.pbStart||'—')+'</div>'+holdHtml : '<div class="tjp-node-time tjp-node-empty">—</div>') +
+                '</div>';
+                html += '</div>';
+
+                // 6. Truck Scale Out (Finish)
+                html += '<div style="position:absolute;left:120px;top:260px;">';
+                html += _tjpNodeHtml('scaleout', 'Truck Scale Out (Finish)', d.pbTgl, d.pbFinish, 'tjp-node-scaleout', '');
+                html += '</div>';
+
+                // Connectors (SVG)
+                html += '<svg class="tjp-connectors" viewBox="0 0 1050 820" preserveAspectRatio="none">';
+
+                var c1Active = (d.abArr && d.abQc);
+                html += '<path d="M 440 55 L 520 55" class="tjp-conn-line'+(c1Active?' tjp-conn-line-active':'')+'"/>';
+
+                var c2Active = (d.abQc && d.pbSampai);
+                html += '<path d="M 600 95 L 600 140" class="tjp-conn-line'+(c2Active?' tjp-conn-line-active':'')+'"/>';
+
+                var c3Active = (d.pbSampai || d.pbStart);
+                var targetPreX = preX + 90;
+                var targetPreY = preY;
+                html += '<path d="M 600 215 L 600 230 L '+targetPreX+' 230 L '+targetPreX+' '+targetPreY+'" class="tjp-conn-line'+(c3Active?' tjp-conn-line-active':'')+'"/>';
+
+                var c4Active = (d.pbSampai && d.pbStart);
+                var gdX = 260, gdY = 460;
+                if (isHino) { gdX = 20; gdY = 460; }
+                else if (isRM) { gdX = 260; gdY = 460; }
+                else if (isSamping) { gdX = 560; gdY = 240; }
+                else if (isGebang) { gdX = 780; gdY = 20; }
+
+                var pBToGdX = gdX + 90;
+                var pBToGdY = gdY;
+                html += '<path d="M '+targetPreX+' '+(preY+70)+' L '+pBToGdX+' '+pBToGdY+'" class="tjp-conn-line'+(c4Active?' tjp-conn-line-active':'')+'"/>';
+
+                var c5Active = (d.pbStart && d.pbFinish);
+                var gdOutX = gdX + 90;
+                var gdOutY = gdY + 70;
+                html += '<path d="M '+gdOutX+' '+gdOutY+' L '+gdOutX+' '+(gdOutY+20)+' L 200 '+(gdOutY+20)+' L 200 330" class="tjp-conn-line'+(c5Active?' tjp-conn-line-active':'')+'"/>';
+
+                html += '</svg>';
+
+                // Duration & Breakdown Labels
+                var bd1 = _tjpGetBreakdownHtml(d.bd, 'ABArrivalTime_ABQCTime');
+                var bd2 = _tjpGetBreakdownHtml(d.bd, 'ABQCTime_PBSampaiGudang');
+                var bd3 = _tjpGetBreakdownHtml(d.bd, 'PBSampaiGudang_PBStartBongkar');
+                var bd4 = _tjpGetCombinedBreakdownHtml(d.bd, ['PBStartBongkar_PBHoldQC', 'PBHoldQC_PBRestartQC', 'PBRestartQC_PBFinish']);
+
+                html += '<div class="tjp-conn-label" style="left:415px;top:25px;">' +
+                            '<div class="tjp-conn-dur"><i class="far fa-clock"></i> ' + _tjpDiffLabel(d.msAbArr, d.msAbQc) + '</div>' + bd1 +
+                        '</div>';
+                html += '<div class="tjp-conn-label" style="left:615px;top:90px;">' +
+                            '<div class="tjp-conn-dur"><i class="far fa-clock"></i> ' + _tjpDiffLabel(d.msAbQc, d.msPbSampai) + '</div>' + bd2 +
+                        '</div>';
+                html += '<div class="tjp-conn-label" style="left:'+(targetPreX - 45)+'px;top:'+(preY - 45)+'px;">' +
+                            '<div class="tjp-conn-dur"><i class="far fa-clock"></i> ' + _tjpDiffLabel(d.msPbSampai, d.msPbStart) + '</div>' + bd3 +
+                        '</div>';
+                html += '<div class="tjp-conn-label" style="left:'+(gdOutX - 60)+'px;top:'+(gdOutY + 15)+'px;">' +
+                            '<div class="tjp-conn-dur"><i class="far fa-clock"></i> ' + _tjpDiffLabel(d.msPbStart, d.msPbFinish) + '</div>' + bd4 +
+                        '</div>';
+
+                return html;
+            }
+
+            window.showTruckJourneyPopup = function(rowIdxOrRow) {
+                var row;
+                if (typeof rowIdxOrRow === 'number') {
+                    var tableRows = window._bkkDbTableRows;
+                    if (!tableRows || !tableRows[rowIdxOrRow]) return;
+                    var entry = tableRows[rowIdxOrRow];
+                    row = entry.sourceRow;
+                } else if (rowIdxOrRow && typeof rowIdxOrRow === 'object') {
+                    row = rowIdxOrRow;
+                } else if (typeof rowIdxOrRow === 'string') {
+                    var cleanNp = rowIdxOrRow.trim().toUpperCase();
+                    var tableRows = window._bkkDbTableRows;
+                    if (tableRows) {
+                        var found = tableRows.find(function(entry) {
+                            return String(entry.nopol || '').trim().toUpperCase() === cleanNp;
+                        });
+                        if (found) row = found.sourceRow;
+                    }
+                }
+                if (!row) return;
+
+                var d = _tjpExtract(row);
+
+                var overlay = document.getElementById('tjpOverlay');
+                var header = document.getElementById('tjpHeader');
+                var meta = document.getElementById('tjpMeta');
+                var canvas = document.getElementById('tjpCanvas');
+                var totalDurWrapper = document.getElementById('tjpTotalDurWrapper');
+                if (!overlay || !header || !canvas) return;
+
+                header.textContent = 'Perjalanan Truck: ' + d.nopol;
+                
+                // Construct Kuli Text dynamically
+                var kuliText = (d.jumlahKuli && d.jumlahKuli !== '-' && d.jumlahKuli !== '') ? d.jumlahKuli + ' kuli' : '—';
+                if (d.kuliPenggarap && d.kuliPenggarap !== '-' && d.kuliPenggarap !== '') {
+                    kuliText += ' (' + d.kuliPenggarap + ')';
+                }
+
+                meta.innerHTML =
+                    '<div class="tjp-meta-pill" style="border-left: 3px solid #2563eb;">' +
+                        '<i class="fas fa-calendar-alt" style="color: #2563eb;"></i>' +
+                        '<div class="tjp-pill-content">' +
+                            '<span class="tjp-pill-label">Tanggal</span>' +
+                            '<span class="tjp-pill-value">' + _tjpEsc(d.tanggal) + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="tjp-meta-pill" style="border-left: 3px solid #7c3aed;">' +
+                        '<i class="fas fa-box" style="color: #7c3aed;"></i>' +
+                        '<div class="tjp-pill-content">' +
+                            '<span class="tjp-pill-label">Jenis Material</span>' +
+                            '<span class="tjp-pill-value">' + _tjpEsc(d.material) + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="tjp-meta-pill" style="border-left: 3px solid #059669;">' +
+                        '<i class="fas fa-truck" style="color: #059669;"></i>' +
+                        '<div class="tjp-pill-content">' +
+                            '<span class="tjp-pill-label">Jenis Truck</span>' +
+                            '<span class="tjp-pill-value">' + _tjpEsc(d.jenisTruck) + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="tjp-meta-pill" style="border-left: 3px solid #ea580c;">' +
+                        '<i class="fas fa-user-tie" style="color: #ea580c;"></i>' +
+                        '<div class="tjp-pill-content">' +
+                            '<span class="tjp-pill-label">Nama Krani</span>' +
+                            '<span class="tjp-pill-value">' + _tjpEsc(d.namaKrani) + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="tjp-meta-pill" style="border-left: 3px solid #0891b2;">' +
+                        '<i class="fas fa-users" style="color: #0891b2;"></i>' +
+                        '<div class="tjp-pill-content">' +
+                            '<span class="tjp-pill-label">Jumlah Kuli</span>' +
+                            '<span class="tjp-pill-value">' + _tjpEsc(kuliText) + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="tjp-meta-pill" style="border-left: 3px solid #dc2626;">' +
+                        '<i class="fas fa-weight-hanging" style="color: #dc2626;"></i>' +
+                        '<div class="tjp-pill-content">' +
+                            '<span class="tjp-pill-label">Netto / KG</span>' +
+                            '<span class="tjp-pill-value">' + (d.netto > 0 ? d.netto.toLocaleString('id-ID') + ' kg' : '-') + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="tjp-meta-pill" style="border-left: 3px solid #4f46e5;">' +
+                        '<i class="fas fa-warehouse" style="color: #4f46e5;"></i>' +
+                        '<div class="tjp-pill-content">' +
+                            '<span class="tjp-pill-label">SLOC</span>' +
+                            '<span class="tjp-pill-value">' + _tjpEsc(d.sloc) + '</span>' +
+                        '</div>' +
+                    '</div>';
+
+                // Calculate total duration in-out
+                var startMs = isNaN(d.msAbArr) ? d.msPbSampai : d.msAbArr;
+                if (isNaN(startMs)) startMs = d.msPbStart;
+                var totalDur = _tjpDiffLabel(startMs, d.msPbFinish);
+
+                if (totalDurWrapper) {
+                    totalDurWrapper.innerHTML = 
+                        '<div class="tjp-total-dur-card">' +
+                            '<span class="tjp-total-dur-label">Total Durasi In-Out</span>' +
+                            '<span class="tjp-total-dur-val">' + totalDur + '</span>' +
+                        '</div>';
+                }
+
+                canvas.innerHTML = _tjpRenderCanvas(d);
+                overlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            };
+
+            window.closeTruckJourneyPopup = function() {
+                var overlay = document.getElementById('tjpOverlay');
+                if (overlay) overlay.style.display = 'none';
+                document.body.style.overflow = '';
+            };
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    var overlay = document.getElementById('tjpOverlay');
+                    if (overlay && overlay.style.display !== 'none') {
+                        window.closeTruckJourneyPopup();
+                    }
+                }
+            });
+        })();
     </script>
+
+    <!-- ===== TRUCK JOURNEY MODAL HTML ===== -->
+    <div class="tjp-overlay" id="tjpOverlay" style="display:none;" onclick="closeTruckJourneyPopup()">
+        <div class="tjp-popup" onclick="event.stopPropagation()">
+            <button type="button" class="tjp-close" onclick="closeTruckJourneyPopup()" title="Tutup">&times;</button>
+            <div class="tjp-header-container">
+                <div class="tjp-header-left">
+                    <div class="tjp-header" id="tjpHeader">Perjalanan Truck: —</div>
+                </div>
+                <div class="tjp-header-right" id="tjpTotalDurWrapper"></div>
+            </div>
+            <div class="tjp-meta" id="tjpMeta"></div>
+            <div class="tjp-canvas-scroll">
+                <div class="tjp-canvas" id="tjpCanvas"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TRUCK JOURNEY MODAL CSS ===== -->
+    <style>
+    /* ===== TRUCK JOURNEY POPUP — SCOPED CSS ===== */
+    .tjp-overlay{position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;animation:tjpFadeIn .25s ease;}
+    @keyframes tjpFadeIn{from{opacity:0}to{opacity:1}}
+    .tjp-popup{background:#f8fafc;width:95vw;max-width:1200px;height:85vh;border-radius:24px;box-shadow:0 30px 70px -15px rgba(15,23,42,0.4);display:flex;flex-direction:column;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.7);animation:tjpScaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);}
+    @keyframes tjpScaleUp {
+        from {
+            opacity: 0;
+            transform: scale(0.9) translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+    .tjp-close{position:absolute;top:18px;right:18px;z-index:10;width:36px;height:36px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;}
+    .tjp-close:hover{background:#fef2f2;color:#ef4444;border-color:#fecaca;}
+    
+    .tjp-header-container{display:flex;justify-content:space-between;align-items:center;padding:20px 24px 8px;}
+    .tjp-header-left{display:flex;flex-direction:column;gap:4px;}
+    .tjp-header-right{margin-right:48px;flex-shrink:0;}
+    .tjp-header{padding:0 !important;font-family:'Orbitron','Rajdhani',sans-serif;font-size:1.35rem;font-weight:800;color:#0f172a;letter-spacing:.6px;}
+    
+    .tjp-meta{padding:10px 24px 18px !important;border-bottom:1px solid #cbd5e1;display:flex;gap:10px;flex-wrap:wrap;background:rgba(241,245,249,0.5);}
+    .tjp-meta-pill{background:#ffffff;border:1px solid rgba(226,232,240,0.8);border-radius:12px;padding:6px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 10px rgba(0,0,0,0.02);transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);flex:1;min-width:130px;}
+    .tjp-meta-pill:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(0,0,0,0.06);}
+    .tjp-meta-pill i{font-size:1.15rem;flex-shrink:0;}
+    .tjp-pill-content{display:flex;flex-direction:column;line-height:1.25;}
+    .tjp-pill-label{font-size:0.6rem;font-weight:700;text-transform:uppercase;color:#94a3b8;letter-spacing:0.5px;}
+    .tjp-pill-value{font-size:0.78rem;font-weight:700;color:#1e293b;}
+
+    .tjp-total-dur-card{background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:8px 16px;display:flex;flex-direction:column;align-items:flex-end;text-align:right;box-shadow:0 8px 20px -6px rgba(15,23,42,0.35);position:relative;overflow:hidden;min-width:160px;}
+    .tjp-total-dur-label{font-size:0.58rem;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;font-weight:700;}
+    .tjp-total-dur-val{font-family:'Rajdhani',sans-serif;font-size:1.55rem;font-weight:900;color:#fff;line-height:1.1;margin-top:2px;text-shadow:0 0 8px rgba(139,92,246,0.5);}
+
+    .tjp-canvas-scroll{flex:1;overflow:auto;padding:20px 24px 30px;}
+    .tjp-canvas{position:relative;width:1050px;height:820px;min-width:1050px;min-height:820px;}
+
+    /* Nodes */
+    .tjp-node{position:absolute;border-radius:14px;padding:12px 16px;min-width:160px;box-shadow:0 4px 14px -6px rgba(0,0,0,0.12);border:2px solid transparent;transition:transform .3s cubic-bezier(0.4, 0, 0.2, 1),box-shadow .3s cubic-bezier(0.4, 0, 0.2, 1),border-color 0.3s ease;z-index:2;}
+    .tjp-node:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 12px 24px -10px rgba(0,0,0,0.2) !important;}
+    .tjp-node-label{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+    .tjp-node-time{font-family:'Rajdhani',sans-serif;font-size:.92rem;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:5px;}
+    .tjp-node-time i{font-size:.72rem;opacity:.6;}
+    .tjp-node-empty .tjp-node-time{color:#cbd5e1;}
+
+    /* Node colors */
+    .tjp-node-pretimbang{background:linear-gradient(145deg,#eff6ff,#dbeafe);border-color:#93c5fd;}.tjp-node-pretimbang .tjp-node-label{color:#1d4ed8;}
+    .tjp-node-qc{background:linear-gradient(145deg,#fefce8,#fef9c3);border-color:#fde047;}.tjp-node-qc .tjp-node-label{color:#a16207;}
+    .tjp-node-scalein{background:linear-gradient(145deg,#f0fdf4,#dcfce7);border-color:#86efac;}.tjp-node-scalein .tjp-node-label{color:#15803d;}
+    .tjp-node-prebongkar{background:linear-gradient(145deg,#fff7ed,#ffedd5);border-color:#fdba74;}.tjp-node-prebongkar .tjp-node-label{color:#c2410c;}
+    .tjp-node-bongkar{background:linear-gradient(145deg,#fdf2f8,#fce7f3);border-color:#f9a8d4;}.tjp-node-bongkar .tjp-node-label{color:#be185d;}
+    .tjp-node-scaleout{background:linear-gradient(145deg,#ecfdf5,#d1fae5);border-color:#6ee7b7;}.tjp-node-scaleout .tjp-node-label{color:#047857;}
+    .tjp-node-inactive{background:linear-gradient(145deg,#f8fafc,#f1f5f9) !important;border-color:#e2e8f0 !important;opacity:.35;}
+    .tjp-node-inactive .tjp-node-label{color:#94a3b8 !important;}
+
+    /* Active node glow with breathing animation */
+    .tjp-node-pretimbang.tjp-node-active { box-shadow: 0 0 16px rgba(59, 130, 246, 0.3), inset 0 2px 4px rgba(255,255,255,0.6); border-color: #3b82f6; animation: tjpGlowBlue 2.5s ease-in-out infinite alternate; }
+    .tjp-node-qc.tjp-node-active { box-shadow: 0 0 16px rgba(234, 179, 8, 0.3), inset 0 2px 4px rgba(255,255,255,0.6); border-color: #eab308; animation: tjpGlowYellow 2.5s ease-in-out infinite alternate; }
+    .tjp-node-scalein.tjp-node-active { box-shadow: 0 0 16px rgba(34, 197, 94, 0.3), inset 0 2px 4px rgba(255,255,255,0.6); border-color: #22c55e; animation: tjpGlowGreen 2.5s ease-in-out infinite alternate; }
+    .tjp-node-prebongkar.tjp-node-active { box-shadow: 0 0 16px rgba(249, 115, 22, 0.3), inset 0 2px 4px rgba(255,255,255,0.6); border-color: #f97316; animation: tjpGlowOrange 2.5s ease-in-out infinite alternate; }
+    .tjp-node-bongkar.tjp-node-active { box-shadow: 0 0 16px rgba(236, 72, 153, 0.3), inset 0 2px 4px rgba(255,255,255,0.6); border-color: #ec4899; animation: tjpGlowPink 2.5s ease-in-out infinite alternate; }
+    .tjp-node-scaleout.tjp-node-active { box-shadow: 0 0 16px rgba(16, 185, 129, 0.3), inset 0 2px 4px rgba(255,255,255,0.6); border-color: #10b981; animation: tjpGlowTeal 2.5s ease-in-out infinite alternate; }
+
+    @keyframes tjpGlowBlue { from { box-shadow: 0 0 8px rgba(59, 130, 246, 0.2); } to { box-shadow: 0 0 18px rgba(59, 130, 246, 0.45); } }
+    @keyframes tjpGlowYellow { from { box-shadow: 0 0 8px rgba(234, 179, 8, 0.2); } to { box-shadow: 0 0 18px rgba(234, 179, 8, 0.45); } }
+    @keyframes tjpGlowGreen { from { box-shadow: 0 0 8px rgba(34, 197, 94, 0.2); } to { box-shadow: 0 0 18px rgba(34, 197, 94, 0.45); } }
+    @keyframes tjpGlowOrange { from { box-shadow: 0 0 8px rgba(249, 115, 22, 0.2); } to { box-shadow: 0 0 18px rgba(249, 115, 22, 0.45); } }
+    @keyframes tjpGlowPink { from { box-shadow: 0 0 8px rgba(236, 72, 153, 0.2); } to { box-shadow: 0 0 18px rgba(236, 72, 153, 0.45); } }
+    @keyframes tjpGlowTeal { from { box-shadow: 0 0 8px rgba(16, 185, 129, 0.2); } to { box-shadow: 0 0 18px rgba(16, 185, 129, 0.45); } }
+
+    /* Hold/restart mini-table */
+    .tjp-hold-table{margin-top:8px;font-size:.76rem;border-collapse:collapse;width:100%;}
+    .tjp-hold-table td{padding:3px 8px;border:1px solid rgba(0,0,0,.08);}
+    .tjp-hold-table td:first-child{font-weight:700;color:#64748b;text-transform:uppercase;font-size:.65rem;letter-spacing:.5px;}
+
+    /* Connectors (SVG overlay) */
+    .tjp-connectors{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+    .tjp-conn-line{stroke:#cbd5e1;stroke-width:2.5;fill:none;stroke-dasharray:6 4;opacity:.7;}
+    
+    /* Flow dash offset animation for active lines */
+    .tjp-conn-line-active{stroke:#7c3aed;stroke-width:3.2;stroke-dasharray:8 5;animation:tjpFlow 25s linear infinite;opacity:1;}
+    @keyframes tjpFlow {
+        from { stroke-dashoffset: 0; }
+        to { stroke-dashoffset: -400; }
+    }
+
+    .tjp-conn-dur{font-family:'Rajdhani',sans-serif;font-size:0.82rem;font-weight:800;color:#1e293b;display:flex;align-items:center;justify-content:center;gap:4px;}
+    .tjp-conn-label{position:absolute;z-index:3;background:rgba(255, 255, 255, 0.85);backdrop-filter:blur(8px);border:1px solid rgba(203, 213, 225, 0.8);border-radius:10px;padding:6px 12px;box-shadow:0 6px 15px -4px rgba(0,0,0,0.1);white-space:nowrap;text-align:center;line-height:1.3;transition:all 0.3s ease;cursor:pointer;}
+    .tjp-conn-label:hover{transform:scale(1.05);box-shadow:0 10px 22px -6px rgba(0,0,0,0.15);z-index:99;background:#ffffff;border-color:#7c3aed;}
+    
+    .tjp-bd-indicator{font-size:0.65rem;color:#7c3aed;margin-left:4px;display:inline-flex;align-items:center;vertical-align:middle;animation:tjpPulseInd 2s infinite alternate;}
+    @keyframes tjpPulseInd { from { opacity: 0.6; } to { opacity: 1; } }
+
+    .tjp-connector-bd-list{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:8px;background:rgba(15,23,42,0.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:10px 14px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.3);z-index:999;flex-direction:column;gap:6px;min-width:200px;pointer-events:none;}
+    .tjp-conn-label:hover .tjp-connector-bd-list{display:flex;animation:tjpTooltipFade 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;}
+    @keyframes tjpTooltipFade {
+        from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .tjp-connector-bd-item{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:0.68rem;color:#e2e8f0;}
+    .tjp-bd-dot{width:4px;height:4px;border-radius:50%;background:#a78bfa;flex-shrink:0;}
+    .tjp-bd-text{flex:1;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:#cbd5e1;text-align:left;}
+    .tjp-bd-time{font-weight:700;color:#c084fc;font-family:'Rajdhani',sans-serif;font-size:0.75rem;}
+    </style>
+
     <svg width="0" height="0" style="position: absolute;">
         <filter id="fire-distort">
             <feTurbulence type="fractalNoise" baseFrequency="0.03 0.15" numOctaves="1" seed="1">

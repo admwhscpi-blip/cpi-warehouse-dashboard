@@ -1146,5 +1146,468 @@
 <script src="bkk-kartustock.js?v=20260507fix3"></script>
 <script src="bkk-intake71-dashboard.js?v=20260508i71fix3"></script>
 
+<!-- ===== TRUCK JOURNEY POPUP (MODAL) ===== -->
+<div class="tjp-overlay" id="tjpOverlay" style="display:none;" onclick="closeTruckJourneyPopup()">
+  <div class="tjp-popup" onclick="event.stopPropagation()">
+    <button type="button" class="tjp-close" onclick="closeTruckJourneyPopup()" title="Tutup">&times;</button>
+    <div class="tjp-header" id="tjpHeader">Perjalanan Truck: —</div>
+    <div class="tjp-meta" id="tjpMeta"></div>
+    <div class="tjp-canvas-scroll">
+      <div class="tjp-canvas" id="tjpCanvas"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ===== TRUCK JOURNEY POPUP — SCOPED CSS ===== */
+.tjp-overlay{position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;animation:tjpFadeIn .25s ease;}
+@keyframes tjpFadeIn{from{opacity:0}to{opacity:1}}
+.tjp-popup{background:#f8fafc;width:90vw;max-width:1200px;height:85vh;border-radius:20px;box-shadow:0 25px 60px -12px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden;position:relative;animation:tjpSlideUp .3s ease;}
+@keyframes tjpSlideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.tjp-close{position:absolute;top:14px;right:18px;z-index:10;width:36px;height:36px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#64748b;font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;}
+.tjp-close:hover{background:#fef2f2;color:#ef4444;border-color:#fecaca;}
+.tjp-header{padding:18px 24px 0;font-family:'Orbitron','Rajdhani',sans-serif;font-size:1.15rem;font-weight:800;color:#0f172a;letter-spacing:.6px;}
+.tjp-meta{padding:6px 24px 14px;font-size:.78rem;color:#64748b;border-bottom:1px solid #e2e8f0;display:flex;gap:18px;flex-wrap:wrap;}
+.tjp-meta span{display:inline-flex;align-items:center;gap:5px;}
+.tjp-canvas-scroll{flex:1;overflow:auto;padding:20px 24px 30px;}
+.tjp-canvas{position:relative;width:1050px;height:820px;min-width:1050px;min-height:820px;}
+
+/* Nodes */
+.tjp-node{position:absolute;border-radius:14px;padding:12px 16px;min-width:160px;box-shadow:0 4px 14px -6px rgba(0,0,0,.15);border:2px solid transparent;transition:transform .2s,box-shadow .2s;z-index:2;}
+.tjp-node:hover{transform:translateY(-2px);box-shadow:0 8px 22px -8px rgba(0,0,0,.2);}
+.tjp-node-label{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.tjp-node-time{font-family:'Rajdhani',sans-serif;font-size:.92rem;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:5px;}
+.tjp-node-time i{font-size:.72rem;opacity:.6;}
+.tjp-node-empty .tjp-node-time{color:#cbd5e1;}
+
+/* Node colors */
+.tjp-node-pretimbang{background:linear-gradient(145deg,#eff6ff,#dbeafe);border-color:#93c5fd;}.tjp-node-pretimbang .tjp-node-label{color:#1d4ed8;}
+.tjp-node-qc{background:linear-gradient(145deg,#fefce8,#fef9c3);border-color:#fde047;}.tjp-node-qc .tjp-node-label{color:#a16207;}
+.tjp-node-scalein{background:linear-gradient(145deg,#f0fdf4,#dcfce7);border-color:#86efac;}.tjp-node-scalein .tjp-node-label{color:#15803d;}
+.tjp-node-prebongkar{background:linear-gradient(145deg,#fff7ed,#ffedd5);border-color:#fdba74;}.tjp-node-prebongkar .tjp-node-label{color:#c2410c;}
+.tjp-node-bongkar{background:linear-gradient(145deg,#fdf2f8,#fce7f3);border-color:#f9a8d4;}.tjp-node-bongkar .tjp-node-label{color:#be185d;}
+.tjp-node-scaleout{background:linear-gradient(145deg,#ecfdf5,#d1fae5);border-color:#6ee7b7;}.tjp-node-scaleout .tjp-node-label{color:#047857;}
+.tjp-node-inactive{background:linear-gradient(145deg,#f8fafc,#f1f5f9) !important;border-color:#e2e8f0 !important;opacity:.55;}
+.tjp-node-inactive .tjp-node-label{color:#94a3b8 !important;}
+
+/* Active node glow */
+.tjp-node-active{border-width:2.5px;box-shadow:0 4px 18px -6px rgba(59,130,246,.35);}
+
+/* Hold/restart mini-table */
+.tjp-hold-table{margin-top:8px;font-size:.76rem;border-collapse:collapse;width:100%;}
+.tjp-hold-table td{padding:3px 8px;border:1px solid rgba(0,0,0,.08);}
+.tjp-hold-table td:first-child{font-weight:700;color:#64748b;text-transform:uppercase;font-size:.65rem;letter-spacing:.5px;}
+
+/* BK slots mini */
+.tjp-bk-slots{display:flex;flex-direction:column;gap:3px;margin-top:6px;}
+.tjp-bk-slot{padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:700;border:1px solid #e2e8f0;background:#fff;color:#94a3b8;text-align:center;transition:.2s;}
+.tjp-bk-slot.tjp-bk-active{background:linear-gradient(135deg,#fce7f3,#fdf2f8);border-color:#f9a8d4;color:#be185d;box-shadow:0 2px 8px -3px rgba(190,24,93,.25);}
+
+/* Connectors (SVG overlay) */
+.tjp-connectors{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}
+.tjp-conn-line{stroke:#94a3b8;stroke-width:2.5;fill:none;stroke-dasharray:6 4;opacity:.7;}
+.tjp-conn-line-active{stroke:#3b82f6;stroke-width:2.5;stroke-dasharray:none;opacity:1;}
+.tjp-conn-label{position:absolute;z-index:3;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:4px 10px;font-size:.7rem;font-weight:700;color:#475569;box-shadow:0 2px 8px -4px rgba(0,0,0,.12);white-space:nowrap;text-align:center;line-height:1.3;}
+.tjp-conn-label small{display:block;font-weight:500;color:#94a3b8;font-size:.62rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;}
+
+/* Intake sub-type badges */
+.tjp-intake-badge{display:inline-block;padding:2px 10px;border-radius:6px;font-size:.68rem;font-weight:700;margin-top:4px;}
+.tjp-intake-manual{background:#dbeafe;color:#1d4ed8;}
+.tjp-intake-tilting{background:#fef9c3;color:#a16207;}
+</style>
+
+<script>
+/* ===== TRUCK JOURNEY POPUP — SELF-CONTAINED SCRIPT ===== */
+(function() {
+  'use strict';
+
+  /* ---------- helpers ---------- */
+  function _tjpEsc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+  function _tjpNormHM(v) {
+    if (v == null || v === '') return '';
+    if (typeof v === 'object' && v instanceof Date && !isNaN(v.getTime())) return String(v.getHours()).padStart(2,'0')+':'+String(v.getMinutes()).padStart(2,'0');
+    var s = String(v).trim();
+    if (s.indexOf('T') !== -1) { try { var d = new Date(s); if (!isNaN(d.getTime())) return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); } catch(e){} }
+    if (/^\d{1,2}:\d{2}/.test(s)) return s.substring(0,5);
+    return s.length >= 5 ? s.substring(0,5) : s;
+  }
+  function _tjpYmd(v) {
+    if (v == null || v === '') return '';
+    if (typeof v === 'object' && v instanceof Date && !isNaN(v.getTime())) {
+      try { return v.toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'}); } catch(e) { return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0'); }
+    }
+    var s = String(v).trim();
+    if (s.indexOf('T') !== -1) { try { var d = new Date(s); if (!isNaN(d.getTime())) { try { return d.toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'}); } catch(e) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); } } } catch(e){} }
+    return s.length >= 10 ? s.substring(0,10) : s;
+  }
+  function _tjpCol(row, name) {
+    if (!row) return '';
+    var v = row[name]; if (v != null && v !== '') return v;
+    var lo = name.toLowerCase(); if (row[lo] != null && row[lo] !== '') return row[lo];
+    return '';
+  }
+  function _tjpConcatMs(ymd, hm) {
+    if (!ymd || !hm) return NaN;
+    var p = String(hm).split(':');
+    var h = parseInt(p[0],10), m = parseInt(p[1]||'0',10);
+    if (isNaN(h)||isNaN(m)) return NaN;
+    return new Date(ymd+'T'+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':00+07:00').getTime();
+  }
+  function _tjpDiffLabel(ms1, ms2) {
+    if (isNaN(ms1)||isNaN(ms2)) return '-';
+    var diff = Math.round(Math.abs(ms2-ms1)/60000);
+    if (diff < 60) return diff + ' mnt';
+    var h = Math.floor(diff/60), mm = diff%60;
+    return h + 'j ' + String(mm).padStart(2,'0') + 'm';
+  }
+  function _tjpParseDj(r) {
+    if (!r) return {};
+    var raw = r.DURASI_JSON || r.durasi_json || r['DURASI JSON'] || '';
+    if (!raw) return {};
+    try {
+      var obj = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (typeof obj === 'string') obj = JSON.parse(obj);
+      return (obj && typeof obj === 'object') ? obj : {};
+    } catch(e) { return {}; }
+  }
+  function _tjpRowType(r) {
+    var t = String(_tjpCol(r,'TYPE_BONGKARAN')||'').trim().toLowerCase();
+    if (!t) { var dj = _tjpParseDj(r); if (dj && dj.type_bongkaran) t = String(dj.type_bongkaran).trim().toLowerCase(); }
+    var norm = t.replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+    if (norm==='intake_71_manual'||norm==='intake71_manual') return 'intake71_manual';
+    if (norm==='intake_71_tilting'||norm==='intake71_tilting'||norm==='tilting') return 'intake71_tilting';
+    if (norm==='direct_gudang'||norm==='direct') return 'direct_gudang';
+    return t || 'direct_gudang';
+  }
+
+  /* ---------- extract all fields from row ---------- */
+  function _tjpExtract(row) {
+    var dj = _tjpParseDj(row);
+    var tanggal = _tjpYmd(_tjpCol(row,'TANGGAL'));
+    var abTgl = (dj.ab_tanggal || _tjpYmd(_tjpCol(row,'AB_TANGGAL')) || '');
+    var abArr = (dj.ab_arrival || _tjpNormHM(_tjpCol(row,'AB_ARRIVAL')) || '');
+    var abQc = (dj.ab_qc || _tjpNormHM(_tjpCol(row,'AB_QC')) || '');
+    var pbTgl = (dj.pb_tanggal || _tjpYmd(_tjpCol(row,'PB_TANGGAL')) || tanggal);
+    var pbSampai = (dj.pb_sampai || _tjpNormHM(_tjpCol(row,'PB_SAMPAI')) || '');
+    var pbStart = (dj.pb_start || _tjpNormHM(_tjpCol(row,'PB_START')) || '');
+    var pbHold = (dj.pb_hold || _tjpNormHM(_tjpCol(row,'PB_HOLD')) || '');
+    var pbRestart = (dj.pb_restart || _tjpNormHM(_tjpCol(row,'PB_RESTART')) || '');
+    var pbFinish = (dj.pb_finish || _tjpNormHM(_tjpCol(row,'PB_FINISH')) || '');
+    var nopol = String(row.NO_POLISI || row.no_polisi || '-');
+    var bkId = String(row.BK_ID || row.bk_id || '-');
+    var material = String(row.MATERIAL || row.material || '-');
+    var netto = Number(row.NETTO_KG || 0);
+    var typeB = _tjpRowType(row);
+    var breakdowns = (dj.breakdowns && typeof dj.breakdowns === 'object') ? dj.breakdowns : {};
+
+    // compute ms timestamps
+    var abBaseTgl = abTgl || pbTgl || tanggal;
+    var msAbArr = _tjpConcatMs(abBaseTgl, abArr);
+    var msAbQc = _tjpConcatMs(abBaseTgl, abQc);
+    var msPbSampai = _tjpConcatMs(pbTgl, pbSampai);
+    var msPbStart = _tjpConcatMs(pbTgl, pbStart);
+    var msPbHold = _tjpConcatMs(pbTgl, pbHold);
+    var msPbRestart = _tjpConcatMs(pbTgl, pbRestart);
+    var msPbFinish = _tjpConcatMs(pbTgl, pbFinish);
+
+    return {
+      nopol: nopol, bkId: bkId, material: material, netto: netto, tanggal: tanggal,
+      typeB: typeB,
+      abTgl: abBaseTgl, abArr: abArr, abQc: abQc,
+      pbTgl: pbTgl, pbSampai: pbSampai, pbStart: pbStart, pbHold: pbHold, pbRestart: pbRestart, pbFinish: pbFinish,
+      msAbArr: msAbArr, msAbQc: msAbQc, msPbSampai: msPbSampai, msPbStart: msPbStart,
+      msPbHold: msPbHold, msPbRestart: msPbRestart, msPbFinish: msPbFinish,
+      breakdowns: breakdowns
+    };
+  }
+
+  /* ---------- breakdown text for a segment ---------- */
+  function _tjpBdText(bds, key) {
+    if (!bds || !bds[key] || !Array.isArray(bds[key]) || !bds[key].length) return '';
+    return bds[key].map(function(it) {
+      var cat = String(it.cat||it.CAT||'').trim();
+      var oth = it.other ? String(it.other).trim() : '';
+      var mn = parseInt(it.min != null ? it.min : it.MIN, 10);
+      var label = (cat.toUpperCase()==='OTHER'&&oth) ? oth : (cat||oth||'Lainnya');
+      return label + (isNaN(mn)?'':(' '+mn+'m'));
+    }).join(', ');
+  }
+
+  /* ---------- build node HTML ---------- */
+  function _tjpNodeHtml(id, label, dateStr, timeStr, extraCls, extraHtml) {
+    var hasData = (timeStr && timeStr !== '-' && timeStr !== '');
+    var cls = 'tjp-node ' + extraCls + (hasData ? ' tjp-node-active' : ' tjp-node-inactive tjp-node-empty');
+    var display = hasData ? ('📅 ' + _tjpEsc(dateStr||'') + '  ' + _tjpEsc(timeStr)) : '—';
+    return '<div class="'+cls+'" id="tjp-n-'+id+'">' +
+      '<div class="tjp-node-label"><i class="fas fa-map-marker-alt"></i> '+_tjpEsc(label)+'</div>' +
+      '<div class="tjp-node-time"><i class="far fa-clock"></i> '+display+'</div>' +
+      (extraHtml||'') +
+    '</div>';
+  }
+
+  /* ---------- render factory map ---------- */
+  function _tjpRenderCanvas(d) {
+    var isDirect = (d.typeB === 'direct_gudang');
+    var isManual = (d.typeB === 'intake71_manual');
+    var isTilting = (d.typeB === 'intake71_tilting');
+    var isIntake = isManual || isTilting;
+
+    // BK slots
+    var bkSlots = '';
+    for (var b = 1; b <= 6; b++) {
+      var active = (isDirect && d.bkId.toUpperCase().indexOf('BK-'+b) >= 0) || (isDirect && d.bkId.toUpperCase().indexOf('BK'+b) >= 0) || (isDirect && d.bkId === String(b));
+      bkSlots += '<div class="tjp-bk-slot'+(active?' tjp-bk-active':'')+'">BK'+b+'</div>';
+    }
+
+    // Hold/restart mini-table
+    var holdHtml = '';
+    if (d.pbHold || d.pbRestart) {
+      holdHtml = '<table class="tjp-hold-table"><tr><td>Hold</td><td>'+(d.pbHold||'—')+'</td></tr><tr><td>Restart</td><td>'+(d.pbRestart||'—')+'</td></tr></table>';
+    }
+
+    // Bongkar location label
+    var bongkarLabel = isDirect ? ('Gudang ' + _tjpEsc(d.bkId)) : (isManual ? '71-MANUAL' : '71-TILTING');
+
+    // -- Nodes with positions --
+    var html = '';
+
+    // 1. Parkir Pre-Timbang (top-center)
+    html += '<div style="position:absolute;left:340px;top:20px;">';
+    html += _tjpNodeHtml('pretimbang', 'Parkir Pre-Timbang', d.abTgl, d.abArr, 'tjp-node-pretimbang', '');
+    html += '</div>';
+
+    // 2. Shelter QC (top-right)
+    html += '<div style="position:absolute;left:750px;top:20px;">';
+    html += _tjpNodeHtml('qc', 'Shelter QC', d.abTgl, d.abQc, 'tjp-node-qc', '');
+    html += '</div>';
+
+    // 3. Truck Scale In (mid-right, only for Intake path)
+    var scaleInCls = isIntake ? 'tjp-node-scalein' : 'tjp-node-scalein tjp-node-inactive';
+    html += '<div style="position:absolute;left:750px;top:170px;">';
+    html += _tjpNodeHtml('scalein', 'Truck Scale In', '', isIntake?'→':'', scaleInCls, isIntake ? '<div style="font-size:.65rem;color:#64748b;margin-top:4px;">Jalur Intake 71</div>' : '');
+    html += '</div>';
+
+    // 4a. Parkir Pre-Bongkar Direct (mid-center, for Direct path)
+    var preBDirectCls = isDirect ? 'tjp-node-prebongkar' : 'tjp-node-prebongkar tjp-node-inactive';
+    html += '<div style="position:absolute;left:450px;top:170px;">';
+    html += '<div class="tjp-node '+preBDirectCls+'" id="tjp-n-prebongkar-direct" style="min-width:200px;">' +
+      '<div class="tjp-node-label"><i class="fas fa-map-marker-alt"></i> Parkir Pre-Bongkar Direct</div>' +
+      (isDirect ? '<div class="tjp-node-time"><i class="far fa-clock"></i> 📅 '+_tjpEsc(d.pbTgl||'')+' '+_tjpEsc(d.pbSampai||'—')+'</div>' : '<div class="tjp-node-time tjp-node-empty">—</div>') +
+      '<div class="tjp-bk-slots">'+bkSlots+'</div>' +
+    '</div>';
+    html += '</div>';
+
+    // 4b. Parkir Pre-Bongkar via Intake-71 (lower-left, for Intake path)
+    var preBIntakeCls = isIntake ? 'tjp-node-prebongkar' : 'tjp-node-prebongkar tjp-node-inactive';
+    html += '<div style="position:absolute;left:20px;top:440px;">';
+    html += '<div class="tjp-node '+preBIntakeCls+'" id="tjp-n-prebongkar-intake" style="min-width:180px;">' +
+      '<div class="tjp-node-label"><i class="fas fa-map-marker-alt"></i> Parkir Pre-Bongkar via Intake-71</div>' +
+      (isIntake ? '<div class="tjp-node-time"><i class="far fa-clock"></i> 📅 '+_tjpEsc(d.pbTgl||'')+' '+_tjpEsc(d.pbSampai||'—')+'</div>' : '<div class="tjp-node-time tjp-node-empty">—</div>') +
+    '</div>';
+    html += '</div>';
+
+    // 5a. Gudang BK (bongkar Direct) — center
+    html += '<div style="position:absolute;left:450px;top:440px;">';
+    html += '<div class="tjp-node '+(isDirect?'tjp-node-bongkar tjp-node-active':'tjp-node-bongkar tjp-node-inactive')+'" id="tjp-n-bongkar-direct" style="min-width:200px;">' +
+      '<div class="tjp-node-label"><i class="fas fa-warehouse"></i> '+(isDirect?_tjpEsc(bongkarLabel):'Gudang BK')+'</div>' +
+      (isDirect ? '<div class="tjp-node-time"><i class="far fa-clock"></i> Start: '+_tjpEsc(d.pbStart||'—')+'</div>'+holdHtml : '<div class="tjp-node-time tjp-node-empty">—</div>') +
+    '</div>';
+    html += '</div>';
+
+    // 5b. 71-MANUAL (lower-center)
+    html += '<div style="position:absolute;left:340px;top:590px;">';
+    html += '<div class="tjp-node '+(isManual?'tjp-node-bongkar tjp-node-active':'tjp-node-bongkar tjp-node-inactive')+'" id="tjp-n-71manual" style="min-width:180px;">' +
+      '<div class="tjp-node-label"><i class="fas fa-industry"></i> 71-MANUAL</div>' +
+      (isManual ? '<div class="tjp-node-time"><i class="far fa-clock"></i> Start: '+_tjpEsc(d.pbStart||'—')+'</div>'+holdHtml : '<div class="tjp-node-time tjp-node-empty">—</div>') +
+    '</div>';
+    html += '</div>';
+
+    // 5c. 71-TILTING (lower-center, below manual)
+    html += '<div style="position:absolute;left:580px;top:590px;">';
+    html += '<div class="tjp-node '+(isTilting?'tjp-node-bongkar tjp-node-active':'tjp-node-bongkar tjp-node-inactive')+'" id="tjp-n-71tilting" style="min-width:180px;">' +
+      '<div class="tjp-node-label"><i class="fas fa-industry"></i> 71-TILTING</div>' +
+      (isTilting ? '<div class="tjp-node-time"><i class="far fa-clock"></i> Start: '+_tjpEsc(d.pbStart||'—')+'</div>'+holdHtml : '<div class="tjp-node-time tjp-node-empty">—</div>') +
+    '</div>';
+    html += '</div>';
+
+    // 6. Truck Scale Out (bottom-center)
+    html += '<div style="position:absolute;left:340px;top:730px;">';
+    html += _tjpNodeHtml('scaleout', 'Truck Scale Out (Finish)', d.pbTgl, d.pbFinish, 'tjp-node-scaleout', '');
+    html += '</div>';
+
+    // -- SVG connectors --
+    html += '<svg class="tjp-connectors" viewBox="0 0 1050 820" preserveAspectRatio="none">';
+
+    // Connector: Pre-Timbang → Shelter QC
+    var c1Active = (d.abArr && d.abQc);
+    html += '<path d="M 530 55 L 750 55" class="tjp-conn-line'+(c1Active?' tjp-conn-line-active':'')+'"/>';
+
+    if (isDirect) {
+      // Direct path: QC → Pre-Bongkar Direct
+      var c2Active = (d.abQc && d.pbSampai);
+      html += '<path d="M 820 95 L 820 140 L 560 140 L 560 170" class="tjp-conn-line'+(c2Active?' tjp-conn-line-active':'')+'"/>';
+      // Pre-Bongkar Direct → Gudang BK
+      var c3Active = (d.pbSampai && d.pbStart);
+      html += '<path d="M 560 410 L 560 440" class="tjp-conn-line'+(c3Active?' tjp-conn-line-active':'')+'"/>';
+      // Gudang BK → Scale Out
+      var c4Active = (d.pbStart && d.pbFinish);
+      html += '<path d="M 480 530 L 430 530 L 430 760 L 340 760" class="tjp-conn-line'+(c4Active?' tjp-conn-line-active':'')+'"/>';
+    } else {
+      // Intake path: QC → Scale In
+      var c2Active = (d.abQc || true);
+      html += '<path d="M 820 95 L 820 170" class="tjp-conn-line'+(c2Active?' tjp-conn-line-active':'')+'"/>';
+      // Scale In → Pre-Bongkar Intake
+      var c3Active = (d.pbSampai || false);
+      html += '<path d="M 750 210 L 200 210 L 120 210 L 120 440" class="tjp-conn-line'+(c3Active?' tjp-conn-line-active':'')+'"/>';
+      // Pre-Bongkar Intake → 71 node
+      var targetY = isManual ? 620 : 620;
+      var targetX = isManual ? 340 : 580;
+      var c4Active = (d.pbSampai && d.pbStart);
+      html += '<path d="M 200 530 L 200 '+targetY+' L '+targetX+' '+targetY+'" class="tjp-conn-line'+(c4Active?' tjp-conn-line-active':'')+'"/>';
+      // 71 node → Scale Out
+      var fromX = isManual ? 440 : 680;
+      var c5Active = (d.pbStart && d.pbFinish);
+      html += '<path d="M '+fromX+' 680 L '+fromX+' 760 L 530 760" class="tjp-conn-line'+(c5Active?' tjp-conn-line-active':'')+'"/>';
+    }
+    html += '</svg>';
+
+    // -- Duration labels on connectors --
+    // 1. Pre-Timbang → QC
+    html += '<div class="tjp-conn-label" style="left:600px;top:30px;">'+_tjpDiffLabel(d.msAbArr, d.msAbQc);
+    var bd1 = _tjpBdText(d.breakdowns, 'ab_arr_qc');
+    if (bd1) html += '<small>'+_tjpEsc(bd1)+'</small>';
+    html += '</div>';
+
+    if (isDirect) {
+      // QC → Pre-Bongkar
+      html += '<div class="tjp-conn-label" style="left:630px;top:120px;">'+_tjpDiffLabel(d.msAbQc, d.msPbSampai);
+      var bd2 = _tjpBdText(d.breakdowns, 'ab_qc_pbsampai');
+      if (bd2) html += '<small>'+_tjpEsc(bd2)+'</small>';
+      html += '</div>';
+      // Pre-Bongkar → BK Start
+      html += '<div class="tjp-conn-label" style="left:590px;top:415px;">'+_tjpDiffLabel(d.msPbSampai, d.msPbStart);
+      var bd3 = _tjpBdText(d.breakdowns, 'seg_0_1');
+      if (bd3) html += '<small>'+_tjpEsc(bd3)+'</small>';
+      html += '</div>';
+      // BK Start → Finish
+      html += '<div class="tjp-conn-label" style="left:350px;top:530px;">'+_tjpDiffLabel(d.msPbStart, d.msPbFinish);
+      var bd4 = _tjpBdText(d.breakdowns, 'seg_1_4');
+      if (!bd4) bd4 = _tjpBdText(d.breakdowns, 'seg_1_2');
+      if (bd4) html += '<small>'+_tjpEsc(bd4)+'</small>';
+      html += '</div>';
+    } else {
+      // QC → Scale In
+      html += '<div class="tjp-conn-label" style="left:840px;top:120px;">'+_tjpDiffLabel(d.msAbQc, d.msPbSampai);
+      var bd2i = _tjpBdText(d.breakdowns, 'ab_qc_pbsampai');
+      if (bd2i) html += '<small>'+_tjpEsc(bd2i)+'</small>';
+      html += '</div>';
+      // Scale In → Pre-Bongkar Intake
+      html += '<div class="tjp-conn-label" style="left:200px;top:300px;">'+_tjpDiffLabel(d.msPbSampai, d.msPbStart);
+      var bd3i = _tjpBdText(d.breakdowns, 'seg_0_1');
+      if (bd3i) html += '<small>'+_tjpEsc(bd3i)+'</small>';
+      html += '</div>';
+      // PB Start → Finish
+      var lblX = isManual ? 250 : 500;
+      html += '<div class="tjp-conn-label" style="left:'+lblX+'px;top:690px;">'+_tjpDiffLabel(d.msPbStart, d.msPbFinish);
+      var bd4i = _tjpBdText(d.breakdowns, 'seg_1_4');
+      if (!bd4i) bd4i = _tjpBdText(d.breakdowns, 'seg_1_2');
+      if (bd4i) html += '<small>'+_tjpEsc(bd4i)+'</small>';
+      html += '</div>';
+    }
+
+    // Total duration overlay
+    var startMs = NaN;
+    var matLower = String(d.material || '').toLowerCase();
+    var isSbmMat = matLower.indexOf('sbm') !== -1 || matLower.indexOf('kedelai') !== -1 || matLower.indexOf('soybean') !== -1;
+
+    if (isSbmMat) {
+      startMs = d.msPbStart;
+    } else {
+      startMs = isNaN(d.msAbArr) ? d.msPbSampai : d.msAbArr;
+      if (isNaN(startMs)) {
+        startMs = d.msPbStart;
+      }
+    }
+    var totalDur = _tjpDiffLabel(startMs, d.msPbFinish);
+    html += '<div style="position:absolute;right:20px;bottom:20px;background:linear-gradient(135deg,#1e293b,#334155);color:#fff;border-radius:14px;padding:14px 20px;z-index:4;box-shadow:0 6px 20px -8px rgba(0,0,0,.4);text-align:center;">' +
+      '<div style="font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;font-weight:700;">Total Durasi In–Out</div>' +
+      '<div style="font-family:\'Rajdhani\',sans-serif;font-size:1.6rem;font-weight:900;margin-top:4px;">'+totalDur+'</div>' +
+    '</div>';
+
+    // Type badge
+    var typeName = isDirect ? 'Direct Gudang' : (isManual ? 'Intake 71 Manual' : 'Intake 71 Tilting');
+    var typeColor = isDirect ? '#c2410c' : '#1d4ed8';
+    html += '<div style="position:absolute;left:20px;top:20px;z-index:4;display:flex;flex-direction:column;gap:6px;">' +
+      '<div style="background:'+typeColor+';color:#fff;padding:6px 14px;border-radius:8px;font-size:.72rem;font-weight:800;letter-spacing:.5px;box-shadow:0 4px 12px -4px rgba(0,0,0,.3);"><i class="fas fa-route" style="margin-right:5px;"></i> '+typeName+'</div>' +
+      '<div style="background:#fff;border:1px solid #e2e8f0;padding:4px 12px;border-radius:8px;font-size:.7rem;font-weight:700;color:#475569;box-shadow:0 2px 8px -4px rgba(0,0,0,.1);"><i class="fas fa-warehouse" style="margin-right:4px;color:#f59e0b;"></i> '+_tjpEsc(d.bkId)+'</div>' +
+    '</div>';
+
+    return html;
+  }
+
+  /* ---------- public: open popup ---------- */
+  window.showTruckJourneyPopup = function(rowIdxOrRow) {
+    var row;
+    if (typeof rowIdxOrRow === 'number') {
+      var tableRows = window._bkkDbTableRows;
+      if (!tableRows || !tableRows[rowIdxOrRow]) return;
+      var entry = tableRows[rowIdxOrRow];
+      row = entry.sourceRow;
+    } else if (rowIdxOrRow && typeof rowIdxOrRow === 'object') {
+      row = rowIdxOrRow;
+    } else if (typeof rowIdxOrRow === 'string') {
+      var cleanNp = rowIdxOrRow.trim().toUpperCase();
+      var tableRows = window._bkkDbTableRows;
+      if (tableRows) {
+        var found = tableRows.find(function(entry) {
+          return String(entry.nopol || '').trim().toUpperCase() === cleanNp;
+        });
+        if (found) row = found.sourceRow;
+      }
+      if (!row && typeof window.i71GetRawRowByNopol === 'function') {
+        row = window.i71GetRawRowByNopol(cleanNp);
+      }
+    }
+    if (!row) return;
+
+    var d = _tjpExtract(row);
+
+    var overlay = document.getElementById('tjpOverlay');
+    var header = document.getElementById('tjpHeader');
+    var meta = document.getElementById('tjpMeta');
+    var canvas = document.getElementById('tjpCanvas');
+    if (!overlay || !header || !canvas) return;
+
+    header.textContent = 'Perjalanan Truck: ' + d.nopol;
+    meta.innerHTML =
+      '<span><i class="fas fa-calendar-alt"></i> ' + _tjpEsc(d.tanggal) + '</span>' +
+      '<span><i class="fas fa-box"></i> ' + _tjpEsc(d.material) + '</span>' +
+      '<span><i class="fas fa-weight-hanging"></i> ' + (d.netto > 0 ? d.netto.toLocaleString('id-ID') + ' kg' : '-') + '</span>' +
+      '<span><i class="fas fa-warehouse"></i> ' + _tjpEsc(d.bkId) + '</span>';
+
+    canvas.innerHTML = _tjpRenderCanvas(d);
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  };
+
+  /* ---------- public: close popup ---------- */
+  window.closeTruckJourneyPopup = function() {
+    var overlay = document.getElementById('tjpOverlay');
+    if (overlay) overlay.style.display = 'none';
+    document.body.style.overflow = '';
+  };
+
+  /* ESC key to close */
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      var overlay = document.getElementById('tjpOverlay');
+      if (overlay && overlay.style.display !== 'none') {
+        window.closeTruckJourneyPopup();
+      }
+    }
+  });
+})();
+</script>
+
 </body>
 </html>

@@ -697,21 +697,56 @@
     return t === 'intake71_manual' || t === 'intake71_tilting';
   }
 
-  function bkkDbComputeRowTotalMinutes(row, allRows) {
+  function bkkDbComputeTrueTotalMinutes(row) {
+    if (!row) return null;
     var dj = bkkDbParseDj(row);
-    var isS = bkkDbIsSbmRow(row, dj);
-    var computed = bkkDbComputeDurationsFromRow(row, dj, allRows || []);
-    var keys = isS ? _bkkDbKeysSbm : _bkkDbKeysNs;
-    var total = 0;
-    var hasAny = false;
-    keys.forEach(function(k) {
-      var v = bkkDbResolveMinutes(dj, k, computed);
-      if (v !== null && !isNaN(v) && v >= 0) {
-        total += v;
-        hasAny = true;
+    var isSbm = bkkDbIsSbmRow(row, dj);
+    var pbYmd = bkkDbYmdFromCell(bkkDbCol(row, 'PB_TANGGAL'));
+    if (!pbYmd) pbYmd = bkkDbYmdFromCell(bkkDbCol(row, 'TANGGAL'));
+    if (!pbYmd) return null;
+
+    if (isSbm) {
+      var psSbm = bkkDbNormalizeHM(bkkDbCol(row, 'PB_START'));
+      var pfSbm = bkkDbNormalizeHM(bkkDbCol(row, 'PB_FINISH'));
+      if (psSbm && pfSbm) {
+        var msSS = bkkDbConcatMs(pbYmd, psSbm);
+        var msFS = bkkDbConcatMs(pbYmd, pfSbm);
+        if (!isNaN(msSS) && !isNaN(msFS) && msFS >= msSS) {
+          return Math.round((msFS - msSS) / 60000);
+        }
       }
-    });
-    return hasAny ? total : null;
+    } else {
+      var pf = bkkDbNormalizeHM(bkkDbCol(row, 'PB_FINISH'));
+      if (!pf) return null;
+      var msF = bkkDbConcatMs(pbYmd, pf);
+      if (isNaN(msF)) return null;
+
+      // Ambil start: AB Arrival jika ada, jika tidak ada fallback ke PB Sampai
+      var abTgl = dj ? dj.ab_tanggal : '';
+      var abArr = dj ? dj.ab_arrival : '';
+      if (!abTgl) abTgl = bkkDbYmdFromCell(bkkDbCol(row, 'AB_TANGGAL')) || pbYmd;
+      if (!abArr) abArr = bkkDbNormalizeHM(bkkDbCol(row, 'AB_ARRIVAL'));
+
+      var msS = NaN;
+      if (abTgl && abArr) {
+        msS = bkkDbConcatMs(abTgl, abArr);
+      }
+      if (isNaN(msS)) {
+        var pbSampai = bkkDbNormalizeHM(bkkDbCol(row, 'PB_SAMPAI'));
+        if (pbSampai) {
+          msS = bkkDbConcatMs(pbYmd, pbSampai);
+        }
+      }
+
+      if (!isNaN(msS) && msF >= msS) {
+        return Math.round((msF - msS) / 60000);
+      }
+    }
+    return null;
+  }
+
+  function bkkDbComputeRowTotalMinutes(row, allRows) {
+    return bkkDbComputeTrueTotalMinutes(row);
   }
 
   function bkkDbMergeIntervals(intervals) {
@@ -1172,8 +1207,8 @@
           }
         }
       });
-      entry.total = hasAny ? rowTotal : null;
-      entry.totalValid = hasAny;
+      entry.total = bkkDbComputeTrueTotalMinutes(row);
+      entry.totalValid = (entry.total !== null && entry.total >= 0);
       tableData.push(entry);
     });
 
@@ -1334,7 +1369,7 @@
         else badge = '<span class="db-badge db-badge-lama">Lama</span>';
       }
       html += '<tr style="animation-delay:' + Math.min(idx, 20) * 0.02 + 's;">';
-      html += '<td style="font-weight:700;">' + bkkDbEsc(entry.nopol) + '</td>';
+      html += '<td class="tjp-nopol-cell" style="font-weight:700;cursor:pointer;color:#3b82f6;text-decoration:underline;text-decoration-style:dotted;" onclick="event.stopPropagation();showTruckJourneyPopup(' + idx + ')" title="Klik untuk lihat perjalanan truck">' + bkkDbEsc(entry.nopol) + '</td>';
       html += '<td style="color:var(--text-secondary,#64748b);">' + bkkDbEsc(entry.tanggal) + '</td>';
       selected.forEach(function(t) {
         var v = entry.durations[t.key];
