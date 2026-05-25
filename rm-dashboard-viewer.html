@@ -305,8 +305,12 @@
         // 1. DATA FETCHING
         async function initDashboard() {
             console.log("Initializing RM Stock Dashboard...");
-            App.data = await DataService.fetchData();
-            if (!App.data) return;
+            const raw = await DataService.fetchData();
+            if (!raw) return;
+
+            App.data = typeof DataService.sanitizeRmDashboard === 'function'
+                ? DataService.sanitizeRmDashboard(raw)
+                : raw;
 
             renderGlobalStats(DataService.processGlobalStats(App.data));
             renderWarehouseCards(App.data);
@@ -564,9 +568,20 @@
             let isValid = false;
             try {
                 if (token) {
-                    const resp = await fetch(`${CONFIG.API_URL}?action=getShareStatus&t=${Date.now()}`);
-                    const status = await resp.json();
-                    if (status.active && status.token === token) {
+                    const url = `${CONFIG.API_URL}?action=getShareStatus&t=${Date.now()}`;
+                    let status = null;
+                    try {
+                        const resp = await fetch(url);
+                        if (resp.ok) status = await resp.json();
+                    } catch (e) {
+                        console.warn("Verification fetch failed, trying JSONP...", e);
+                    }
+
+                    if (!status && typeof DataService.fetchJSONP === 'function') {
+                        status = await DataService.fetchJSONP(url);
+                    }
+
+                    if (status && status.active && status.token === token) {
                         isValid = true;
                     }
                 }

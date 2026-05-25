@@ -2,16 +2,71 @@
 // Fokus pada komunikasi dengan API dan pengolahan data
 
 const DataService = {
-    fetchData: async function () {
-        try {
-            // Anti-cache param & Action param
-            const url = `${CONFIG.API_URL}?action=getData&t=${new Date().getTime()}`;
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("Gagal mengambil data");
-            const raw = await response.json();
+    fetchJSONP: function (url) {
+        return new Promise((resolve, reject) => {
+            const callbackName = 'jsonp_' + Math.floor(Math.random() * 1000000) + '_' + Date.now().toString(36);
+            const script = document.createElement('script');
+            const sep = url.indexOf('?') !== -1 ? '&' : '?';
+            script.src = `${url}${sep}callback=${callbackName}`;
+            
+            const timeoutId = setTimeout(() => {
+                cleanup();
+                reject(new Error("Request timeout"));
+            }, 15000);
+            
+            window[callbackName] = function (data) {
+                clearTimeout(timeoutId);
+                cleanup();
+                resolve(data);
+            };
+            
+            script.onerror = function () {
+                clearTimeout(timeoutId);
+                cleanup();
+                reject(new Error("Network error or script blocked"));
+            };
+            
+            function cleanup() {
+                if (script.parentNode) {
+                    script.parentNode.removeChild(script);
+                }
+                delete window[callbackName];
+            }
+            
+            document.body.appendChild(script);
+        });
+    },
 
+    fetchData: async function (silent = false) {
+        const url = `${CONFIG.API_URL}?action=getData&t=${new Date().getTime()}`;
+        let raw = null;
+
+        try {
+            // Coba fetch standar terlebih dahulu
+            const response = await fetch(url);
+            if (response.ok) {
+                raw = await response.json();
+            }
+        } catch (fetchError) {
+            console.warn("Standard fetch failed, trying JSONP fallback...", fetchError);
+        }
+
+        // Jika fetch standar gagal, gunakan JSONP fallback
+        if (!raw) {
+            try {
+                raw = await this.fetchJSONP(url);
+            } catch (jsonpError) {
+                console.error("JSONP fetch also failed:", jsonpError);
+                if (!silent) {
+                    alert(`Gagal mengambil data: ${jsonpError.message}. \n\nPastikan koneksi internet lancar dan URL Google Apps Script di app-config.js sudah benar.`);
+                }
+                return null;
+            }
+        }
+
+        try {
             // Handle New Comprehensive API Structure
-            if (raw.success) {
+            if (raw && raw.success) {
                 const data = {
                     warehouses: raw.warehouses || [],
                     capacities: raw.capacities || [],
@@ -35,8 +90,10 @@ const DataService = {
 
             throw new Error("Struktur data API tidak valid");
         } catch (error) {
-            console.error("Error Fetching Data:", error);
-            alert(`Gagal mengambil data: ${error.message}. \n\nPastikan koneksi internet lancar dan URL Google Apps Script di app-config.js sudah benar.`);
+            console.error("Error Processing Data:", error);
+            if (!silent) {
+                alert(`Gagal memproses data: ${error.message}.`);
+            }
             return null;
         }
     },
@@ -197,23 +254,48 @@ const DataService = {
     fetchRmSnapshot: async function (tanggal) {
         var t = encodeURIComponent(String(tanggal || '').substring(0, 10));
         var url = CONFIG.API_URL + '?action=getRmSnapshot&tanggal=' + t + '&t=' + Date.now();
-        var r = await fetch(url);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        var j = await r.json();
-        if (!j.success || !j.data) return null;
+        let j = null;
+
+        try {
+            var r = await fetch(url);
+            if (r.ok) j = await r.json();
+        } catch (e) {
+            console.warn("Snapshot fetch failed, trying JSONP...", e);
+        }
+
+        if (!j) {
+            try {
+                j = await this.fetchJSONP(url);
+            } catch (e) {
+                throw new Error("Fetch snapshot gagal (Standard & JSONP): " + e.message);
+            }
+        }
+
+        if (!j || !j.success || !j.data) return null;
         return this.sanitizeRmDashboard(j.data);
     },
 
     fetchRmSnapshotList: async function () {
+        var url = CONFIG.API_URL + '?action=getRmSnapshotList&t=' + Date.now();
+        let j = null;
+
         try {
-            var url = CONFIG.API_URL + '?action=getRmSnapshotList&t=' + Date.now();
             var r = await fetch(url);
-            if (!r.ok) return [];
-            var j = await r.json();
-            return j.success && Array.isArray(j.dates) ? j.dates : [];
+            if (r.ok) j = await r.json();
         } catch (e) {
-            return [];
+            console.warn("Snapshot list fetch failed, trying JSONP...", e);
         }
+
+        if (!j) {
+            try {
+                j = await this.fetchJSONP(url);
+            } catch (e) {
+                console.error("JSONP fetch snapshot list failed:", e);
+                return [];
+            }
+        }
+
+        return j && j.success && Array.isArray(j.dates) ? j.dates : [];
     },
 
     postRmSnapshot: async function (tanggal, data) {

@@ -393,7 +393,7 @@
             if (localStorage.getItem(flagKey)) return;
             var dataToSave = App.liveData;
             try {
-                var fresh = await DataService.fetchData();
+                var fresh = await DataService.fetchData(true);
                 if (fresh && typeof DataService.sanitizeRmDashboard === 'function') {
                     App.liveData = DataService.sanitizeRmDashboard(fresh);
                     if (App.viewMode === 'live') {
@@ -920,12 +920,21 @@
             try {
                 // Fetch status from GAS API
                 const url = `${CONFIG.API_URL}?action=getShareStatus&t=${Date.now()}`;
-                const response = await fetch(url);
-                const result = await response.json();
+                let result = null;
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) result = await response.json();
+                } catch (e) {
+                    console.warn("Share status fetch failed, trying JSONP...", e);
+                }
+
+                if (!result && typeof DataService.fetchJSONP === 'function') {
+                    result = await DataService.fetchJSONP(url);
+                }
 
                 loading.style.display = 'none';
 
-                if (result.active && result.token) {
+                if (result && result.active && result.token) {
                     activeView.style.display = 'block';
                     
                     const currentUrl = window.location.href;
@@ -956,13 +965,22 @@
 
             try {
                 const url = `${CONFIG.API_URL}?action=toggleShare&enable=true&t=${Date.now()}`;
-                const response = await fetch(url);
-                const result = await response.json();
+                let result = null;
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) result = await response.json();
+                } catch (e) {
+                    console.warn("Toggle share enable fetch failed, trying JSONP...", e);
+                }
+
+                if (!result && typeof DataService.fetchJSONP === 'function') {
+                    result = await DataService.fetchJSONP(url);
+                }
                 
-                if (result.success) {
+                if (result && result.success) {
                     await updateShareUI();
                 } else {
-                    alert("Gagal mengaktifkan sharing: " + (result.message || "Unknown error"));
+                    alert("Gagal mengaktifkan sharing: " + (result ? result.message : "Unknown error"));
                 }
             } catch (err) {
                 alert("Error koneksi ke API: " + err.message);
@@ -982,11 +1000,22 @@
 
             try {
                 const url = `${CONFIG.API_URL}?action=toggleShare&enable=false&t=${Date.now()}`;
-                const response = await fetch(url);
-                const result = await response.json();
+                let result = null;
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) result = await response.json();
+                } catch (e) {
+                    console.warn("Toggle share disable fetch failed, trying JSONP...", e);
+                }
+
+                if (!result && typeof DataService.fetchJSONP === 'function') {
+                    result = await DataService.fetchJSONP(url);
+                }
                 
-                if (result.success) {
+                if (result && result.success) {
                     await updateShareUI();
+                } else {
+                    alert("Gagal menonaktifkan sharing: " + (result ? result.message : "Unknown error"));
                 }
             } catch (err) {
                 alert("Error koneksi ke API: " + err.message);
