@@ -26,6 +26,27 @@
     }
   }
 
+  function fmtDateTimeIndo(dateOrMs) {
+    try {
+      var d = new Date(dateOrMs);
+      if (isNaN(d.getTime())) return '';
+      
+      var dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      var monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+      
+      var day = dayNames[d.getDay()];
+      var date = d.getDate();
+      var month = monthNames[d.getMonth()];
+      var year = d.getFullYear();
+      var hours = ('0' + d.getHours()).slice(-2);
+      var minutes = ('0' + d.getMinutes()).slice(-2);
+      
+      return day + ', ' + date + ' ' + month + ' ' + year + ' ' + hours + ':' + minutes + ' WIB';
+    } catch (e) {
+      return '';
+    }
+  }
+
   function parseAnyDateTimeMs(v) {
     if (v == null || v === '') return NaN;
     if (typeof v === 'number' && isFinite(v)) return v;
@@ -224,7 +245,10 @@
         kapasitas: kap,
         utilisasi: util,
         sap: sap,
-        ageDays: ageDays
+        ageDays: ageDays,
+        namaBk: bk.NAMA_BK || '',
+        supplierDefault: bk.SUPPLIER_DEFAULT || '',
+        awalIsiYmd: bk.AWAL_ISI_YMD || ''
       };
     });
 
@@ -247,11 +271,11 @@
       totalBongkarHariIni: totalBongkarHariIni,
       totalUsageHariIni: totalUsageHariIni,
       totalStok: totalStok,
-      periodStartLabel: range.startLabel,
-      periodEndLabel: range.endLabel,
+      periodStartLabel: fmtDateTimeIndo(range.startMs),
+      periodEndLabel: fmtDateTimeIndo(range.endMs),
       detail: detail,
       longDate: fmtLongId(day),
-      printTs: fmtPrintTs(),
+      printTs: fmtDateTimeIndo(Date.now()),
       creatorName: creatorName
     };
   }
@@ -459,32 +483,115 @@
     return String(Number(n));
   }
 
-  function buildCsv(data) {
+  function ymdToDmy(ymd) {
+    if (!ymd) return '';
+    var parts = ymd.split('-');
+    if (parts.length === 3) {
+      return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+    return ymd;
+  }
+
+  function fmtIdKg(num) {
+    if (num == null || isNaN(num)) return '0 Kg';
+    var formatted = Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    return formatted + ' Kg';
+  }
+
+  function buildExcel(data) {
     var userName = (appState.user && (appState.user.nama || appState.user.username)) ? String(appState.user.nama || appState.user.username) : '—';
-    var lines = [];
-    lines.push(csvQuote('PT Charoen Pokphand Indonesia - Cirebon') + ',' + csvQuote('Integrated Warehouse Information System'));
-    lines.push(csvQuote('Smart Warehouse v2.0 - Bulk Storage Smart Inventory System'));
-    lines.push(csvQuote('Laporan Stock Harian BK-Storage') + ',' + csvQuote('Tanggal: ' + data.longDate));
-    lines.push(csvQuote('Periode transaksi: ' + (data.periodStartLabel || '—') + ' s/d ' + (data.periodEndLabel || '—')));
-    lines.push('');
-    lines.push('BK,Material,Stok Kemarin (kg),Bongkar/Masuk (kg),Usage/Kirim (kg),Stok Hari Ini (kg),Kapasitas (kg),Utilisasi (%),Status SAP');
+    var html = [];
+    html.push('<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">');
+    html.push('<head>');
+    html.push('<meta charset="utf-8">');
+    html.push('<!--[if gte mso 9]>');
+    html.push('<xml>');
+    html.push(' <x:ExcelWorkbook>');
+    html.push('  <x:ExcelWorksheets>');
+    html.push('   <x:ExcelWorksheet>');
+    html.push('    <x:Name>Laporan Stock BK</x:Name>');
+    html.push('    <x:WorksheetOptions>');
+    html.push('     <x:DisplayGridlines/>');
+    html.push('    </x:WorksheetOptions>');
+    html.push('   </x:ExcelWorksheet>');
+    html.push('  </x:ExcelWorksheets>');
+    html.push(' </x:ExcelWorkbook>');
+    html.push('</xml>');
+    html.push('<![endif]-->');
+    html.push('<style>');
+    html.push('  body { font-family: Calibri, Arial, sans-serif; }');
+    html.push('  .kop-main { font-size: 14pt; font-weight: bold; color: #1e3a8a; }');
+    html.push('  .kop-sub { font-size: 11pt; color: #475569; }');
+    html.push('  .kop-meta { font-size: 10pt; color: #334155; }');
+    html.push('  table { border-collapse: collapse; }');
+    html.push('  th { background-color: #1e3a8a; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 11pt; text-align: center; }');
+    html.push('  td { border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 10pt; vertical-align: middle; }');
+    html.push('  .text-center { text-align: center; }');
+    html.push('  .text-right { text-align: right; }');
+    html.push('  .stok-hari-ini { font-weight: bold; font-size: 12pt; background-color: #f1f5f9; color: #0f172a; text-align: right; border: 1px solid #cbd5e1; }');
+    html.push('</style>');
+    html.push('</head>');
+    html.push('<body>');
+    html.push('<table>');
+    html.push('  <tr><td colspan="13" class="kop-main">PT Charoen Pokphand Indonesia - Cirebon</td></tr>');
+    html.push('  <tr><td colspan="13" class="kop-sub">Smart Warehouse v2.0 - Bulk Storage Smart Inventory System</td></tr>');
+    html.push('  <tr><td colspan="13" class="kop-meta">Laporan Stock Harian BK-Storage | Tanggal: ' + escHtml(data.longDate) + '</td></tr>');
+    
+    // Format periode transaksi dengan hari, tanggal, dan format jam yang rapi
+    var startStyled = '<span style="color: #2563eb; font-weight: bold;">' + escHtml(data.periodStartLabel) + '</span>';
+    var endStyled = '<span style="color: #16a34a; font-weight: bold;">' + escHtml(data.periodEndLabel) + '</span>';
+    html.push('  <tr><td colspan="13" class="kop-meta">Periode transaksi: ' + startStyled + ' s/d ' + endStyled + '</td></tr>');
+    
+    html.push('  <tr><td colspan="13" style="border:none; height:10px;"></td></tr>');
+    html.push('  <tr>');
+    
+    // Gunakan inline style th agar pasti dirender di semua versi Microsoft Excel
+    var ths = 'style="background-color: #1e3a8a; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 11pt; text-align: center;"';
+    html.push('    <th ' + ths + '>BK_ID</th>');
+    html.push('    <th ' + ths + '>NAMA_BK</th>');
+    html.push('    <th ' + ths + '>KAPASITAS_KG (kg)</th>');
+    html.push('    <th ' + ths + '>MATERIAL_DEFAULT</th>');
+    html.push('    <th ' + ths + '>SUPPLIER_DEFAULT</th>');
+    html.push('    <th ' + ths + '>STATUS</th>');
+    html.push('    <th ' + ths + '>AWAL ISI</th>');
+    html.push('    <th ' + ths + '>Umur</th>');
+    html.push('    <th ' + ths + '>Stock Kemarin (kg)</th>');
+    html.push('    <th ' + ths + '>Penerimaan (kg)</th>');
+    html.push('    <th ' + ths + '>Usage (kg)</th>');
+    html.push('    <th ' + ths + '>Stock Hari Ini (kg)</th>');
+    html.push('    <th ' + ths + '>Utilisasi</th>');
+    html.push('  </tr>');
+    
     data.detail.forEach(function (r) {
-      lines.push([
-        csvQuote(r.bkId),
-        csvQuote(r.material),
-        numRaw(r.stokKemarin),
-        numRaw(r.bongkar),
-        numRaw(r.kirim),
-        numRaw(r.stokHari),
-        numRaw(r.kapasitas),
-        numRaw(r.kapasitas ? Number(r.utilisasi.toFixed(2)) : 0),
-        csvQuote(r.sap.label)
-      ].join(','));
+      html.push('  <tr>');
+      html.push('    <td class="text-center" style="border: 1px solid #cbd5e1; text-align: center;">' + escHtml(r.bkId.replace('-', '')) + '</td>');
+      html.push('    <td style="border: 1px solid #cbd5e1;">' + escHtml(r.namaBk) + '</td>');
+      html.push('    <td class="text-right" style="border: 1px solid #cbd5e1; text-align: right;">' + escHtml(fmtIdKg(r.kapasitas)) + '</td>');
+      html.push('    <td style="border: 1px solid #cbd5e1;">' + escHtml(r.material) + '</td>');
+      html.push('    <td style="border: 1px solid #cbd5e1;">' + escHtml(r.supplierDefault) + '</td>');
+      html.push('    <td class="text-center" style="border: 1px solid #cbd5e1; text-align: center;">' + escHtml('ACTIVE') + '</td>');
+      html.push('    <td class="text-center" style="border: 1px solid #cbd5e1; text-align: center;">' + escHtml(ymdToDmy(r.awalIsiYmd)) + '</td>');
+      html.push('    <td class="text-center" style="border: 1px solid #cbd5e1; text-align: center;">' + escHtml((r.ageDays || 0) + ' Hari') + '</td>');
+      html.push('    <td class="text-right" style="border: 1px solid #cbd5e1; text-align: right;">' + escHtml(fmtIdKg(r.stokKemarin)) + '</td>');
+      html.push('    <td class="text-right" style="border: 1px solid #cbd5e1; text-align: right;">' + escHtml(fmtIdKg(r.bongkar)) + '</td>');
+      html.push('    <td class="text-right" style="border: 1px solid #cbd5e1; text-align: right;">' + escHtml(fmtIdKg(r.kirim)) + '</td>');
+      
+      // Inline styles untuk stock hari ini agar tebal, lebih besar, dan berlatar belakang lembut
+      var shStyle = 'style="font-weight: bold; font-size: 11.5pt; background-color: #f1f5f9; color: #000000; text-align: right; border: 1px solid #cbd5e1;"';
+      html.push('    <td class="stok-hari-ini" ' + shStyle + '>' + escHtml(fmtIdKg(r.stokHari)) + '</td>');
+      
+      html.push('    <td class="text-center" style="border: 1px solid #cbd5e1; text-align: center;">' + escHtml((r.kapasitas ? Math.round(r.utilisasi) : 0) + '%') + '</td>');
+      html.push('  </tr>');
     });
-    lines.push('');
-    lines.push(csvQuote('Dicetak oleh: ' + userName) + ',' + csvQuote('Tanggal cetak: ' + data.printTs));
-    lines.push(csvQuote('Accuracy | Transparency | Accountability'));
-    return '\uFEFF' + lines.join('\r\n');
+    
+    html.push('  <tr><td colspan="13" style="border:none; height:10px;"></td></tr>');
+    html.push('  <tr><td colspan="13" class="kop-meta" style="font-weight:bold;">Dicetak oleh: ' + escHtml(userName) + ' | Tanggal cetak: ' + escHtml(data.printTs) + '</td></tr>');
+    html.push('  <tr><td colspan="13" class="kop-meta" style="font-style:italic;">Accuracy | Transparency | Accountability</td></tr>');
+    html.push('</table>');
+    html.push('</body>');
+    html.push('</html>');
+    
+    return '\uFEFF' + html.join('\r\n');
   }
 
   /**
@@ -528,12 +635,12 @@
     }
     var data = buildRows();
     if (format === 'csv') {
-      var csv = buildCsv(data);
-      var fname = 'Laporan-Stock-Harian-' + data.day + '.csv';
+      var xls = buildExcel(data);
+      var fname = 'Laporan-Stock-Harian-' + data.day + '.xls';
       if (typeof downloadFile === 'function') {
-        downloadFile(fname, 'text/csv;charset=utf-8', csv);
+        downloadFile(fname, 'application/vnd.ms-excel', xls);
       } else {
-        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        var blob = new Blob([xls], { type: 'application/vnd.ms-excel;charset=utf-8' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
