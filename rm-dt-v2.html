@@ -6664,12 +6664,13 @@
                 return h + 'j ' + mm + 'm';
             }
 
-            function _tjpNodeHtml(id, label, dateStr, timeStr, extraCls, extraHtml) {
+            function _tjpNodeHtml(id, label, dateStr, timeStr, extraCls, extraHtml, iconHtml) {
                 var hasData = (timeStr && timeStr !== '-' && timeStr !== '');
                 var cls = 'tjp-node ' + extraCls + (hasData ? ' tjp-node-active' : ' tjp-node-inactive tjp-node-empty');
                 var display = hasData ? ('📅 ' + _tjpEsc(dateStr||'') + '  ' + _tjpEsc(timeStr)) : '—';
+                var icon = iconHtml || '<i class="fas fa-map-marker-alt"></i>';
                 return '<div class="'+cls+'" id="tjp-n-'+id+'">' +
-                    '<div class="tjp-node-label"><i class="fas fa-map-marker-alt"></i> '+_tjpEsc(label)+'</div>' +
+                    '<div class="tjp-node-label">' + icon + ' '+_tjpEsc(label)+'</div>' +
                     '<div class="tjp-node-time"><i class="far fa-clock"></i> '+display+'</div>' +
                     (extraHtml||'') +
                 '</div>';
@@ -6743,6 +6744,39 @@
                             '</div>';
                 });
                 html += '</div>';
+                return html;
+            }
+
+            function _tjpGetMiniBreakdownTable(bd, keys) {
+                var allItems = [];
+                var keyList = Array.isArray(keys) ? keys : [keys];
+                keyList.forEach(function(key) {
+                    var items = bd[key] || [];
+                    if (!items || items.length === 0) {
+                        for (var k in bd) {
+                            if (k.startsWith(key) && Array.isArray(bd[k])) {
+                                items = bd[k];
+                                break;
+                            }
+                        }
+                    }
+                    if (items && items.length > 0) {
+                        items.forEach(function(it) {
+                            allItems.push(it);
+                        });
+                    }
+                });
+                
+                if (allItems.length === 0) return '—';
+                
+                var html = '<table style="width:100%; border-collapse:collapse; font-size:11px; margin-top:2px;">';
+                allItems.forEach(function(item) {
+                    var ket = item.keterangan || item.ket || item.alasan || 'Lainnya';
+                    var min = parseInt(item.waktu || item.min || item.durasi) || 0;
+                    var formattedMin = min < 60 ? min + 'm' : Math.floor(min/60) + 'j ' + (min%60) + 'm';
+                    html += '<tr style="background:transparent;"><td style="padding:2px 4px; border:none; text-align:left; color:#475569; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">• ' + _tjpEsc(ket) + '</td><td style="padding:2px 4px; border:none; text-align:right; font-weight:700; color:#7c3aed; font-family:\'Rajdhani\',sans-serif;">' + formattedMin + '</td></tr>';
+                });
+                html += '</table>';
                 return html;
             }
 
@@ -6851,11 +6885,11 @@
                 else if (isSamping) activeGudang = 'GUDANG SAMPING';
                 else if (isHino) activeGudang = 'HINO';
 
-                var preX = 260, preY = 320; 
-                if (isHino) { preX = 20; preY = 320; }
-                else if (isRM) { preX = 260; preY = 320; }
-                else if (isSamping) { preX = 560; preY = 460; }
-                else if (isGebang) { preX = 780; preY = 240; }
+                var preX = 220, preY = 320; 
+                if (isHino) { preX = 10; preY = 320; }
+                else if (isRM) { preX = 220; preY = 320; }
+                else if (isSamping) { preX = 460; preY = 460; }
+                else if (isGebang) { preX = 640; preY = 240; }
 
                 var holdHtml = '';
                 if (d.pbHold || d.pbRestart) {
@@ -6865,88 +6899,112 @@
                 var html = '';
 
                 // 1. Parkir Pre-Timbang
-                html += '<div style="position:absolute;left:260px;top:20px;">';
-                html += _tjpNodeHtml('pretimbang', 'Parkir Pre-Timbang', d.abTgl, d.abArr, 'tjp-node-pretimbang', '');
+                html += '<div style="position:absolute;left:220px;top:20px;">';
+                html += _tjpNodeHtml('pretimbang', 'Parkir Pre-Timbang', d.abTgl, d.abArr, 'tjp-node-pretimbang', '', '<i class="fas fa-parking"></i>');
                 html += '</div>';
 
                 // 2. Shelter QC
-                html += '<div style="position:absolute;left:520px;top:20px;">';
-                html += _tjpNodeHtml('qc', 'Shelter QC', d.abTgl, d.abQc, 'tjp-node-qc', '');
+                html += '<div style="position:absolute;left:420px;top:20px;">';
+                html += _tjpNodeHtml('qc', 'Shelter QC', d.abTgl, d.abQc, 'tjp-node-qc', '', '<i class="fas fa-microscope"></i>');
                 html += '</div>';
 
                 // 3. Truck Scale In
                 var scaleInCls = 'tjp-node-scalein';
-                html += '<div style="position:absolute;left:520px;top:140px;">';
-                html += _tjpNodeHtml('scalein', 'Truck Scale In', '', d.abQc ? '→' : '', scaleInCls, '');
+                html += '<div style="position:absolute;left:420px;top:140px;">';
+                html += _tjpNodeHtml('scalein', 'Truck Scale In', '', d.abQc ? '→' : '', scaleInCls, '', '<i class="fas fa-balance-scale"></i>');
                 html += '</div>';
+
+                // 3b. SEGEL (Only for Rental Warehouses)
+                if (!isRM) {
+                    html += '<div style="position:absolute;left:220px;top:360px;">';
+                    html += '<div class="tjp-node tjp-node-segel tjp-node-active" id="tjp-n-segel" style="min-width:180px;">' +
+                                '<div class="tjp-node-label"><i class="fas fa-lock"></i> SEGEL</div>' +
+                                '<div class="tjp-node-time" style="font-size:0.72rem; font-weight:500; color:#6d28d9; white-space:normal; line-height:1.25; margin-top:4px;">' +
+                                    'Truck disegel di RM sebelum dikirim to gudang rental' +
+                                '</div>' +
+                            '</div>';
+                    html += '</div>';
+                }
 
                 // 4. Dynamic "Parkir Pre-Bongkar"
                 var hasPreB = (d.pbSampai);
                 var preBCls = hasPreB ? 'tjp-node-prebongkar' : 'tjp-node-prebongkar tjp-node-inactive';
                 html += '<div style="position:absolute;left:'+preX+'px;top:'+preY+'px;">';
                 html += '<div class="tjp-node '+preBCls+'" id="tjp-n-prebongkar" style="min-width:180px;">' +
-                    '<div class="tjp-node-label"><i class="fas fa-map-marker-alt"></i> Parkir Pre-Bongkar</div>' +
+                    '<div class="tjp-node-label"><i class="fas fa-warehouse"></i> Parkir Pre-Bongkar</div>' +
                     (hasPreB ? '<div class="tjp-node-time"><i class="far fa-clock"></i> 📅 '+_tjpEsc(d.pbTgl||'')+' '+_tjpEsc(d.pbSampai||'—')+'</div>' : '<div class="tjp-node-time tjp-node-empty">—</div>') +
                 '</div>';
                 html += '</div>';
 
                 // 5a. GEBANG Gudang Node
-                html += '<div style="position:absolute;left:780px;top:20px;">';
+                html += '<div style="position:absolute;left:640px;top:20px;">';
                 html += '<div class="tjp-node '+(isGebang?'tjp-node-bongkar tjp-node-active':'tjp-node-bongkar tjp-node-inactive')+'" id="tjp-n-gebang" style="min-width:180px;min-height:100px;">' +
-                    '<div class="tjp-node-label"><i class="fas fa-warehouse"></i> GEBANG</div>' +
+                    '<div class="tjp-node-label"><span style="margin-right:4px;">🚧</span> GEBANG</div>' +
                     (isGebang ? '<div class="tjp-node-time"><i class="far fa-clock"></i> Start: '+_tjpEsc(d.pbStart||'—')+'</div>'+holdHtml : '<div class="tjp-node-time tjp-node-empty">—</div>') +
                 '</div>';
                 html += '</div>';
 
                 // 5b. GUDANG SAMPING Node
-                html += '<div style="position:absolute;left:560px;top:240px;">';
+                html += '<div style="position:absolute;left:460px;top:240px;">';
                 html += '<div class="tjp-node '+(isSamping?'tjp-node-bongkar tjp-node-active':'tjp-node-bongkar tjp-node-inactive')+'" id="tjp-n-samping" style="min-width:180px;min-height:100px;">' +
-                    '<div class="tjp-node-label"><i class="fas fa-warehouse"></i> GUDANG SAMPING</div>' +
+                    '<div class="tjp-node-label"><span style="margin-right:4px;">🏪</span> GUDANG SAMPING</div>' +
                     (isSamping ? '<div class="tjp-node-time"><i class="far fa-clock"></i> Start: '+_tjpEsc(d.pbStart||'—')+'</div>'+holdHtml : '<div class="tjp-node-time tjp-node-empty">—</div>') +
                 '</div>';
                 html += '</div>';
 
                 // 5c. RM Node
-                html += '<div style="position:absolute;left:260px;top:460px;">';
+                html += '<div style="position:absolute;left:220px;top:460px;">';
                 html += '<div class="tjp-node '+(isRM?'tjp-node-bongkar tjp-node-active':'tjp-node-bongkar tjp-node-inactive')+'" id="tjp-n-rm" style="min-width:180px;min-height:100px;">' +
-                    '<div class="tjp-node-label"><i class="fas fa-warehouse"></i> RM</div>' +
+                    '<div class="tjp-node-label"><i class="fas fa-box"></i> RM</div>' +
                     (isRM ? '<div class="tjp-node-time"><i class="far fa-clock"></i> Start: '+_tjpEsc(d.pbStart||'—')+'</div>'+holdHtml : '<div class="tjp-node-time tjp-node-empty">—</div>') +
                 '</div>';
                 html += '</div>';
 
                 // 5d. HINO Node
-                html += '<div style="position:absolute;left:20px;top:460px;">';
+                html += '<div style="position:absolute;left:10px;top:460px;">';
                 html += '<div class="tjp-node '+(isHino?'tjp-node-bongkar tjp-node-active':'tjp-node-bongkar tjp-node-inactive')+'" id="tjp-n-hino" style="min-width:180px;min-height:100px;">' +
-                    '<div class="tjp-node-label"><i class="fas fa-warehouse"></i> HINO</div>' +
+                    '<div class="tjp-node-label"><span style="margin-right:4px;">🏪</span> HINO</div>' +
                     (isHino ? '<div class="tjp-node-time"><i class="far fa-clock"></i> Start: '+_tjpEsc(d.pbStart||'—')+'</div>'+holdHtml : '<div class="tjp-node-time tjp-node-empty">—</div>') +
                 '</div>';
                 html += '</div>';
 
                 // 6. Truck Scale Out (Finish)
-                html += '<div style="position:absolute;left:120px;top:260px;">';
-                html += _tjpNodeHtml('scaleout', 'Truck Scale Out (Finish)', d.pbTgl, d.pbFinish, 'tjp-node-scaleout', '');
+                html += '<div style="position:absolute;left:100px;top:260px;">';
+                html += _tjpNodeHtml('scaleout', 'Truck Scale Out (Finish)', d.pbTgl, d.pbFinish, 'tjp-node-scaleout', '', '<i class="fas fa-flag-checkered"></i>');
                 html += '</div>';
 
                 // Connectors (SVG)
-                html += '<svg class="tjp-connectors" viewBox="0 0 1050 820" preserveAspectRatio="none">';
+                html += '<svg class="tjp-connectors" viewBox="0 0 830 560" preserveAspectRatio="none">';
 
                 var c1Active = (d.abArr && d.abQc);
-                html += '<path d="M 440 55 L 520 55" class="tjp-conn-line'+(c1Active?' tjp-conn-line-active':'')+'"/>';
+                html += '<path d="M 400 55 L 420 55" class="tjp-conn-line'+(c1Active?' tjp-conn-line-active':'')+'"/>';
 
                 var c2Active = (d.abQc && d.pbSampai);
-                html += '<path d="M 600 95 L 600 140" class="tjp-conn-line'+(c2Active?' tjp-conn-line-active':'')+'"/>';
+                html += '<path d="M 500 95 L 500 140" class="tjp-conn-line'+(c2Active?' tjp-conn-line-active':'')+'"/>';
 
                 var c3Active = (d.pbSampai || d.pbStart);
                 var targetPreX = preX + 90;
                 var targetPreY = preY;
-                html += '<path d="M 600 215 L 600 230 L '+targetPreX+' 230 L '+targetPreX+' '+targetPreY+'" class="tjp-conn-line'+(c3Active?' tjp-conn-line-active':'')+'"/>';
+                if (!isRM) {
+                    // Connect Truck Scale In to SEGEL (SEGEL is at left:220, top:360, width:180, so center X is 310)
+                    html += '<path d="M 500 215 L 500 230 L 310 230 L 310 360" class="tjp-conn-line' + (c3Active ? ' tjp-conn-line-active' : '') + '"/>';
+                    
+                    // Connect SEGEL (bottom is 430) to Parkir Pre-Bongkar
+                    var endY = targetPreY;
+                    if (endY === 240) {
+                        endY = 310; // Connect to the bottom of Gebang's Parkir Pre-Bongkar node
+                    }
+                    html += '<path d="M 310 430 L 310 445 L ' + targetPreX + ' 445 L ' + targetPreX + ' ' + endY + '" class="tjp-conn-line' + (c3Active ? ' tjp-conn-line-active' : '') + '"/>';
+                } else {
+                    html += '<path d="M 500 215 L 500 230 L ' + targetPreX + ' 230 L ' + targetPreX + ' ' + targetPreY + '" class="tjp-conn-line' + (c3Active ? ' tjp-conn-line-active' : '') + '"/>';
+                }
 
                 var c4Active = (d.pbSampai && d.pbStart);
-                var gdX = 260, gdY = 460;
-                if (isHino) { gdX = 20; gdY = 460; }
-                else if (isRM) { gdX = 260; gdY = 460; }
-                else if (isSamping) { gdX = 560; gdY = 240; }
-                else if (isGebang) { gdX = 780; gdY = 20; }
+                var gdX = 220, gdY = 460;
+                if (isHino) { gdX = 10; gdY = 460; }
+                else if (isRM) { gdX = 220; gdY = 460; }
+                else if (isSamping) { gdX = 460; gdY = 240; }
+                else if (isGebang) { gdX = 640; gdY = 20; }
 
                 var pBToGdX = gdX + 90;
                 var pBToGdY = gdY;
@@ -6955,27 +7013,38 @@
                 var c5Active = (d.pbStart && d.pbFinish);
                 var gdOutX = gdX + 90;
                 var gdOutY = gdY + 70;
-                html += '<path d="M '+gdOutX+' '+gdOutY+' L '+gdOutX+' '+(gdOutY+20)+' L 200 '+(gdOutY+20)+' L 200 330" class="tjp-conn-line'+(c5Active?' tjp-conn-line-active':'')+'"/>';
+                html += '<path d="M '+gdOutX+' '+gdOutY+' L '+gdOutX+' '+(gdOutY+20)+' L 180 '+(gdOutY+20)+' L 180 330" class="tjp-conn-line'+(c5Active?' tjp-conn-line-active':'')+'"/>';
 
                 html += '</svg>';
 
-                // Duration & Breakdown Labels
-                var bd1 = _tjpGetBreakdownHtml(d.bd, 'ABArrivalTime_ABQCTime');
-                var bd2 = _tjpGetBreakdownHtml(d.bd, 'ABQCTime_PBSampaiGudang');
-                var bd3 = _tjpGetBreakdownHtml(d.bd, 'PBSampaiGudang_PBStartBongkar');
-                var bd4 = _tjpGetCombinedBreakdownHtml(d.bd, ['PBStartBongkar_PBHoldQC', 'PBHoldQC_PBRestartQC', 'PBRestartQC_PBFinish']);
+                // Calculate mathematical centers for middle placement (Perubahan 2)
+                var label1Left = 360;
+                var label1Top = 38;
 
-                html += '<div class="tjp-conn-label" style="left:415px;top:25px;">' +
-                            '<div class="tjp-conn-dur"><i class="far fa-clock"></i> ' + _tjpDiffLabel(d.msAbArr, d.msAbQc) + '</div>' + bd1 +
+                var label2Left = (500 + targetPreX) / 2 - 45;
+                var label2Top = 213;
+
+                var label3Left = targetPreX - 45;
+                var label3Top = (preY + 70 + gdY) / 2 - 17;
+
+                var label4Left = (gdOutX + 180) / 2 - 45;
+                var label4Top = gdOutY + 20 - 17;
+
+                html += '<div class="tjp-conn-label" style="left:' + label1Left + 'px;top:' + label1Top + 'px;">' +
+                            '<div style="font-size: 9px; font-weight: 800; color: #475569; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px;">Sampling-1</div>' +
+                            '<div class="tjp-conn-dur"><i class="far fa-clock" style="font-size: 10px; opacity: 0.8;"></i> ' + _tjpDiffLabel(d.msAbArr, d.msAbQc) + '</div>' +
                         '</div>';
-                html += '<div class="tjp-conn-label" style="left:615px;top:90px;">' +
-                            '<div class="tjp-conn-dur"><i class="far fa-clock"></i> ' + _tjpDiffLabel(d.msAbQc, d.msPbSampai) + '</div>' + bd2 +
+                html += '<div class="tjp-conn-label" style="left:' + label2Left + 'px;top:' + label2Top + 'px;">' +
+                            '<div style="font-size: 9px; font-weight: 800; color: #475569; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px;">Panggil Masuk</div>' +
+                            '<div class="tjp-conn-dur"><i class="far fa-clock" style="font-size: 10px; opacity: 0.8;"></i> ' + _tjpDiffLabel(d.msAbQc, d.msPbSampai) + '</div>' +
                         '</div>';
-                html += '<div class="tjp-conn-label" style="left:'+(targetPreX - 45)+'px;top:'+(preY - 45)+'px;">' +
-                            '<div class="tjp-conn-dur"><i class="far fa-clock"></i> ' + _tjpDiffLabel(d.msPbSampai, d.msPbStart) + '</div>' + bd3 +
+                html += '<div class="tjp-conn-label" style="left:' + label3Left + 'px;top:' + label3Top + 'px;">' +
+                            '<div style="font-size: 9px; font-weight: 800; color: #475569; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px;">Antri Bongkar</div>' +
+                            '<div class="tjp-conn-dur"><i class="far fa-clock" style="font-size: 10px; opacity: 0.8;"></i> ' + _tjpDiffLabel(d.msPbSampai, d.msPbStart) + '</div>' +
                         '</div>';
-                html += '<div class="tjp-conn-label" style="left:'+(gdOutX - 60)+'px;top:'+(gdOutY + 15)+'px;">' +
-                            '<div class="tjp-conn-dur"><i class="far fa-clock"></i> ' + _tjpDiffLabel(d.msPbStart, d.msPbFinish) + '</div>' + bd4 +
+                html += '<div class="tjp-conn-label" style="left:' + label4Left + 'px;top:' + label4Top + 'px;">' +
+                            '<div style="font-size: 9px; font-weight: 800; color: #475569; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px;">Bongkar</div>' +
+                            '<div class="tjp-conn-dur"><i class="far fa-clock" style="font-size: 10px; opacity: 0.8;"></i> ' + _tjpDiffLabel(d.msPbStart, d.msPbFinish) + '</div>' +
                         '</div>';
 
                 return html;
@@ -7084,6 +7153,76 @@
                 }
 
                 canvas.innerHTML = _tjpRenderCanvas(d);
+
+                // Render Ringkasan Durasi Table (Perubahan 3 & Perubahan 1 Baru)
+                var durTableWrapper = document.getElementById('tjpDurationTableWrapper');
+                if (durTableWrapper) {
+                    var sloc = String(d.sloc || '').trim().toUpperCase();
+                    var isRM = (sloc === 'RM01');
+                    
+                    var durPreTimbang = _tjpDiffLabel(d.msAbArr, d.msAbQc);
+                    var durQC = _tjpDiffLabel(d.msAbQc, d.msPbSampai);
+                    var durPreBongkar = _tjpDiffLabel(d.msPbSampai, d.msPbStart);
+                    
+                    // Unload sub-steps breakdown (Perubahan Terbaru)
+                    var durBongkarAwal = '—';
+                    var durSampling2 = '—';
+                    var durBongkarAkhir = '—';
+
+                    var bdBongkarAwal = '—';
+                    var bdSampling2 = '—';
+                    var bdBongkarAkhir = '—';
+
+                    if (!isNaN(d.msPbStart) && !isNaN(d.msPbFinish)) {
+                        if (!isNaN(d.msPbHold) && !isNaN(d.msPbRestart)) {
+                            // Has QC Hold & Restart
+                            durBongkarAwal = _tjpDiffLabel(d.msPbStart, d.msPbHold);
+                            durSampling2 = _tjpDiffLabel(d.msPbHold, d.msPbRestart);
+                            durBongkarAkhir = _tjpDiffLabel(d.msPbRestart, d.msPbFinish);
+                            
+                            bdBongkarAwal = _tjpGetMiniBreakdownTable(d.bd, 'PBStartBongkar_PBHoldQC');
+                            bdSampling2 = _tjpGetMiniBreakdownTable(d.bd, 'PBHoldQC_PBRestartQC');
+                            bdBongkarAkhir = _tjpGetMiniBreakdownTable(d.bd, 'PBRestartQC_PBFinish');
+                        } else {
+                            // Direct Unloading without QC Hold
+                            durBongkarAwal = _tjpDiffLabel(d.msPbStart, d.msPbFinish);
+                            bdBongkarAwal = _tjpGetMiniBreakdownTable(d.bd, ['PBStartBongkar_PBHoldQC', 'PBHoldQC_PBRestartQC', 'PBRestartQC_PBFinish']);
+                        }
+                    }
+                    
+                    var formatDur = function(val) {
+                        return (val === '-' || val === '') ? '—' : val;
+                    };
+                    
+                    var tableHtml = '<div class="tjp-dur-title"><i class="far fa-clock" style="color: #7c3aed;"></i> Ringkasan Durasi</div>';
+                    tableHtml += '<table class="tjp-dur-table">';
+                    tableHtml += '<thead><tr><th>Step</th><th>Durasi</th><th>Breakdown</th></tr></thead>';
+                    tableHtml += '<tbody>';
+                    
+                    tableHtml += '<tr><td>Sampling-1</td><td>' + formatDur(durPreTimbang) + '</td><td>' + _tjpGetMiniBreakdownTable(d.bd, 'ABArrivalTime_ABQCTime') + '</td></tr>';
+                    tableHtml += '<tr><td>Panggil Masuk</td><td>' + formatDur(durQC) + '</td><td>' + _tjpGetMiniBreakdownTable(d.bd, 'ABQCTime_PBSampaiGudang') + '</td></tr>';
+                    tableHtml += '<tr><td>Truck Scale In</td><td>—</td><td>—</td></tr>';
+                    
+                    if (!isRM) {
+                        tableHtml += '<tr><td style="color:#7c3aed; font-weight:600;">🔒 Segel</td><td style="color:#7c3aed; font-weight:600;">—</td><td style="color:#7c3aed; font-weight:600;">—</td></tr>';
+                    }
+                    
+                    tableHtml += '<tr><td>Antri Bongkar</td><td>' + formatDur(durPreBongkar) + '</td><td>' + _tjpGetMiniBreakdownTable(d.bd, 'PBSampaiGudang_PBStartBongkar') + '</td></tr>';
+                    
+                    // Splitted Bongkar Steps
+                    tableHtml += '<tr><td>Bongkar Awal</td><td>' + formatDur(durBongkarAwal) + '</td><td>' + bdBongkarAwal + '</td></tr>';
+                    tableHtml += '<tr><td>Sampling 2</td><td>' + formatDur(durSampling2) + '</td><td>' + bdSampling2 + '</td></tr>';
+                    tableHtml += '<tr><td>Bongkar Akhir</td><td>' + formatDur(durBongkarAkhir) + '</td><td>' + bdBongkarAkhir + '</td></tr>';
+                    
+                    tableHtml += '<tr><td>Truck Scale Out</td><td>—</td><td>—</td></tr>';
+                    
+                    tableHtml += '<tr class="total-row"><td>TOTAL</td><td>' + formatDur(totalDur) + '</td><td>—</td></tr>';
+                    tableHtml += '</tbody>';
+                    tableHtml += '</table>';
+                    
+                    durTableWrapper.innerHTML = tableHtml;
+                }
+
                 overlay.style.display = 'flex';
                 document.body.style.overflow = 'hidden';
             };
@@ -7117,7 +7256,10 @@
             </div>
             <div class="tjp-meta" id="tjpMeta"></div>
             <div class="tjp-canvas-scroll">
-                <div class="tjp-canvas" id="tjpCanvas"></div>
+                <div class="tjp-content-layout" style="display: flex; gap: 24px; min-width: 1220px;">
+                    <div class="tjp-canvas" id="tjpCanvas"></div>
+                    <div class="tjp-duration-table-wrapper" id="tjpDurationTableWrapper" style="width: 360px; flex-shrink: 0; padding-top: 20px;"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -7127,7 +7269,7 @@
     /* ===== TRUCK JOURNEY POPUP — SCOPED CSS ===== */
     .tjp-overlay{position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;animation:tjpFadeIn .25s ease;}
     @keyframes tjpFadeIn{from{opacity:0}to{opacity:1}}
-    .tjp-popup{background:#f8fafc;width:95vw;max-width:1200px;height:85vh;border-radius:24px;box-shadow:0 30px 70px -15px rgba(15,23,42,0.4);display:flex;flex-direction:column;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.7);animation:tjpScaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);}
+    .tjp-popup{background:#f8fafc;width:95vw;max-width:1300px;height:85vh;border-radius:24px;box-shadow:0 30px 70px -15px rgba(15,23,42,0.4);display:flex;flex-direction:column;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.7);animation:tjpScaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);}
     @keyframes tjpScaleUp {
         from {
             opacity: 0;
@@ -7159,7 +7301,7 @@
     .tjp-total-dur-val{font-family:'Rajdhani',sans-serif;font-size:1.55rem;font-weight:900;color:#fff;line-height:1.1;margin-top:2px;text-shadow:0 0 8px rgba(139,92,246,0.5);}
 
     .tjp-canvas-scroll{flex:1;overflow:auto;padding:20px 24px 30px;}
-    .tjp-canvas{position:relative;width:1050px;height:820px;min-width:1050px;min-height:820px;}
+    .tjp-canvas{position:relative;width:830px;height:560px;min-width:830px;min-height:560px;}
 
     /* Nodes */
     .tjp-node{position:absolute;border-radius:14px;padding:12px 16px;min-width:160px;box-shadow:0 4px 14px -6px rgba(0,0,0,0.12);border:2px solid transparent;transition:transform .3s cubic-bezier(0.4, 0, 0.2, 1),box-shadow .3s cubic-bezier(0.4, 0, 0.2, 1),border-color 0.3s ease;z-index:2;}
@@ -7227,6 +7369,72 @@
     .tjp-bd-dot{width:4px;height:4px;border-radius:50%;background:#a78bfa;flex-shrink:0;}
     .tjp-bd-text{flex:1;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:#cbd5e1;text-align:left;}
     .tjp-bd-time{font-weight:700;color:#c084fc;font-family:'Rajdhani',sans-serif;font-size:0.75rem;}
+
+    /* Segel and Duration Table styles */
+    .tjp-node-segel {
+        background: linear-gradient(145deg, #f5f3ff, #ede9fe);
+        border-color: #ddd6fe;
+    }
+    .tjp-node-segel .tjp-node-label {
+        color: #6d28d9 !important;
+    }
+    .tjp-node-segel.tjp-node-active {
+        box-shadow: 0 0 16px rgba(124, 58, 237, 0.3), inset 0 2px 4px rgba(255,255,255,0.6);
+        border-color: #7c3aed;
+        animation: tjpGlowPurple 2.5s ease-in-out infinite alternate;
+    }
+    @keyframes tjpGlowPurple {
+        from { box-shadow: 0 0 8px rgba(124, 58, 237, 0.2); }
+        to { box-shadow: 0 0 18px rgba(124, 58, 237, 0.45); }
+    }
+
+    .tjp-dur-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        color: #334155;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    .tjp-dur-table th {
+        background: #e2e8f0;
+        color: #1e293b;
+        font-weight: 700;
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1.5px solid #cbd5e1;
+        font-family: 'Rajdhani', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .tjp-dur-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .tjp-dur-table tr:last-child td {
+        border-bottom: none;
+    }
+    .tjp-dur-table tr.total-row td {
+        font-weight: 800;
+        background: #f1f5f9;
+        color: #0f172a;
+        border-top: 1.5px solid #cbd5e1;
+        font-size: 13px;
+    }
+    .tjp-dur-title {
+        font-family: 'Orbitron', 'Rajdhani', sans-serif;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 12px;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
     </style>
 
     <svg width="0" height="0" style="position: absolute;">
