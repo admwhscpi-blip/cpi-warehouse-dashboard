@@ -2358,7 +2358,7 @@
 
             .main-container {
                 margin-left: 0;
-                padding-bottom: 90px;
+                padding-bottom: 20px;
             }
 
             .mobile-toggle-v2 {
@@ -2366,7 +2366,7 @@
             }
 
             .bottom-nav {
-                display: flex;
+                display: none !important;
             }
 
             .chart-row-double, .chart-row-triple {
@@ -2900,9 +2900,6 @@
                     <button class="submenu-btn" data-subtab="analisa" onclick="switchDashboardSubtab('analisa')">
                         <i class="fa-solid fa-chart-line"></i> Analisa
                     </button>
-                    <button class="submenu-btn" data-subtab="filter" onclick="switchDashboardSubtab('filter')">
-                        <i class="fa-solid fa-filter"></i> Filter
-                    </button>
                 </div>
 
                 <!-- REAL-TIME FLEET MONITORING GRID -->
@@ -2918,152 +2915,6 @@
                         </div>
                     </div>
                     <div class="fleet-grid" id="fleet-monitoring-grid"></div>
-                </div>
-
-                <!-- PANEL FILTER LANJUTAN WRAPPER -->
-                <div id="dashboard-filter-section" style="display: none; flex-direction: column; gap: 24px;">
-                    <!-- PANEL FILTER LANJUTAN -->
-                    <div class="filter-panel" style="margin-top: 0;">
-                        <div style="font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-filter" style="color: var(--primary);"></i> Panel Analisis & Filter Data</div>
-                        <div class="filter-grid">
-                            <div class="form-group">
-                                <label>Rentang Tanggal Dari</label>
-                                <input type="date" class="form-control" id="filter-date-from">
-                            </div>
-                            <div class="form-group">
-                                <label>Sampai</label>
-                                <input type="date" class="form-control" id="filter-date-to">
-                            </div>
-                            <div class="form-group">
-                                <label>Jenis Unit</label>
-                                <select class="form-control" id="filter-jenis" onchange="updateFilterDropdownTypes()">
-                                    <option value="">Semua Jenis</option>
-                                    <option value="FORKLIFT">FORKLIFT</option>
-                                    <option value="LOADER">LOADER</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Tipe Unit</label>
-                                <select class="form-control" id="filter-type">
-                                    <option value="">Semua Tipe</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Kategori</label>
-                                <select class="form-control" id="filter-kategori">
-                                    <option value="">Semua Kategori</option>
-                                    <option value="ENGINE">ENGINE</option>
-                                    <option value="TRANSMISSION">TRANSMISSION</option>
-                                    <option value="HYDRAULIC">HYDRAULIC</option>
-                                    <option value="ELECTRICAL">ELECTRICAL</option>
-                                    <option value="TIRE">TIRE</option>
-                                    <option value="BRAKE">BRAKE</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Status</label>
-                                <select class="form-control" id="filter-status">
-                                    <option value="">Semua Status</option>
-                                    <option value="ONGOING">ONGOING</option>
-                                    <option value="SELESAI">SELESAI</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Kondisi Operasional</label>
-                                <select class="form-control" id="filter-kondisi-operasional">
-                                    <option value="">Semua Kondisi</option>
-                                    <option value="BREAKDOWN">🔴 BREAKDOWN</option>
-                                    <option value="RUNNING">🟡 RUNNING</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="filter-actions">
-                            <button class="btn btn-secondary" onclick="resetFilters()"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
-                            <button class="btn" onclick="applyFilters()"><i class="fa-solid fa-check"></i> Terapkan Analisa</button>
-                        </div>
-                    </div>
-
-                    <!-- DASHBOARD KPI GRIDS -->
-                    <div class="dashboard-kpi-grid">
-                        <div class="kpi-card kpi-blue">
-                            <div class="kpi-icon"><i class="fa-solid fa-wrench"></i></div>
-                            <div class="kpi-details">
-                                <div class="kpi-title">Total Kejadian</div>
-                                <div class="kpi-value" id="kpi-total-breakdowns">0</div>
-                            </div>
-                        </div>
-                        <div class="kpi-card kpi-amber">
-                            <div class="kpi-icon"><i class="fa-solid fa-calendar-day"></i></div>
-                            <div class="kpi-details">
-                                <div class="kpi-title">Bulan Ini</div>
-                                <div class="kpi-value" id="kpi-month-breakdowns">0</div>
-                            </div>
-                        </div>
-                        <div class="kpi-card kpi-red">
-                            <div class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                            <div class="kpi-details">
-                                <div class="kpi-title">Armada Aktif BD</div>
-                                <div class="kpi-value" id="kpi-ongoing-count">0</div>
-                            </div>
-                        </div>
-                        <div class="kpi-card kpi-green" onclick="switchTab('tab-riwayat')" style="cursor: pointer;">
-                            <div class="kpi-icon"><i class="fa-solid fa-truck-pickup"></i></div>
-                            <div class="kpi-details">
-                                <div class="kpi-title" style="font-size: 0.8rem;">Unit Terbanyak BD</div>
-                                <div class="kpi-value" id="kpi-worst-unit" style="font-size: 1.15rem; font-weight: 800;">-</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- CHARTS ROW 1 (TRENS & PROPORSI TYPE) -->
-                    <div class="chart-row-double">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-title"><i class="fa-solid fa-chart-line"></i> Tren Durasi Breakdown per Minggu</div>
-                            </div>
-                            <div style="position: relative; height: 300px; width: 100%;">
-                                <canvas id="chart-weekly-trend"></canvas>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-title"><i class="fa-solid fa-chart-pie"></i> Proporsi Jenis Unit</div>
-                            </div>
-                            <div style="position: relative; height: 300px; width: 100%; display: flex; align-items: center; justify-content: center;">
-                                <canvas id="chart-jenis-share"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- CHARTS ROW 2 (TIPE UNIT & KATEGORI) -->
-                    <div class="chart-row-double">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-title"><i class="fa-solid fa-chart-bar"></i> Jumlah Kasus per Kategori Sistem</div>
-                            </div>
-                            <div style="position: relative; height: 300px; width: 100%;">
-                                <canvas id="chart-categories"></canvas>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-title"><i class="fa-solid fa-medal"></i> Ranking Unit Sering Breakdown</div>
-                            </div>
-                            <div class="ranking-list" id="dashboard-ranking-list">
-                                <!-- Populated dynamically -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- CHARTS ROW 3 (TOP PILIHAN KERUSAKAN) -->
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title"><i class="fa-solid fa-list-ol"></i> Top 10 Gejala Pilihan Kerusakan Terbanyak</div>
-                        </div>
-                        <div class="choices-rank-list" id="dashboard-top-choices-list">
-                            <!-- Populated dynamically -->
-                        </div>
-                    </div>
                 </div>
 
                 <!-- ============================================== -->
@@ -4672,6 +4523,16 @@
                 textSubtitle.textContent = "Arsip rekaman perbaikan dan durasi breakdown alat berat";
                 renderHistoryTable();
             }
+
+            // Close mobile sidebar if open
+            const sidebar = document.getElementById("sidebar");
+            const ovl = document.getElementById("sidebarOvl");
+            if (sidebar && sidebar.classList.contains("open")) {
+                sidebar.classList.remove("open");
+            }
+            if (ovl && ovl.classList.contains("open")) {
+                ovl.classList.remove("open");
+            }
         }
 
         // ==============================================
@@ -5563,8 +5424,11 @@
         // ==============================================
         // Update model units dropdown based on selected jenis unit in filter panel
         function updateFilterDropdownTypes() {
-            const filterJenis = document.getElementById("filter-jenis").value;
+            const filterJenisEl = document.getElementById("filter-jenis");
             const typeDropdown = document.getElementById("filter-type");
+            if (!filterJenisEl || !typeDropdown) return;
+            
+            const filterJenis = filterJenisEl.value;
             typeDropdown.innerHTML = '<option value="">Semua Tipe</option>';
 
             const uniqueTypes = [...new Set(cachedJenisUnit
@@ -5586,12 +5450,12 @@
         }
 
         function resetFilters() {
-            document.getElementById("filter-date-from").value = "";
-            document.getElementById("filter-date-to").value = "";
-            document.getElementById("filter-jenis").value = "";
-            document.getElementById("filter-type").value = "";
-            document.getElementById("filter-kategori").value = "";
-            document.getElementById("filter-status").value = "";
+            if (document.getElementById("filter-date-from")) document.getElementById("filter-date-from").value = "";
+            if (document.getElementById("filter-date-to")) document.getElementById("filter-date-to").value = "";
+            if (document.getElementById("filter-jenis")) document.getElementById("filter-jenis").value = "";
+            if (document.getElementById("filter-type")) document.getElementById("filter-type").value = "";
+            if (document.getElementById("filter-kategori")) document.getElementById("filter-kategori").value = "";
+            if (document.getElementById("filter-status")) document.getElementById("filter-status").value = "";
             if (document.getElementById("filter-kondisi-operasional")) {
                 document.getElementById("filter-kondisi-operasional").value = "";
             }
@@ -5602,12 +5466,12 @@
         }
 
         function getFilteredDataset() {
-            const fFrom = document.getElementById("filter-date-from").value;
-            const fTo = document.getElementById("filter-date-to").value;
-            const fJenis = document.getElementById("filter-jenis").value;
-            const fType = document.getElementById("filter-type").value;
-            const fKategori = document.getElementById("filter-kategori").value;
-            const fStatus = document.getElementById("filter-status").value;
+            const fFrom = document.getElementById("filter-date-from") ? document.getElementById("filter-date-from").value : "";
+            const fTo = document.getElementById("filter-date-to") ? document.getElementById("filter-date-to").value : "";
+            const fJenis = document.getElementById("filter-jenis") ? document.getElementById("filter-jenis").value : "";
+            const fType = document.getElementById("filter-type") ? document.getElementById("filter-type").value : "";
+            const fKategori = document.getElementById("filter-kategori") ? document.getElementById("filter-kategori").value : "";
+            const fStatus = document.getElementById("filter-status") ? document.getElementById("filter-status").value : "";
             const fKondisi = document.getElementById("filter-kondisi-operasional") ? document.getElementById("filter-kondisi-operasional").value : "";
 
             return cachedRiwayat.filter(item => {
@@ -5663,10 +5527,13 @@
             });
             const avgMin = completed > 0 ? Math.round(totalDurasiMin / completed) : 0;
             
-            // Update DOM KPIs
-            document.getElementById("kpi-total-breakdowns").textContent = total;
-            document.getElementById("kpi-month-breakdowns").textContent = mtd;
-            document.getElementById("kpi-ongoing-count").textContent = ongoing;
+            // Update DOM KPIs (null-safe: filter section may be removed)
+            const kpiTotalEl = document.getElementById("kpi-total-breakdowns");
+            const kpiMonthEl = document.getElementById("kpi-month-breakdowns");
+            const kpiOngoingEl = document.getElementById("kpi-ongoing-count");
+            if (kpiTotalEl) kpiTotalEl.textContent = total;
+            if (kpiMonthEl) kpiMonthEl.textContent = mtd;
+            if (kpiOngoingEl) kpiOngoingEl.textContent = ongoing;
             
             // Calculate Worst Unit
             const unitBreakdownsAll = {};
@@ -5714,13 +5581,17 @@
                 return wObj.compCount > 0 ? Number((wObj.totalMins / wObj.compCount / 60).toFixed(1)) : 0;
             });
 
-            renderWeeklyTrendChart(weekLabels, weekCounts, weekAvgHours);
+            if (document.getElementById("chart-weekly-trend")) {
+                renderWeeklyTrendChart(weekLabels, weekCounts, weekAvgHours);
+            }
 
             // 3. RENDER CHART 2: PROPORSI JENIS (DONUT)
             const forkliftCount = data.filter(r => r.jenisUnit === "FORKLIFT").length;
             const loaderCount = data.filter(r => r.jenisUnit === "LOADER").length;
             
-            renderJenisShareChart(forkliftCount, loaderCount);
+            if (document.getElementById("chart-jenis-share")) {
+                renderJenisShareChart(forkliftCount, loaderCount);
+            }
 
             // 4. RENDER CHART 3: KATEGORI KERUSAKAN (HORIZONTAL BAR)
             const catMap = {};
@@ -5747,10 +5618,12 @@
                 }
             }
 
-            if (activeCats.length === 0) {
-                renderCategoriesChart(["ENGINE", "TRANSMISSION", "HYDRAULIC", "ELECTRICAL", "TIRE", "BRAKE"], [0, 0, 0, 0, 0, 0]);
-            } else {
-                renderCategoriesChart(activeCats, activeCounts);
+            if (document.getElementById("chart-categories")) {
+                if (activeCats.length === 0) {
+                    renderCategoriesChart(["ENGINE", "TRANSMISSION", "HYDRAULIC", "ELECTRICAL", "TIRE", "BRAKE"], [0, 0, 0, 0, 0, 0]);
+                } else {
+                    renderCategoriesChart(activeCats, activeCounts);
+                }
             }
 
             // 5. RENDER SECTION: RANKING TOP BREAKDOWN UNITS (1,2,3 MEDALS)
@@ -5777,6 +5650,12 @@
             const sortedUnits = Object.values(unitBreakdowns).sort((a,b) => b.count - a.count);
             
             const rankingList = document.getElementById("dashboard-ranking-list");
+            if (!rankingList) {
+                // Ranking section removed, skip to fleet monitoring
+                renderUnitStatusMonitoring();
+                renderAnalisaSection();
+                return;
+            }
             rankingList.innerHTML = "";
             
             if (sortedUnits.length === 0) {
@@ -5816,6 +5695,11 @@
                 .sort((a,b) => b.count - a.count);
 
             const topChoicesList = document.getElementById("dashboard-top-choices-list");
+            if (!topChoicesList) {
+                renderUnitStatusMonitoring();
+                renderAnalisaSection();
+                return;
+            }
             topChoicesList.innerHTML = "";
             
             if (sortedChoices.length === 0) {
@@ -6575,11 +6459,9 @@
             
             // Toggle display of sections
             const statusSec = document.getElementById("dashboard-status-section");
-            const filterSec = document.getElementById("dashboard-filter-section");
             const analisaSec = document.getElementById("dashboard-analisa-section");
             
             if (statusSec) statusSec.style.display = (subtab === "status") ? "block" : "none";
-            if (filterSec) filterSec.style.display = (subtab === "filter") ? "block" : "none";
             if (analisaSec) {
                 analisaSec.style.display = (subtab === "analisa") ? "flex" : "none";
                 if (subtab === "analisa") {
@@ -7912,6 +7794,197 @@
         }
         #detail-modal-overlay {
             z-index: 11000 !important;
+        }
+        /* =========================================================== */
+        /* MOBILE RESPONSIVE STYLES — New Popups, Modals & Analisa     */
+        /* Only affects mobile screens. Desktop remains untouched.     */
+        /* =========================================================== */
+
+        /* === TABLET (max-width: 768px) === */
+        @media (max-width: 768px) {
+            /* Analisa Modal Overlay (dark popup for unit detail) */
+            #analisa-modal-overlay > div {
+                max-width: 98vw !important;
+                width: 98% !important;
+                padding: 16px !important;
+                border-radius: 12px !important;
+                gap: 12px !important;
+            }
+            #analisa-modal-overlay #analisa-modal-title {
+                font-size: 0.9rem !important;
+            }
+            #analisa-modal-overlay #analisa-modal-body {
+                max-height: 70vh !important;
+                font-size: 0.78rem !important;
+            }
+
+            /* Detail Modal (Rincian Riwayat Kerja - white popup) */
+            #detail-modal-overlay .modal-card {
+                max-width: 96% !important;
+                width: 96% !important;
+                max-height: 92vh !important;
+                margin: 4vh auto !important;
+                padding: 12px 16px !important;
+                border-radius: 12px !important;
+            }
+            #detail-modal-overlay .modal-body {
+                padding: 12px 14px !important;
+            }
+            #detail-modal-overlay .summary-grid {
+                grid-template-columns: 1fr !important;
+                padding: 10px 12px !important;
+                gap: 10px !important;
+            }
+            #detail-modal-overlay #det-photo-item {
+                grid-column: 1 !important;
+                grid-row: auto !important;
+                border-left: none !important;
+                border-top: 1.5px dashed rgba(79, 70, 229, 0.18) !important;
+                padding-left: 0 !important;
+                padding-top: 12px !important;
+                margin-top: 4px !important;
+            }
+            #detail-modal-overlay #det-photo-img {
+                height: 140px !important;
+            }
+
+            /* Analisa Section — Charts grid becomes 1 column */
+            #dashboard-analisa-section {
+                padding: 14px !important;
+                min-height: auto !important;
+            }
+            #dashboard-analisa-section .cyber-glow-card {
+                padding: 12px 14px !important;
+            }
+
+            /* Dashboard submenu tabs */
+            .dashboard-submenu-container {
+                width: 100% !important;
+                gap: 6px !important;
+                padding: 6px 8px !important;
+            }
+            .submenu-btn {
+                padding: 8px 14px !important;
+                font-size: 0.72rem !important;
+                letter-spacing: 0.5px !important;
+            }
+        }
+
+        /* === MOBILE PHONE (max-width: 480px) === */
+        @media (max-width: 480px) {
+            /* Analisa Modal Overlay (dark popup) */
+            #analisa-modal-overlay > div {
+                max-width: 100vw !important;
+                width: 100% !important;
+                padding: 12px !important;
+                border-radius: 10px 10px 0 0 !important;
+                max-height: 95vh !important;
+                margin-top: auto !important;
+            }
+            #analisa-modal-overlay {
+                align-items: flex-end !important;
+            }
+            #analisa-modal-overlay #analisa-modal-title {
+                font-size: 0.82rem !important;
+                padding-right: 32px !important;
+            }
+            #analisa-modal-overlay #analisa-modal-body {
+                max-height: 78vh !important;
+                font-size: 0.72rem !important;
+            }
+            /* Unit detail popup — header, stats, table */
+            #analisa-modal-overlay #analisa-modal-body table {
+                font-size: 0.65rem !important;
+            }
+            #analisa-modal-overlay #analisa-modal-body table th,
+            #analisa-modal-overlay #analisa-modal-body table td {
+                padding: 4px 2px !important;
+            }
+            /* Hide "Klik Detail" text on very small screens, keep icon */
+            #analisa-modal-overlay #analisa-modal-body table button {
+                font-size: 0.55rem !important;
+                padding: 2px 4px !important;
+            }
+
+            /* Detail Modal (Rincian Riwayat Kerja) */
+            #detail-modal-overlay .modal-card {
+                max-width: 100% !important;
+                width: 100% !important;
+                max-height: 95vh !important;
+                margin: 0 !important;
+                border-radius: 12px 12px 0 0 !important;
+                padding: 10px 12px !important;
+            }
+            #detail-modal-overlay .modal-header h3 {
+                font-size: 0.9rem !important;
+            }
+            #detail-modal-overlay .summary-label {
+                font-size: 0.65rem !important;
+            }
+            #detail-modal-overlay .summary-value {
+                font-size: 0.8rem !important;
+            }
+            #detail-modal-overlay #det-photo-img {
+                height: 120px !important;
+            }
+            #detail-modal-overlay .modal-footer {
+                padding: 8px 0 !important;
+            }
+            #detail-modal-overlay .modal-footer .btn {
+                font-size: 0.8rem !important;
+                padding: 8px 20px !important;
+            }
+
+            /* Analisa Section — Full compact mobile */
+            #dashboard-analisa-section {
+                padding: 10px !important;
+                gap: 12px !important;
+                border-radius: 10px !important;
+            }
+
+            /* KPI Cards in Analisa — 2 columns on mobile */
+            #dashboard-analisa-section .cyber-glow-card {
+                padding: 10px 12px !important;
+                font-size: 0.7rem !important;
+            }
+
+            /* Ranking table in Analisa — smaller text */
+            #dashboard-analisa-section table {
+                font-size: 0.65rem !important;
+            }
+            #dashboard-analisa-section table th,
+            #dashboard-analisa-section table td {
+                padding: 6px 4px !important;
+            }
+
+            /* Fleet cards */
+            .fleet-card {
+                padding: 12px !important;
+            }
+            .fleet-card .fleet-card-header {
+                flex-wrap: wrap !important;
+            }
+
+            /* Dashboard submenu tabs - stack */
+            .dashboard-submenu-container {
+                gap: 4px !important;
+                padding: 4px 6px !important;
+            }
+            .submenu-btn {
+                padding: 7px 10px !important;
+                font-size: 0.65rem !important;
+                gap: 4px !important;
+            }
+            .submenu-btn i {
+                font-size: 0.8rem !important;
+            }
+
+            /* SweetAlert2 mobile adjustments */
+            .swal2-popup {
+                max-width: 92vw !important;
+                padding: 16px !important;
+                font-size: 0.85rem !important;
+            }
         }
     </style>
     <!-- FUTURISTIC MODAL OVERLAY DETAIL POPUP (ROOT LEVEL VIEWPORT FIX) -->
