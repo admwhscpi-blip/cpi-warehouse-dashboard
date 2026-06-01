@@ -8,7 +8,7 @@
     <!-- FONTS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <!-- ICON CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- CHART JS -->
@@ -110,10 +110,10 @@
 
         /* SIDEBAR (Desktop) */
         .sidebar {
-            width: 280px;
-            background: linear-gradient(180deg, #0b0f19 0%, #1e293b 100%) !important;
-            border-right: 1.5px solid rgba(79, 70, 229, 0.3) !important;
-            box-shadow: 6px 0 35px rgba(0, 0, 0, 0.4);
+            width: 260px;
+            background: linear-gradient(165deg, #1e1b4b 0%, #312e81 36%, #4338ca 78%, #4c1d95 100%) !important;
+            border-right: none !important;
+            box-shadow: 12px 0 40px rgba(49, 46, 129, 0.35) !important;
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
@@ -124,20 +124,21 @@
             left: 0;
             top: 0;
             overflow-y: auto;
+            overflow-x: hidden !important;
         }
 
         .sidebar-logo {
             padding: 30px 20px 15px 20px;
-            border-bottom: 1px solid rgba(79, 70, 229, 0.2);
+            border-bottom: 1px solid rgba(196, 181, 253, 0.12);
         }
 
         .sidebar-logo h2 {
             font-family: 'Orbitron', sans-serif;
             font-size: 1.45rem;
-            color: #ffffff;
+            color: #faf5ff;
             letter-spacing: 2px;
             line-height: 1.2;
-            text-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+            text-shadow: 0 2px 20px rgba(167, 139, 250, 0.35);
         }
 
         .sidebar-logo span.v-badge {
@@ -145,20 +146,20 @@
             font-size: 0.58rem;
             color: #fff;
             font-weight: 800;
-            background: var(--primary-gradient);
+            background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%) !important;
             padding: 3px 8px;
             border-radius: 6px;
             margin-left: 6px;
             letter-spacing: 0.5px;
             vertical-align: middle;
-            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 2px 14px rgba(124, 58, 237, 0.45) !important;
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .sidebar-logo p {
             font-size: 0.65rem;
-            color: #64748b;
-            margin-top: 35px;
+            color: rgba(221, 214, 254, 0.55);
+            margin-top: 40px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1.2px;
@@ -166,32 +167,32 @@
 
         /* Clock Widget */
         .mini-clock-wrapper {
-            margin-top: 15px;
-            transform: scale(0.85);
+            margin-top: 20px;
+            transform: scale(0.8);
             transform-origin: left top;
-            width: 115%;
-            margin-bottom: -10px;
+            width: 125%;
+            margin-bottom: -15px;
         }
 
         .clock-container {
             display: flex;
             align-items: center;
             gap: 15px;
-            padding: 10px 20px;
-            background: rgba(15, 23, 42, 0.8) !important;
-            border: 1.5px solid rgba(79, 70, 229, 0.45) !important;
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.06) !important;
+            border: 1px solid rgba(196, 181, 253, 0.2) !important;
             border-radius: 40px;
             font-family: 'Orbitron', sans-serif;
             color: #ffffff;
-            min-width: 300px;
-            height: 65px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35), inset 0 0 15px rgba(79, 70, 229, 0.2) !important;
+            min-width: 320px;
+            height: 60px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35), inset 0 0 15px rgba(196, 181, 253, 0.1) !important;
             transition: all 0.3s;
         }
 
         .clock-container:hover {
-            border-color: #06B6D4 !important;
-            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.25), inset 0 0 20px rgba(6, 182, 212, 0.15) !important;
+            border-color: #a78bfa !important;
+            box-shadow: 0 8px 30px rgba(167, 139, 250, 0.25), inset 0 0 20px rgba(167, 139, 250, 0.15) !important;
         }
 
         .clock-date-group {
@@ -204,10 +205,9 @@
 
         .clock-day {
             font-size: 0.65rem;
-            color: #06B6D4 !important; /* Cyan glow */
+            color: #c4b5fd !important;
             letter-spacing: 2px;
             font-weight: 700;
-            text-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
         }
 
         .clock-date {
@@ -230,7 +230,7 @@
         .clock-circle {
             position: absolute;
             inset: 0;
-            border: 2px solid rgba(99, 102, 241, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 50%;
         }
 
@@ -238,10 +238,9 @@
             position: absolute;
             inset: 0;
             border: 2px solid transparent;
-            border-top: 2px solid #06B6D4;
+            border-top: 2px solid #a78bfa !important;
             border-radius: 50%;
             transition: transform 1s linear;
-            filter: drop-shadow(0 0 8px #06B6D4);
         }
 
         .clock-time-group {
@@ -254,9 +253,8 @@
         .clock-ampm {
             font-size: 0.42rem;
             font-weight: 900;
-            color: #06B6D4 !important;
+            color: #c4b5fd !important;
             text-transform: uppercase;
-            text-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
         }
 
         .clock-time {
@@ -277,8 +275,8 @@
             position: relative;
             width: 100%;
             text-align: left;
-            padding: 13px 18px;
-            background: transparent;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.02);
             border: 1px solid transparent;
             color: #94a3b8;
             font-family: 'Rajdhani', sans-serif;
@@ -293,6 +291,38 @@
             border-radius: 12px;
             margin-bottom: 8px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg,
+                rgba(167, 139, 250, 0.95) 58deg,
+                transparent 120deg,
+                rgba(129, 140, 248, 0.92) 196deg,
+                transparent 260deg,
+                rgba(196, 181, 253, 0.9) 318deg,
+                transparent 360deg
+            ) !important;
+            border-radius: 12px;
+            z-index: -1;
+            opacity: 0;
+            animation: bkkNavRotatingGlow 2.6s linear infinite !important;
+            transform-origin: center center !important;
+        }
+
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            inset: 1px;
+            background: rgba(30, 27, 75, 0.92);
+            border-radius: 11px;
+            z-index: -1;
+            transition: background 0.3s;
         }
 
         .nav-item i {
@@ -300,38 +330,41 @@
             width: 20px;
             text-align: center;
             color: #818CF8;
-            transition: transform 0.3s, filter 0.3s;
+            transition: transform 0.3s;
+            position: relative;
+            z-index: 2;
         }
 
         .nav-item:hover {
             color: #ffffff;
-            background: rgba(99, 102, 241, 0.12);
-            transform: translateX(6px);
-            border-left: 4px solid #06B6D4;
-            border-top-left-radius: 4px;
-            border-bottom-left-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            background: transparent;
         }
 
-        .nav-item:hover i {
-            transform: scale(1.2);
-            color: #06B6D4;
-            filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.8));
+        .nav-item:hover::before,
+        .nav-item.active::before {
+            opacity: 1;
         }
 
         .nav-item.active {
             color: #ffffff !important;
             font-weight: 800;
-            background: linear-gradient(135deg, rgba(79, 70, 229, 0.8), rgba(6, 182, 212, 0.8)) !important;
-            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.35), 0 0 15px rgba(79, 70, 229, 0.25);
-            transform: scale(1.02) translateX(6px);
-            border-left: 4px solid #06B6D4;
-            border-top-left-radius: 4px;
-            border-bottom-left-radius: 4px;
+            background: transparent;
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35), 0 0 22px rgba(139, 92, 246, 0.45) !important;
+            transform: scale(1.03) translateX(5px);
+        }
+
+        .nav-item.active::after {
+            background: linear-gradient(135deg, rgba(91, 33, 182, 0.95), rgba(76, 29, 149, 0.98)) !important;
         }
 
         .nav-item.active i {
-            color: #ffffff !important;
-            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
+            color: #e9d5ff !important;
+        }
+
+        @keyframes bkkNavRotatingGlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         .nav-divider {
@@ -341,61 +374,69 @@
         }
 
         .sidebar-footer-brand {
+            margin-top: auto;
             padding: 14px 10px 18px;
-            border-top: 1px solid rgba(79, 70, 229, 0.25) !important;
-            background: rgba(9, 13, 22, 0.95) !important;
+            border-top: 1px solid rgba(0, 0, 0, 0.35) !important;
+            background: #0a0a0a !important;
         }
 
         .sidebar-brand-lines {
             text-align: center;
-            background: rgba(17, 24, 39, 0.6) !important;
-            border: 1px solid rgba(79, 70, 229, 0.3) !important;
+            background: #eef1f5 !important;
             border-radius: 12px;
-            padding: 12px 8px 10px;
-            box-shadow: inset 0 0 12px rgba(79, 70, 229, 0.05);
-            transition: border-color 0.3s, box-shadow 0.3s;
+            padding: 14px 8px 12px;
+            box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08) !important;
+            border: none !important;
         }
 
         .sidebar-brand-lines:hover {
-            border-color: #06B6D4 !important;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.25) !important;
+            box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08) !important;
         }
 
         .sidebar-brand-main {
             margin: 0;
-            font-size: 0.62rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.625rem;
             font-weight: 700;
-            line-height: 1.5;
-            color: #e2e8f0;
+            line-height: 1.55;
+            color: #0a0a0a !important;
         }
 
         .sidebar-brand-tag {
             display: block;
-            margin-top: 6px;
+            margin-top: 8px;
             font-size: 0.58rem;
             font-weight: 700;
-            color: #06B6D4;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
+            color: #0a0a0a !important;
+            letter-spacing: 0.02em;
+            text-transform: none;
         }
 
         .sidebar-brand-values {
-            margin: 10px 0 0;
-            padding: 8px 4px 0;
-            border-top: 1px solid rgba(79, 70, 229, 0.2);
-            font-size: 0.5rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
+            margin: 12px 0 0;
+            padding: 10px 4px 4px;
+            border-top: 1px solid rgba(15, 23, 42, 0.1) !important;
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(0.42rem, 0.45vw + 0.33rem, 0.5rem);
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            line-height: 1.35;
             text-transform: uppercase;
-            color: #94a3b8;
+            color: #334155 !important;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 5px;
+            flex-wrap: wrap;
+            gap: 3px 5px;
+            max-width: 100%;
         }
 
         .sidebar-values-sep {
-            color: rgba(79, 70, 229, 0.5);
+            color: #94a3b8 !important;
+            font-weight: 600;
+            opacity: 0.9;
+            flex-shrink: 0;
+            font-size: 0.85em;
         }
 
         /* Sidebar Overlay for Mobile */
@@ -423,7 +464,7 @@
             overflow: hidden;
             min-width: 0;
             padding: 0;
-            margin-left: 280px;
+            margin-left: 260px;
             transition: var(--transition);
         }
 
@@ -433,31 +474,44 @@
             align-items: center;
             justify-content: space-between;
             gap: 14px;
-            min-height: 75px;
-            padding: 14px 30px;
-            background: linear-gradient(135deg, #0b0f19 0%, #1e293b 100%);
-            border-bottom: 1.5px solid rgba(79, 70, 229, 0.3);
-            box-shadow: 0 4px 25px rgba(79, 70, 229, 0.15);
+            flex-wrap: wrap;
+            height: auto !important;
+            min-height: 72px;
+            padding: 14px clamp(14px, 3vw, 28px) !important;
+            background: #eef2f6 !important;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.35) !important;
+            box-shadow: 0 2px 16px rgba(15, 23, 42, 0.06) !important;
             flex-shrink: 0;
             position: relative;
             z-index: 10;
         }
 
         .header-premium-v3 .header-left {
+            flex: 1;
+            min-width: min(100%, 260px);
             display: flex;
             align-items: center;
-            flex: 1;
         }
 
         .header-premium-v3 .header-left-inner {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 15px;
             width: 100%;
-            padding: 8px 16px;
+            padding: 14px 18px;
             border-radius: 14px;
-            border: 1px solid rgba(79, 70, 229, 0.25);
-            background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(15, 23, 42, 0.6) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.32) !important;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 2px 12px rgba(5, 150, 105, 0.08) !important;
+            background-color: #ecfdf5 !important;
+            background-image:
+                repeating-linear-gradient(
+                    -36deg,
+                    rgba(255, 255, 255, 0) 0,
+                    rgba(255, 255, 255, 0) 8px,
+                    rgba(5, 150, 105, 0.11) 8px,
+                    rgba(5, 150, 105, 0.11) 9px
+                ),
+                linear-gradient(165deg, #d1fae5 0%, #ecfdf5 55%, #f0fdf4 100%) !important;
             position: relative;
             overflow: hidden;
         }
@@ -467,23 +521,48 @@
             position: absolute;
             inset: 0;
             pointer-events: none;
-            background: linear-gradient(110deg, transparent 0%, rgba(79, 70, 229, 0.12) 40%, transparent 80%);
-            background-size: 200% 100%;
-            animation: header-sweep 6.5s ease-in-out infinite;
+            z-index: 0;
+            background:
+                linear-gradient(110deg, rgba(255,255,255,0) 0%, rgba(186,230,253,0.36) 42%, rgba(255,255,255,0) 74%),
+                radial-gradient(circle at 16% 28%, rgba(56,189,248,0.16), transparent 45%) !important;
+            background-size: 220% 100%, auto !important;
+            animation: bkkHeaderSweepBlue 6.8s ease-in-out infinite !important;
         }
 
-        @keyframes header-sweep {
-            0% { background-position: 150% 0; }
-            100% { background-position: -50% 0; }
+        .header-premium-v3 .header-left-inner::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            border-radius: inherit;
+            box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.45), inset 0 0 28px rgba(14, 165, 233, 0.08) !important;
+            animation: bkkHeaderPulseBlue 3.4s ease-in-out infinite !important;
+        }
+
+        .header-premium-v3 .header-left-inner > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes bkkHeaderSweepBlue {
+            0% { background-position: 200% 0, 0 0; }
+            100% { background-position: -40% 0, 0 0; }
+        }
+
+        @keyframes bkkHeaderPulseBlue {
+            0%, 100% { opacity: 0.55; }
+            50% { opacity: 0.95; }
         }
 
         .mobile-toggle-v2 {
             display: none;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(79, 70, 229, 0.3);
+            background: rgba(255, 255, 255, 0.92) !important;
+            border-color: rgba(6, 95, 70, 0.25) !important;
+            color: #064e3b !important;
+            box-shadow: 0 1px 4px rgba(6, 78, 59, 0.12) !important;
             border-radius: 10px;
             font-size: 1.2rem;
-            color: #818CF8;
             cursor: pointer;
             width: 44px;
             height: 44px;
@@ -493,9 +572,10 @@
         }
 
         .mobile-toggle-v2:hover {
-            background: var(--primary);
-            color: #fff;
-            box-shadow: 0 0 15px rgba(79, 70, 229, 0.5);
+            background: #0ea5e9 !important;
+            color: #fff !important;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.5) !important;
+            transform: translateY(-2px) !important;
         }
 
         .header-title-v3 {
@@ -504,57 +584,76 @@
 
         .header-logo-title {
             font-family: 'Rajdhani', sans-serif;
-            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
-            font-weight: 800;
+            font-size: clamp(1.35rem, 3vw, 2rem) !important;
+            font-weight: 950 !important;
             text-transform: uppercase;
             letter-spacing: 3px;
             margin: 0;
             line-height: 1.1;
-            color: #ffffff;
-            text-shadow: 0 0 12px rgba(129, 140, 248, 0.6);
+            color: #022c22 !important;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            -webkit-text-fill-color: unset !important;
         }
 
         .header-meta-row {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 14px;
-            margin-top: 4px;
+            flex-wrap: wrap;
+            margin-top: 8px;
         }
 
         .header-tagline {
-            font-size: clamp(0.7rem, 1.4vw, 0.8rem);
-            color: #94a3b8;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 700;
-            letter-spacing: 0.05em;
+            font-family: 'Inter', sans-serif;
+            font-weight: 800 !important;
+            font-size: clamp(0.72rem, 1.4vw, 0.84rem) !important;
+            color: #14532d !important;
+            letter-spacing: 0.02em;
+            max-width: 200px;
+            line-height: 1.35;
             text-transform: uppercase;
         }
 
         .header-meta-divider {
             width: 1px;
-            height: 18px;
-            background: rgba(79, 70, 229, 0.4);
+            align-self: stretch;
+            min-height: 2.5rem;
+            background: linear-gradient(
+                180deg,
+                transparent 0%,
+                rgba(6, 95, 70, 0.28) 15%,
+                rgba(6, 95, 70, 0.28) 85%,
+                transparent 100%
+            ) !important;
+            flex-shrink: 0;
+            height: auto !important;
         }
 
         .header-site-block {
             display: flex;
             flex-direction: column;
-            gap: 1px;
+            gap: 3px;
+            min-width: 0;
         }
 
         .header-site-title {
             font-family: 'Rajdhani', sans-serif;
-            font-weight: 800;
-            font-size: 0.72rem;
-            letter-spacing: 0.1em;
-            color: #818CF8;
-            text-shadow: 0 0 8px rgba(129, 140, 248, 0.3);
+            font-weight: 900 !important;
+            font-size: clamp(0.78rem, 1.6vw, 0.95rem) !important;
+            letter-spacing: 0.14em;
+            color: #064e3b !important;
+            text-shadow: none !important;
         }
 
         .header-site-address {
-            font-size: 0.58rem;
-            font-weight: 600;
-            color: #94a3b8;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.62rem !important;
+            font-weight: 700 !important;
+            color: #166534 !important;
+            line-height: 1.45;
+            max-width: 300px;
         }
 
         .header-user-actions {
@@ -562,44 +661,59 @@
             align-items: center;
             gap: 12px;
             flex-shrink: 0;
-            padding: 8px 12px;
+            padding: 10px 14px !important;
             border-radius: 14px;
-            border: 1px solid rgba(79, 70, 229, 0.25);
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(8px);
+            border: 1px solid rgba(100, 116, 139, 0.28) !important;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 2px 10px rgba(15, 23, 42, 0.06) !important;
+            background-color: #f1f5f9 !important;
+            background-image:
+                repeating-linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0) 0,
+                    rgba(255, 255, 255, 0) 7px,
+                    rgba(71, 85, 105, 0.09) 7px,
+                    rgba(71, 85, 105, 0.09) 8px
+                ),
+                linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%) !important;
+            backdrop-filter: none !important;
         }
 
         .header-user-chip {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 6px 12px 6px 8px;
-            background: rgba(79, 70, 229, 0.1);
-            border: 1px solid rgba(79, 70, 229, 0.25);
+            padding: 8px 14px 8px 10px !important;
+            background: rgba(255, 255, 255, 0.94) !important;
+            border: 1px solid rgba(71, 85, 105, 0.22) !important;
             border-radius: 999px;
+            box-shadow: 0 1px 6px rgba(15, 23, 42, 0.06) !important;
         }
 
         .header-user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 11px !important;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Orbitron', sans-serif;
+            font-family: 'Rajdhani', sans-serif;
             font-weight: 800;
-            font-size: 0.8rem;
-            color: #fff;
-            background: linear-gradient(135deg, #4f46e5, #06b6d4);
-            box-shadow: 0 0 10px rgba(129, 140, 248, 0.4);
+            font-size: 0.95rem !important;
+            color: #fff !important;
+            background: linear-gradient(145deg, #475569, #334155) !important;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25) !important;
         }
 
         .header-user-name {
             font-family: 'Rajdhani', sans-serif;
             font-weight: 800;
-            font-size: 0.85rem;
+            font-size: 0.92rem !important;
             letter-spacing: 0.04em;
-            color: #ffffff;
+            color: #0f172a !important;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .header-logout-btn {
@@ -607,18 +721,35 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 10px 16px;
+            padding: 10px 16px !important;
+            margin: 0;
             border-radius: 12px;
             cursor: pointer;
             font-family: 'Rajdhani', sans-serif;
             font-weight: 800;
-            font-size: 0.78rem;
-            letter-spacing: 0.08em;
+            font-size: 0.76rem !important;
+            letter-spacing: 0.1em;
             text-transform: uppercase;
-            color: #ffffff;
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(79, 70, 229, 0.25);
-            transition: 0.2s;
+            color: #7f1d1d !important;
+            background: rgba(254, 226, 226, 0.95) !important;
+            border: 1px solid rgba(185, 28, 28, 0.35) !important;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+        }
+
+        .header-logout-btn:hover {
+            background: #fecaca !important;
+            border-color: rgba(185, 28, 28, 0.55) !important;
+            color: #450a0a !important;
+            box-shadow: 0 4px 14px rgba(127, 29, 29, 0.18) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        .header-logout-btn:active {
+            transform: scale(0.98) !important;
+        }
+
+        .header-logout-btn i {
+            font-size: 0.9rem !important;
         }
 
         .header-logout-btn:hover {
@@ -2533,7 +2664,7 @@
         <!-- ===== SIDEBAR PREMIUM ===== -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <h2>HEAVIX <span class="v-badge">v2.0</span></h2>
+                <h2>SMART<br>WAREHOUSE <span class="v-badge">V2.0</span></h2>
                 <div class="mini-clock-wrapper">
                     <div class="clock-container" id="clock-widget">
                         <div class="clock-date-group">
@@ -2550,7 +2681,7 @@
                         </div>
                     </div>
                 </div>
-                <p>ALAT BERAT PORTAL</p>
+                <p>HEAVIX</p>
             </div>
             
             <div class="sidebar-nav">
@@ -2567,14 +2698,14 @@
                     <i class="fas fa-history"></i> Riwayat Laporan
                 </div>
             </div>
-            <div class="sidebar-footer-brand">
+            <div class="sidebar-footer sidebar-footer-brand">
                 <div class="sidebar-brand-lines">
                     <p class="sidebar-brand-main">
-                        Smart Warehouse Live
-                        <span class="sidebar-brand-tag">[Integrated Infrastructure Suite]</span>
+                        PT Charoen Pokphand Indonesia – Cirebon<br>
+                        <span class="sidebar-brand-tag">[Integrated Warehouse Information System]</span>
                     </p>
                     <p class="sidebar-brand-values">
-                        Accuracy<span class="sidebar-values-sep">|</span>Safety<span class="sidebar-values-sep">|</span>Efficiency
+                        <span>Accuracy</span><span class="sidebar-values-sep">|</span><span>Transparency</span><span class="sidebar-values-sep">|</span><span>Accountability</span>
                     </p>
                 </div>
             </div>
@@ -2938,62 +3069,293 @@
                 <!-- ============================================== -->
                 <!-- SECTION ANALISA UTILISASI                      -->
                 <!-- ============================================== -->
-                <div id="dashboard-analisa-section" style="display: none; flex-direction: column; gap: 24px;">
-                    <!-- KPI UTILISASI ARMADA (GRID) -->
-                    <div class="card" style="background: rgba(255, 255, 255, 0.85); border-radius: var(--radius-lg); padding: 24px;">
-                        <div class="card-header" style="margin-bottom: 20px;">
-                            <div class="card-title" style="font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 1.25rem;">
-                                <i class="fa-solid fa-chart-pie" style="color: var(--primary); margin-right: 8px;"></i> KPI UTILISASI ARMADA (30 HARI TERAKHIR)
-                            </div>
-                            <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-top: 4px;">
-                                Persentase Uptime dihitung berdasarkan (720 Jam Tersedia - Durasi Breakdown)
-                            </p>
-                        </div>
-                        <div class="utilization-grid" id="analisa-utilization-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
-                            <!-- Rendered dynamically in JS -->
-                        </div>
-                    </div>
+                <div id="dashboard-analisa-section" style="display: none; flex-direction: column; gap: 20px; position: relative; min-height: 800px; padding: 24px; background: radial-gradient(circle at top left, #0d1226, #070914); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05); color: #f8fafc;">
+                    
+                    <!-- HIGH TECH ANALISA CSS SYSTEM -->
+                    <style>
+                        #dashboard-analisa-section {
+                            --neon-blue: #38bdf8;
+                            --neon-cyan: #06b6d4;
+                            --neon-orange: #f97316;
+                            --neon-green: #10b981;
+                            --neon-red: #ef4444;
+                            --neon-purple: #a855f7;
+                            --neon-gold: #fbbf24;
+                            font-family: 'Inter', sans-serif;
+                        }
 
-                    <!-- DAILY BREAKDOWN ANALYSIS -->
-                    <div class="card" style="background: rgba(255, 255, 255, 0.85); border-radius: var(--radius-lg); padding: 24px;">
-                        <div class="card-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                            <div>
-                                <div class="card-title" style="font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 1.25rem;">
-                                    <i class="fa-solid fa-calendar-days" style="color: var(--primary); margin-right: 8px;"></i> BREAKDOWN DAILY & LOG HARIAN
-                                </div>
-                                <p style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-top: 4px;">
-                                    Pilih unit untuk melihat tren downtime harian dan rincian log aktivitas perbaikan.
-                                </p>
+                        /* Frosted Dark Panels */
+                        .cyber-panel {
+                            background: rgba(13, 20, 38, 0.65);
+                            backdrop-filter: blur(20px);
+                            -webkit-backdrop-filter: blur(20px);
+                            border: 1px solid rgba(255, 255, 255, 0.06);
+                            border-radius: 12px;
+                            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+                            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        }
+
+                        /* Luxury Hover Glow Cards */
+                        .cyber-glow-card {
+                            background: rgba(17, 24, 39, 0.7);
+                            border: 1px solid rgba(255, 255, 255, 0.05);
+                            border-radius: 12px;
+                            padding: 16px 20px;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                            position: relative;
+                            overflow: hidden;
+                        }
+                        .cyber-glow-card::before {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+                            pointer-events: none;
+                        }
+                        .cyber-glow-card:hover {
+                            transform: translateY(-4px) scale(1.02);
+                        }
+
+                        /* High-Tech Form Controls */
+                        .cyber-select {
+                            padding: 8px 12px;
+                            border-radius: 8px;
+                            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+                            background: rgba(10, 15, 30, 0.85) !important;
+                            color: #ffffff !important;
+                            font-weight: 600;
+                            cursor: pointer;
+                            outline: none;
+                            font-size: 0.82rem;
+                            font-family: 'JetBrains Mono', monospace;
+                            transition: all 0.2s;
+                        }
+                        .cyber-select:hover {
+                            border-color: var(--neon-blue) !important;
+                            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+                        }
+                        .cyber-select option {
+                            background: #0f172a;
+                            color: #fff;
+                            font-family: 'Inter', sans-serif;
+                        }
+
+                        /* Title Fonts */
+                        .cyber-title {
+                            font-family: 'Orbitron', sans-serif;
+                            font-size: 0.85rem;
+                            font-weight: 800;
+                            letter-spacing: 1px;
+                            color: #e2e8f0;
+                            text-transform: uppercase;
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                        }
+
+                        /* Pulsing Ambient Animation */
+                        @keyframes pulse-cyan {
+                            0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+                            70% { box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); }
+                            100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+                        }
+                        .pulse-beacon {
+                            width: 6px;
+                            height: 6px;
+                            background: var(--neon-cyan);
+                            border-radius: 50%;
+                            display: inline-block;
+                            box-shadow: 0 0 8px var(--neon-cyan);
+                            animation: pulse-cyan 2s infinite;
+                        }
+
+                        /* Custom dark scrollbar for logs inside dashboard-analisa-section */
+                        #dashboard-analisa-section ::-webkit-scrollbar {
+                            width: 6px;
+                            height: 6px;
+                        }
+                        #dashboard-analisa-section ::-webkit-scrollbar-track {
+                            background: rgba(0, 0, 0, 0.3);
+                            border-radius: 4px;
+                        }
+                        #dashboard-analisa-section ::-webkit-scrollbar-thumb {
+                            background: rgba(255, 255, 255, 0.15);
+                            border-radius: 4px;
+                        }
+                        #dashboard-analisa-section ::-webkit-scrollbar-thumb:hover {
+                            background: rgba(255, 255, 255, 0.3);
+                        }
+                    </style>
+
+                    <!-- DYNAMIC NEON CONSOLE FILTER BAR -->
+                    <div class="cyber-panel" style="padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; border: 1px solid rgba(255,255,255,0.08);">
+                        <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap; flex: 1;">
+                            
+                            <!-- Filter Periode Bulan -->
+                            <div style="display: flex; flex-direction: column; gap: 6px; min-width: 150px;">
+                                <label style="font-family: 'Rajdhani', sans-serif; font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 4px;">
+                                    <span class="pulse-beacon"></span> Periode Bulan
+                                </label>
+                                <select id="filter-periode-bulan" onchange="renderAnalisaSection()" class="cyber-select">
+                                    <option value="Semua">Semua Periode</option>
+                                </select>
                             </div>
-                            <!-- Interactive Selector -->
-                            <div>
-                                <select class="form-control" id="analisa-unit-selector" onchange="updateAnalisaDailyView()" style="min-width: 180px; font-weight: 700; border-radius: 10px; cursor: pointer; border-color: var(--border-active);">
-                                    <!-- Populated dynamically -->
+                            
+                            <!-- Filter Jenis Alat -->
+                            <div style="display: flex; flex-direction: column; gap: 6px; min-width: 150px;">
+                                <label style="font-family: 'Rajdhani', sans-serif; font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">
+                                    <i class="fa-solid fa-screwdriver-wrench" style="color: var(--neon-blue);"></i> Jenis Alat
+                                </label>
+                                <select id="filter-jenis-alat" onchange="renderAnalisaSection()" class="cyber-select">
+                                    <option value="Semua">Semua Jenis</option>
+                                    <option value="FORKLIFT">Forklift</option>
+                                    <option value="LOADER">Loader</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Filter Vendor -->
+                            <div style="display: flex; flex-direction: column; gap: 6px; min-width: 180px;">
+                                <label style="font-family: 'Rajdhani', sans-serif; font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">
+                                    <i class="fa-solid fa-building-flag" style="color: var(--neon-purple);"></i> Vendor / Merk (Kolom D)
+                                </label>
+                                <select id="filter-vendor" onchange="renderAnalisaSection()" class="cyber-select">
+                                    <option value="Semua">Semua Vendor</option>
                                 </select>
                             </div>
                         </div>
+                        
+                        <!-- Reset Button with Icon Rotation Hover -->
+                        <button onclick="resetAnalisaFilters()" style="padding: 10px 18px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.08); color: #f87171; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.82rem; letter-spacing: 0.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.3s; box-shadow: 0 0 10px rgba(239, 68, 68, 0.05);" onmouseenter="this.style.background='rgba(239, 68, 68, 0.2)'; this.style.borderColor='rgba(239, 68, 68, 0.4)'; this.style.boxShadow='0 0 15px rgba(239, 68, 68, 0.2)';" onmouseleave="this.style.background='rgba(239, 68, 68, 0.08)'; this.style.borderColor='rgba(239, 68, 68, 0.2)'; this.style.boxShadow='0 0 10px rgba(239, 68, 68, 0.05)';">
+                            <i class="fa-solid fa-arrows-rotate" id="reset-filter-icon"></i> RESET FILTERS
+                        </button>
+                    </div>
 
-                        <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 24px; min-height: 320px;" id="analisa-daily-content">
-                            <!-- Chart Left -->
-                            <div style="background: rgba(15, 23, 42, 0.02); border-radius: var(--radius-md); padding: 20px; border: 1px solid rgba(0,0,0,0.03);">
-                                <h4 style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700; margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
-                                    <i class="fa-solid fa-chart-column" style="color: var(--primary);"></i> TREN DOWNTIME HARIAN (JAM)
-                                </h4>
-                                <div style="position: relative; height: 260px; width: 100%;">
-                                    <canvas id="chart-analisa-daily"></canvas>
-                                </div>
+                    <!-- LUXURY GLOWING KPI CARDS GRID -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+                        
+                        <!-- Card 1: Total Downtime -->
+                        <div onclick="kpiDowntimeClick()" class="cyber-glow-card" style="border-left: 3px solid var(--neon-red);" onmouseenter="this.style.borderColor='var(--neon-red)'; this.style.boxShadow='0 0 25px rgba(239,68,68,0.3)'; this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='rgba(255,255,255,0.05)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.2)'; this.style.transform='translateY(0)'">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span style="font-family: 'Rajdhani', sans-serif; font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Total Downtime</span>
+                                <span id="kpi-downtime-value" style="font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 800; color: #ef4444; text-shadow: 0 0 8px rgba(239, 68, 68, 0.5);">0.0j</span>
                             </div>
-                            <!-- Log Right -->
-                            <div style="background: rgba(15, 23, 42, 0.02); border-radius: var(--radius-md); padding: 20px; border: 1px solid rgba(0,0,0,0.03); display: flex; flex-direction: column;">
-                                <h4 style="font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700; margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
-                                    <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i> LOG PERBAIKAN HARIAN
-                                </h4>
-                                <div id="analisa-daily-log-list" style="flex: 1; overflow-y: auto; max-height: 260px; display: flex; flex-direction: column; gap: 10px;">
-                                    <!-- Rendered dynamically -->
-                                </div>
+                            <div style="background: rgba(239, 68, 68, 0.1); color: #ef4444; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.15);">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 2: Total Kasus -->
+                        <div onclick="kpiCasesClick()" class="cyber-glow-card" style="border-left: 3px solid var(--neon-orange);" onmouseenter="this.style.borderColor='var(--neon-orange)'; this.style.boxShadow='0 0 25px rgba(249,115,22,0.3)'; this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='rgba(255,255,255,0.05)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.2)'; this.style.transform='translateY(0)'">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span style="font-family: 'Rajdhani', sans-serif; font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Total Kasus</span>
+                                <span id="kpi-cases-value" style="font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 800; color: #f97316; text-shadow: 0 0 8px rgba(249, 115, 22, 0.5);">0</span>
+                            </div>
+                            <div style="background: rgba(249, 115, 22, 0.1); color: #f97316; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; box-shadow: inset 0 0 10px rgba(249, 115, 22, 0.15);">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 3: Unit Kritis -->
+                        <div onclick="kpiCriticalClick()" class="cyber-glow-card" style="border-left: 3px solid var(--neon-purple);" onmouseenter="this.style.borderColor='var(--neon-purple)'; this.style.boxShadow='0 0 25px rgba(168,85,247,0.3)'; this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='rgba(255,255,255,0.05)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.2)'; this.style.transform='translateY(0)'">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span style="font-family: 'Rajdhani', sans-serif; font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Unit Kritis (&lt;75%)</span>
+                                <span id="kpi-critical-value" style="font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 800; color: #c084fc; text-shadow: 0 0 8px rgba(168, 85, 247, 0.5);">0</span>
+                            </div>
+                            <div style="background: rgba(168, 85, 247, 0.1); color: #c084fc; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; box-shadow: inset 0 0 10px rgba(168, 85, 247, 0.15);">
+                                <i class="fa-solid fa-heart-crack"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Card 4: Unit Prima -->
+                        <div onclick="kpiPrimaClick()" class="cyber-glow-card" style="border-left: 3px solid var(--neon-green);" onmouseenter="this.style.borderColor='var(--neon-green)'; this.style.boxShadow='0 0 25px rgba(16,185,129,0.3)'; this.style.transform='translateY(-3px)'" onmouseleave="this.style.borderColor='rgba(255,255,255,0.05)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.2)'; this.style.transform='translateY(0)'">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <span style="font-family: 'Rajdhani', sans-serif; font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Unit Prima (100%)</span>
+                                <span id="kpi-prima-value" style="font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 800; color: #10b981; text-shadow: 0 0 8px rgba(16, 185, 129, 0.5);">0</span>
+                            </div>
+                            <div style="background: rgba(16, 185, 129, 0.1); color: #10b981; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.15);">
+                                <i class="fa-solid fa-circle-check"></i>
                             </div>
                         </div>
                     </div>
+
+                    <!-- RAPET & PADET COMPACT CHARTS GRID (3 COLUMNS HORIZONTAL) -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+                        
+                        <!-- Chart 1: Downtime per Unit (Bar Chart) -->
+                        <div class="cyber-panel" style="padding: 16px; border: 1px solid rgba(255,255,255,0.07);">
+                            <h4 class="cyber-title">
+                                <i class="fa-solid fa-chart-bar" style="color: var(--neon-blue);"></i> Downtime per Unit
+                            </h4>
+                            <div style="position: relative; height: 180px; width: 100%; margin-top: 12px;">
+                                <canvas id="chart-downtime-unit"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Chart 2: Proporsional Downtime Forklift vs Loader -->
+                        <div class="cyber-panel" style="padding: 16px; border: 1px solid rgba(255,255,255,0.07);">
+                            <h4 class="cyber-title">
+                                <i class="fa-solid fa-chart-pie" style="color: var(--neon-purple);"></i> Proporsi Downtime
+                            </h4>
+                            <div style="position: relative; height: 180px; width: 100%; margin-top: 12px;">
+                                <canvas id="chart-downtime-dist"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 3: Uptime Comparison -->
+                        <div class="cyber-panel" style="padding: 16px; border: 1px solid rgba(255,255,255,0.07);">
+                            <h4 class="cyber-title">
+                                <i class="fa-solid fa-chart-line" style="color: var(--neon-green);"></i> Perbandingan Uptime %
+                            </h4>
+                            <div style="position: relative; height: 180px; width: 100%; margin-top: 12px;">
+                                <canvas id="chart-uptime-comp"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FLEET UTILIZATION CARDS GRID -->
+                    <div class="cyber-panel" style="padding: 20px; display: flex; flex-direction: column; gap: 14px; border: 1px solid rgba(255,255,255,0.07);">
+                        <h4 class="cyber-title" style="font-size: 0.9rem;">
+                            <i class="fa-solid fa-table-cells-large" style="color: var(--neon-cyan);"></i> UTILISASI & UPTIME PER ARMADA
+                        </h4>
+                        <!-- Autogrid containing 5 cards dynamically on large width -->
+                        <div class="utilization-grid" id="analisa-utilization-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
+                            <!-- Rendered dynamically via js -->
+                        </div>
+                    </div>
+
+                    <!-- SUPER PREMIUM RANKING TABLE PANEL -->
+                    <div class="cyber-panel" style="padding: 20px; display: flex; flex-direction: column; gap: 14px; border: 1px solid rgba(255,255,255,0.07);">
+                        <h4 class="cyber-title" style="font-size: 0.9rem;">
+                            <i class="fa-solid fa-medal" style="color: var(--neon-gold);"></i> Peringkat Uptime Armada (Analisis Efisiensi)
+                        </h4>
+                        <div style="overflow-x: auto; width: 100%;">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid rgba(255,255,255,0.1); font-family: 'Rajdhani', sans-serif; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <th style="padding: 10px 8px; text-align: center; width: 60px;">Rank</th>
+                                        <th style="padding: 10px 8px;">Nama Unit</th>
+                                        <th style="padding: 10px 8px;">Tipe</th>
+                                        <th style="padding: 10px 8px;">Downtime</th>
+                                        <th style="padding: 10px 8px;">Kasus</th>
+                                        <th style="padding: 10px 8px;">Uptime %</th>
+                                        <th style="padding: 10px 8px; width: 120px;">Visual</th>
+                                        <th style="padding: 10px 8px; text-align: right;">Status Badge</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ranking-table-tbody">
+                                    <!-- Rendered dynamically via js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
             </section>
 
@@ -3245,16 +3607,16 @@
     <script>
         // MASTER MOCK DATABASE (INITIALIZED TO LOCAL STORAGE IF NOT EXISTS)
         const MOCK_JENIS_UNIT = [
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 02", vendor: "TIGER PARTNER" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 03", vendor: "TIGER PARTNER" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 08", vendor: "MITSUBISHIINDO" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 09", vendor: "MITSUBISHIINDO" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 11", vendor: "MITSUBISHIINDO" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 16", vendor: "BULL RENTAL" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MITSUBISHI 11.5", vendor: "BULL RENTAL" },
-            { jenisUnit: "LOADER", typeUnit: "JGM", vendor: "JGM INDONESIA" },
-            { jenisUnit: "LOADER", typeUnit: "LIUGONG", vendor: "LIUGONG RENTAL" },
-            { jenisUnit: "LOADER", typeUnit: "SEM", vendor: "SEM HEAVY MACHINERY" }
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 02", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 03", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 08", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 09", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 11", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 16", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MITSUBISHI 11.5", vendor: "PT. KARYA MITRA TEKNIK" },
+            { jenisUnit: "LOADER", typeUnit: "JGM", vendor: "PT. OSCAR OMEGA" },
+            { jenisUnit: "LOADER", typeUnit: "LIUGONG", vendor: "PT. TRI MEGAH ANUGERAH PERKASA" },
+            { jenisUnit: "LOADER", typeUnit: "SEM", vendor: "PT CPI" }
         ];
 
         const CATEGORY_CONFIG = {
@@ -4057,7 +4419,7 @@
             
             if (dbMode === "offline") {
                 // Initialize Offline LocalStorage
-                if (!localStorage.getItem("smart_bd_jenis_unit") || !localStorage.getItem("smart_bd_jenis_unit").includes("MHE 09")) {
+                if (!localStorage.getItem("smart_bd_jenis_unit") || !localStorage.getItem("smart_bd_jenis_unit").includes("PT. JEBSEN")) {
                     localStorage.setItem("smart_bd_jenis_unit", JSON.stringify(MOCK_JENIS_UNIT));
                 }
                 if (!localStorage.getItem("smart_bd_riwayat")) {
@@ -4226,6 +4588,11 @@
         // Process data once loaded
         function processLoadedData() {
             filteredRiwayat = [...cachedRiwayat];
+            
+            // Populate filters for Analisa tab
+            if (typeof populateAnalisaFilters === "function") {
+                populateAnalisaFilters();
+            }
             
             // Update Tab Selesaikan Badge Count
             const ongoingCount = cachedRiwayat.filter(r => r.status.toLowerCase() === "ongoing").length;
@@ -5819,6 +6186,21 @@
             return `${year}-${month}-${day}`;
         }
 
+        function formatDayDateIndo(dateVal) {
+            const d = parseDateString(dateVal);
+            if (isNaN(d.getTime())) return "-";
+            const daysIndo = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            const monthsIndo = [
+                "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+            ];
+            const dayName = daysIndo[d.getDay()];
+            const dateNum = d.getDate();
+            const monthName = monthsIndo[d.getMonth()];
+            const year = d.getFullYear();
+            return `${dayName}, ${dateNum} ${monthName} ${year}`;
+        }
+
         function formatDateTimeIndo(dateVal) {
             const d = parseDateString(dateVal);
             if (isNaN(d.getTime())) return "-";
@@ -5831,6 +6213,14 @@
             const minutes = ("0" + d.getMinutes()).slice(-2);
             return `${dayName}, ${year}-${month}-${day}, ${hours}:${minutes} WIB`;
         }
+
+        window.openHistoryDetailById = function(id) {
+            if (!Array.isArray(cachedRiwayat)) return;
+            const item = cachedRiwayat.find(r => r.idBreakdown === id);
+            if (item) {
+                openHistoryDetailModal(item);
+            }
+        };
 
         function getDaysAgo(dateVal) {
             const targetDate = parseDateString(dateVal);
@@ -6166,7 +6556,10 @@
         // DASHBOARD SUBTAB NAVIGATION & ANALISA ENGINE
         // ==============================================
         let activeDashboardSubtab = "status"; // default
-        let chartAnalisaDailyInstance = null;
+        let chartDowntimeUnitInstance = null;
+        let chartDowntimeDistInstance = null;
+        let chartUptimeCompInstance = null;
+        let filtersInitialized = false;
 
         function switchDashboardSubtab(subtab) {
             activeDashboardSubtab = subtab;
@@ -6190,265 +6583,1104 @@
             if (analisaSec) {
                 analisaSec.style.display = (subtab === "analisa") ? "flex" : "none";
                 if (subtab === "analisa") {
+                    populateAnalisaFilters();
                     renderAnalisaSection();
                 }
             }
         }
 
-        function getDailyDowntimeData(unitType, daysToLookback = 10) {
-            const dailyData = {};
-            const labels = [];
-            const now = new Date();
+        // --- DYNAMIC FILTER POPULATION ---
+        function populateAnalisaFilters() {
+            populateMonthFilter();
+            populateVendorFilter();
+            filtersInitialized = true;
+        }
+
+        function populateMonthFilter() {
+            const selectEl = document.getElementById('filter-periode-bulan');
+            if (!selectEl) return;
             
-            // Generate labels for past N days
-            for (let i = daysToLookback - 1; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(now.getDate() - i);
-                const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
-                labels.push(dateStr);
-                dailyData[dateStr] = 0;
+            const currentVal = selectEl.value;
+            selectEl.innerHTML = '<option value="Semua">Semua Periode</option>';
+            
+            const monthsMap = {};
+            const indonesianMonths = [
+                "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+            ];
+            
+            cachedRiwayat.forEach(item => {
+                if (item.jamMulai) {
+                    const date = parseDateString(item.jamMulai);
+                    if (!isNaN(date.getTime())) {
+                        const year = date.getFullYear();
+                        const monthIdx = date.getMonth();
+                        const key = `${year}-${String(monthIdx + 1).padStart(2, '0')}`;
+                        const label = `${indonesianMonths[monthIdx]} ${year}`;
+                        monthsMap[key] = { key, label, dateObj: new Date(year, monthIdx, 1) };
+                    }
+                }
+            });
+            
+            // Sort descending (newest month first)
+            const sortedMonths = Object.values(monthsMap).sort((a, b) => b.dateObj - a.dateObj);
+            
+            sortedMonths.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.key;
+                opt.textContent = m.label;
+                selectEl.appendChild(opt);
+            });
+            
+            // Restore selection if valid
+            if (Array.from(selectEl.options).some(o => o.value === currentVal)) {
+                selectEl.value = currentVal;
+            } else {
+                selectEl.value = "Semua";
             }
+        }
+
+        function populateVendorFilter() {
+            const selectEl = document.getElementById('filter-vendor');
+            if (!selectEl) return;
             
-            // Fill with downtime duration
-            const unitCases = cachedRiwayat.filter(r => r.typeUnit === unitType);
+            const currentVal = selectEl.value;
+            selectEl.innerHTML = '<option value="Semua">Semua Vendor</option>';
+            
+            const allUnits = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+            // Get unique sorted vendors
+            const vendors = [...new Set(allUnits.map(u => u.vendor))].filter(Boolean).sort();
+            
+            vendors.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                selectEl.appendChild(opt);
+            });
+            
+            // Restore selection if valid
+            if (Array.from(selectEl.options).some(o => o.value === currentVal)) {
+                selectEl.value = currentVal;
+            } else {
+                selectEl.value = "Semua";
+            }
+        }
+
+        // --- FILTER & DATA CORE ---
+        function getFilteredData() {
+            const selectedMonth = document.getElementById('filter-periode-bulan')?.value || "Semua"; // "Semua" or "YYYY-MM"
+            const selectedType = document.getElementById('filter-jenis-alat')?.value || "Semua"; // "Semua" or "FORKLIFT" or "LOADER"
+            const selectedVendor = document.getElementById('filter-vendor')?.value || "Semua"; // "Semua" or exact vendor string
+            
+            const allUnits = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+            
+            // Filter units first
+            const filteredUnits = allUnits.filter(unit => {
+                // Filter by Type
+                if (selectedType !== "Semua" && unit.jenisUnit !== selectedType) {
+                    return false;
+                }
+                // Filter by exact Vendor
+                if (selectedVendor !== "Semua" && unit.vendor !== selectedVendor) {
+                    return false;
+                }
+                return true;
+            });
+
+            // Now filter riwayat cases
+            const filteredCases = cachedRiwayat.filter(c => {
+                // Match unit
+                const unit = allUnits.find(u => u.typeUnit === c.typeUnit);
+                if (!unit) return false;
+
+                // Apply unit filters
+                if (selectedType !== "Semua" && unit.jenisUnit !== selectedType) {
+                    return false;
+                }
+                if (selectedVendor !== "Semua" && unit.vendor !== selectedVendor) {
+                    return false;
+                }
+
+                // Filter by month (YYYY-MM format match)
+                if (selectedMonth !== "Semua" && c.jamMulai) {
+                    const date = parseDateString(c.jamMulai);
+                    if (!isNaN(date.getTime())) {
+                        const y = date.getFullYear();
+                        const m = String(date.getMonth() + 1).padStart(2, '0');
+                        const key = `${y}-${m}`;
+                        if (key !== selectedMonth) {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            return { filteredUnits, filteredCases };
+        }
+
+        function calculateUnitStats(unit, filteredCases) {
+            // Find the active operational date (maximum of system clock or latest date in database)
+            let activeDate = new Date();
+            if (Array.isArray(cachedRiwayat)) {
+                cachedRiwayat.forEach(item => {
+                    if (item.jamMulai) {
+                        const d = parseDateString(item.jamMulai);
+                        if (!isNaN(d.getTime()) && d > activeDate) {
+                            activeDate = d;
+                        }
+                    }
+                    if (item.jamSelesai && item.jamSelesai !== "-") {
+                        const d = parseDateString(item.jamSelesai);
+                        if (!isNaN(d.getTime()) && d > activeDate) {
+                            activeDate = d;
+                        }
+                    }
+                });
+            }
+
+            const unitCases = filteredCases.filter(c => c.typeUnit === unit.typeUnit);
+            let totalDowntime = 0;
+            let casesCount = unitCases.length;
+            
+            // UPTIME LOGIC: Only BREAKDOWN (Stop Total) cases affect uptime calculation.
+            // RUNNING (Kerusakan Kerja / Maintenance Running) cases are excluded from downtime 
+            // because the unit remains operational during maintenance.
             unitCases.forEach(c => {
-                if (c.jamMulai) {
-                    const dateOnly = c.jamMulai.split('T')[0];
-                    if (dailyData[dateOnly] !== undefined) {
-                        if (c.status.toLowerCase() === "selesai" && c.durasiJam) {
-                            dailyData[dateOnly] += c.durasiJam;
-                        } else if (c.status.toLowerCase() === "ongoing") {
-                            // Estimate ongoing time on that date
-                            const start = new Date(c.jamMulai.replace(' ', 'T'));
-                            const end = new Date();
-                            const diffMs = end - start;
-                            const diffHrs = Math.max(0, diffMs / (1000 * 60 * 60));
-                            dailyData[dateOnly] += diffHrs;
-                        }
+                const opCond = (c.kondisiOperasional || 'BREAKDOWN').toUpperCase();
+                // Skip RUNNING cases from downtime calculation
+                if (opCond === 'RUNNING') return;
+                
+                const durJam = Number(c.durasiJam || 0);
+                if (c.status.toLowerCase() === "selesai") {
+                    totalDowntime += durJam;
+                } else if (c.status.toLowerCase() === "ongoing" && c.jamMulai) {
+                    const start = parseDateString(c.jamMulai);
+                    if (!isNaN(start.getTime())) {
+                        const diffMs = activeDate - start;
+                        const diffHrs = Math.max(0, diffMs / (1000 * 60 * 60));
+                        totalDowntime += diffHrs;
                     }
                 }
             });
             
-            const datasets = labels.map(lbl => Number(dailyData[lbl].toFixed(2)));
-            return { labels, datasets };
-        }
-
-        function renderDailyDowntimeChart(unitType) {
-            const ctx = document.getElementById('chart-analisa-daily');
-            if (!ctx) return;
+            // Dynamic available hours calculation based on month (real-time elapsed tracking)
+            const selectedMonth = document.getElementById('filter-periode-bulan')?.value || "Semua";
+            let totalAvailableHours = 720; // Default standard 30 days standard
             
-            const { labels, datasets } = getDailyDowntimeData(unitType, 10);
-            
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
-            const formattedLabels = labels.map(lbl => {
-                const parts = lbl.split('-');
-                if (parts.length === 3) {
-                    const day = parseInt(parts[2]);
-                    const monthIdx = parseInt(parts[1]) - 1;
-                    return `${day} ${months[monthIdx]}`;
+            if (selectedMonth !== "Semua") {
+                const parts = selectedMonth.split('-');
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10);
+                
+                const currentYear = activeDate.getFullYear();
+                const currentMonth = activeDate.getMonth() + 1;
+                
+                if (year === currentYear && month === currentMonth) {
+                    // Current Month: calculate elapsed hours from start of month to current time
+                    const startOfMonth = new Date(year, month - 1, 1, 0, 0, 0);
+                    const diffMs = activeDate - startOfMonth;
+                    // Protect against future client time by keeping min 1 hour elapsed
+                    totalAvailableHours = Math.max(1, diffMs / (1000 * 60 * 60));
+                } else if (year < currentYear || (year === currentYear && month < currentMonth)) {
+                    // Past Month: total hours in that month
+                    const daysInMonth = new Date(year, month, 0).getDate();
+                    totalAvailableHours = daysInMonth * 24;
+                } else {
+                    // Future Month: clamp to 1 hour to prevent division by zero
+                    totalAvailableHours = 1;
                 }
-                return lbl;
-            });
-
-            if (chartAnalisaDailyInstance) {
-                chartAnalisaDailyInstance.destroy();
             }
             
-            chartAnalisaDailyInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: formattedLabels,
-                    datasets: [{
-                        label: 'Downtime (Jam)',
-                        data: datasets,
-                        backgroundColor: 'rgba(79, 70, 229, 0.75)',
-                        borderColor: '#4F46E5',
-                        borderWidth: 1.5,
-                        borderRadius: 6,
-                        hoverBackgroundColor: 'rgba(6, 182, 212, 0.85)',
-                        hoverBorderColor: '#06B6D4'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `Downtime: ${context.parsed.y} Jam`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Durasi (Jam)',
-                                font: {
-                                    family: "'Plus Jakarta Sans', sans-serif",
-                                    weight: '700',
-                                    size: 10
-                                }
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
+            const uptimePercent = Math.max(0, Math.min(100, ((totalAvailableHours - totalDowntime) / totalAvailableHours) * 100));
+            
+            return { totalDowntime, casesCount, uptimePercent, unitCases, totalAvailableHours };
         }
 
-        function renderDailyLogs(unitType) {
-            const listEl = document.getElementById('analisa-daily-log-list');
-            if (!listEl) return;
-            listEl.innerHTML = "";
+        // --- RENDER KPI ---
+        function renderKPICards(filteredUnits, filteredCases) {
+            let totalDowntime = 0;
+            let totalCases = 0;
+            let criticalCount = 0;
+            let primaCount = 0;
             
-            const unitCases = cachedRiwayat.filter(r => r.typeUnit === unitType);
-            if (unitCases.length === 0) {
-                listEl.innerHTML = `
-                    <div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 0.8rem; font-weight: 600;">
-                        <i class="fa-solid fa-circle-info" style="font-size: 1.5rem; color: var(--primary); opacity: 0.5; margin-bottom: 8px; display: block;"></i>
-                        Tidak ada riwayat perbaikan untuk unit ini.
+            filteredUnits.forEach(unit => {
+                const stats = calculateUnitStats(unit, filteredCases);
+                totalDowntime += stats.totalDowntime;
+                totalCases += stats.casesCount;
+                if (stats.uptimePercent < 75) {
+                    criticalCount++;
+                }
+                if (stats.uptimePercent === 100) {
+                    primaCount++;
+                }
+            });
+            
+            const dtValEl = document.getElementById('kpi-downtime-value');
+            if (dtValEl) dtValEl.textContent = totalDowntime.toFixed(1) + "j";
+            
+            const csValEl = document.getElementById('kpi-cases-value');
+            if (csValEl) csValEl.textContent = totalCases;
+            
+            const crValEl = document.getElementById('kpi-critical-value');
+            if (crValEl) crValEl.textContent = criticalCount;
+            
+            const prValEl = document.getElementById('kpi-prima-value');
+            if (prValEl) prValEl.textContent = primaCount;
+        }
+
+        // --- RENDER FLEET CARDS ---
+        function renderFleetCards(filteredUnits, filteredCases) {
+            const gridEl = document.getElementById('analisa-utilization-grid');
+            if (!gridEl) return;
+            gridEl.innerHTML = "";
+            
+            if (filteredUnits.length === 0) {
+                gridEl.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px; font-weight: 600; font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px;">
+                        TIDAK ADA ARMADA YANG COCOK DENGAN FILTER
                     </div>
                 `;
                 return;
             }
             
-            const sortedCases = [...unitCases].sort((a, b) => b.jamMulai.localeCompare(a.jamMulai));
+            const statusColors = {
+                "Prima": "#10b981",
+                "Baik": "#3b82f6",
+                "Waspada": "#f97316",
+                "Kritis": "#ef4444",
+                "Down": "#ef4444"
+            };
             
-            sortedCases.forEach(c => {
-                const dateStr = formatDateOnly(c.jamMulai);
-                const statusHtml = c.status.toLowerCase() === 'selesai' 
-                    ? `<span style="background: var(--success-light); color: var(--success); font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">SELESAI</span>`
-                    : `<span style="background: var(--danger-light); color: var(--danger); font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; animation: pulse-border 2s infinite;">AKTIF</span>`;
-                    
-                const durationText = c.status.toLowerCase() === 'selesai'
-                    ? `${c.durasiJam} Jam`
-                    : 'Sedang Berjalan';
-                    
-                const item = document.createElement('div');
-                item.style.cssText = "background: #ffffff; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm); transition: var(--transition);";
-                item.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted);">${dateStr}</span>
-                        ${statusHtml}
-                    </div>
-                    <div style="font-size: 0.85rem; font-weight: 800; color: var(--text-main);">${c.kategoriKerusakan} — <span style="font-weight: 600; color: var(--text-muted);">${c.pilihanKerusakan}</span></div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted); line-height: 1.4; max-height: 40px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${c.detailKerusakan || ''}</div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed rgba(0,0,0,0.05); padding-top: 6px; margin-top: 2px; font-size: 0.68rem; font-weight: 600; color: var(--text-muted);">
-                        <span>Durasi: <strong style="color: var(--text-main); font-weight: 700;">${durationText}</strong></span>
-                        <span>Pelapor: <strong style="color: var(--text-main); font-weight: 700;">${c.operatorAwal || '-'}</strong></span>
-                    </div>
-                `;
-                listEl.appendChild(item);
-            });
-        }
-
-        function updateAnalisaDailyView() {
-            const selector = document.getElementById('analisa-unit-selector');
-            if (!selector) return;
-            const selectedUnit = selector.value;
-            renderDailyDowntimeChart(selectedUnit);
-            renderDailyLogs(selectedUnit);
-        }
-
-        function renderAnalisaSection() {
-            const gridEl = document.getElementById('analisa-utilization-grid');
-            if (!gridEl) return;
-            gridEl.innerHTML = "";
-            
-            const units = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
-            
-            const selector = document.getElementById('analisa-unit-selector');
-            const previousVal = selector ? selector.value : "";
-            if (selector) {
-                selector.innerHTML = "";
-            }
-            
-            units.forEach((unit, idx) => {
-                if (selector) {
-                    const opt = document.createElement('option');
-                    opt.value = unit.typeUnit;
-                    opt.textContent = `${unit.typeUnit} (${unit.jenisUnit})`;
-                    selector.appendChild(opt);
-                }
+            filteredUnits.forEach(unit => {
+                const stats = calculateUnitStats(unit, filteredCases);
                 
-                const unitCases = cachedRiwayat.filter(r => r.typeUnit === unit.typeUnit);
-                let totalDowntimeHours = 0;
-                let casesCount = 0;
-                
-                unitCases.forEach(c => {
-                    if (c.status.toLowerCase() === "selesai" && c.durasiJam) {
-                        totalDowntimeHours += c.durasiJam;
-                        casesCount++;
-                    } else if (c.status.toLowerCase() === "ongoing" && c.jamMulai) {
-                        const start = new Date(c.jamMulai.replace(' ', 'T'));
-                        const now = new Date();
-                        const diffMs = now - start;
-                        const diffHrs = Math.max(0, diffMs / (1000 * 60 * 60));
-                        totalDowntimeHours += diffHrs;
-                        casesCount++;
-                    }
-                });
-                
-                const totalAvailableHours = 30 * 24;
-                const uptimePercent = Math.max(0, Math.min(100, ((totalAvailableHours - totalDowntimeHours) / totalAvailableHours) * 100));
-                
-                const radius = 32;
-                const circumference = 2 * Math.PI * radius;
-                const offset = circumference - (uptimePercent / 100) * circumference;
-                
-                let strokeColor = '#10B981';
-                if (uptimePercent < 90) {
-                    strokeColor = '#EF4444';
-                } else if (uptimePercent < 95) {
-                    strokeColor = '#F59E0B';
+                let statusText = "Prima";
+                let statusColor = statusColors["Prima"];
+                if (stats.uptimePercent < 60) {
+                    statusText = "Down";
+                    statusColor = statusColors["Down"];
+                } else if (stats.uptimePercent < 80) {
+                    statusText = "Kritis";
+                    statusColor = statusColors["Kritis"];
+                } else if (stats.uptimePercent < 95) {
+                    statusText = "Waspada";
+                    statusColor = statusColors["Waspada"];
+                } else if (stats.uptimePercent < 100) {
+                    statusText = "Baik";
+                    statusColor = statusColors["Baik"];
                 }
                 
                 const card = document.createElement('div');
-                card.className = 'util-card';
+                card.className = 'cyber-panel';
+                card.style.cssText = `
+                    padding: 14px 16px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: pointer;
+                    position: relative;
+                    overflow: hidden;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    border-left: 3px solid ${statusColor};
+                `;
+                
+                // Add pendar glow hover dynamically in Javascript
+                card.addEventListener('mouseenter', () => {
+                    card.style.borderColor = statusColor;
+                    card.style.transform = 'translateY(-3px) scale(1.02)';
+                    card.style.boxShadow = `0 10px 25px rgba(${statusColor === '#10b981' ? '16,185,129' : statusColor === '#3b82f6' ? '59,130,246' : statusColor === '#f97316' ? '249,115,22' : '239,68,68'}, 0.25)`;
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                    card.style.transform = 'translateY(0) scale(1)';
+                    card.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.25)';
+                });
+                
+                card.addEventListener('click', () => {
+                    showUnitDetailModal(unit.typeUnit);
+                });
+                
+                // Beautiful instrumentation visuals
                 card.innerHTML = `
-                    <div class="util-left">
-                        <span class="util-tag">${unit.jenisUnit}</span>
-                        <span class="util-name">${unit.typeUnit}</span>
-                        <div class="util-stat">Downtime: <span>${totalDowntimeHours.toFixed(1)} Jam</span></div>
-                        <div class="util-stat">Total Kasus: <span>${casesCount} Kasus</span></div>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <span style="font-family: 'Rajdhani', sans-serif; font-size: 0.65rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">${unit.jenisUnit}</span>
+                        <span style="font-family: 'Orbitron', sans-serif; font-size: 0.95rem; font-weight: 800; color: #ffffff;">${unit.typeUnit}</span>
+                        <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px; font-family: 'Inter', sans-serif;">
+                            Downtime: <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #ef4444;">${stats.totalDowntime.toFixed(1)}j</span>
+                        </div>
+                        <div style="font-size: 0.72rem; color: #94a3b8; font-family: 'Inter', sans-serif;">
+                            Kasus: <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #ffffff;">${stats.casesCount}</span>
+                        </div>
                     </div>
-                    <div class="util-right">
-                        <svg width="80" height="80" viewBox="0 0 80 80">
-                            <circle cx="40" cy="40" r="32" stroke="rgba(79, 70, 229, 0.08)" stroke-width="6" fill="transparent"></circle>
-                            <circle cx="40" cy="40" r="32" stroke="${strokeColor}" stroke-width="6" fill="transparent"
-                                    stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
-                                    stroke-linecap="round" transform="rotate(-90 40 40)"
-                                    style="transition: stroke-dashoffset 0.8s ease-in-out; filter: drop-shadow(0 0 4px ${strokeColor}40);"></circle>
-                            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="'Orbitron', sans-serif" font-weight="800" font-size="12" fill="var(--text-main)">${uptimePercent.toFixed(1)}%</text>
-                        </svg>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 800; color: ${statusColor}; text-shadow: 0 0 6px ${statusColor}aa;">
+                            ${stats.uptimePercent.toFixed(1)}%
+                        </div>
+                        <span style="background: ${statusColor}15; color: ${statusColor}; border: 0.5px solid ${statusColor}33; font-family: 'Rajdhani', sans-serif; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ${statusText}
+                        </span>
                     </div>
                 `;
+                
                 gridEl.appendChild(card);
             });
+        }
+
+        // --- RENDER COMPACT NEON CHARTS ---
+        function renderAnalisaCharts(filteredUnits, filteredCases) {
+            // Chart 1: Downtime per Unit (Compact Bar Chart)
+            const downtimeCtx = document.getElementById('chart-downtime-unit');
+            if (downtimeCtx) {
+                if (chartDowntimeUnitInstance) chartDowntimeUnitInstance.destroy();
+                
+                const labels = filteredUnits.map(u => u.typeUnit);
+                const data = filteredUnits.map(u => {
+                    const stats = calculateUnitStats(u, filteredCases);
+                    return Number(stats.totalDowntime.toFixed(1));
+                });
+                
+                const ctx2d = downtimeCtx.getContext('2d');
+                // Gradients
+                const gradients = filteredUnits.map(u => {
+                    const grad = ctx2d.createLinearGradient(0, 0, 0, 180);
+                    if (u.jenisUnit === 'FORKLIFT') {
+                        grad.addColorStop(0, 'rgba(239, 68, 68, 0.85)'); // neon red
+                        grad.addColorStop(1, 'rgba(249, 115, 22, 0.1)'); // transparent orange
+                    } else {
+                        grad.addColorStop(0, 'rgba(56, 189, 248, 0.85)'); // neon blue
+                        grad.addColorStop(1, 'rgba(6, 182, 212, 0.1)'); // transparent cyan
+                    }
+                    return grad;
+                });
+                
+                const borders = filteredUnits.map(u => u.jenisUnit === 'FORKLIFT' ? '#ef4444' : '#38bdf8');
+                
+                chartDowntimeUnitInstance = new Chart(downtimeCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: gradients,
+                            borderColor: borders,
+                            borderWidth: 1.5,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 1200, easing: 'easeOutQuart' },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                titleFont: { family: 'Orbitron', size: 10 },
+                                bodyFont: { family: 'JetBrains Mono', size: 11 },
+                                bodyColor: '#fff',
+                                borderColor: 'rgba(255,255,255,0.1)',
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: (context) => ` Downtime: ${context.raw.toFixed(1)} jam`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: true, 
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 9 } }
+                            },
+                            x: { 
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8', font: { family: 'Rajdhani', size: 10, weight: 'bold' } }
+                            }
+                        }
+                    }
+                });
+            }
             
-            if (selector) {
-                if (previousVal && units.some(u => u.typeUnit === previousVal)) {
-                    selector.value = previousVal;
-                } else if (units.length > 0) {
-                    selector.value = units[0].typeUnit;
-                }
-                updateAnalisaDailyView();
+            // Chart 2: Compact Doughnut Chart
+            const distCtx = document.getElementById('chart-downtime-dist');
+            if (distCtx) {
+                if (chartDowntimeDistInstance) chartDowntimeDistInstance.destroy();
+                
+                let forkliftDowntime = 0;
+                let loaderDowntime = 0;
+                
+                filteredUnits.forEach(u => {
+                    const stats = calculateUnitStats(u, filteredCases);
+                    if (u.jenisUnit === 'FORKLIFT') {
+                        forkliftDowntime += stats.totalDowntime;
+                    } else {
+                        loaderDowntime += stats.totalDowntime;
+                    }
+                });
+                
+                const ctx2d = distCtx.getContext('2d');
+                const gFork = ctx2d.createLinearGradient(0, 0, 180, 180);
+                gFork.addColorStop(0, '#f97316');
+                gFork.addColorStop(1, '#ef4444');
+                
+                const gLoad = ctx2d.createLinearGradient(0, 0, 180, 180);
+                gLoad.addColorStop(0, '#38bdf8');
+                gLoad.addColorStop(1, '#06b6d4');
+                
+                chartDowntimeDistInstance = new Chart(distCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Forklift', 'Loader'],
+                        datasets: [{
+                            data: [Number(forkliftDowntime.toFixed(1)), Number(loaderDowntime.toFixed(1))],
+                            backgroundColor: [gFork, gLoad],
+                            borderWidth: 1.5,
+                            borderColor: '#0b0f19',
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 1200, easing: 'easeOutQuart' },
+                        cutout: '65%',
+                        plugins: {
+                            legend: { 
+                                position: 'bottom',
+                                labels: { color: '#e2e8f0', font: { family: 'Rajdhani', size: 10, weight: 'bold' }, boxWidth: 10 }
+                            },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                titleFont: { family: 'Orbitron', size: 10 },
+                                bodyFont: { family: 'JetBrains Mono', size: 11 },
+                                bodyColor: '#fff',
+                                borderColor: 'rgba(255,255,255,0.1)',
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: (context) => ` ${context.label}: ${context.raw.toFixed(1)} jam`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Chart 3: Horizontal Uptime Comparison
+            const compCtx = document.getElementById('chart-uptime-comp');
+            if (compCtx) {
+                if (chartUptimeCompInstance) chartUptimeCompInstance.destroy();
+                
+                const labels = filteredUnits.map(u => u.typeUnit);
+                const data = filteredUnits.map(u => {
+                    const stats = calculateUnitStats(u, filteredCases);
+                    return Number(stats.uptimePercent.toFixed(1));
+                });
+                
+                const ctx2d = compCtx.getContext('2d');
+                const gradients = filteredUnits.map(u => {
+                    const stats = calculateUnitStats(u, filteredCases);
+                    const val = stats.uptimePercent;
+                    const grad = ctx2d.createLinearGradient(0, 0, 180, 0);
+                    
+                    if (val >= 95) {
+                        grad.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+                        grad.addColorStop(1, 'rgba(16, 185, 129, 0.85)');
+                    } else if (val >= 80) {
+                        grad.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+                        grad.addColorStop(1, 'rgba(59, 130, 246, 0.85)');
+                    } else if (val >= 60) {
+                        grad.addColorStop(0, 'rgba(249, 115, 22, 0.2)');
+                        grad.addColorStop(1, 'rgba(249, 115, 22, 0.85)');
+                    } else {
+                        grad.addColorStop(0, 'rgba(239, 68, 68, 0.2)');
+                        grad.addColorStop(1, 'rgba(239, 68, 68, 0.85)');
+                    }
+                    return grad;
+                });
+                
+                const borders = filteredUnits.map(u => {
+                    const stats = calculateUnitStats(u, filteredCases);
+                    const val = stats.uptimePercent;
+                    if (val >= 95) return '#10b981';
+                    if (val >= 80) return '#3b82f6';
+                    if (val >= 60) return '#f97316';
+                    return '#ef4444';
+                });
+                
+                chartUptimeCompInstance = new Chart(compCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: gradients,
+                            borderColor: borders,
+                            borderWidth: 1.5,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // Horizontal
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 1200, easing: 'easeOutQuart' },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#0f172a',
+                                titleFont: { family: 'Orbitron', size: 10 },
+                                bodyFont: { family: 'JetBrains Mono', size: 11 },
+                                bodyColor: '#fff',
+                                borderColor: 'rgba(255,255,255,0.1)',
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: (context) => ` Uptime: ${context.raw.toFixed(1)}%`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                min: 0, 
+                                max: 100, 
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono', size: 9 } }
+                            },
+                            y: { 
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8', font: { family: 'Rajdhani', size: 10, weight: 'bold' } }
+                            }
+                        }
+                    }
+                });
             }
         }
+
+        // --- RENDER RANKING TABLE (WITH CLICK EVENT ACTION) ---
+        function renderRankingTable(filteredUnits, filteredCases) {
+            const list = filteredUnits.map(u => {
+                const stats = calculateUnitStats(u, filteredCases);
+                return { unit: u, stats };
+            });
+            
+            // Sort Uptime descending, then Name ascending
+            list.sort((a, b) => b.stats.uptimePercent - a.stats.uptimePercent || a.unit.typeUnit.localeCompare(b.unit.typeUnit));
+            
+            const tbody = document.getElementById('ranking-table-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = "";
+            
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8; font-family: 'Rajdhani', sans-serif;">TIDAK ADA PERINGKAT DATA</td></tr>`;
+                return;
+            }
+            
+            list.forEach((item, idx) => {
+                const rank = idx + 1;
+                let rankBadge = `<span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #94a3b8;">${rank}</span>`;
+                if (rank === 1) {
+                    rankBadge = `<span style="background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 900; font-size: 0.75rem; box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);">1</span>`;
+                } else if (rank === 2) {
+                    rankBadge = `<span style="background: linear-gradient(135deg, #cbd5e1, #64748b); color: #000; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 900; font-size: 0.75rem; box-shadow: 0 0 10px rgba(203, 213, 225, 0.3);">2</span>`;
+                } else if (rank === 3) {
+                    rankBadge = `<span style="background: linear-gradient(135deg, #b45309, #78350f); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 900; font-size: 0.75rem; box-shadow: 0 0 10px rgba(180, 83, 9, 0.3);">3</span>`;
+                }
+                
+                let statusText = "Prima";
+                let statusColor = "#10b981";
+                if (item.stats.uptimePercent < 60) {
+                    statusText = "Down";
+                    statusColor = "#ef4444";
+                } else if (item.stats.uptimePercent < 80) {
+                    statusText = "Kritis";
+                    statusColor = "#ef4444";
+                } else if (item.stats.uptimePercent < 95) {
+                    statusText = "Waspada";
+                    statusColor = "#f97316";
+                } else if (item.stats.uptimePercent < 100) {
+                    statusText = "Baik";
+                    statusColor = "#3b82f6";
+                }
+                
+                const tr = document.createElement('tr');
+                tr.style.cssText = "border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.2s; cursor: pointer;";
+                tr.addEventListener('mouseenter', () => tr.style.background = 'rgba(255,255,255,0.03)');
+                tr.addEventListener('mouseleave', () => tr.style.background = 'none');
+                
+                // Clicking on a row shows the popup details for that unit
+                tr.addEventListener('click', () => {
+                    showUnitDetailModal(item.unit.typeUnit);
+                });
+                
+                tr.innerHTML = `
+                    <td style="padding: 10px 8px; text-align: center;">${rankBadge}</td>
+                    <td style="padding: 10px 8px; font-weight: 700; color: #ffffff; font-family: 'Orbitron', sans-serif; font-size: 0.85rem;">${item.unit.typeUnit}</td>
+                    <td style="padding: 10px 8px; font-family: 'Rajdhani', sans-serif; font-weight: 600; color: #cbd5e1; text-transform: uppercase;">${item.unit.jenisUnit}</td>
+                    <td style="padding: 10px 8px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #ef4444;">${item.stats.totalDowntime.toFixed(1)}j</td>
+                    <td style="padding: 10px 8px; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #cbd5e1;">${item.stats.casesCount}</td>
+                    <td style="padding: 10px 8px; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: ${statusColor}; text-shadow: 0 0 5px ${statusColor}77;">${item.stats.uptimePercent.toFixed(1)}%</td>
+                    <td style="padding: 10px 8px;">
+                        <div style="width: 100px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);">
+                            <div style="width: ${item.stats.uptimePercent}%; height: 100%; background: linear-gradient(90deg, ${statusColor}aa, ${statusColor}); border-radius: 3px; box-shadow: 0 0 6px ${statusColor};"></div>
+                        </div>
+                    </td>
+                    <td style="padding: 10px 8px; text-align: right;">
+                        <span style="background: ${statusColor}15; color: ${statusColor}; border: 0.5px solid ${statusColor}33; font-family: 'Rajdhani', sans-serif; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ${statusText}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- POPUP / MODAL ENGINE (WITH BODY SCROLL LOCKING) ---
+        function showAnalisaModal(title, contentHtml) {
+            const modalOvl = document.getElementById('analisa-modal-overlay');
+            const modalTitle = document.getElementById('analisa-modal-title');
+            const modalBody = document.getElementById('analisa-modal-body');
+            
+            if (!modalOvl || !modalTitle || !modalBody) return;
+            
+            modalTitle.innerHTML = `<i class="fa-solid fa-cube" style="color: var(--neon-cyan);"></i> ${title}`;
+            modalBody.innerHTML = contentHtml;
+            
+            // Lock body scroll to keep overlay stable
+            document.body.style.overflow = 'hidden';
+            
+            modalOvl.style.display = 'flex';
+            setTimeout(() => {
+                modalOvl.style.opacity = '1';
+            }, 10);
+        }
+
+        function closeAnalisaModal() {
+            const modalOvl = document.getElementById('analisa-modal-overlay');
+            if (!modalOvl) return;
+            modalOvl.style.opacity = '0';
+            setTimeout(() => {
+                modalOvl.style.display = 'none';
+                // Unlock body scroll
+                document.body.style.overflow = '';
+            }, 200);
+        }
+
+        // --- KPI CARD CLICKS ---
+        function kpiDowntimeClick() {
+            const { filteredUnits, filteredCases } = getFilteredData();
+            const list = [];
+            filteredUnits.forEach(unit => {
+                const stats = calculateUnitStats(unit, filteredCases);
+                if (stats.totalDowntime > 0) {
+                    list.push({ unit, stats });
+                }
+            });
+            list.sort((a, b) => b.stats.totalDowntime - a.stats.totalDowntime);
+            
+            let html = `
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem; color: #cbd5e1;">
+                    <thead>
+                        <tr style="border-bottom: 1.5px solid rgba(255,255,255,0.1); font-family: 'Rajdhani', sans-serif; font-weight: 800; color: #fff;">
+                            <th style="padding: 10px 8px;">Unit</th>
+                            <th style="padding: 10px 8px;">Tipe</th>
+                            <th style="padding: 10px 8px; text-align: right;">Downtime</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            if (list.length === 0) {
+                html += `<tr><td colspan="3" style="padding: 20px; text-align: center; color: #94a3b8; font-family: 'Rajdhani', sans-serif;">Tidak ada unit dengan downtime.</td></tr>`;
+            } else {
+                list.forEach(item => {
+                    html += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 10px 8px; font-weight: 700; color: #fff; font-family: 'Orbitron', sans-serif;">${item.unit.typeUnit}</td>
+                            <td style="padding: 10px 8px; font-family: 'Rajdhani', sans-serif; font-weight: 600;">${item.unit.jenisUnit}</td>
+                            <td style="padding: 10px 8px; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #ef4444;">${item.stats.totalDowntime.toFixed(1)}j</td>
+                        </tr>
+                    `;
+                });
+            }
+            html += `</tbody></table>`;
+            showAnalisaModal("Rincian Downtime per Unit (Desc)", html);
+        }
+
+        function kpiCasesClick() {
+            const { filteredUnits, filteredCases } = getFilteredData();
+            const list = [];
+            filteredUnits.forEach(unit => {
+                const stats = calculateUnitStats(unit, filteredCases);
+                if (stats.casesCount > 0) {
+                    list.push({ unit, stats });
+                }
+            });
+            list.sort((a, b) => b.stats.casesCount - a.stats.casesCount);
+            
+            let html = `
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem; color: #cbd5e1;">
+                    <thead>
+                        <tr style="border-bottom: 1.5px solid rgba(255,255,255,0.1); font-family: 'Rajdhani', sans-serif; font-weight: 800; color: #fff;">
+                            <th style="padding: 10px 8px;">Unit</th>
+                            <th style="padding: 10px 8px; text-align: center;">Jumlah Kasus</th>
+                            <th style="padding: 10px 8px;">Daftar Kerusakan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            if (list.length === 0) {
+                html += `<tr><td colspan="3" style="padding: 20px; text-align: center; color: #94a3b8; font-family: 'Rajdhani', sans-serif;">Tidak ada unit dengan kasus kerusakan.</td></tr>`;
+            } else {
+                list.forEach(item => {
+                    const categories = item.stats.unitCases.map(c => c.kategoriKerusakan || '-');
+                    const uniqueCategories = [...new Set(categories)].join(', ');
+                    html += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 10px 8px; font-weight: 700; color: #fff; font-family: 'Orbitron', sans-serif;">${item.unit.typeUnit}</td>
+                            <td style="padding: 10px 8px; text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #f97316;">${item.stats.casesCount}</td>
+                            <td style="padding: 10px 8px; font-size: 0.75rem; color: #94a3b8; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${uniqueCategories}">${uniqueCategories || '-'}</td>
+                        </tr>
+                    `;
+                });
+            }
+            html += `</tbody></table>`;
+            showAnalisaModal("Daftar Kasus Kerusakan per Unit", html);
+        }
+
+        function kpiCriticalClick() {
+            const { filteredUnits, filteredCases } = getFilteredData();
+            const list = [];
+            filteredUnits.forEach(unit => {
+                const stats = calculateUnitStats(unit, filteredCases);
+                if (stats.uptimePercent < 75) {
+                    list.push({ unit, stats });
+                }
+            });
+            list.sort((a, b) => a.stats.uptimePercent - b.stats.uptimePercent);
+            
+            let html = `
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem; color: #cbd5e1;">
+                    <thead>
+                        <tr style="border-bottom: 1.5px solid rgba(255,255,255,0.1); font-family: 'Rajdhani', sans-serif; font-weight: 800; color: #fff;">
+                            <th style="padding: 10px 8px;">Unit</th>
+                            <th style="padding: 10px 8px; text-align: center;">Uptime %</th>
+                            <th style="padding: 10px 8px; text-align: right;">Downtime</th>
+                            <th style="padding: 10px 8px; text-align: center;">Kasus</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            if (list.length === 0) {
+                html += `<tr><td colspan="4" style="padding: 20px; text-align: center; color: #94a3b8; font-family: 'Rajdhani', sans-serif;">Tidak ada unit berkategori kritis (&lt; 75% Uptime).</td></tr>`;
+            } else {
+                list.forEach(item => {
+                    html += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 10px 8px; font-weight: 700; color: #fff; font-family: 'Orbitron', sans-serif;">${item.unit.typeUnit}</td>
+                            <td style="padding: 10px 8px; text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #ef4444;">${item.stats.uptimePercent.toFixed(1)}%</td>
+                            <td style="padding: 10px 8px; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #cbd5e1;">${item.stats.totalDowntime.toFixed(1)}j</td>
+                            <td style="padding: 10px 8px; text-align: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #cbd5e1;">${item.stats.casesCount}</td>
+                        </tr>
+                    `;
+                });
+            }
+            html += `</tbody></table>`;
+            showAnalisaModal("Daftar Unit Kritis (< 75% Uptime)", html);
+        }
+
+        function kpiPrimaClick() {
+            const { filteredUnits, filteredCases } = getFilteredData();
+            const list = [];
+            filteredUnits.forEach(unit => {
+                const stats = calculateUnitStats(unit, filteredCases);
+                if (stats.uptimePercent === 100) {
+                    list.push({ unit, stats });
+                }
+            });
+            list.sort((a, b) => a.unit.typeUnit.localeCompare(b.unit.typeUnit));
+            
+            let html = `
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem; color: #cbd5e1;">
+                    <thead>
+                        <tr style="border-bottom: 1.5px solid rgba(255,255,255,0.1); font-family: 'Rajdhani', sans-serif; font-weight: 800; color: #fff;">
+                            <th style="padding: 10px 8px;">Unit</th>
+                            <th style="padding: 10px 8px;">Tipe</th>
+                            <th style="padding: 10px 8px;">Vendor</th>
+                            <th style="padding: 10px 8px; text-align: right;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            if (list.length === 0) {
+                html += `<tr><td colspan="4" style="padding: 20px; text-align: center; color: #94a3b8; font-family: 'Rajdhani', sans-serif;">Tidak ada unit berkategori prima (100% Uptime).</td></tr>`;
+            } else {
+                list.forEach(item => {
+                    html += `
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 10px 8px; font-weight: 700; color: #fff; font-family: 'Orbitron', sans-serif;">${item.unit.typeUnit}</td>
+                            <td style="padding: 10px 8px; font-family: 'Rajdhani', sans-serif; font-weight: 600;">${item.unit.jenisUnit}</td>
+                            <td style="padding: 10px 8px; color: #94a3b8;">${item.unit.vendor}</td>
+                            <td style="padding: 10px 8px; text-align: right; color: #10b981; font-weight: 800; font-size: 0.72rem; letter-spacing: 0.5px; font-family: 'Rajdhani', sans-serif;">OPERASIONAL PRIMA</td>
+                        </tr>
+                    `;
+                });
+            }
+            html += `</tbody></table>`;
+            showAnalisaModal("Daftar Unit Prima (100% Uptime)", html);
+        }
+
+        // --- UNIT DETAIL CLICK (BULLETPROOF POPUP WITH DAILY UPTIME CONTRIBUTION) ---
+        function showUnitDetailModal(unitType) {
+            try {
+                const allUnits = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+                const unit = allUnits.find(u => u.typeUnit === unitType);
+                if (!unit) return;
+                
+                const { filteredCases } = getFilteredData();
+                const stats = calculateUnitStats(unit, filteredCases);
+                
+                // Find the active operational date (maximum of system clock or latest date in database)
+                let activeDate = new Date();
+                if (Array.isArray(cachedRiwayat)) {
+                    cachedRiwayat.forEach(item => {
+                        if (item.jamMulai) {
+                            const d = parseDateString(item.jamMulai);
+                            if (!isNaN(d.getTime()) && d > activeDate) {
+                                activeDate = d;
+                            }
+                        }
+                        if (item.jamSelesai && item.jamSelesai !== "-") {
+                            const d = parseDateString(item.jamSelesai);
+                            if (!isNaN(d.getTime()) && d > activeDate) {
+                                activeDate = d;
+                            }
+                        }
+                    });
+                }
+                
+                let statusText = "Prima";
+                let statusColor = "#10b981";
+                if (stats.uptimePercent < 60) {
+                    statusText = "Down";
+                    statusColor = "#ef4444";
+                } else if (stats.uptimePercent < 80) {
+                    statusText = "Kritis";
+                    statusColor = "#ef4444";
+                } else if (stats.uptimePercent < 95) {
+                    statusText = "Waspada";
+                    statusColor = "#f97316";
+                } else if (stats.uptimePercent < 100) {
+                    statusText = "Baik";
+                    statusColor = "#3b82f6";
+                }
+                
+                let logsHtml = `
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.76rem; margin-top: 10px; color: #cbd5e1;">
+                        <thead>
+                            <tr style="border-bottom: 1.5px solid rgba(255,255,255,0.1); font-family: 'Rajdhani', sans-serif; font-weight: 800; color: #fff;">
+                                <th style="padding: 6px 4px; width: 105px; text-align: center;">Klik Detail</th>
+                                <th style="padding: 6px 4px; width: 155px;">Tanggal</th>
+                                <th style="padding: 6px 4px; width: 80px;">Kondisi</th>
+                                <th style="padding: 6px 4px; width: 70px;">Downtime</th>
+                                <th style="padding: 6px 4px; width: 90px;">Dampak Uptime</th>
+                                <th style="padding: 6px 4px;">Keterangan Kerusakan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                if (!stats.unitCases || stats.unitCases.length === 0) {
+                    logsHtml += `<tr><td colspan="6" style="padding: 14px; text-align: center; color: #94a3b8; font-family: 'Inter', sans-serif;">Tidak ada log aktivitas untuk unit ini.</td></tr>`;
+                } else {
+                    // Safe date comparisons sorting
+                    const sorted = [...stats.unitCases].sort((a, b) => (b.jamMulai || "").localeCompare(a.jamMulai || ""));
+                    sorted.forEach(c => {
+                        const dateStr = formatDayDateIndo(c.jamMulai);
+                        const durVal = Number(c.durasiJam || 0);
+                        const durationStr = c.status.toLowerCase() === 'selesai' ? `${durVal.toFixed(1)}j` : 'Ongoing';
+                        const opCond = (c.kondisiOperasional || 'BREAKDOWN').toUpperCase();
+                        const isRunning = opCond === 'RUNNING';
+                        
+                        // Condition badge
+                        let condBadge = '';
+                        if (isRunning) {
+                            condBadge = `<span style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); font-family: 'Rajdhani', sans-serif; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px;">🟡 RUNNING</span>`;
+                        } else {
+                            condBadge = `<span style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); font-family: 'Rajdhani', sans-serif; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px;">🔴 STOP</span>`;
+                        }
+                        
+                        // Uptime impact column
+                        let uptimeCell = '';
+                        if (isRunning) {
+                            // RUNNING / Maintenance: does NOT affect uptime
+                            uptimeCell = `<span style="background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.25); font-family: 'Rajdhani', sans-serif; font-size: 0.58rem; padding: 2px 5px; border-radius: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2px; display: inline-block; line-height: 1.3;" title="Unit tetap beroperasi selama proses maintenance berlangsung — tidak memengaruhi perhitungan uptime armada.">N/A<br><span style='font-size:0.5rem;opacity:0.7;'>Tdk Dihitung</span></span>`;
+                        } else {
+                            // BREAKDOWN: Calculate impact on uptime
+                            let dailyUptime = 100;
+                            if (c.status.toLowerCase() === 'selesai') {
+                                // For multi-day breakdowns (>24h), proportionally distribute impact
+                                const impactHrs = Math.min(durVal, stats.totalAvailableHours);
+                                dailyUptime = Math.max(0, ((stats.totalAvailableHours - impactHrs) / stats.totalAvailableHours) * 100);
+                            } else {
+                                // Ongoing case
+                                const start = parseDateString(c.jamMulai);
+                                const elapsedHrs = Math.max(0, (activeDate - start) / (1000 * 60 * 60));
+                                const impactHrs = Math.min(elapsedHrs, stats.totalAvailableHours);
+                                dailyUptime = Math.max(0, ((stats.totalAvailableHours - impactHrs) / stats.totalAvailableHours) * 100);
+                            }
+                            
+                            const uptimeColor = dailyUptime >= 95 ? '#10b981' : dailyUptime >= 80 ? '#3b82f6' : dailyUptime >= 60 ? '#f97316' : '#ef4444';
+                            const uptimeStr = c.status.toLowerCase() === 'selesai' || durVal > 0 ? `${dailyUptime.toFixed(1)}%` : 'Ongoing';
+                            uptimeCell = `<span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: ${uptimeColor};">${uptimeStr}</span>`;
+                        }
+                        
+                        logsHtml += `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);${isRunning ? ' opacity: 0.75;' : ''}">
+                                <td style="padding: 6px 4px; text-align: center;">
+                                    <button onclick="openHistoryDetailById('${c.idBreakdown}')" style="background: rgba(6, 182, 212, 0.2); border: 1px solid rgba(6, 182, 212, 0.5); color: #00f0ff; font-family: 'Rajdhani', sans-serif; font-size: 0.68rem; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-weight: 800; text-transform: uppercase; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 8px rgba(6, 182, 212, 0.3);" onmouseenter="this.style.background='rgba(6, 182, 212, 0.4)'; this.style.boxShadow='0 0 12px rgba(6, 182, 212, 0.6)'; this.style.transform='scale(1.05)';" onmouseleave="this.style.background='rgba(6, 182, 212, 0.2)'; this.style.boxShadow='0 0 8px rgba(6, 182, 212, 0.3)'; this.style.transform='scale(1)';">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Klik Detail
+                                    </button>
+                                </td>
+                                <td style="padding: 6px 4px; font-weight: 600; color: #e2e8f0;">${dateStr}</td>
+                                <td style="padding: 6px 4px;">${condBadge}</td>
+                                <td style="padding: 6px 4px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: ${isRunning ? '#fbbf24' : '#ef4444'};">${durationStr}</td>
+                                <td style="padding: 6px 4px;">${uptimeCell}</td>
+                                <td style="padding: 6px 4px; color: #cbd5e1; max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${c.kategoriKerusakan || ''} - ${c.pilihanKerusakan || ''}: ${c.detailKerusakan || ''}">${c.kategoriKerusakan || ''} - ${c.pilihanKerusakan || ''} (${c.detailKerusakan || '-'})</td>
+                            </tr>
+                        `;
+                    });
+                }
+                logsHtml += `</tbody></table>`;
+                
+                // Info note about RUNNING exclusion
+                const hasRunningCases = stats.unitCases.some(c => (c.kondisiOperasional || 'BREAKDOWN').toUpperCase() === 'RUNNING');
+                if (hasRunningCases) {
+                    logsHtml += `
+                        <div style="margin-top: 10px; padding: 10px 14px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 8px; display: flex; align-items: flex-start; gap: 8px;">
+                            <i class="fa-solid fa-circle-info" style="color: #fbbf24; margin-top: 2px; font-size: 0.8rem;"></i>
+                            <div style="font-family: 'Inter', sans-serif; font-size: 0.68rem; color: #fde68a; line-height: 1.5;">
+                                <strong style="color: #fbbf24;">Catatan Kalkulasi Uptime:</strong> Kasus dengan status <strong>🟡 RUNNING (Kerusakan Kerja)</strong> tidak diperhitungkan dalam logika kalkulasi uptime armada, karena unit tetap beroperasi secara fungsional selama proses maintenance berlangsung.
+                                Hanya kasus <strong>🔴 BREAKDOWN (Stop Total)</strong> yang memengaruhi persentase uptime.
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                const html = `
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <!-- Header Block -->
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <div style="font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 900; color: #ffffff; letter-spacing: 0.5px;">${unit.typeUnit}</div>
+                                <div style="font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; color: #94a3b8; font-weight: 700; margin-top: 2px; text-transform: uppercase;">
+                                    ${unit.jenisUnit} &bull; VENDOR: ${unit.vendor}
+                                </div>
+                            </div>
+                            <span style="background: ${statusColor}15; color: ${statusColor}; border: 1.5px solid ${statusColor}33; font-family: 'Rajdhani', sans-serif; font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                                ${statusText}
+                            </span>
+                        </div>
+                        
+                        <!-- Uptime Progress Instrument -->
+                        <div class="cyber-panel" style="padding: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.08); background: rgba(10,15,30,0.5);">
+                            <div style="font-family: 'Rajdhani', sans-serif; font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Persentase Uptime (Periode Terpilih)</div>
+                            <div style="font-family: 'JetBrains Mono', monospace; font-size: 2.2rem; font-weight: 800; color: ${statusColor}; margin-top: 6px; text-shadow: 0 0 10px ${statusColor}77;">
+                                ${stats.uptimePercent.toFixed(1)}%
+                            </div>
+                            <!-- Progress Bar -->
+                            <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-top: 12px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);">
+                                <div style="width: ${stats.uptimePercent}%; height: 100%; background: linear-gradient(90deg, ${statusColor}aa, ${statusColor}); border-radius: 4px; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 0 8px ${statusColor};"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Key Stats grid -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="cyber-panel" style="padding: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); background: rgba(10,15,30,0.3);">
+                                <div style="font-family: 'Rajdhani', sans-serif; font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Total Downtime <span style="font-size: 0.55rem; color: #64748b;">(Breakdown Only)</span></div>
+                                <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 800; color: #ef4444; margin-top: 4px;">
+                                    ${stats.totalDowntime.toFixed(1)}j
+                                </div>
+                            </div>
+                            <div class="cyber-panel" style="padding: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); background: rgba(10,15,30,0.3);">
+                                <div style="font-family: 'Rajdhani', sans-serif; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Jumlah Kasus</div>
+                                <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 800; color: #ffffff; margin-top: 4px;">
+                                    ${stats.casesCount}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Log Breakdown Table -->
+                        <div>
+                            <div style="font-family: 'Rajdhani', sans-serif; font-size: 0.85rem; font-weight: 800; color: #fff; margin-top: 6px; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-clipboard-list" style="color: var(--neon-cyan);"></i> Log Aktivitas & Kontribusi Uptime
+                            </div>
+                            ${logsHtml}
+                        </div>
+                    </div>
+                `;
+                
+                showAnalisaModal(`Detail Unit: ${unit.typeUnit}`, html);
+            } catch (err) {
+                console.error("Crash in showUnitDetailModal:", err);
+                showAnalisaModal("Kesalahan Sistem", `
+                    <div style="padding: 20px; text-align: center; color: #ef4444; font-family: 'Inter', sans-serif;">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; margin-bottom: 12px;"></i>
+                        <p style="font-weight: 700; font-size: 1rem;">Gagal memuat detail unit.</p>
+                        <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 6px;">Terjadi kesalahan internal saat membaca database data breakdown. Silakan coba kembali.</p>
+                    </div>
+                `);
+            }
+        }
+
+        // --- RESET FILTERS ---
+        function resetAnalisaFilters() {
+            // Spin reset icon animation
+            const resetIcon = document.getElementById('reset-filter-icon');
+            if (resetIcon) {
+                resetIcon.style.transition = 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+                resetIcon.style.transform = 'rotate(360deg)';
+                setTimeout(() => {
+                    resetIcon.style.transform = 'rotate(0deg)';
+                    resetIcon.style.transition = 'none';
+                }, 600);
+            }
+
+            document.getElementById('filter-periode-bulan').value = 'Semua';
+            document.getElementById('filter-jenis-alat').value = 'Semua';
+            document.getElementById('filter-vendor').value = 'Semua';
+            renderAnalisaSection();
+        }
+
+        // --- CORE RENDER FUNCTION ---
+        function renderAnalisaSection() {
+            // 1. Get filtered data
+            const { filteredUnits, filteredCases } = getFilteredData();
+            
+            // 2. Render KPI cards
+            renderKPICards(filteredUnits, filteredCases);
+            
+            // 3. Render Fleet Cards
+            renderFleetCards(filteredUnits, filteredCases);
+            
+            // 4. Render Charts
+            renderAnalisaCharts(filteredUnits, filteredCases);
+            
+            // 5. Render Ranking Table
+            renderRankingTable(filteredUnits, filteredCases);
+        }
+
+        // Modal overlay listener
+        setTimeout(() => {
+            const overlay = document.getElementById('analisa-modal-overlay');
+            if (overlay) {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeAnalisaModal();
+                    }
+                });
+            }
+        }, 500);
 
         // ==============================================
         // TOAST NOTIFICATIONS POPUP
@@ -6623,8 +7855,8 @@
 
         /* CUSTOM SPACING TO MAKE DETAIL MODAL COMPACT ON DESKTOP */
         #detail-modal-overlay .modal-card {
-            max-width: 660px !important;
-            max-height: 85vh !important;
+            max-width: 880px !important;
+            max-height: 90vh !important;
         }
         #detail-modal-overlay .modal-body {
             padding: 16px 24px !important;
@@ -6678,7 +7910,20 @@
         .swal2-container {
             z-index: 99999 !important;
         }
+        #detail-modal-overlay {
+            z-index: 11000 !important;
+        }
     </style>
+    <!-- FUTURISTIC MODAL OVERLAY DETAIL POPUP (ROOT LEVEL VIEWPORT FIX) -->
+    <div id="analisa-modal-overlay" style="display: none; opacity: 0; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(3, 7, 18, 0.75); z-index: 10000; align-items: center; justify-content: center; transition: opacity 0.25s ease-in-out; backdrop-filter: blur(8px);">
+        <div style="background: rgba(15, 23, 42, 0.95); border-radius: 16px; padding: 24px; max-width: 1050px; width: 95%; position: relative; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 20px 50px rgba(0,0,0,0.65), 0 0 30px rgba(56, 189, 248, 0.15); display: flex; flex-direction: column; gap: 16px; color: #fff;">
+            <button onclick="closeAnalisaModal()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8; font-weight: 700; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; transition: color 0.2s;" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='#94a3b8'" title="Tutup">×</button>
+            <h3 id="analisa-modal-title" style="font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 800; color: #ffffff; margin: 0; padding-right: 24px; display: flex; align-items: center; gap: 8px;"></h3>
+            <div id="analisa-modal-body" style="max-height: 480px; overflow-y: auto; font-family: 'Inter', sans-serif; font-size: 0.86rem; color: #cbd5e1;">
+                <!-- Modal Body Content via JS -->
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
