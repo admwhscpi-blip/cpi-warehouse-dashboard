@@ -302,9 +302,22 @@ function ksComputeStock(bkId, ascDates) {
   var resetTs = resetBase ? resetBase.ts : NaN;
   var hasResetSo = !!resetBase;
 
+  // ── Determine whether the SO falls inside or before the viewing period ──
+  // If the latest SO is BEFORE the viewing period (resetDate < firstDate),
+  // we still need to compute carry-forward from SO → firstDate, but using
+  // the SO-reset logic (start from 0, accumulate after SO timestamp).
+  var soBeforePeriod = hasResetSo && resetDate < firstDate;
+
+  // When SO is before the period, disable the intra-period reset flags
+  // so the day loop doesn't skip dates. We'll handle carry-forward below.
+  if (soBeforePeriod) {
+    hasResetSo = false;
+  }
+
   // Find last opname BEFORE the start of this period → initial stock baseline
+  // (only when there's no SO at all — SO-based BKs use the reset logic)
   var lastOp = null;
-  if (!hasResetSo) {
+  if (!hasResetSo && !soBeforePeriod) {
     ksState.raw.opname.forEach(function(r) {
       if (ksNormBK(r.BK_ID) !== bkTarget) return;
       if (r.TANGGAL < firstDate) {
@@ -315,8 +328,37 @@ function ksComputeStock(bkId, ascDates) {
 
   var prevStock = 0;
   if (hasResetSo) {
-    // Sesuai kebutuhan operasional: setelah SO, baseline kartu stock dimulai ulang dari nol.
+    // Sesuai kebutuhan operasional: setelah SO di dalam periode, baseline kartu stock dimulai ulang dari nol.
     prevStock = 0;
+  } else if (soBeforePeriod) {
+    // SO ada di bulan sebelumnya: baseline = 0, lalu carry-forward semua
+    // bongkar/kirim dari setelah timestamp SO sampai sebelum firstDate.
+    // Ini mereplikasi logika reset SO yang sama (prevStock=0 + akumulasi),
+    // hanya saja di-extend melewati batas bulan.
+    prevStock = 0;
+    ksState.raw.bongkar.forEach(function(r) {
+      if (ksNormBK(r.BK_ID) !== bkTarget) return;
+      if (r.TANGGAL < firstDate && r.TANGGAL >= resetDate) {
+        // Untuk bongkar di tanggal SO itu sendiri, cek timestamp > resetTs
+        if (r.TANGGAL === resetDate) {
+          var tbms = ksRowTsMs(r);
+          if (isNaN(tbms)) tbms = ksNoonMs(resetDate);
+          if (!isNaN(resetTs) && tbms <= resetTs) return;
+        }
+        prevStock += ksEffectiveBongkarKg(r);
+      }
+    });
+    ksState.raw.kirim.forEach(function(r) {
+      if (ksNormBK(r.BK_ID) !== bkTarget) return;
+      if (r.TANGGAL < firstDate && r.TANGGAL >= resetDate) {
+        if (r.TANGGAL === resetDate) {
+          var ukms = ksRowTsMs(r);
+          if (isNaN(ukms)) ukms = ksNoonMs(resetDate);
+          if (!isNaN(resetTs) && ukms <= resetTs) return;
+        }
+        prevStock -= (Number(r.NETTO_KG) || 0);
+      }
+    });
   } else if (lastOp) {
     prevStock = Number(lastOp.STOK_FISIK_KG) || 0;
     // Forward-compute from lastOp.TANGGAL up to (but not including) firstDate
