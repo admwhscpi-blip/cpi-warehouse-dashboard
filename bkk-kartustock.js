@@ -388,6 +388,27 @@ function ksComputeStock(bkId, ascDates) {
 
   var result = {};
   var totalPenerimaan = 0;
+  if (soBeforePeriod) {
+    ksState.raw.bongkar.forEach(function(r) {
+      if (ksNormBK(r.BK_ID) !== bkTarget) return;
+      if (r.TANGGAL < firstDate && r.TANGGAL >= resetDate) {
+        if (r.TANGGAL === resetDate) {
+          var tbms = ksRowTsMs(r);
+          if (isNaN(tbms)) tbms = ksNoonMs(resetDate);
+          if (!isNaN(resetTs) && tbms <= resetTs) return;
+        }
+        totalPenerimaan += ksEffectiveBongkarKg(r);
+      }
+    });
+  } else if (!hasResetSo) {
+    ksState.raw.bongkar.forEach(function(r) {
+      if (ksNormBK(r.BK_ID) !== bkTarget) return;
+      if (r.TANGGAL < firstDate) {
+        totalPenerimaan += ksEffectiveBongkarKg(r);
+      }
+    });
+  }
+
   ascDates.forEach(function(ds) {
     if (hasResetSo && ds < resetDate) {
       result[ds] = { rows: [], stock: null };
