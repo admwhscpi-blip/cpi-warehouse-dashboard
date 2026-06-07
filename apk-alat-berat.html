@@ -6962,60 +6962,141 @@
         }
 
         // CSV EXPORTER ENGINE
+        // CSV EXPORTER ENGINE (Excel XML Format matching BS Storage)
         function exportToCSV() {
             if (filteredRiwayat.length === 0) {
                 showToast("Tidak ada data yang dapat diekspor!", "error");
                 return;
             }
 
-            showToast("Mempersiapkan download file CSV...", "warning");
+            showToast("Mempersiapkan ekspor laporan...", "warning");
 
-            let csvContent = "data:text/csv;charset=utf-8,";
-            
-            // Header
-            const headers = [
-                "ID_BREAKDOWN", "TIMESTAMP_INPUT", "JENIS_UNIT", "TYPE_UNIT", "VENDOR",
-                "KATEGORI_KERUSAKAN", "PILHAN_KERUSAKAN", "DETAIL_KERUSAKAN",
-                "OPERATOR_AWAL", "JAM_MULAI", "OPERATOR_AKHIR", "JAM_SELESAI",
-                "DURASI_MENIT", "DURASI_JAM", "STATUS"
-            ];
-            csvContent += headers.join(",") + "\r\n";
+            function escHtml(s) {
+                return String(s == null ? '' : s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
 
-            // Rows
-            filteredRiwayat.forEach(item => {
-                const row = [
-                    item.idBreakdown,
-                    item.timestamp,
-                    item.jenisUnit,
-                    item.typeUnit,
-                    item.vendor,
-                    item.kategoriKerusakan,
-                    `"${item.pilihanKerusakan.replace(/"/g, '""')}"`,
-                    `"${item.detailKerusakan.replace(/"/g, '""')}"`,
-                    `"${item.operatorAwal.replace(/"/g, '""')}"`,
-                    item.jamMulai,
-                    `"${item.operatorAkhir.replace(/"/g, '""')}"`,
-                    item.jamSelesai,
-                    item.durasiMenit !== null ? item.durasiMenit : "",
-                    item.durasiJam !== null ? item.durasiJam : "",
-                    item.status
-                ];
-                csvContent += row.join(",") + "\r\n";
-            });
-
-            // Trigger Download
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            
+            const userName = loggedInUser || '—';
             const timestampFile = new Date().toISOString().substring(0, 10);
-            link.setAttribute("download", `Riwayat_Breakdown_Alat_Berat_${timestampFile}.csv`);
-            document.body.appendChild(link); // Required for FF
+            const printTs = formatDateTimeIndo(new Date());
+
+            const html = [];
+            html.push('<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">');
+            html.push('<head>');
+            html.push('<meta charset="utf-8">');
+            html.push('<!--[if gte mso 9]>');
+            html.push('<xml>');
+            html.push(' <x:ExcelWorkbook>');
+            html.push('  <x:ExcelWorksheets>');
+            html.push('   <x:ExcelWorksheet>');
+            html.push('    <x:Name>Laporan Breakdown</x:Name>');
+            html.push('    <x:WorksheetOptions>');
+            html.push('     <x:DisplayGridlines/>');
+            html.push('    </x:WorksheetOptions>');
+            html.push('   </x:ExcelWorksheet>');
+            html.push('  </x:ExcelWorksheets>');
+            html.push(' </x:ExcelWorkbook>');
+            html.push('</xml>');
+            html.push('<![endif]-->');
+            html.push('<style>');
+            html.push('  body { font-family: Calibri, Arial, sans-serif; }');
+            html.push('  .kop-main { font-size: 14pt; font-weight: bold; color: #1e3a8a; }');
+            html.push('  .kop-sub { font-size: 11pt; color: #475569; }');
+            html.push('  .kop-meta { font-size: 10pt; color: #334155; }');
+            html.push('  table { border-collapse: collapse; }');
+            html.push('  th { background-color: #1e3a8a; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 11pt; text-align: center; }');
+            html.push('  td { border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 10pt; vertical-align: middle; }');
+            html.push('  .text-center { text-align: center; }');
+            html.push('  .text-right { text-align: right; }');
+            html.push('  .status-selesai { background-color: #d1fae5; color: #065f46; font-weight: bold; text-align: center; border: 1px solid #cbd5e1; }');
+            html.push('  .status-ongoing { background-color: #fee2e2; color: #991b1b; font-weight: bold; text-align: center; border: 1px solid #cbd5e1; }');
+            html.push('</style>');
+            html.push('</head>');
+            html.push('<body>');
+            html.push('<table>');
+            html.push('  <tr><td colspan="15" class="kop-main">PT Charoen Pokphand Indonesia - Cirebon</td></tr>');
+            html.push('  <tr><td colspan="15" class="kop-sub">Smart Warehouse v2.0 - Heavy Equipment Command Center (HEAVIX)</td></tr>');
+            html.push('  <tr><td colspan="15" class="kop-meta">Laporan Riwayat Breakdown Alat Berat | Tanggal Cetak: ' + escHtml(printTs) + '</td></tr>');
             
+            const fFrom = document.getElementById("filter-date-from") ? document.getElementById("filter-date-from").value : "";
+            const fTo = document.getElementById("filter-date-to") ? document.getElementById("filter-date-to").value : "";
+            let periodText = "Semua Riwayat";
+            if (fFrom && fTo) {
+                periodText = fFrom + " s/d " + fTo;
+            } else if (fFrom) {
+                periodText = "Mulai dari " + fFrom;
+            } else if (fTo) {
+                periodText = "Sampai dengan " + fTo;
+            }
+            html.push('  <tr><td colspan="15" class="kop-meta">Periode Filter: <span style="color: #2563eb; font-weight: bold;">' + escHtml(periodText) + '</span> | Total Data: <span style="color: #16a34a; font-weight: bold;">' + filteredRiwayat.length + ' rekaman</span></td></tr>');
+            
+            html.push('  <tr><td colspan="15" style="border:none; height:10px;"></td></tr>');
+            html.push('  <tr>');
+            
+            const ths = 'style="background-color: #1e3a8a; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 11pt; text-align: center;"';
+            html.push('    <th ' + ths + '>ID Breakdown</th>');
+            html.push('    <th ' + ths + '>Timestamp Input</th>');
+            html.push('    <th ' + ths + '>Jenis Unit</th>');
+            html.push('    <th ' + ths + '>Tipe Unit</th>');
+            html.push('    <th ' + ths + '>Vendor</th>');
+            html.push('    <th ' + ths + '>Kategori Kerusakan</th>');
+            html.push('    <th ' + ths + '>Pilihan Kerusakan</th>');
+            html.push('    <th ' + ths + '>Detail Kerusakan</th>');
+            html.push('    <th ' + ths + '>Operator Pelapor</th>');
+            html.push('    <th ' + ths + '>Jam Mulai</th>');
+            html.push('    <th ' + ths + '>Operator Eksekutor</th>');
+            html.push('    <th ' + ths + '>Jam Selesai</th>');
+            html.push('    <th ' + ths + '>Durasi (Menit)</th>');
+            html.push('    <th ' + ths + '>Durasi (Jam)</th>');
+            html.push('    <th ' + ths + '>Status</th>');
+            html.push('  </tr>');
+            
+            filteredRiwayat.forEach(function (r) {
+                const isOngoing = String(r.status || '').toLowerCase() === 'ongoing';
+                const statusStyleClass = isOngoing ? 'class="status-ongoing"' : 'class="status-selesai"';
+                
+                html.push('  <tr>');
+                html.push('    <td class="text-center" style="border: 1px solid #cbd5e1; text-align: center;">' + escHtml(r.idBreakdown) + '</td>');
+                html.push('    <td class="text-center" style="border: 1px solid #cbd5e1; text-align: center;">' + escHtml(r.timestamp || '-') + '</td>');
+                html.push('    <td style="border: 1px solid #cbd5e1;">' + escHtml(r.jenisUnit || '-') + '</td>');
+                html.push('    <td class="text-center" style="border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">' + escHtml(r.typeUnit || '-') + '</td>');
+                html.push('    <td style="border: 1px solid #cbd5e1;">' + escHtml(r.vendor || '-') + '</td>');
+                html.push('    <td style="border: 1px solid #cbd5e1;">' + escHtml(r.kategoriKerusakan || '-') + '</td>');
+                html.push('    <td style="border: 1px solid #cbd5e1;">' + escHtml(r.pilihanKerusakan || '-') + '</td>');
+                html.push('    <td style="border: 1px solid #cbd5e1; max-width: 250px; white-space: normal; word-wrap: break-word;">' + escHtml(r.detailKerusakan || '-') + '</td>');
+                html.push('    <td style="border: 1px solid #cbd5e1;">' + escHtml(r.operatorAwal || '-') + '</td>');
+                html.push('    <td class="text-center" style="border: 1px solid #cbd5e1; text-align: center;">' + escHtml(r.jamMulai ? r.jamMulai.replace('T', ' ') : '-') + '</td>');
+                html.push('    <td style="border: 1px solid #cbd5e1;">' + escHtml(r.operatorAkhir || '-') + '</td>');
+                html.push('    <td class="text-center" style="border: 1px solid #cbd5e1; text-align: center;">' + escHtml((r.jamSelesai && r.jamSelesai !== '-') ? r.jamSelesai.replace('T', ' ') : '-') + '</td>');
+                html.push('    <td class="text-right" style="border: 1px solid #cbd5e1; text-align: right;">' + escHtml(r.durasiMenit !== null && r.durasiMenit !== undefined ? r.durasiMenit : '-') + '</td>');
+                html.push('    <td class="text-right" style="border: 1px solid #cbd5e1; text-align: right;">' + escHtml(r.durasiJam !== null && r.durasiJam !== undefined ? r.durasiJam : '-') + '</td>');
+                html.push('    <td ' + statusStyleClass + '>' + escHtml(r.status || '-') + '</td>');
+                html.push('  </tr>');
+            });
+            
+            html.push('  <tr><td colspan="15" style="border:none; height:10px;"></td></tr>');
+            html.push('  <tr><td colspan="15" class="kop-meta" style="font-weight:bold;">Dicetak oleh: ' + escHtml(userName) + ' | Tanggal cetak: ' + escHtml(printTs) + '</td></tr>');
+            html.push('  <tr><td colspan="15" class="kop-meta" style="font-style:italic;">Accuracy | Transparency | Accountability</td></tr>');
+            html.push('</table>');
+            html.push('</body>');
+            html.push('</html>');
+            
+            const excelContent = '\uFEFF' + html.join('\r\n');
+            const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `Laporan_Breakdown_Alat_Berat_${timestampFile}.xls`;
+            document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-
-            showToast("Sukses mendownload file CSV!", "success");
+            URL.revokeObjectURL(url);
+            
+            showToast("Laporan Excel berhasil diunduh!", "success");
         }
 
         // ==============================================
