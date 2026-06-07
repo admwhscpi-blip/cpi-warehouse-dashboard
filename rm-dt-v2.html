@@ -5185,7 +5185,9 @@
         const DB_MUAT_DURATION_TYPES = [
             { key: 'bongkarStapel', label: 'Bongkar Stapel', sub: 'Bongkar Stapel → Start Muat', color: '#f97316' },
             { key: 'prosesMuat',    label: 'Proses Muat',    sub: 'Start Muat → Finish',          color: '#8b5cf6' },
-            { key: 'terpalSegel',   label: 'Terpal & Segel', sub: 'Finish → OTW Pabrik',          color: '#06b6d4' }
+            { key: 'terpalSegel',   label: 'Terpal & Segel', sub: 'Finish → OTW Pabrik',          color: '#06b6d4' },
+            { key: 'perjalanan',    label: 'Perjalanan',     sub: 'OTW Pabrik → Start Bongkar',   color: '#10b981' },
+            { key: 'prosesBongkar', label: 'Proses Bongkar',  sub: 'Start Bongkar → Finish',       color: '#ef4444' }
         ];
 
         let _dbSelectedTypes = [];
@@ -5216,15 +5218,15 @@
         }
 
         function computeDbMuatDurations(row) {
-            const result = { bongkarStapel: null, prosesMuat: null, terpalSegel: null };
+            const result = { bongkarStapel: null, prosesMuat: null, terpalSegel: null, perjalanan: null, prosesBongkar: null };
             const tanggal = String(row.TANGGAL || row.tanggal || '').trim();
             if (!tanggal) return result;
 
-            const parseDateTime = (timeStr) => {
+            const parseDateTime = (timeStr, baseDate = tanggal) => {
                 if (!timeStr) return null;
                 const t = String(timeStr).trim();
                 if (!t || t === '-') return null;
-                const dt = new Date(`${tanggal}T${t}:00`);
+                const dt = new Date(`${baseDate}T${t}:00`);
                 return isNaN(dt) ? null : dt;
             };
 
@@ -5243,6 +5245,39 @@
             result.bongkarStapel = diffMin(tBS,  tSM);
             result.prosesMuat    = diffMin(tSM,  tFin);
             result.terpalSegel   = diffMin(tFin, tOtw);
+
+            // Find matching BONGKAR row for this MUAT row to calculate perjalanan and prosesBongkar
+            let matchingBongkar = null;
+            if (hubData && hubData.templateDump) {
+                const cleanNopol = String(row.NOPOL || '').trim().toUpperCase();
+                matchingBongkar = hubData.templateDump.find(r => {
+                    const k = String(r.KEGIATAN || '').toUpperCase();
+                    if (!k.includes('BONGKAR')) return false;
+                    const rNopol = String(r.NOPOL || '').trim().toUpperCase();
+                    const rTgl = String(r.TANGGAL || '').substring(0, 10);
+                    return rNopol === cleanNopol && rTgl === tanggal;
+                });
+            }
+
+            if (matchingBongkar) {
+                const pbDate = String(matchingBongkar.TANGGAL_PB || matchingBongkar.TANGGAL || tanggal).substring(0, 10);
+                const tTiba = parseDateTime(matchingBongkar.SAMPAI_GUDANG || matchingBongkar.sampaiGudang, pbDate);
+                const tStartB = parseDateTime(matchingBongkar.START_BONGKAR || matchingBongkar.startBongkar, pbDate);
+                const tFinB = parseDateTime(matchingBongkar.FINISH_TIME || matchingBongkar.finishTime, pbDate);
+
+                if (tOtw && tStartB) {
+                    let diffPerjalanan = (tStartB - tOtw) / 60000;
+                    if (diffPerjalanan < 0) diffPerjalanan += 1440;
+                    result.perjalanan = (diffPerjalanan > 0 && diffPerjalanan < 1440) ? Math.round(diffPerjalanan) : null;
+                }
+
+                if (tStartB && tFinB) {
+                    let diffBongkar = (tFinB - tStartB) / 60000;
+                    if (diffBongkar < 0) diffBongkar += 1440;
+                    result.prosesBongkar = (diffBongkar > 0 && diffBongkar < 1440) ? Math.round(diffBongkar) : null;
+                }
+            }
+
             return result;
         }
 
@@ -6664,7 +6699,7 @@
                 return h + 'j ' + mm + 'm';
             }
 
-            function _tjpNodeHtml(id, label, dateStr, timeStr, extraCls, extraHtml, iconHtml) {
+             function _tjpNodeHtml(id, label, dateStr, timeStr, extraCls, extraHtml, iconHtml) {
                 var hasData = (timeStr && timeStr !== '-' && timeStr !== '');
                 var cls = 'tjp-node ' + extraCls + (hasData ? ' tjp-node-active' : ' tjp-node-inactive tjp-node-empty');
                 var display = hasData ? ('📅 ' + _tjpEsc(dateStr||'') + '  ' + _tjpEsc(timeStr)) : '—';
@@ -6673,6 +6708,14 @@
                     '<div class="tjp-node-label">' + icon + ' '+_tjpEsc(label)+'</div>' +
                     '<div class="tjp-node-time"><i class="far fa-clock"></i> '+display+'</div>' +
                     (extraHtml||'') +
+                '</div>';
+            }
+
+            function _tjpSourceWhNodeHtml(id, label, isActive, icon) {
+                var cls = 'tjp-node ' + (isActive ? 'tjp-node-pretimbang tjp-node-active' : 'tjp-node-pretimbang tjp-node-inactive tjp-node-empty');
+                return '<div class="'+cls+'" id="tjp-n-src-'+id+'" style="min-width:180px;">' +
+                    '<div class="tjp-node-label">' + icon + ' ' + _tjpEsc(label) + '</div>' +
+                    '<div class="tjp-node-time">' + (isActive ? '🟢 Sumber Muat' : '—') + '</div>' +
                 '</div>';
             }
 
@@ -6781,6 +6824,7 @@
             }
 
             function _tjpExtract(row) {
+                var isMuat = String(row.KEGIATAN || '').toUpperCase().includes('MUAT');
                 var tanggal = _tjpYmd(row.TANGGAL);
                 
                 var abBaseDateStr  = row.TANGGAL;
@@ -6837,13 +6881,53 @@
                 var msPbFinish = dtV ? dtV.getTime() : NaN;
 
                 var bd = {};
+                var matchingBongkar = null;
+                if (isMuat && hubData && hubData.templateDump) {
+                    const cleanNopol = String(row.NOPOL || '').trim().toUpperCase();
+                    matchingBongkar = hubData.templateDump.find(r => {
+                        const k = String(r.KEGIATAN || '').toUpperCase();
+                        if (!k.includes('BONGKAR')) return false;
+                        const rNopol = String(r.NOPOL || '').trim().toUpperCase();
+                        const rTgl = String(r.TANGGAL || '').substring(0, 10);
+                        return rNopol === cleanNopol && rTgl === tanggal;
+                    });
+                }
+
+                var tBS = row.BONGKAR_STAPEL;
+                var tSM = row.START_MUAT;
+                var tFin = row.FINISH;
+                var tOtw = row.OTW_PABRIK;
+                
+                var dtBS = buildDateTime(parseFlexDate(row.TANGGAL), parseFlexTime(tBS));
+                var dtSM = buildDateTime(parseFlexDate(row.TANGGAL), parseFlexTime(tSM));
+                var dtFin = buildDateTime(parseFlexDate(row.TANGGAL), parseFlexTime(tFin));
+                var dtOtw = buildDateTime(parseFlexDate(row.TANGGAL), parseFlexTime(tOtw));
+
+                if (dtBS && dtSM) dtSM = autoFixMidnightCrossing(dtBS, dtSM, false);
+                if (dtSM && dtFin) dtFin = autoFixMidnightCrossing(dtSM, dtFin, false);
+                if (dtFin && dtOtw) dtOtw = autoFixMidnightCrossing(dtFin, dtOtw, false);
+
+                var dtTiba = null, dtStartB = null, dtFinB = null;
+                if (matchingBongkar) {
+                    const pbDate = String(matchingBongkar.TANGGAL_PB || matchingBongkar.TANGGAL || row.TANGGAL).substring(0, 10);
+                    dtTiba = buildDateTime(parseFlexDate(pbDate), parseFlexTime(matchingBongkar.SAMPAI_GUDANG));
+                    dtStartB = buildDateTime(parseFlexDate(pbDate), parseFlexTime(matchingBongkar.START_BONGKAR));
+                    dtFinB = buildDateTime(parseFlexDate(pbDate), parseFlexTime(matchingBongkar.FINISH_TIME));
+                    
+                    if (dtOtw && dtTiba) dtTiba = autoFixMidnightCrossing(dtOtw, dtTiba, !!matchingBongkar.TANGGAL_PB);
+                    if (dtTiba && dtStartB) dtStartB = autoFixMidnightCrossing(dtTiba, dtStartB, !!matchingBongkar.TANGGAL_PB);
+                    else if (dtOtw && dtStartB) dtStartB = autoFixMidnightCrossing(dtOtw, dtStartB, !!matchingBongkar.TANGGAL_PB);
+                    if (dtStartB && dtFinB) dtFinB = autoFixMidnightCrossing(dtStartB, dtFinB, !!matchingBongkar.TANGGAL_PB);
+                }
+
                 try {
-                    if (typeof row.breakdownJson === 'object' && row.breakdownJson !== null) {
-                        bd = row.breakdownJson;
-                    } else if (typeof row.BREAKDOWN_DURASI === 'object' && row.BREAKDOWN_DURASI !== null) {
-                        bd = row.BREAKDOWN_DURASI;
+                    var targetRow = matchingBongkar || row;
+                    if (typeof targetRow.breakdownJson === 'object' && targetRow.breakdownJson !== null) {
+                        bd = targetRow.breakdownJson;
+                    } else if (typeof targetRow.BREAKDOWN_DURASI === 'object' && targetRow.BREAKDOWN_DURASI !== null) {
+                        bd = targetRow.BREAKDOWN_DURASI;
                     } else {
-                        var rawBd = row.BREAKDOWN_DURASI || row.breakdownJson || '{}';
+                        var rawBd = targetRow.BREAKDOWN_DURASI || targetRow.breakdownJson || '{}';
                         if (typeof rawBd === 'string') {
                             if (rawBd.startsWith("'")) rawBd = rawBd.substring(1);
                             if (rawBd.endsWith("'")) rawBd = rawBd.substring(0, rawBd.length - 1);
@@ -6855,6 +6939,7 @@
                 }
 
                 return {
+                    isMuat: isMuat,
                     nopol: String(row.NOPOL || '-'),
                     sloc: String(row.LOKASI || 'RM'),
                     material: String(row.MATERIAL || row.JENIS_RM || '-'),
@@ -6865,6 +6950,20 @@
                     kuliPenggarap: String(row.KULI_PENGGARAP || row.Kuli_Penggarap || row.kuli_penggarap || row.kuliPenggarap || row['Kuli Penggarap'] || row['kuli penggarap'] || '-'),
                     jumlahKuli: String(row.JUMLAH_KULI || row.Jumlah_Kuli || row.jumlah_kuli || row.jumlahKuli || row['Jumlah Kuli'] || row['jumlah kuli'] || '-'),
                     bd: bd,
+                    
+                    tBS: _tjpNormHM(tBS), tSM: _tjpNormHM(tSM), tFin: _tjpNormHM(tFin), tOtw: _tjpNormHM(tOtw),
+                    msBS: dtBS ? dtBS.getTime() : NaN,
+                    msSM: dtSM ? dtSM.getTime() : NaN,
+                    msFin: dtFin ? dtFin.getTime() : NaN,
+                    msOtw: dtOtw ? dtOtw.getTime() : NaN,
+
+                    tTiba: matchingBongkar ? _tjpNormHM(matchingBongkar.SAMPAI_GUDANG) : '',
+                    tStartB: matchingBongkar ? _tjpNormHM(matchingBongkar.START_BONGKAR) : '',
+                    tFinB: matchingBongkar ? _tjpNormHM(matchingBongkar.FINISH_TIME) : '',
+                    msTiba: dtTiba ? dtTiba.getTime() : NaN,
+                    msStartB: dtStartB ? dtStartB.getTime() : NaN,
+                    msFinB: dtFinB ? dtFinB.getTime() : NaN,
+
                     abTgl: _tjpYmd(arrDateStr), abArr: _tjpNormHM(tO), abQc: _tjpNormHM(tP),
                     pbTgl: _tjpYmd(sampaiDateStr), pbSampai: _tjpNormHM(tR), pbStart: _tjpNormHM(tS), pbHold: _tjpNormHM(tT), pbRestart: _tjpNormHM(tU), pbFinish: _tjpNormHM(tV),
                     msAbArr: msAbArr, msAbQc: msAbQc, msPbSampai: msPbSampai, msPbStart: msPbStart,
@@ -6873,6 +6972,148 @@
             }
 
             function _tjpRenderCanvas(d) {
+                if (d.isMuat) {
+                    var sloc = String(d.sloc || '').trim().toUpperCase();
+                    var isGebang = (sloc === 'RW01' || sloc === 'RW08');
+                    var isSamping = (sloc === 'RW03');
+                    var isHino = (sloc === 'RW06');
+                    var isRM = (sloc === 'RM01');
+
+                    var html = '';
+                    
+                    // Column 1: Source Warehouses (left: 20px)
+                    html += '<div style="position:absolute;left:20px;top:20px;">';
+                    html += _tjpSourceWhNodeHtml('gebang', 'GEBANG', isGebang, '<span style="margin-right:4px;">🚧</span>');
+                    html += '</div>';
+
+                    html += '<div style="position:absolute;left:20px;top:150px;">';
+                    html += _tjpSourceWhNodeHtml('samping', 'GUDANG SAMPING', isSamping, '<span style="margin-right:4px;">🏪</span>');
+                    html += '</div>';
+
+                    html += '<div style="position:absolute;left:20px;top:280px;">';
+                    html += _tjpSourceWhNodeHtml('hino', 'HINO', isHino, '<span style="margin-right:4px;">🏪</span>');
+                    html += '</div>';
+
+                    html += '<div style="position:absolute;left:20px;top:410px;">';
+                    html += _tjpSourceWhNodeHtml('rm', 'RM', isRM, '<i class="fas fa-box" style="margin-right:4px;"></i>');
+                    html += '</div>';
+
+                    // Column 2: Loading Steps at Source (left: 260px)
+                    html += '<div style="position:absolute;left:260px;top:20px;">';
+                    html += _tjpNodeHtml('bongkar_stapel', 'Bongkar Stapel', d.tanggal, d.tBS, 'tjp-node-pretimbang', '', '<i class="fas fa-boxes-packing"></i>');
+                    html += '</div>';
+
+                    html += '<div style="position:absolute;left:260px;top:150px;">';
+                    html += _tjpNodeHtml('start_muat', 'Start Muat', d.tanggal, d.tSM, 'tjp-node-qc', '', '<i class="fas fa-truck-loading"></i>');
+                    html += '</div>';
+
+                    html += '<div style="position:absolute;left:260px;top:280px;">';
+                    html += _tjpNodeHtml('finish_muat', 'Finish Muat', d.tanggal, d.tFin, 'tjp-node-scalein', '', '<i class="fas fa-check-double"></i>');
+                    html += '</div>';
+
+                    html += '<div style="position:absolute;left:260px;top:410px;">';
+                    html += _tjpNodeHtml('otw_pabrik', 'OTW Pabrik', d.tanggal, d.tOtw, 'tjp-node-segel', '', '<i class="fas fa-route"></i>');
+                    html += '</div>';
+
+                    // Column 3: Unloading Steps at Factory RM (left: 500px)
+                    var tTibaDate = d.tTiba ? d.tanggal : '';
+                    html += '<div style="position:absolute;left:500px;top:80px;">';
+                    html += _tjpNodeHtml('scalein', 'Truck Scale In', tTibaDate, d.tTiba, 'tjp-node-prebongkar', '', '<i class="fas fa-balance-scale"></i>');
+                    html += '</div>';
+
+                    var tStartDate = d.tStartB ? d.tanggal : '';
+                    var holdHtml = '';
+                    if (d.pbHold || d.pbRestart) {
+                        holdHtml = '<table class="tjp-hold-table"><tr><td>Hold</td><td>'+(d.pbHold||'—')+'</td></tr><tr><td>Restart</td><td>'+(d.pbRestart||'—')+'</td></tr></table>';
+                    }
+                    html += '<div style="position:absolute;left:500px;top:230px;">';
+                    html += _tjpNodeHtml('bongkar_rm', 'Bongkar RM', tStartDate, d.tStartB, 'tjp-node-bongkar', holdHtml, '<i class="fas fa-truck-unload"></i>');
+                    html += '</div>';
+
+                    var tFinDate = d.tFinB ? d.tanggal : '';
+                    html += '<div style="position:absolute;left:500px;top:380px;">';
+                    html += _tjpNodeHtml('scaleout', 'Truck Scale Out (Finish)', tFinDate, d.tFinB, 'tjp-node-scaleout', '', '<i class="fas fa-flag-checkered"></i>');
+                    html += '</div>';
+
+                    // SVG Connectors (Column 1 -> Column 2 -> Column 3)
+                    html += '<svg class="tjp-connectors" viewBox="0 0 830 560" preserveAspectRatio="none">';
+
+                    // Connector from active warehouse to Bongkar Stapel
+                    var activeY = 55; // default GEBANG
+                    if (isSamping) activeY = 185;
+                    else if (isHino) activeY = 315;
+                    else if (isRM) activeY = 445;
+
+                    var hasSource = (isGebang || isSamping || isHino || isRM);
+                    html += '<path d="M 200 ' + activeY + ' L 230 ' + activeY + ' L 230 55 L 260 55" class="tjp-conn-line'+(hasSource?' tjp-conn-line-active':'')+'"/>';
+
+                    // Loading steps sequence (Column 2)
+                    var c1Active = (d.tBS && d.tSM);
+                    html += '<path d="M 350 90 L 350 150" class="tjp-conn-line'+(c1Active?' tjp-conn-line-active':'')+'"/>';
+
+                    var c2Active = (d.tSM && d.tFin);
+                    html += '<path d="M 350 220 L 350 280" class="tjp-conn-line'+(c2Active?' tjp-conn-line-active':'')+'"/>';
+
+                    var c3Active = (d.tFin && d.tOtw);
+                    html += '<path d="M 350 350 L 350 410" class="tjp-conn-line'+(c3Active?' tjp-conn-line-active':'')+'"/>';
+
+                    // Transit/Journey to factory (Column 2 -> Column 3)
+                    var c4Active = (d.tOtw && (d.tTiba || d.tStartB));
+                    html += '<path d="M 440 445 L 470 445 L 470 115 L 500 115" class="tjp-conn-line'+(c4Active?' tjp-conn-line-active':'')+'"/>';
+
+                    // Factory sequence (Column 3)
+                    var c5Active = (d.tStartB && (d.tTiba || d.tOtw));
+                    html += '<path d="M 590 150 L 590 230" class="tjp-conn-line'+(c5Active?' tjp-conn-line-active':'')+'"/>';
+
+                    var c6Active = (d.tStartB && d.tFinB);
+                    html += '<path d="M 590 300 L 590 380" class="tjp-conn-line'+(c6Active?' tjp-conn-line-active':'')+'"/>';
+
+                    html += '</svg>';
+
+                    // Connector labels with durations
+                    var label1Left = 305, label1Top = 100;
+                    var label2Left = 305, label2Top = 230;
+                    var label3Left = 305, label3Top = 360;
+                    
+                    var label4Left = 425, label4Top = 260; // Journey label
+                    var label5Left = 545, label5Top = 175; // Antri/QC label
+                    var label6Left = 545, label6Top = 325; // Unloading label
+
+                    html += '<div class="tjp-conn-label" style="left:' + label1Left + 'px;top:' + label1Top + 'px;">' +
+                                '<div style="font-size: 8px; font-weight: 800; color: #475569; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px;">Stapel</div>' +
+                                '<div class="tjp-conn-dur"><i class="far fa-clock" style="font-size: 9px; opacity: 0.8;"></i> ' + _tjpDiffLabel(d.msBS, d.msSM) + '</div>' +
+                            '</div>';
+                    html += '<div class="tjp-conn-label" style="left:' + label2Left + 'px;top:' + label2Top + 'px;">' +
+                                '<div style="font-size: 8px; font-weight: 800; color: #475569; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px;">Muat</div>' +
+                                '<div class="tjp-conn-dur"><i class="far fa-clock" style="font-size: 9px; opacity: 0.8;"></i> ' + _tjpDiffLabel(d.msSM, d.msFin) + '</div>' +
+                            '</div>';
+                    html += '<div class="tjp-conn-label" style="left:' + label3Left + 'px;top:' + label3Top + 'px;">' +
+                                '<div style="font-size: 8px; font-weight: 800; color: #475569; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px;">Terpal</div>' +
+                                '<div class="tjp-conn-dur"><i class="far fa-clock" style="font-size: 9px; opacity: 0.8;"></i> ' + _tjpDiffLabel(d.msFin, d.msOtw) + '</div>' +
+                            '</div>';
+
+                    var showSplit = (d.msTiba && !isNaN(d.msTiba));
+                    var label4Dur = showSplit ? _tjpDiffLabel(d.msOtw, d.msTiba) : _tjpDiffLabel(d.msOtw, d.msStartB);
+                    html += '<div class="tjp-conn-label" style="left:' + label4Left + 'px;top:' + label4Top + 'px;">' +
+                                '<div style="font-size: 8px; font-weight: 800; color: #475569; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px;">Perjalanan</div>' +
+                                '<div class="tjp-conn-dur"><i class="far fa-clock" style="font-size: 9px; opacity: 0.8;"></i> ' + label4Dur + '</div>' +
+                            '</div>';
+
+                    if (showSplit) {
+                        html += '<div class="tjp-conn-label" style="left:' + label5Left + 'px;top:' + label5Top + 'px;">' +
+                                    '<div style="font-size: 8px; font-weight: 800; color: #475569; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px;">Antri Bongkar</div>' +
+                                    '<div class="tjp-conn-dur"><i class="far fa-clock" style="font-size: 9px; opacity: 0.8;"></i> ' + _tjpDiffLabel(d.msTiba, d.msStartB) + ' ' + _tjpGetBreakdownHtml(d.bd, 'PBSampaiGudang_PBStartBongkar') + '</div>' +
+                                '</div>';
+                    }
+
+                    html += '<div class="tjp-conn-label" style="left:' + label6Left + 'px;top:' + label6Top + 'px;">' +
+                                '<div style="font-size: 8px; font-weight: 800; color: #475569; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.3px;">Bongkar</div>' +
+                                '<div class="tjp-conn-dur"><i class="far fa-clock" style="font-size: 9px; opacity: 0.8;"></i> ' + _tjpDiffLabel(d.msStartB, d.msFinB) + ' ' + _tjpGetBreakdownHtml(d.bd, 'PBStartBongkar_PBFinish') + '</div>' +
+                            '</div>';
+
+                    return html;
+                }
+
                 var sloc = String(d.sloc || '').trim().toUpperCase();
                 var isRM = (sloc === 'RM01');
                 var isGebang = (sloc === 'RW01' || sloc === 'RW08');
@@ -7134,16 +7375,22 @@
                     '<div class="tjp-meta-pill" style="border-left: 3px solid #4f46e5;">' +
                         '<i class="fas fa-warehouse" style="color: #4f46e5;"></i>' +
                         '<div class="tjp-pill-content">' +
-                            '<span class="tjp-pill-label">SLOC</span>' +
+                            '<span class="tjp-pill-label">Gudang</span>' +
                             '<span class="tjp-pill-value">' + _tjpEsc(d.sloc) + '</span>' +
                         '</div>' +
                     '</div>';
 
                 // Calculate total duration in-out
-                var startMs = isNaN(d.msAbArr) ? d.msPbSampai : d.msAbArr;
-                if (isNaN(startMs)) startMs = d.msPbStart;
-                var totalDur = _tjpDiffLabel(startMs, d.msPbFinish);
-
+                var startMs, totalDur;
+                if (d.isMuat) {
+                    startMs = isNaN(d.msBS) ? d.msSM : d.msBS;
+                    totalDur = _tjpDiffLabel(startMs, d.msFinB);
+                } else {
+                    startMs = isNaN(d.msAbArr) ? d.msPbSampai : d.msAbArr;
+                    if (isNaN(startMs)) startMs = d.msPbStart;
+                    totalDur = _tjpDiffLabel(startMs, d.msPbFinish);
+                }
+ 
                 if (totalDurWrapper) {
                     totalDurWrapper.innerHTML = 
                         '<div class="tjp-total-dur-card">' +
@@ -7151,78 +7398,108 @@
                             '<span class="tjp-total-dur-val">' + totalDur + '</span>' +
                         '</div>';
                 }
-
+ 
                 canvas.innerHTML = _tjpRenderCanvas(d);
-
-                // Render Ringkasan Durasi Table (Perubahan 3 & Perubahan 1 Baru)
+ 
+                // Render Ringkasan Durasi Table
                 var durTableWrapper = document.getElementById('tjpDurationTableWrapper');
                 if (durTableWrapper) {
-                    var sloc = String(d.sloc || '').trim().toUpperCase();
-                    var isRM = (sloc === 'RM01');
-                    
-                    var durPreTimbang = _tjpDiffLabel(d.msAbArr, d.msAbQc);
-                    var durQC = _tjpDiffLabel(d.msAbQc, d.msPbSampai);
-                    var durPreBongkar = _tjpDiffLabel(d.msPbSampai, d.msPbStart);
-                    
-                    // Unload sub-steps breakdown (Perubahan Terbaru)
-                    var durBongkarAwal = '—';
-                    var durSampling2 = '—';
-                    var durBongkarAkhir = '—';
-
-                    var bdBongkarAwal = '—';
-                    var bdSampling2 = '—';
-                    var bdBongkarAkhir = '—';
-
-                    if (!isNaN(d.msPbStart) && !isNaN(d.msPbFinish)) {
-                        if (!isNaN(d.msPbHold) && !isNaN(d.msPbRestart)) {
-                            // Has QC Hold & Restart
-                            durBongkarAwal = _tjpDiffLabel(d.msPbStart, d.msPbHold);
-                            durSampling2 = _tjpDiffLabel(d.msPbHold, d.msPbRestart);
-                            durBongkarAkhir = _tjpDiffLabel(d.msPbRestart, d.msPbFinish);
-                            
-                            bdBongkarAwal = _tjpGetMiniBreakdownTable(d.bd, 'PBStartBongkar_PBHoldQC');
-                            bdSampling2 = _tjpGetMiniBreakdownTable(d.bd, 'PBHoldQC_PBRestartQC');
-                            bdBongkarAkhir = _tjpGetMiniBreakdownTable(d.bd, 'PBRestartQC_PBFinish');
-                        } else {
-                            // Direct Unloading without QC Hold
-                            durBongkarAwal = _tjpDiffLabel(d.msPbStart, d.msPbFinish);
-                            bdBongkarAwal = _tjpGetMiniBreakdownTable(d.bd, ['PBStartBongkar_PBHoldQC', 'PBHoldQC_PBRestartQC', 'PBRestartQC_PBFinish']);
-                        }
-                    }
-                    
                     var formatDur = function(val) {
                         return (val === '-' || val === '') ? '—' : val;
                     };
                     
-                    var tableHtml = '<div class="tjp-dur-title"><i class="far fa-clock" style="color: #7c3aed;"></i> Ringkasan Durasi</div>';
-                    tableHtml += '<table class="tjp-dur-table">';
-                    tableHtml += '<thead><tr><th>Step</th><th>Durasi</th><th>Breakdown</th></tr></thead>';
-                    tableHtml += '<tbody>';
-                    
-                    tableHtml += '<tr><td>Sampling-1</td><td>' + formatDur(durPreTimbang) + '</td><td>' + _tjpGetMiniBreakdownTable(d.bd, 'ABArrivalTime_ABQCTime') + '</td></tr>';
-                    tableHtml += '<tr><td>Panggil Masuk</td><td>' + formatDur(durQC) + '</td><td>' + _tjpGetMiniBreakdownTable(d.bd, 'ABQCTime_PBSampaiGudang') + '</td></tr>';
-                    tableHtml += '<tr><td>Truck Scale In</td><td>—</td><td>—</td></tr>';
-                    
-                    if (!isRM) {
-                        tableHtml += '<tr><td style="color:#7c3aed; font-weight:600;">🔒 Segel</td><td style="color:#7c3aed; font-weight:600;">—</td><td style="color:#7c3aed; font-weight:600;">—</td></tr>';
+                    if (d.isMuat) {
+                        var durStapel = _tjpDiffLabel(d.msBS, d.msSM);
+                        var durMuat = _tjpDiffLabel(d.msSM, d.msFin);
+                        var durTerpal = _tjpDiffLabel(d.msFin, d.msOtw);
+                        
+                        var showSplit = (d.msTiba && !isNaN(d.msTiba));
+                        var durPerjalanan = showSplit ? _tjpDiffLabel(d.msOtw, d.msTiba) : _tjpDiffLabel(d.msOtw, d.msStartB);
+                        var durAntriBongkar = showSplit ? _tjpDiffLabel(d.msTiba, d.msStartB) : '';
+                        var durBongkar = _tjpDiffLabel(d.msStartB, d.msFinB);
+                        
+                        var tableHtml = '<div class="tjp-dur-title"><i class="far fa-clock" style="color: #7c3aed;"></i> Ringkasan Durasi</div>';
+                        tableHtml += '<table class="tjp-dur-table">';
+                        tableHtml += '<thead><tr><th>Step</th><th>Durasi</th><th>Breakdown</th></tr></thead>';
+                        tableHtml += '<tbody>';
+                        
+                        tableHtml += '<tr><td>Bongkar Stapel</td><td>' + formatDur(durStapel) + '</td><td>—</td></tr>';
+                        tableHtml += '<tr><td>Proses Muat</td><td>' + formatDur(durMuat) + '</td><td>—</td></tr>';
+                        tableHtml += '<tr><td>Terpal & Segel</td><td>' + formatDur(durTerpal) + '</td><td>—</td></tr>';
+                        
+                        if (showSplit) {
+                            tableHtml += '<tr><td>Perjalanan</td><td>' + formatDur(durPerjalanan) + '</td><td>—</td></tr>';
+                            tableHtml += '<tr><td>Antri Bongkar</td><td>' + formatDur(durAntriBongkar) + '</td><td>' + _tjpGetMiniBreakdownTable(d.bd, 'PBSampaiGudang_PBStartBongkar') + '</td></tr>';
+                        } else {
+                            tableHtml += '<tr><td>Perjalanan</td><td>' + formatDur(durPerjalanan) + '</td><td>' + _tjpGetMiniBreakdownTable(d.bd, 'PBSampaiGudang_PBStartBongkar') + '</td></tr>';
+                        }
+                        
+                        tableHtml += '<tr><td>Proses Bongkar</td><td>' + formatDur(durBongkar) + '</td><td>' + _tjpGetMiniBreakdownTable(d.bd, 'PBStartBongkar_PBFinish') + '</td></tr>';
+                        
+                        tableHtml += '<tr class="total-row"><td>TOTAL</td><td>' + formatDur(totalDur) + '</td><td>—</td></tr>';
+                        tableHtml += '</tbody>';
+                        tableHtml += '</table>';
+                        
+                        durTableWrapper.innerHTML = tableHtml;
+                    } else {
+                        var sloc = String(d.sloc || '').trim().toUpperCase();
+                        var isRM = (sloc === 'RM01');
+                        
+                        var durPreTimbang = _tjpDiffLabel(d.msAbArr, d.msAbQc);
+                        var durQC = _tjpDiffLabel(d.msAbQc, d.msPbSampai);
+                        var durPreBongkar = _tjpDiffLabel(d.msPbSampai, d.msPbStart);
+                        
+                        // Unload sub-steps breakdown (Perubahan Terbaru)
+                        var durBongkarAwal = '—';
+                        var durSampling2 = '—';
+                        var durBongkarAkhir = '—';
+    
+                        var bdBongkarAwal = '—';
+                        var bdSampling2 = '—';
+                        var bdBongkarAkhir = '—';
+    
+                        if (!isNaN(d.msPbStart) && !isNaN(d.msPbFinish)) {
+                            if (!isNaN(d.msPbHold) && !isNaN(d.msPbRestart)) {
+                                // Has QC Hold & Restart
+                                durBongkarAwal = _tjpDiffLabel(d.msPbStart, d.msPbHold);
+                                durSampling2 = _tjpDiffLabel(d.msPbHold, d.msPbRestart);
+                                durBongkarAkhir = _tjpDiffLabel(d.msPbRestart, d.msPbFinish);
+                                
+                                bdBongkarAwal = _tjpGetMiniBreakdownTable(d.bd, 'PBStartBongkar_PBHoldQC');
+                                bdSampling2 = _tjpGetMiniBreakdownTable(d.bd, 'PBHoldQC_PBRestartQC');
+                                bdBongkarAkhir = _tjpGetMiniBreakdownTable(d.bd, 'PBRestartQC_PBFinish');
+                            } else {
+                                // Direct Unloading without QC Hold
+                                durBongkarAwal = _tjpDiffLabel(d.msPbStart, d.msPbFinish);
+                                bdBongkarAwal = _tjpGetMiniBreakdownTable(d.bd, ['PBStartBongkar_PBHoldQC', 'PBHoldQC_PBRestartQC', 'PBRestartQC_PBFinish']);
+                            }
+                        }
+                        
+                        var tableHtml = '<div class="tjp-dur-title"><i class="far fa-clock" style="color: #7c3aed;"></i> Ringkasan Durasi</div>';
+                        tableHtml += '<table class="tjp-dur-table">';
+                        tableHtml += '<thead><tr><th>Step</th><th>Durasi</th><th>Breakdown</th></tr></thead>';
+                        tableHtml += '<tbody>';
+                        
+                        tableHtml += '<tr><td>Sampling-1</td><td>' + formatDur(durPreTimbang) + '</td><td>' + _tjpGetMiniBreakdownTable(d.bd, 'ABArrivalTime_ABQCTime') + '</td></tr>';
+                        tableHtml += '<tr><td>Panggil Masuk</td><td>' + formatDur(durQC) + '</td><td>' + _tjpGetMiniBreakdownTable(d.bd, 'ABQCTime_PBSampaiGudang') + '</td></tr>';
+                        tableHtml += '<tr><td>Truck Scale In</td><td>—</td><td>—</td></tr>';
+                        
+                        if (!isRM) {
+                            tableHtml += '<tr><td style="color:#7c3aed; font-weight:600;">🔒 Segel</td><td style="color:#7c3aed; font-weight:600;">—</td><td style="color:#7c3aed; font-weight:600;">—</td></tr>';
+                        }
+                        
+                        tableHtml += '<tr><td>Antri Bongkar</td><td>' + formatDur(durPreBongkar) + '</td><td>' + _tjpGetMiniBreakdownTable(d.bd, 'PBSampaiGudang_PBStartBongkar') + '</td></tr>';
+                        
+                        tableHtml += '<tr><td>Bongkar Awal</td><td>' + formatDur(durBongkarAwal) + '</td><td>' + bdBongkarAwal + '</td></tr>';
+                        tableHtml += '<tr><td>Sampling 2</td><td>' + formatDur(durSampling2) + '</td><td>' + bdSampling2 + '</td></tr>';
+                        tableHtml += '<tr><td>Bongkar Akhir</td><td>' + formatDur(durBongkarAkhir) + '</td><td>' + bdBongkarAkhir + '</td></tr>';
+                        tableHtml += '<tr><td>Truck Scale Out</td><td>—</td><td>—</td></tr>';
+                        tableHtml += '<tr class="total-row"><td>TOTAL</td><td>' + formatDur(totalDur) + '</td><td>—</td></tr>';
+                        tableHtml += '</tbody>';
+                        tableHtml += '</table>';
+                        durTableWrapper.innerHTML = tableHtml;
                     }
-                    
-                    tableHtml += '<tr><td>Antri Bongkar</td><td>' + formatDur(durPreBongkar) + '</td><td>' + _tjpGetMiniBreakdownTable(d.bd, 'PBSampaiGudang_PBStartBongkar') + '</td></tr>';
-                    
-                    // Splitted Bongkar Steps
-                    tableHtml += '<tr><td>Bongkar Awal</td><td>' + formatDur(durBongkarAwal) + '</td><td>' + bdBongkarAwal + '</td></tr>';
-                    tableHtml += '<tr><td>Sampling 2</td><td>' + formatDur(durSampling2) + '</td><td>' + bdSampling2 + '</td></tr>';
-                    tableHtml += '<tr><td>Bongkar Akhir</td><td>' + formatDur(durBongkarAkhir) + '</td><td>' + bdBongkarAkhir + '</td></tr>';
-                    
-                    tableHtml += '<tr><td>Truck Scale Out</td><td>—</td><td>—</td></tr>';
-                    
-                    tableHtml += '<tr class="total-row"><td>TOTAL</td><td>' + formatDur(totalDur) + '</td><td>—</td></tr>';
-                    tableHtml += '</tbody>';
-                    tableHtml += '</table>';
-                    
-                    durTableWrapper.innerHTML = tableHtml;
                 }
-
                 overlay.style.display = 'flex';
                 document.body.style.overflow = 'hidden';
             };

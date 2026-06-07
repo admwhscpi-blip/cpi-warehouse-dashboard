@@ -1593,8 +1593,9 @@
         // Urutan kronologis field beserta tanggal base masing-masing
         function getChronologicalSequence(tipe, box) {
             if (tipe === "Langsiran") {
-                // Langsiran hanya pakai PB Start -> PB Finish
+                // Langsiran pakai PB Sampai Gudang -> PB Start -> PB Finish
                 return [
+                    { el: document.getElementById('t_pb_sampai'), baseId: 't_pb_tanggal', name: 'PB Sampai Gudang' },
                     { el: document.getElementById('t_pb_start'),  baseId: 't_pb_tanggal', name: 'PB Start Bongkar' },
                     { el: document.getElementById('t_pb_finish'), baseId: 't_pb_tanggal', name: 'PB Finish' }
                 ];
@@ -1754,11 +1755,20 @@
             // 3. Cari lastValidMs = ms dari field terisi terakhir sebelum el
             let lastValidMs = null;
             let lastValidName = '';
-            for (let i = 0; i < elIdx; i++) {
-                const ms = resolveSeqItemMs(seq[i], box);
-                if (ms !== null) {
-                    lastValidMs = ms;
-                    lastValidName = seq[i].name;
+            if (tipe === "Langsiran" && (el.id === 't_pb_sampai' || (el.id === 't_pb_start' && !document.getElementById('t_pb_sampai').value))) {
+                if (selectedLangsiran && selectedLangsiran.jam_muat && selectedLangsiran.jam_muat !== '-') {
+                    const otwTime = selectedLangsiran.jam_muat;
+                    const otwDate = selectedLangsiran.tanggal;
+                    lastValidMs = new Date(`${otwDate}T${otwTime}:00`).getTime();
+                    lastValidName = `OTW Pabrik (${otwTime})`;
+                }
+            } else {
+                for (let i = 0; i < elIdx; i++) {
+                    const ms = resolveSeqItemMs(seq[i], box);
+                    if (ms !== null) {
+                        lastValidMs = ms;
+                        lastValidName = seq[i].name;
+                    }
                 }
             }
 
@@ -2089,7 +2099,7 @@
             let abFields = ['t_ab_tanggal','t_ab_arrival','t_ab_qc'];
             
             if (tipe === "Langsiran") {
-                pbFields = ['t_pb_tanggal', 't_pb_start', 't_pb_finish'];
+                pbFields = ['t_pb_tanggal', 't_pb_sampai', 't_pb_start', 't_pb_finish'];
             }
             
             let allFilled = true;
@@ -2356,9 +2366,9 @@
 
             // PRE-SUBMIT VALIDATION: Semua wajib diisi (kecuali Netto)
             if (tipe === "Langsiran") {
-                // HANYA TANGGAL, START DAN FINISH WAJIB UNTUK SEMUA MODE LANGSIRAN
-                if (!document.getElementById('t_pb_tanggal').value || !document.getElementById('t_pb_start').value || !document.getElementById('t_pb_finish').value) {
-                    Swal.fire('Data Waktu Belum Lengkap', 'PB-Tanggal, PB-Start Bongkar dan PB-Finish wajib diisi.', 'warning');
+                // TANGGAL, SAMPAI, START DAN FINISH WAJIB UNTUK SEMUA MODE LANGSIRAN
+                if (!document.getElementById('t_pb_tanggal').value || !document.getElementById('t_pb_sampai').value || !document.getElementById('t_pb_start').value || !document.getElementById('t_pb_finish').value) {
+                    Swal.fire('Data Waktu Belum Lengkap', 'PB-Tanggal, PB-Sampai Gudang, PB-Start Bongkar dan PB-Finish wajib diisi.', 'warning');
                     return;
                 }
             } else {
@@ -2603,8 +2613,8 @@
                        ((document.querySelector('#truck-forms-container .truck-box .trk-ab-tanggal') || {}).value || trucks[0].abTanggal))
                     : getElActualDate(abQcEl, 't_ab_tanggal')),
                 pbTanggal: document.getElementById('t_pb_tanggal').value,
-                pbSampaiGudang: isLangsiran ? "-" : (pbSampaiEl ? pbSampaiEl.value : '-'),
-                pbSampaiDate: isLangsiran ? "-" : getElActualDate(pbSampaiEl, 't_pb_tanggal'),
+                pbSampaiGudang: pbSampaiEl ? pbSampaiEl.value : '-',
+                pbSampaiDate: getElActualDate(pbSampaiEl, 't_pb_tanggal'),
                 pbStartBongkar: pbStartEl ? pbStartEl.value : '-',
                 pbStartDate: getElActualDate(pbStartEl, 't_pb_tanggal'),
                 pbHoldQc: isLangsiran ? "-" : (pbHoldEl ? pbHoldEl.value : '-'),

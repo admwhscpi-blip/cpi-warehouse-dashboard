@@ -2625,7 +2625,7 @@
         }
 
         /* ============================================== */
-        /* LOGIN OVERLAY (DTV2 STYLE)                     */
+        /* LOGIN OVERLAY (LIGHT LUXURY STYLE)             */
         /* ============================================== */
         #heavix-login-overlay {
             position: fixed;
@@ -2634,21 +2634,23 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #020617;
-            color: #ffffff;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+            color: #0f172a;
             overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
         #heavix-login-overlay .login-bg-grid {
             position: absolute;
             inset: 0;
             background-image:
-                linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
-            transform: perspective(500px) rotateX(60deg);
+                linear-gradient(rgba(79, 70, 229, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(79, 70, 229, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            transform: perspective(600px) rotateX(45deg);
             transform-origin: center top;
-            animation: loginGridMove 20s linear infinite;
+            animation: loginGridMove 25s linear infinite;
             z-index: 0;
+            opacity: 0.8;
         }
         @keyframes loginGridMove {
             0% { background-position: 0 0; }
@@ -2657,155 +2659,193 @@
         #heavix-login-overlay .login-ambient {
             position: absolute;
             width: 600px; height: 600px;
-            background: radial-gradient(circle, rgba(147, 51, 234, 0.15), transparent 70%);
-            top: 50%; left: 50%;
+            background: radial-gradient(circle, rgba(79, 70, 229, 0.1) 0%, transparent 70%);
+            top: 40%; left: 30%;
             transform: translate(-50%, -50%);
-            animation: loginAmbientPulse 4s ease-in-out infinite;
+            animation: loginAmbientPulse 6s ease-in-out infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+        #heavix-login-overlay .login-ambient-2 {
+            position: absolute;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 70%);
+            top: 60%; left: 70%;
+            transform: translate(-50%, -50%);
+            animation: loginAmbientPulse 8s ease-in-out infinite alternate;
             z-index: 0;
             pointer-events: none;
         }
         @keyframes loginAmbientPulse {
-            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+            0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.9; transform: translate(-50%, -50%) scale(1.15); }
         }
         .login-card-heavix {
             position: relative;
-            width: 100%; max-width: 420px;
+            width: 100%; max-width: 440px;
             margin: 20px;
-            background: rgba(10, 10, 20, 0.7);
-            backdrop-filter: blur(25px);
-            border: 1px solid rgba(0, 243, 255, 0.2);
-            border-radius: 20px;
-            padding: 40px;
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 24px;
+            padding: 40px 36px;
             z-index: 10;
-            box-shadow: 0 0 50px rgba(0, 243, 255, 0.15), inset 0 0 20px rgba(0, 243, 255, 0.05);
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.02), 
+                0 20px 50px -12px rgba(79, 70, 229, 0.12),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.6);
             overflow: hidden;
+            transition: all 0.3s ease;
         }
         .login-card-heavix::before {
             content: '';
             position: absolute; top: 0; left: -100%;
-            width: 100%; height: 4px;
-            background: linear-gradient(90deg, transparent, #00f3ff, #fff);
-            box-shadow: 0 0 20px #00f3ff;
-            animation: loginBorderTop 2s linear infinite;
+            width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, #4f46e5, #06b6d4, transparent);
+            animation: loginBorderTop 3s linear infinite;
         }
         .login-card-heavix::after {
             content: '';
             position: absolute; bottom: 0; right: -100%;
-            width: 100%; height: 4px;
-            background: linear-gradient(270deg, transparent, #9333ea, #fff);
-            box-shadow: 0 0 20px #9333ea;
-            animation: loginBorderBottom 2s linear infinite;
+            width: 100%; height: 2px;
+            background: linear-gradient(270deg, transparent, #06b6d4, #4f46e5, transparent);
+            animation: loginBorderBottom 3s linear infinite;
         }
         .login-card-heavix .login-border-left {
             position: absolute; bottom: -100%; left: 0;
-            width: 4px; height: 100%;
-            background: linear-gradient(0deg, transparent, #00f3ff, #fff);
-            box-shadow: 0 0 20px #00f3ff;
-            animation: loginBorderLeft 2s linear infinite;
-            animation-delay: 1s;
+            width: 2px; height: 100%;
+            background: linear-gradient(0deg, transparent, #4f46e5, #06b6d4, transparent);
+            animation: loginBorderLeft 3s linear infinite;
+            animation-delay: 1.5s;
         }
         .login-card-heavix .login-border-right {
             position: absolute; top: -100%; right: 0;
-            width: 4px; height: 100%;
-            background: linear-gradient(180deg, transparent, #9333ea, #fff);
-            box-shadow: 0 0 20px #9333ea;
-            animation: loginBorderRight 2s linear infinite;
-            animation-delay: 1s;
+            width: 2px; height: 100%;
+            background: linear-gradient(180deg, transparent, #06b6d4, #4f46e5, transparent);
+            animation: loginBorderRight 3s linear infinite;
+            animation-delay: 1.5s;
         }
         @keyframes loginBorderTop { 0% { left: -100%; } 50%, 100% { left: 100%; } }
         @keyframes loginBorderBottom { 0% { right: -100%; } 50%, 100% { right: 100%; } }
         @keyframes loginBorderLeft { 0% { bottom: -100%; } 50%, 100% { bottom: 100%; } }
         @keyframes loginBorderRight { 0% { top: -100%; } 50%, 100% { top: 100%; } }
+        
         .login-card-heavix .login-header { text-align: center; margin-bottom: 30px; }
-        .login-card-heavix .login-icon-lock {
-            font-size: 3.5rem; margin-bottom: 15px;
-            filter: drop-shadow(0 0 15px #00f3ff);
+        
+        .login-card-heavix .login-icon-badge {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .login-card-heavix .icon-badge-inner {
+            width: 64px; height: 64px;
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4f46e5;
+            font-size: 1.6rem;
+            box-shadow: 0 8px 16px rgba(79, 70, 229, 0.1);
+            border: 2px solid #ffffff;
             animation: loginFloatLock 3s ease-in-out infinite alternate;
         }
-        @keyframes loginFloatLock { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+        @keyframes loginFloatLock { from { transform: translateY(0); } to { transform: translateY(-6px); } }
+        
         .login-card-heavix .login-title-main {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.6rem; font-weight: 900;
-            color: #fff; letter-spacing: 3px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1.65rem; font-weight: 800;
+            color: #0f172a; letter-spacing: -0.5px;
             text-transform: uppercase;
-            text-shadow: 0 0 10px rgba(0, 243, 255, 0.8), 0 0 20px rgba(0, 243, 255, 0.5);
-            margin-bottom: 5px;
+            background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+            transition: all 0.3s ease;
+        }
+        .login-card-heavix .login-title-main:hover {
+            transform: scale(1.03);
         }
         .login-card-heavix .login-title-sub {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 0.85rem; color: #94a3b8;
-            letter-spacing: 1px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.8rem; color: #475569;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            text-transform: uppercase;
         }
         .login-card-heavix .login-form-group {
-            margin-bottom: 25px; position: relative;
+            margin-bottom: 20px; position: relative;
         }
         .login-card-heavix .login-form-label {
-            display: block; font-size: 0.8rem; color: #00f3ff;
+            display: block; font-size: 0.75rem; color: #475569;
             margin-bottom: 8px; text-transform: uppercase;
-            letter-spacing: 1px; font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
         }
         .login-card-heavix .login-input-wrapper { position: relative; }
         .login-card-heavix .login-form-input {
-            width: 100%; background: rgba(0, 0, 0, 0.4);
-            border: 1px solid #334155; border-radius: 8px;
-            padding: 12px 16px; color: white; font-size: 1rem;
-            outline: none; transition: 0.3s; font-family: 'Inter', sans-serif;
+            width: 100%; background: rgba(255, 255, 255, 0.6);
+            border: 1px solid #cbd5e1; border-radius: 12px;
+            padding: 14px 16px 14px 44px; color: #0f172a; font-size: 0.95rem;
+            outline: none; transition: 0.3s; font-family: 'Plus Jakarta Sans', sans-serif;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.01);
         }
         .login-card-heavix .login-form-input:focus {
-            border-color: #00f3ff;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
-            background: rgba(0, 243, 255, 0.05);
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            background: #ffffff;
         }
         .login-card-heavix .login-input-icon {
-            position: absolute; right: 15px; top: 50%;
-            transform: translateY(-50%); color: #64748b; font-size: 1.1rem;
+            position: absolute; left: 16px; top: 50%;
+            transform: translateY(-50%); color: #94a3b8; font-size: 1.1rem;
+            pointer-events: none;
+            transition: color 0.3s;
+        }
+        .login-card-heavix .login-form-input:focus ~ .login-input-icon {
+            color: #4f46e5;
         }
         .login-card-heavix .login-btn {
             width: 100%; padding: 14px;
-            background: linear-gradient(90deg, #00f3ff, #2563eb);
-            border: none; border-radius: 8px; color: white;
-            font-family: 'Orbitron', sans-serif; font-size: 1rem;
+            background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+            border: none; border-radius: 12px; color: white;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1rem;
             font-weight: 700; text-transform: uppercase;
-            letter-spacing: 2px; cursor: pointer;
-            position: relative; overflow: hidden; transition: 0.3s;
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            letter-spacing: 1px; cursor: pointer;
+            position: relative; overflow: hidden; transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.2);
         }
         .login-card-heavix .login-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 30px rgba(0, 243, 255, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(79, 70, 229, 0.3);
+        }
+        .login-card-heavix .login-btn:active {
+            transform: translateY(0);
         }
         .login-card-heavix .login-btn::before {
             content: ''; position: absolute; top: 0; left: -100%;
             width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
             transition: 0.5s;
         }
         .login-card-heavix .login-btn:hover::before { left: 100%; }
+        
         .login-card-heavix .login-error-msg {
-            background: rgba(220, 38, 38, 0.2);
-            border: 1px solid #dc2626; color: #f87171;
-            padding: 10px; border-radius: 6px; font-size: 0.9rem;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444;
+            padding: 12px; border-radius: 12px; font-size: 0.9rem;
             text-align: center; margin-bottom: 20px;
             display: none; animation: loginShake 0.5s ease-in-out;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 600;
         }
         @keyframes loginShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-        .login-card-heavix .login-title-main:hover {
-            animation: loginGlitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
-            color: #00f3ff;
-        }
-        @keyframes loginGlitch {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
-            100% { transform: translate(0); }
-        }
+        
         .login-card-heavix .login-loading-spinner {
             display: none; text-align: center; margin-top: 16px;
-            color: #00f3ff; font-family: 'Orbitron', sans-serif;
-            font-size: 0.75rem; letter-spacing: 1px;
+            color: #4f46e5; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.85rem; letter-spacing: 0.5px;
+            font-weight: 600;
         }
         .login-card-heavix .login-loading-spinner i {
             font-size: 1.2rem; margin-right: 8px;
@@ -2865,74 +2905,124 @@
             align-items: center;
             gap: 4px;
         }
+
+        /* STARTUP PREMIUM LOADING OVERLAY */
+        #startup-loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+            color: #0f172a;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s;
+        }
+        #startup-loading-overlay .loading-card {
+            text-align: center;
+            max-width: 440px;
+            width: 90%;
+            padding: 40px 36px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 24px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.02), 
+                0 20px 50px -12px rgba(79, 70, 229, 0.12),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+            position: relative;
+            overflow: hidden;
+        }
+        @keyframes startupGlowPulse {
+            0%, 100% { opacity: 0.15; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.3; transform: translate(-50%, -50%) scale(1.15); }
+        }
+        @keyframes startupIconRotate {
+            0% { transform: rotate(0deg); }
+            30% { transform: rotate(0deg); }
+            70% { transform: rotate(360deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
 <body>
     <!-- ======================================================= -->
-    <!-- LOGIN OVERLAY (DTV2 STYLE)                              -->
+    <!-- LOGIN OVERLAY (LIGHT LUXURY STYLE)                      -->
     <!-- ======================================================= -->
     <div id="heavix-login-overlay">
         <div class="login-bg-grid"></div>
         <div class="login-ambient"></div>
+        <div class="login-ambient-2"></div>
         <div class="login-card-heavix">
             <div class="login-border-left"></div>
             <div class="login-border-right"></div>
             <div class="login-header">
-                <div class="login-icon-lock">🔐</div>
-                <h1 class="login-title-main">HEAVIX ACCESS</h1>
+                <div class="login-icon-badge">
+                    <div class="icon-badge-inner">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                </div>
+                <h1 class="login-title-main">AKSES HEAVIX</h1>
                 <p class="login-title-sub">PUSAT KOMANDO ALAT BERAT</p>
             </div>
-            <div class="login-error-msg" id="heavix-login-error">⛔ Akses Ditolak: Username atau Password salah</div>
+            <div class="login-error-msg" id="heavix-login-error">⛔ Akses Ditolak: Username atau Kata Sandi salah</div>
             <form onsubmit="handleHeavixLogin(event)">
                 <div class="login-form-group">
-                    <label class="login-form-label">Username ID</label>
+                    <label class="login-form-label">ID Pengguna</label>
                     <div class="login-input-wrapper">
-                        <input type="text" id="heavix-login-user" class="login-form-input" placeholder="MASUKKAN USERNAME..." autocomplete="off" required>
-                        <span class="login-input-icon">👤</span>
+                        <input type="text" id="heavix-login-user" class="login-form-input" placeholder="Masukkan username..." autocomplete="off" required>
+                        <span class="login-input-icon"><i class="fa-solid fa-user"></i></span>
                     </div>
                 </div>
                 <div class="login-form-group">
-                    <label class="login-form-label">Password Code</label>
+                    <label class="login-form-label">Kata Sandi</label>
                     <div class="login-input-wrapper">
-                        <input type="password" id="heavix-login-pass" class="login-form-input" placeholder="MASUKKAN PASSWORD..." required>
-                        <span class="login-input-icon">🔑</span>
+                        <input type="password" id="heavix-login-pass" class="login-form-input" placeholder="Masukkan kata sandi..." required>
+                        <span class="login-input-icon"><i class="fa-solid fa-key"></i></span>
                     </div>
                 </div>
-                <button type="submit" class="login-btn" id="heavix-login-btn">INITIALIZE SESSION</button>
+                <button type="submit" class="login-btn" id="heavix-login-btn">MASUK SEKARANG</button>
             </form>
             <div class="login-loading-spinner" id="heavix-login-spinner">
-                <i class="fa-solid fa-circle-notch fa-spin"></i> MENGAUTENTIKASI...
+                <i class="fa-solid fa-circle-notch fa-spin"></i> MEMVERIFIKASI AKSES...
             </div>
         </div>
     </div>
 
     <!-- STARTUP PREMIUM LOADING OVERLAY -->
-    <div id="startup-loading-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, rgba(17, 24, 39, 0.98) 0%, rgba(10, 15, 30, 0.99) 100%); z-index: 99999; display: none; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #ffffff; transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s;">
-        <div style="text-align: center; max-width: 420px; width: 90%; padding: 20px;">
+    <div id="startup-loading-overlay">
+        <div class="login-ambient" style="top: 30%; left: 30%;"></div>
+        <div class="login-ambient-2" style="top: 70%; left: 70%;"></div>
+        <div class="loading-card">
             <!-- Brand Logo Glow -->
             <div style="position: relative; display: inline-block; margin-bottom: 24px;">
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90px; height: 90px; background: radial-gradient(circle, var(--primary) 0%, transparent 70%); filter: blur(12px); opacity: 0.7; animation: startupGlowPulse 2s infinite ease-in-out;"></div>
-                <div style="width: 76px; height: 76px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border-radius: 20px; display: flex; justify-content: center; align-items: center; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4); position: relative; border: 1px solid rgba(255,255,255,0.15);">
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90px; height: 90px; background: radial-gradient(circle, var(--primary) 0%, transparent 70%); filter: blur(12px); opacity: 0.2; animation: startupGlowPulse 2s infinite ease-in-out;"></div>
+                <div style="width: 76px; height: 76px; background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%); border-radius: 20px; display: flex; justify-content: center; align-items: center; box-shadow: 0 8px 24px rgba(79, 70, 229, 0.25); position: relative; border: 2px solid #ffffff;">
                     <i class="fa-solid fa-screwdriver-wrench" style="font-size: 2.2rem; color: #ffffff; animation: startupIconRotate 3s infinite cubic-bezier(0.68, -0.6, 0.32, 1.6);"></i>
                 </div>
             </div>
             
-            <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; background: linear-gradient(to right, #ffffff, #c7d2fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                SMART BREAKDOWN
+            <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; background: linear-gradient(135deg, #0f172a 0%, #334155 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                SISTEM SMART BREAKDOWN
             </h2>
-            <p style="font-size: 0.9rem; color: #a5b4fc; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px;">
-                Heavy Equipment System
+            <p style="font-size: 0.8rem; color: #4f46e5; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; font-family: 'Plus Jakarta Sans', sans-serif;">
+                Sistem Pemantauan Alat Berat
             </p>
             
             <!-- High Tech Loading Bar -->
-            <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.03); position: relative;">
-                <div id="startup-loading-bar" style="height: 100%; width: 5%; background: linear-gradient(to right, var(--primary) 0%, var(--accent) 100%); border-radius: 10px; box-shadow: 0 0 12px var(--primary); transition: width 0.3s ease;"></div>
+            <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.02); position: relative;">
+                <div id="startup-loading-bar" style="height: 100%; width: 5%; background: linear-gradient(to right, #4f46e5 0%, #06b6d4 100%); border-radius: 10px; box-shadow: 0 0 8px rgba(79, 70, 229, 0.3); transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);"></div>
             </div>
             
             <!-- Loading Status Text -->
             <div style="min-height: 24px;">
-                <span id="startup-loading-text" style="font-size: 0.85rem; color: #94a3b8; font-family: 'Outfit', sans-serif; font-weight: 500; letter-spacing: 0.5px;">Menghubungkan ke jaringan...</span>
+                <span id="startup-loading-text" style="font-size: 0.85rem; color: #475569; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; letter-spacing: 0.2px;">Menghubungkan ke jaringan...</span>
             </div>
         </div>
     </div>
@@ -4577,7 +4667,7 @@
         function loginSuccess() {
             const btn = document.getElementById('heavix-login-btn');
             const spinner = document.getElementById('heavix-login-spinner');
-            spinner.innerHTML = '<i class="fa-solid fa-check-circle" style="color:#00f3ff;"></i> ACCESS GRANTED';
+            spinner.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#10b981;"></i> AKSES DISETUJUI';
             
             setTimeout(() => {
                 document.getElementById('heavix-login-overlay').style.display = 'none';
@@ -4800,7 +4890,7 @@
 
         async function syncDataWithMode() {
             if (isInitialLoad) {
-                updateStartupProgress(15, "Menghubungkan ke database Google Sheets...");
+                updateStartupProgress(15, "Menghubungkan ke basis data Google Sheets...");
             } else {
                 showToast("Menyelaraskan data...", "warning");
                 document.getElementById("pull-refresh-indicator").style.display = "flex";
@@ -4814,17 +4904,17 @@
                 if (!localStorage.getItem("smart_bd_riwayat")) {
                     localStorage.setItem("smart_bd_riwayat", JSON.stringify(INITIAL_MOCK_RIWAYAT));
                 }
-
-                if (isInitialLoad) updateStartupProgress(45, "Membaca cache database offline...");
-
+ 
+                if (isInitialLoad) updateStartupProgress(45, "Membaca data cache lokal...");
+ 
                 cachedJenisUnit = JSON.parse(localStorage.getItem("smart_bd_jenis_unit"));
                 cachedRiwayat = JSON.parse(localStorage.getItem("smart_bd_riwayat"));
                 
                 // Urutkan Riwayat descending
                 cachedRiwayat.sort((a, b) => b.idBreakdown.localeCompare(a.idBreakdown));
                 
-                if (isInitialLoad) updateStartupProgress(75, "Memproses riwayat perbaikan...");
-
+                if (isInitialLoad) updateStartupProgress(75, "Memproses data riwayat perbaikan...");
+ 
                 setTimeout(() => {
                     if (isInitialLoad) {
                         updateStartupProgress(100, "Sistem Siap! Membuka Portal...");
@@ -4841,7 +4931,7 @@
             } else {
                 // ONLINE DATABASE MODE
                 try {
-                    if (isInitialLoad) updateStartupProgress(35, "Mengunduh master data unit alat berat...");
+                    if (isInitialLoad) updateStartupProgress(35, "Mengunduh data master alat berat...");
                     // 1. Fetch Jenis Unit
                     const resJenis = await apiCall("getJenisUnit");
                     if (resJenis.success) {
@@ -4849,7 +4939,7 @@
                         localStorage.setItem("smart_bd_jenis_unit", JSON.stringify(cachedJenisUnit));
                     }
                     
-                    if (isInitialLoad) updateStartupProgress(65, "Sinkronisasi riwayat breakdown...");
+                    if (isInitialLoad) updateStartupProgress(65, "Menyelaraskan riwayat gangguan unit...");
                     // 2. Fetch Riwayat Breakdown (Semua)
                     const resRiwayat = await apiCall("getRiwayatBreakdown");
                     if (resRiwayat.success) {
@@ -4857,8 +4947,8 @@
                         localStorage.setItem("smart_bd_riwayat", JSON.stringify(cachedRiwayat));
                     }
                     
-                    if (isInitialLoad) updateStartupProgress(85, "Menginisialisasi grafik visualisasi...");
-
+                    if (isInitialLoad) updateStartupProgress(85, "Menyiapkan grafik dasbor analitik...");
+ 
                     if (isInitialLoad) {
                         updateStartupProgress(100, "Sistem Siap! Membuka Portal...");
                         setTimeout(() => {
@@ -4872,7 +4962,7 @@
                     showToast("Penyelarasan Google Sheets berhasil!", "success");
                 } catch (err) {
                     console.error(err);
-                    if (isInitialLoad) updateStartupProgress(80, "Server sibuk. Membaca cache lokal...");
+                    if (isInitialLoad) updateStartupProgress(80, "Server sibuk. Menggunakan data cache lokal...");
                     
                     // Fallback to cache if exists
                     if (localStorage.getItem("smart_bd_jenis_unit") && localStorage.getItem("smart_bd_riwayat")) {
@@ -4886,7 +4976,7 @@
                     
                     setTimeout(() => {
                         if (isInitialLoad) {
-                            updateStartupProgress(100, "Sistem Siap! (Offline Mode)");
+                            updateStartupProgress(100, "Sistem Siap! (Mode Luring)");
                             setTimeout(() => {
                                 hideStartupLoader();
                                 isInitialLoad = false;
