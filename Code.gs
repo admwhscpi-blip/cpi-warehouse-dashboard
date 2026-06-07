@@ -168,8 +168,8 @@ function getJenisUnit() {
     var lastRow = sheet.getLastRow();
     if (lastRow < 3) return [];
     
-    // Ambil kolom B (Jenis Unit), C (Type Unit), D (Vendor) mulai baris 3
-    var range = sheet.getRange(3, 2, lastRow - 2, 3);
+    // Ambil kolom B (Jenis Unit), C (Type Unit), D (Vendor), E (User), F (PW) mulai baris 3
+    var range = sheet.getRange(3, 2, lastRow - 2, 5);
     var values = range.getValues();
     
     var list = [];
@@ -178,12 +178,16 @@ function getJenisUnit() {
       var jenis = String(row[0]).trim();
       var type = String(row[1]).trim();
       var vendor = String(row[2]).trim();
+      var user = String(row[3]).trim();
+      var pw = String(row[4]).trim();
       
       if (jenis && type) {
         list.push({
           jenisUnit: jenis.toUpperCase(),
           typeUnit: type,
-          vendor: vendor || "-"
+          vendor: vendor || "-",
+          user: user || "",
+          pw: pw || ""
         });
       }
     }

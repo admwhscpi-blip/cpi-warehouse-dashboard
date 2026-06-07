@@ -2623,12 +2623,292 @@
             70% { transform: rotate(360deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* ============================================== */
+        /* LOGIN OVERLAY (DTV2 STYLE)                     */
+        /* ============================================== */
+        #heavix-login-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #020617;
+            color: #ffffff;
+            overflow: hidden;
+        }
+        #heavix-login-overlay .login-bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: perspective(500px) rotateX(60deg);
+            transform-origin: center top;
+            animation: loginGridMove 20s linear infinite;
+            z-index: 0;
+        }
+        @keyframes loginGridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 1000px; }
+        }
+        #heavix-login-overlay .login-ambient {
+            position: absolute;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(147, 51, 234, 0.15), transparent 70%);
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            animation: loginAmbientPulse 4s ease-in-out infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+        @keyframes loginAmbientPulse {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+        }
+        .login-card-heavix {
+            position: relative;
+            width: 100%; max-width: 420px;
+            margin: 20px;
+            background: rgba(10, 10, 20, 0.7);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            z-index: 10;
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.15), inset 0 0 20px rgba(0, 243, 255, 0.05);
+            overflow: hidden;
+        }
+        .login-card-heavix::before {
+            content: '';
+            position: absolute; top: 0; left: -100%;
+            width: 100%; height: 4px;
+            background: linear-gradient(90deg, transparent, #00f3ff, #fff);
+            box-shadow: 0 0 20px #00f3ff;
+            animation: loginBorderTop 2s linear infinite;
+        }
+        .login-card-heavix::after {
+            content: '';
+            position: absolute; bottom: 0; right: -100%;
+            width: 100%; height: 4px;
+            background: linear-gradient(270deg, transparent, #9333ea, #fff);
+            box-shadow: 0 0 20px #9333ea;
+            animation: loginBorderBottom 2s linear infinite;
+        }
+        .login-card-heavix .login-border-left {
+            position: absolute; bottom: -100%; left: 0;
+            width: 4px; height: 100%;
+            background: linear-gradient(0deg, transparent, #00f3ff, #fff);
+            box-shadow: 0 0 20px #00f3ff;
+            animation: loginBorderLeft 2s linear infinite;
+            animation-delay: 1s;
+        }
+        .login-card-heavix .login-border-right {
+            position: absolute; top: -100%; right: 0;
+            width: 4px; height: 100%;
+            background: linear-gradient(180deg, transparent, #9333ea, #fff);
+            box-shadow: 0 0 20px #9333ea;
+            animation: loginBorderRight 2s linear infinite;
+            animation-delay: 1s;
+        }
+        @keyframes loginBorderTop { 0% { left: -100%; } 50%, 100% { left: 100%; } }
+        @keyframes loginBorderBottom { 0% { right: -100%; } 50%, 100% { right: 100%; } }
+        @keyframes loginBorderLeft { 0% { bottom: -100%; } 50%, 100% { bottom: 100%; } }
+        @keyframes loginBorderRight { 0% { top: -100%; } 50%, 100% { top: 100%; } }
+        .login-card-heavix .login-header { text-align: center; margin-bottom: 30px; }
+        .login-card-heavix .login-icon-lock {
+            font-size: 3.5rem; margin-bottom: 15px;
+            filter: drop-shadow(0 0 15px #00f3ff);
+            animation: loginFloatLock 3s ease-in-out infinite alternate;
+        }
+        @keyframes loginFloatLock { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+        .login-card-heavix .login-title-main {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem; font-weight: 900;
+            color: #fff; letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.8), 0 0 20px rgba(0, 243, 255, 0.5);
+            margin-bottom: 5px;
+        }
+        .login-card-heavix .login-title-sub {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.85rem; color: #94a3b8;
+            letter-spacing: 1px;
+        }
+        .login-card-heavix .login-form-group {
+            margin-bottom: 25px; position: relative;
+        }
+        .login-card-heavix .login-form-label {
+            display: block; font-size: 0.8rem; color: #00f3ff;
+            margin-bottom: 8px; text-transform: uppercase;
+            letter-spacing: 1px; font-family: 'Orbitron', sans-serif;
+        }
+        .login-card-heavix .login-input-wrapper { position: relative; }
+        .login-card-heavix .login-form-input {
+            width: 100%; background: rgba(0, 0, 0, 0.4);
+            border: 1px solid #334155; border-radius: 8px;
+            padding: 12px 16px; color: white; font-size: 1rem;
+            outline: none; transition: 0.3s; font-family: 'Inter', sans-serif;
+        }
+        .login-card-heavix .login-form-input:focus {
+            border-color: #00f3ff;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            background: rgba(0, 243, 255, 0.05);
+        }
+        .login-card-heavix .login-input-icon {
+            position: absolute; right: 15px; top: 50%;
+            transform: translateY(-50%); color: #64748b; font-size: 1.1rem;
+        }
+        .login-card-heavix .login-btn {
+            width: 100%; padding: 14px;
+            background: linear-gradient(90deg, #00f3ff, #2563eb);
+            border: none; border-radius: 8px; color: white;
+            font-family: 'Orbitron', sans-serif; font-size: 1rem;
+            font-weight: 700; text-transform: uppercase;
+            letter-spacing: 2px; cursor: pointer;
+            position: relative; overflow: hidden; transition: 0.3s;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+        }
+        .login-card-heavix .login-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.6);
+        }
+        .login-card-heavix .login-btn::before {
+            content: ''; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+            transition: 0.5s;
+        }
+        .login-card-heavix .login-btn:hover::before { left: 100%; }
+        .login-card-heavix .login-error-msg {
+            background: rgba(220, 38, 38, 0.2);
+            border: 1px solid #dc2626; color: #f87171;
+            padding: 10px; border-radius: 6px; font-size: 0.9rem;
+            text-align: center; margin-bottom: 20px;
+            display: none; animation: loginShake 0.5s ease-in-out;
+        }
+        @keyframes loginShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .login-card-heavix .login-title-main:hover {
+            animation: loginGlitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+            color: #00f3ff;
+        }
+        @keyframes loginGlitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+        .login-card-heavix .login-loading-spinner {
+            display: none; text-align: center; margin-top: 16px;
+            color: #00f3ff; font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem; letter-spacing: 1px;
+        }
+        .login-card-heavix .login-loading-spinner i {
+            font-size: 1.2rem; margin-right: 8px;
+        }
+
+        /* ACTIVE TICKETS ON MONITORING CARD */
+        .fleet-active-tickets-list {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .fleet-active-ticket-item {
+            background: rgba(255, 255, 255, 0.65);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .fleet-active-ticket-item:hover {
+            background: rgba(255, 255, 255, 0.85);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .fleet-active-ticket-status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.65rem;
+            font-weight: 800;
+        }
+        .fleet-active-ticket-kategori {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .fleet-active-ticket-detail {
+            font-size: 0.68rem;
+            color: #334155;
+            line-height: 1.25;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        .fleet-active-ticket-duration {
+            font-size: 0.65rem;
+            color: #475569;
+            font-weight: 600;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
     </style>
 </head>
 
 <body>
+    <!-- ======================================================= -->
+    <!-- LOGIN OVERLAY (DTV2 STYLE)                              -->
+    <!-- ======================================================= -->
+    <div id="heavix-login-overlay">
+        <div class="login-bg-grid"></div>
+        <div class="login-ambient"></div>
+        <div class="login-card-heavix">
+            <div class="login-border-left"></div>
+            <div class="login-border-right"></div>
+            <div class="login-header">
+                <div class="login-icon-lock">🔐</div>
+                <h1 class="login-title-main">HEAVIX ACCESS</h1>
+                <p class="login-title-sub">PUSAT KOMANDO ALAT BERAT</p>
+            </div>
+            <div class="login-error-msg" id="heavix-login-error">⛔ Akses Ditolak: Username atau Password salah</div>
+            <form onsubmit="handleHeavixLogin(event)">
+                <div class="login-form-group">
+                    <label class="login-form-label">Username ID</label>
+                    <div class="login-input-wrapper">
+                        <input type="text" id="heavix-login-user" class="login-form-input" placeholder="MASUKKAN USERNAME..." autocomplete="off" required>
+                        <span class="login-input-icon">👤</span>
+                    </div>
+                </div>
+                <div class="login-form-group">
+                    <label class="login-form-label">Password Code</label>
+                    <div class="login-input-wrapper">
+                        <input type="password" id="heavix-login-pass" class="login-form-input" placeholder="MASUKKAN PASSWORD..." required>
+                        <span class="login-input-icon">🔑</span>
+                    </div>
+                </div>
+                <button type="submit" class="login-btn" id="heavix-login-btn">INITIALIZE SESSION</button>
+            </form>
+            <div class="login-loading-spinner" id="heavix-login-spinner">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> MENGAUTENTIKASI...
+            </div>
+        </div>
+    </div>
+
     <!-- STARTUP PREMIUM LOADING OVERLAY -->
-    <div id="startup-loading-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, rgba(17, 24, 39, 0.98) 0%, rgba(10, 15, 30, 0.99) 100%); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #ffffff; transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s;">
+    <div id="startup-loading-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, rgba(17, 24, 39, 0.98) 0%, rgba(10, 15, 30, 0.99) 100%); z-index: 99999; display: none; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #ffffff; transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s;">
         <div style="text-align: center; max-width: 420px; width: 90%; padding: 20px;">
             <!-- Brand Logo Glow -->
             <div style="position: relative; display: inline-block; margin-bottom: 24px;">
@@ -2733,10 +3013,10 @@
                 </div>
                 <div class="header-right header-user-actions">
                     <div class="header-user-chip">
-                        <span class="header-user-avatar" aria-hidden="true">KA</span>
-                        <span class="header-user-name">KOMANDAN ARMADA</span>
+                        <span class="header-user-avatar" aria-hidden="true" id="header-user-avatar-text">KA</span>
+                        <span class="header-user-name" id="header-user-name-text">KOMANDAN ARMADA</span>
                     </div>
-                    <button type="button" class="header-logout-btn" onclick="window.location.href='index.html'"><i class="fas fa-arrow-left"></i><span>Kembali</span></button>
+                    <button type="button" class="header-logout-btn" onclick="heavixLogout()"><i class="fas fa-right-from-bracket"></i><span>Logout</span></button>
                 </div>
             </header>
 
@@ -3458,16 +3738,18 @@
     <script>
         // MASTER MOCK DATABASE (INITIALIZED TO LOCAL STORAGE IF NOT EXISTS)
         const MOCK_JENIS_UNIT = [
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 02", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 03", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 08", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 09", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 11", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 16", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MITSUBISHI 11.5", vendor: "PT. KARYA MITRA TEKNIK" },
-            { jenisUnit: "LOADER", typeUnit: "JGM", vendor: "PT. OSCAR OMEGA" },
-            { jenisUnit: "LOADER", typeUnit: "LIUGONG", vendor: "PT. TRI MEGAH ANUGERAH PERKASA" },
-            { jenisUnit: "LOADER", typeUnit: "SEM", vendor: "PT CPI" }
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 02", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 03", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 08", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 09", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 11", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 16", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MITSUBISHI 11.5", vendor: "PT. KARYA MITRA TEKNIK", user: "KMT", pw: "KMT5678" },
+            { jenisUnit: "LOADER", typeUnit: "JGM", vendor: "PT. OSCAR OMEGA", user: "JGM", pw: "JGM0331" },
+            { jenisUnit: "LOADER", typeUnit: "LIUGONG", vendor: "PT. TRI MEGAH ANUGERAH PERKASA", user: "LIUGONG", pw: "LIUGONG2012" },
+            { jenisUnit: "LOADER", typeUnit: "SEM", vendor: "PT CPI", user: "ARF", pw: "1891" },
+            { jenisUnit: "FORKLIFT", typeUnit: "CATERPILLAR", vendor: "PT CPI", user: "TOYOTA", pw: "TYT123456" },
+            { jenisUnit: "FORKLIFT", typeUnit: "TOYOTA", vendor: "TOYOTA", user: "TOYOTA", pw: "TYT123456" }
         ];
 
         const CATEGORY_CONFIG = {
@@ -4092,8 +4374,239 @@
         let currentTab = "tab-dashboard";
         let activeWizardStep = 1;
         let dbMode = "online"; // "online" or "offline"
-        let appsScriptUrl = "https://script.google.com/macros/s/AKfycbyV2hqCNVs3UbKIU0TSEKxE9SQjj6W0F9RiDGQmacLwvNYYb27AGwVqK_GJwSsX3lbG/exec";
+        let appsScriptUrl = "https://script.google.com/macros/s/AKfycbyK1N7NjNN2hB-6qPHV642DksUtw4hbCOuHxWiLKMY6Tgi_tY0TiQb0eZUjHwoJAgrQtg/exec";
         
+        // ============================================
+        // AUTH STATE & FUNCTIONS
+        // ============================================
+        let loggedInUser = "";
+        let isAdminUser = false;
+        const ADMIN_USERS = ["ARIF", "CECEP", "AJI", "BINTANG", "PAK ZUL", "PAK DOVAN", "PAK AGUSTRI", "PEPENG"];
+        const ADMIN_PASSWORD = "1891";
+
+        // Get list of typeUnit allowed for current user
+        function getUserAllowedTypes() {
+            if (isAdminUser || (loggedInUser || "").toUpperCase() === "OPERATOR") return null; // null = see all
+            const units = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+            return units
+                .filter(u => (u.user || "").toUpperCase() === loggedInUser.toUpperCase())
+                .map(u => u.typeUnit);
+        }
+
+        // Filter any array by user's allowed typeUnits
+        function filterByUserAccess(dataArray, typeField) {
+            typeField = typeField || "typeUnit";
+            const allowed = getUserAllowedTypes();
+            if (!allowed) return dataArray; // admin sees all
+            return dataArray.filter(item => allowed.includes(item[typeField]));
+        }
+
+        // Role-based navigation access check
+        function isTabAllowedForUser(tabId) {
+            const userUp = (loggedInUser || "").toUpperCase();
+            if (ADMIN_USERS.includes(userUp)) {
+                return true; // Admin has access to all
+            }
+            if (userUp === "OPERATOR") {
+                // Operator can only access dashboard, catat, and riwayat
+                return ["tab-dashboard", "tab-catat", "tab-riwayat"].includes(tabId);
+            }
+            // Other regular unit users can only access dashboard, selesaikan, and riwayat
+            return ["tab-dashboard", "tab-selesaikan", "tab-riwayat"].includes(tabId);
+        }
+
+        // Apply access control to Sidebar and Bottom Navigation
+        function applyNavigationAccessControl() {
+            const sidebarItems = document.querySelectorAll(".sidebar-nav .nav-item");
+            const bottomItems = document.querySelectorAll(".bottom-nav .bottom-nav-item");
+            
+            sidebarItems.forEach(item => {
+                const tab = item.getAttribute("data-tab");
+                if (!isTabAllowedForUser(tab)) {
+                    item.style.display = "none";
+                } else {
+                    item.style.display = "flex";
+                }
+            });
+            
+            bottomItems.forEach(item => {
+                const tab = item.getAttribute("data-tab");
+                if (!isTabAllowedForUser(tab)) {
+                    item.style.display = "none";
+                } else {
+                    item.style.display = "flex";
+                }
+            });
+            
+            // If current tab is not allowed, reset to dashboard
+            if (!isTabAllowedForUser(currentTab)) {
+                switchTab("tab-dashboard");
+            }
+        }
+
+        // Get list of allowed jenisUnit based on allowed typeUnits
+        function getUserAllowedJenisUnits() {
+            if (isAdminUser) return ["FORKLIFT", "LOADER"];
+            const units = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+            const allowedTypes = getUserAllowedTypes();
+            if (!allowedTypes) return ["FORKLIFT", "LOADER"];
+            const allowedUnits = units.filter(u => allowedTypes.includes(u.typeUnit));
+            return [...new Set(allowedUnits.map(u => u.jenisUnit.toUpperCase()))];
+        }
+
+        // Adjust Wizard Step 1 options dynamically
+        function adjustWizardJenisUnitOptions() {
+            const allowedJenis = getUserAllowedJenisUnits();
+            const forkliftCards = document.querySelectorAll(".jenis-unit-card[onclick*='FORKLIFT']");
+            const loaderCards = document.querySelectorAll(".jenis-unit-card[onclick*='LOADER']");
+            
+            forkliftCards.forEach(card => {
+                if (!allowedJenis.includes("FORKLIFT")) {
+                    card.style.opacity = "0.3";
+                    card.style.pointerEvents = "none";
+                    card.style.cursor = "not-allowed";
+                    card.title = "Anda tidak memiliki akses ke unit Forklift";
+                } else {
+                    card.style.opacity = "1";
+                    card.style.pointerEvents = "auto";
+                    card.style.cursor = "pointer";
+                    card.removeAttribute("title");
+                }
+            });
+            
+            loaderCards.forEach(card => {
+                if (!allowedJenis.includes("LOADER")) {
+                    card.style.opacity = "0.3";
+                    card.style.pointerEvents = "none";
+                    card.style.cursor = "not-allowed";
+                    card.title = "Anda tidak memiliki akses ke unit Loader";
+                } else {
+                    card.style.opacity = "1";
+                    card.style.pointerEvents = "auto";
+                    card.style.cursor = "pointer";
+                    card.removeAttribute("title");
+                }
+            });
+        }
+
+        // Pre-fetch unit data for login credential validation
+        async function prefetchUnitDataForLogin() {
+            try {
+                const url = appsScriptUrl + "?action=getJenisUnit";
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.success && data.data) {
+                    cachedJenisUnit = data.data;
+                    localStorage.setItem("smart_bd_jenis_unit", JSON.stringify(cachedJenisUnit));
+                }
+            } catch (e) {
+                // Try cached data from localStorage
+                const cached = localStorage.getItem("smart_bd_jenis_unit");
+                if (cached) {
+                    try { cachedJenisUnit = JSON.parse(cached); } catch(ex) {}
+                }
+                if (cachedJenisUnit.length === 0) {
+                    cachedJenisUnit = MOCK_JENIS_UNIT;
+                }
+            }
+        }
+
+        // Handle login form submission
+        async function handleHeavixLogin(event) {
+            event.preventDefault();
+            const rawUser = document.getElementById('heavix-login-user').value.trim();
+            const userUp = rawUser.toUpperCase();
+            const pass = document.getElementById('heavix-login-pass').value.trim();
+            const btn = document.getElementById('heavix-login-btn');
+            const spinner = document.getElementById('heavix-login-spinner');
+            const errorBox = document.getElementById('heavix-login-error');
+
+            errorBox.style.display = 'none';
+            btn.style.display = 'none';
+            spinner.style.display = 'block';
+
+            // Ensure unit data is loaded
+            if (cachedJenisUnit.length === 0) {
+                await prefetchUnitDataForLogin();
+            }
+
+            // Check admin users first
+            if (ADMIN_USERS.includes(userUp) && pass === ADMIN_PASSWORD) {
+                loggedInUser = userUp;
+                isAdminUser = true;
+                sessionStorage.setItem('heavix_logged_in', 'true');
+                sessionStorage.setItem('heavix_user', userUp);
+                sessionStorage.setItem('heavix_admin', 'true');
+                loginSuccess();
+                return;
+            }
+
+            // Check operator user
+            if (userUp === "OPERATOR" && pass === "1891") {
+                loggedInUser = userUp;
+                isAdminUser = false;
+                sessionStorage.setItem('heavix_logged_in', 'true');
+                sessionStorage.setItem('heavix_user', userUp);
+                sessionStorage.setItem('heavix_admin', 'false');
+                loginSuccess();
+                return;
+            }
+
+            // Check dynamic credentials from sheet data
+            const units = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+            const matchedUnit = units.find(u => 
+                (u.user || "").toUpperCase() === userUp && 
+                (u.pw || "") === pass
+            );
+
+            if (matchedUnit) {
+                loggedInUser = userUp;
+                isAdminUser = false;
+                sessionStorage.setItem('heavix_logged_in', 'true');
+                sessionStorage.setItem('heavix_user', userUp);
+                sessionStorage.setItem('heavix_admin', 'false');
+                loginSuccess();
+            } else {
+                btn.style.display = 'block';
+                spinner.style.display = 'none';
+                errorBox.style.display = 'block';
+                setTimeout(() => { errorBox.style.display = 'none'; }, 3000);
+            }
+        }
+
+        function loginSuccess() {
+            const btn = document.getElementById('heavix-login-btn');
+            const spinner = document.getElementById('heavix-login-spinner');
+            spinner.innerHTML = '<i class="fa-solid fa-check-circle" style="color:#00f3ff;"></i> ACCESS GRANTED';
+            
+            setTimeout(() => {
+                document.getElementById('heavix-login-overlay').style.display = 'none';
+                const startupLoader = document.getElementById('startup-loading-overlay');
+                if (startupLoader) startupLoader.style.display = 'flex';
+                initApp();
+            }, 800);
+        }
+
+        function heavixLogout() {
+            sessionStorage.removeItem('heavix_logged_in');
+            sessionStorage.removeItem('heavix_user');
+            sessionStorage.removeItem('heavix_admin');
+            loggedInUser = "";
+            isAdminUser = false;
+            window.location.reload();
+        }
+
+        function updateHeaderForUser() {
+            const nameEl = document.getElementById('header-user-name-text');
+            const avatarEl = document.getElementById('header-user-avatar-text');
+            if (nameEl) {
+                nameEl.textContent = loggedInUser;
+            }
+            if (avatarEl) {
+                avatarEl.textContent = loggedInUser.substring(0, 2).toUpperCase();
+            }
+        }
+
         // Active Laporan Data State
         let formBreakdown = {
             jenisUnit: "",
@@ -4125,7 +4638,8 @@
         // ==============================================
         // CORE INITIALIZER
         // ==============================================
-        window.addEventListener("DOMContentLoaded", function () {
+        // Full app initialization (called after successful login)
+        function initApp() {
             initDatabaseConnectionSettings();
             initDynamicCategoryFilter();
             updateDigitalClock();
@@ -4143,11 +4657,35 @@
                 });
             });
 
+            // Update header with logged-in user
+            updateHeaderForUser();
+
+            // Apply navigation access control based on user role
+            if (typeof applyNavigationAccessControl === "function") {
+                applyNavigationAccessControl();
+            }
+
             // Initial Data load
             syncDataWithMode();
 
             // Setup ongoing timer updating every minute
             setInterval(updateOngoingTimers, 60000);
+        }
+
+        window.addEventListener("DOMContentLoaded", function () {
+            // Check if user is already logged in (session)
+            if (sessionStorage.getItem('heavix_logged_in') === 'true') {
+                loggedInUser = sessionStorage.getItem('heavix_user') || '';
+                isAdminUser = sessionStorage.getItem('heavix_admin') === 'true';
+                document.getElementById('heavix-login-overlay').style.display = 'none';
+                const startupLoader = document.getElementById('startup-loading-overlay');
+                if (startupLoader) startupLoader.style.display = 'flex';
+                initApp();
+            } else {
+                // Show login overlay, pre-fetch unit data for validation
+                document.getElementById('heavix-login-overlay').style.display = 'flex';
+                prefetchUnitDataForLogin();
+            }
         });
 
         // INITIALIZE DYNAMIC CATEGORY FILTER DROPDOWN
@@ -4186,7 +4724,7 @@
 
         // DATABASE CONNECTION STATE
         function initDatabaseConnectionSettings() {
-            const defaultUrl = "https://script.google.com/macros/s/AKfycbyV2hqCNVs3UbKIU0TSEKxE9SQjj6W0F9RiDGQmacLwvNYYb27AGwVqK_GJwSsX3lbG/exec";
+            const defaultUrl = "https://script.google.com/macros/s/AKfycbyK1N7NjNN2hB-6qPHV642DksUtw4hbCOuHxWiLKMY6Tgi_tY0TiQb0eZUjHwoJAgrQtg/exec";
             
             appsScriptUrl = defaultUrl;
             document.getElementById("settings-api-url").value = defaultUrl;
@@ -4438,15 +4976,20 @@
 
         // Process data once loaded
         function processLoadedData() {
-            filteredRiwayat = [...cachedRiwayat];
+            filteredRiwayat = filterByUserAccess([...cachedRiwayat]);
+            
+            // Adjust step 1 wizard options based on user access
+            if (typeof adjustWizardJenisUnitOptions === "function") {
+                adjustWizardJenisUnitOptions();
+            }
             
             // Populate filters for Analisa tab
             if (typeof populateAnalisaFilters === "function") {
                 populateAnalisaFilters();
             }
             
-            // Update Tab Selesaikan Badge Count
-            const ongoingCount = cachedRiwayat.filter(r => r.status.toLowerCase() === "ongoing").length;
+            // Update Tab Selesaikan Badge Count (filtered by user)
+            const ongoingCount = filteredRiwayat.filter(r => r.status.toLowerCase() === "ongoing").length;
             const badgeS = document.getElementById("ongoing-badge-sidebar");
             if (ongoingCount > 0) {
                 badgeS.textContent = ongoingCount;
@@ -4474,6 +5017,10 @@
         // NAV TAB CONTROLLER
         // ==============================================
         function switchTab(tabId) {
+            if (typeof isTabAllowedForUser === "function" && !isTabAllowedForUser(tabId)) {
+                showToast("Akses ditolak untuk peran Anda.", "error");
+                return;
+            }
             currentTab = tabId;
             
             // Update active menu markers
@@ -4658,7 +5205,7 @@
             const container = document.getElementById("type-unit-grid");
             container.innerHTML = "";
             
-            const filtered = cachedJenisUnit.filter(u => u.jenisUnit === formBreakdown.jenisUnit);
+            const filtered = filterByUserAccess(cachedJenisUnit.filter(u => u.jenisUnit === formBreakdown.jenisUnit));
             
             filtered.forEach(unit => {
                 const card = document.createElement("div");
@@ -5176,6 +5723,9 @@
 
             resetWaktuMulaiInputs();
             updateWizardUI();
+            if (typeof adjustWizardJenisUnitOptions === "function") {
+                adjustWizardJenisUnitOptions();
+            }
         }
 
         // ==============================================
@@ -5185,7 +5735,7 @@
             const grid = document.getElementById("ongoing-cards-grid");
             grid.innerHTML = "";
             
-            const ongoingList = cachedRiwayat.filter(r => r.status.toLowerCase() === "ongoing");
+            const ongoingList = filterByUserAccess(cachedRiwayat.filter(r => r.status.toLowerCase() === "ongoing"));
             
             if (ongoingList.length === 0) {
                 grid.innerHTML = `
@@ -5431,7 +5981,7 @@
             const filterJenis = filterJenisEl.value;
             typeDropdown.innerHTML = '<option value="">Semua Tipe</option>';
 
-            const uniqueTypes = [...new Set(cachedJenisUnit
+            const uniqueTypes = [...new Set(filterByUserAccess(cachedJenisUnit)
                 .filter(u => !filterJenis || u.jenisUnit === filterJenis)
                 .map(u => u.typeUnit)
             )];
@@ -5474,7 +6024,7 @@
             const fStatus = document.getElementById("filter-status") ? document.getElementById("filter-status").value : "";
             const fKondisi = document.getElementById("filter-kondisi-operasional") ? document.getElementById("filter-kondisi-operasional").value : "";
 
-            return cachedRiwayat.filter(item => {
+            return filterByUserAccess(cachedRiwayat.filter(item => {
                 let match = true;
                 
                 // Filter tanggal (berdasarkan Jam Mulai)
@@ -5497,7 +6047,7 @@
                 if (fKondisi && (item.kondisiOperasional || "BREAKDOWN") !== fKondisi) match = false;
 
                 return match;
-            });
+            }));
         }
 
         function calculateAndRenderDashboard() {
@@ -6162,26 +6712,48 @@
             if (ovl) ovl.classList.toggle("open");
         }
 
+        function getOngoingDurationString(jamMulaiStr) {
+            const tMulai = parseDateString(jamMulaiStr);
+            if (isNaN(tMulai.getTime())) return "-";
+            const now = new Date();
+            const diffMs = Math.max(0, now.getTime() - tMulai.getTime());
+            const diffMins = Math.floor(diffMs / 60000);
+            
+            if (diffMins < 60) {
+                return `${diffMins} mnt`;
+            }
+            
+            const diffHours = Math.floor(diffMins / 60);
+            const mins = diffMins % 60;
+            if (diffHours < 24) {
+                return `${diffHours} jam ${mins} mnt`;
+            }
+            
+            const days = Math.floor(diffHours / 24);
+            const hours = diffHours % 24;
+            return `${days} hari ${hours} jam ${mins} mnt`;
+        }
+
         function renderUnitStatusMonitoring() {
             const grid = document.getElementById("fleet-monitoring-grid");
             if (!grid) return;
             grid.innerHTML = "";
-            const units = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+            const units = filterByUserAccess(cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT);
             
             units.forEach(unit => {
-                const activeTicket = cachedRiwayat.find(r => r.typeUnit === unit.typeUnit && r.status.toLowerCase() === "ongoing");
+                const activeTickets = cachedRiwayat.filter(r => r.typeUnit === unit.typeUnit && r.status.toLowerCase() === "ongoing");
                 let statusClass = "status-aman", badgeClass = "badge-aman", badgeText = "🟢 AMAN";
                 
-                if (activeTicket) {
-                    const cond = (activeTicket.kondisiOperasional || "BREAKDOWN").toUpperCase();
-                    if (cond === "RUNNING") {
-                        statusClass = "status-running";
-                        badgeClass = "badge-running";
-                        badgeText = "🟡 MAINTENANCE - RUNNING";
-                    } else {
+                if (activeTickets.length > 0) {
+                    const hasBreakdown = activeTickets.some(t => (t.kondisiOperasional || "BREAKDOWN").toUpperCase() === "BREAKDOWN");
+                    if (hasBreakdown) {
                         statusClass = "status-breakdown";
                         badgeClass = "badge-breakdown";
-                        badgeText = "🔴 MAINTENANCE - BREAKDOWN";
+                        badgeText = `🔴 MAINTENANCE (${activeTickets.length} LAPORAN)`;
+                    } else {
+                        statusClass = "status-running";
+                        badgeClass = "badge-running";
+                        badgeText = `🟡 MAINTENANCE (${activeTickets.length} RUNNING)`;
                     }
                 }
                 
@@ -6201,9 +6773,30 @@
                 card.className = `fleet-unit-card ${statusClass}`;
                 
                 let badgeHtml = `<span class="fleet-unit-status-badge ${badgeClass}">${badgeText}</span>`;
-                if (activeTicket) {
-                    badgeHtml = `<span class="fleet-unit-status-badge ${badgeClass}" onclick="openActiveTicketDetail('${activeTicket.idBreakdown}')" title="Klik untuk lihat rincian aktif">${badgeText}</span>`;
+                
+                let ticketsHtml = "";
+                if (activeTickets.length > 0) {
+                    ticketsHtml = `<div class="fleet-active-tickets-list">`;
+                    activeTickets.forEach(t => {
+                        const cond = (t.kondisiOperasional || "BREAKDOWN").toUpperCase();
+                        const condIcon = cond === "BREAKDOWN" ? "🔴" : "🟡";
+                        const durText = getOngoingDurationString(t.jamMulai);
+                        
+                        ticketsHtml += `
+                            <div class="fleet-active-ticket-item" onclick="openActiveTicketDetail('${t.idBreakdown}')" title="Klik untuk rincian tiket ${t.idBreakdown}">
+                                <div class="fleet-active-ticket-status-row">
+                                    <span style="color: ${cond === 'BREAKDOWN' ? '#b91c1c' : '#b45309'}; font-weight:800;">${condIcon} ${cond}</span>
+                                    <span style="font-family:'Orbitron', sans-serif; font-size:0.6rem; color:#475569;">${t.idBreakdown}</span>
+                                </div>
+                                <div class="fleet-active-ticket-kategori">${t.kategoriKerusakan || '-'} (${t.pilihanKerusakan || '-'})</div>
+                                <div class="fleet-active-ticket-duration"><i class="fa-regular fa-clock"></i> Sudah berjalan: ${durText}</div>
+                            </div>
+                        `;
+                    });
+                    ticketsHtml += `</div>`;
                 }
+                
+                const showLastBd = activeTickets.length === 0;
                 
                 card.innerHTML = `
                     <div class="fleet-unit-header">
@@ -6212,19 +6805,8 @@
                     </div>
                     <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Vendor: ${unit.vendor}</div>
                     <div style="margin-top: 4px;">${badgeHtml}</div>
-                    ${activeTicket ? `
-                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(15, 23, 42, 0.1); display: flex; flex-direction: column; gap: 4px;">
-                        <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; justify-content: space-between;">
-                            <span>Kategori:</span>
-                            <span style="font-weight: 600; color: var(--text-muted); background: rgba(79, 70, 229, 0.08); padding: 2px 6px; border-radius: 4px;">${activeTicket.kategoriKerusakan || '-'}</span>
-                        </div>
-                        <div style="font-size: 0.68rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; justify-content: space-between;">
-                            <span>Sub-Kategori:</span>
-                            <span style="font-weight: 600; color: var(--text-muted); background: rgba(15, 23, 42, 0.05); padding: 2px 6px; border-radius: 4px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${activeTicket.pilihanKerusakan || '-'}">${activeTicket.pilihanKerusakan || '-'}</span>
-                        </div>
-                    </div>
-                    ` : ''}
-                    <div class="fleet-unit-last-bd">Terakhir Breakdown: <span>${lastBdText}</span></div>
+                    ${ticketsHtml}
+                    ${showLastBd ? `<div class="fleet-unit-last-bd">Terakhir Breakdown: <span>${lastBdText}</span></div>` : ''}
                 `;
                 grid.appendChild(card);
             });
@@ -6491,7 +7073,7 @@
                 "Juli", "Agustus", "September", "Oktober", "November", "Desember"
             ];
             
-            cachedRiwayat.forEach(item => {
+            filterByUserAccess(cachedRiwayat).forEach(item => {
                 if (item.jamMulai) {
                     const date = parseDateString(item.jamMulai);
                     if (!isNaN(date.getTime())) {
@@ -6529,7 +7111,7 @@
             const currentVal = selectEl.value;
             selectEl.innerHTML = '<option value="Semua">Semua Vendor</option>';
             
-            const allUnits = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+            const allUnits = filterByUserAccess(cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT);
             // Get unique sorted vendors
             const vendors = [...new Set(allUnits.map(u => u.vendor))].filter(Boolean).sort();
             
@@ -6554,7 +7136,7 @@
             const selectedType = document.getElementById('filter-jenis-alat')?.value || "Semua"; // "Semua" or "FORKLIFT" or "LOADER"
             const selectedVendor = document.getElementById('filter-vendor')?.value || "Semua"; // "Semua" or exact vendor string
             
-            const allUnits = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+            const allUnits = filterByUserAccess(cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT);
             
             // Filter units first
             const filteredUnits = allUnits.filter(unit => {
@@ -7315,7 +7897,7 @@
         // --- UNIT DETAIL CLICK (BULLETPROOF POPUP WITH DAILY UPTIME CONTRIBUTION) ---
         function showUnitDetailModal(unitType) {
             try {
-                const allUnits = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+                const allUnits = filterByUserAccess(cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT);
                 const unit = allUnits.find(u => u.typeUnit === unitType);
                 if (!unit) return;
                 
