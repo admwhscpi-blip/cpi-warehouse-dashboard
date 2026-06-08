@@ -3124,12 +3124,44 @@
                     <div class="stepper-progress">
                         <div class="stepper-progress-bar" id="stepper-bar"></div>
                     </div>
-                    <div class="stepper-info" id="stepper-step-indicator">LANGKAH 1 DARI 7</div>
+                    <div class="stepper-info" id="stepper-step-indicator">LANGKAH 1 DARI 8</div>
                 </div>
 
                 <div class="card" style="padding: 40px 24px;">
-                    <!-- STEP 1: PILIH JENIS UNIT -->
+                    <!-- STEP 1: PILIH LOKASI KERJA -->
                     <div id="step-1" class="wizard-step active">
+                        <h2 class="step-title">Pilih Lokasi Kerja</h2>
+                        <p class="step-subtitle">Pilih lokasi kerja tempat armada alat berat beroperasi</p>
+                        <div class="jenis-unit-container" style="grid-template-columns: repeat(2, 1fr); max-width: 600px; margin: 0 auto; gap: 20px;">
+                            <div class="jenis-unit-card lokasi-kerja-card" onclick="selectLokasiKerja('RM')">
+                                <div class="jenis-icon-circle">
+                                    <i class="fa-solid fa-warehouse"></i>
+                                </div>
+                                <div class="jenis-unit-title">RM</div>
+                            </div>
+                            <div class="jenis-unit-card lokasi-kerja-card" onclick="selectLokasiKerja('FG')">
+                                <div class="jenis-icon-circle">
+                                    <i class="fa-solid fa-boxes-stacked"></i>
+                                </div>
+                                <div class="jenis-unit-title">FG</div>
+                            </div>
+                            <div class="jenis-unit-card lokasi-kerja-card" onclick="selectLokasiKerja('PRODUKSI')">
+                                <div class="jenis-icon-circle">
+                                    <i class="fa-solid fa-industry"></i>
+                                </div>
+                                <div class="jenis-unit-title">PRODUKSI</div>
+                            </div>
+                            <div class="jenis-unit-card lokasi-kerja-card" onclick="selectLokasiKerja('BOILER')">
+                                <div class="jenis-icon-circle">
+                                    <i class="fa-solid fa-fire"></i>
+                                </div>
+                                <div class="jenis-unit-title">BOILER</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: PILIH JENIS UNIT -->
+                    <div id="step-2" class="wizard-step">
                         <h2 class="step-title">Pilih Jenis Unit</h2>
                         <p class="step-subtitle">Pilih kategori armada alat berat yang mengalami kendala breakdown</p>
                         <div class="jenis-unit-container">
@@ -3148,8 +3180,8 @@
                         </div>
                     </div>
 
-                    <!-- STEP 2: PILIH TYPE UNIT -->
-                    <div id="step-2" class="wizard-step">
+                    <!-- STEP 3: PILIH TYPE UNIT -->
+                    <div id="step-3" class="wizard-step">
                         <h2 class="step-title">Pilih Tipe Unit</h2>
                         <p class="step-subtitle">Pilih nomor seri atau tipe spesifik alat berat yang breakdown</p>
                         <div class="type-unit-grid" id="type-unit-grid">
@@ -3157,8 +3189,8 @@
                         </div>
                     </div>
 
-                    <!-- STEP 3: KATEGORI KERUSAKAN -->
-                    <div id="step-3" class="wizard-step">
+                    <!-- STEP 4: KATEGORI KERUSAKAN -->
+                    <div id="step-4" class="wizard-step">
                         <h2 class="step-title">Pilih Kategori Kerusakan</h2>
                         <p class="step-subtitle">Pilih sistem atau komponen utama yang mengalami kendala teknis</p>
                         <div class="category-grid">
@@ -3166,8 +3198,8 @@
                         </div>
                     </div>
 
-                    <!-- STEP 4: PILIH DETAIL KERUSAKAN -->
-                    <div id="step-4" class="wizard-step">
+                    <!-- STEP 5: PILIH DETAIL KERUSAKAN -->
+                    <div id="step-5" class="wizard-step">
                         <h2 class="step-title">Pilih Gejala / Detail Kerusakan</h2>
                         <p class="step-subtitle">Pilih gejala kerusakan yang paling mencerminkan kondisi unit saat ini</p>
                         <div class="choices-container" id="choices-list-container">
@@ -3175,8 +3207,8 @@
                         </div>
                     </div>
 
-                    <!-- STEP 5: DESKRIPSI DETAIL BEBAS -->
-                    <div id="step-5" class="wizard-step">
+                    <!-- STEP 6: DESKRIPSI DETAIL BEBAS -->
+                    <div id="step-6" class="wizard-step">
                         <h2 class="step-title">Tambahkan Catatan Tambahan</h2>
                         <p class="step-subtitle">Jelaskan kronologi kejadian secara bebas untuk memudahkan perbaikan (minimal 10 karakter)</p>
                         
@@ -3194,10 +3226,10 @@
                         </div>
                     </div>
 
-                    <!-- STEP 6: WAKTU MULAI & IDENTITAS -->
-                    <div id="step-6" class="wizard-step">
+                    <!-- STEP 7: WAKTU MULAI & IDENTITAS -->
+                    <div id="step-7" class="wizard-step">
                         <h2 class="step-title">Identitas Pelapor & Waktu Mulai</h2>
-                        <p class="step-subtitle">Lengkapi nama penanggung jawab awal dan waktu kejadian breakdown</p>
+                        <p class="step-subtitle">Lengkapi nama penanggung jawab awal and waktu kejadian breakdown</p>
                         <div class="waktu-mulai-form">
                             <div class="form-group">
                                 <label for="input-operator-awal">Nama Operator Penanggung Jawab</label>
@@ -3216,8 +3248,8 @@
                         </div>
                     </div>
 
-                    <!-- STEP 7: UNGGHAH FOTO -->
-                    <div id="step-7" class="wizard-step">
+                    <!-- STEP 8: UNGGHAH FOTO -->
+                    <div id="step-8" class="wizard-step">
                         <h2 class="step-title">Unggah Foto Breakdown (Opsional)</h2>
                         <p class="step-subtitle">Ambil foto kerusakan secara langsung menggunakan kamera atau unggah dari file</p>
                         <div style="max-width: 400px; margin: 20px auto 0 auto; display: flex; flex-direction: column; gap: 15px;">
@@ -3249,6 +3281,17 @@
             <!-- TAB 2: SELESAIKAN BREAKDOWN                     -->
             <!-- ============================================== -->
             <section id="tab-selesaikan" class="screen">
+                <!-- LOKASI KERJA FILTER FOR SELESAIKAN WO -->
+                <div class="lokasi-filter-container" style="display: flex; gap: 8px; margin-bottom: 16px; background: rgba(255, 255, 255, 0.45); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-md); box-shadow: var(--shadow-glass); width: fit-content; align-items: center; flex-wrap: wrap;">
+                    <span style="font-family: 'Rajdhani', sans-serif; font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin-right: 6px; display: flex; align-items: center; gap: 5px;">
+                        <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> LOKASI KERJA:
+                    </span>
+                    <button class="selesaikan-lokasi-btn active" data-lokasi="all" onclick="filterSelesaikanByLokasi('all', this)" style="padding: 6px 14px; font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); background: linear-gradient(135deg, rgba(79, 70, 229, 0.85), rgba(6, 182, 212, 0.85)); color: white; box-shadow: 0 4px 10px rgba(6, 182, 212, 0.2);">ALL</button>
+                    <button class="selesaikan-lokasi-btn" data-lokasi="RM" onclick="filterSelesaikanByLokasi('RM', this)" style="padding: 6px 14px; font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); background: transparent; color: var(--text-muted);">RM</button>
+                    <button class="selesaikan-lokasi-btn" data-lokasi="FG" onclick="filterSelesaikanByLokasi('FG', this)" style="padding: 6px 14px; font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); background: transparent; color: var(--text-muted);">FG</button>
+                    <button class="selesaikan-lokasi-btn" data-lokasi="PRODUKSI" onclick="filterSelesaikanByLokasi('PRODUKSI', this)" style="padding: 6px 14px; font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); background: transparent; color: var(--text-muted);">PRODUKSI</button>
+                    <button class="selesaikan-lokasi-btn" data-lokasi="BOILER" onclick="filterSelesaikanByLokasi('BOILER', this)" style="padding: 6px 14px; font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); background: transparent; color: var(--text-muted);">BOILER</button>
+                </div>
                 <div id="ongoing-loading-container" class="shimmer-wrapper" style="display: none;">
                     <div class="shimmer" style="height: 120px;"></div>
                     <div class="shimmer" style="height: 120px;"></div>
@@ -3262,6 +3305,18 @@
             <!-- TAB 3: DASHBOARD ANALYTICS                     -->
             <!-- ============================================== -->
             <section id="tab-dashboard" class="screen active">
+                <!-- LOKASI KERJA FILTER -->
+                <div class="lokasi-filter-container" style="display: flex; gap: 8px; margin-bottom: 16px; background: rgba(255, 255, 255, 0.45); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: var(--radius-md); box-shadow: var(--shadow-glass); width: fit-content; align-items: center; flex-wrap: wrap;">
+                    <span style="font-family: 'Rajdhani', sans-serif; font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-muted); margin-right: 6px; display: flex; align-items: center; gap: 5px;">
+                        <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> LOKASI KERJA:
+                    </span>
+                    <button class="lokasi-btn active" data-lokasi="all" onclick="filterDashboardByLokasi('all', this)" style="padding: 6px 14px; font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); background: linear-gradient(135deg, rgba(79, 70, 229, 0.85), rgba(6, 182, 212, 0.85)); color: white; box-shadow: 0 4px 10px rgba(6, 182, 212, 0.2);">ALL</button>
+                    <button class="lokasi-btn" data-lokasi="RM" onclick="filterDashboardByLokasi('RM', this)" style="padding: 6px 14px; font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); background: transparent; color: var(--text-muted);">RM</button>
+                    <button class="lokasi-btn" data-lokasi="FG" onclick="filterDashboardByLokasi('FG', this)" style="padding: 6px 14px; font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); background: transparent; color: var(--text-muted);">FG</button>
+                    <button class="lokasi-btn" data-lokasi="PRODUKSI" onclick="filterDashboardByLokasi('PRODUKSI', this)" style="padding: 6px 14px; font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); background: transparent; color: var(--text-muted);">PRODUKSI</button>
+                    <button class="lokasi-btn" data-lokasi="BOILER" onclick="filterDashboardByLokasi('BOILER', this)" style="padding: 6px 14px; font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: var(--transition); background: transparent; color: var(--text-muted);">BOILER</button>
+                </div>
+
                 <!-- DASHBOARD SUB-MENU FILTER / NAVIGATION -->
                 <div class="dashboard-submenu-container">
                     <button class="submenu-btn active" data-subtab="status" onclick="switchDashboardSubtab('status')">
@@ -3595,7 +3650,23 @@
                             <input type="text" class="search-control" id="table-search-input" placeholder="Cari ID, type unit, operator..." oninput="handleTableSearchDebounced()">
                         </div>
                         <div class="grid-actions">
-                            <button class="btn btn-secondary" onclick="triggerManualSync()"><i class="fa-solid fa-rotate"></i> Sinkron Data</button>
+                            <select id="filter-riwayat-lokasi" onchange="applyRiwayatFilters()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(15, 23, 42, 0.15); background: #ffffff; color: var(--text-main); font-weight: 600; cursor: pointer; outline: none; font-size: 0.8rem; font-family: var(--font-main); transition: var(--transition);">
+                                <option value="Semua">📍 Semua Lokasi</option>
+                                <option value="RM">RM</option>
+                                <option value="FG">FG</option>
+                                <option value="PRODUKSI">PRODUKSI</option>
+                                <option value="BOILER">BOILER</option>
+                            </select>
+                            <select id="filter-riwayat-jenis" onchange="applyRiwayatFilters()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(15, 23, 42, 0.15); background: #ffffff; color: var(--text-main); font-weight: 600; cursor: pointer; outline: none; font-size: 0.8rem; font-family: var(--font-main); transition: var(--transition);">
+                                <option value="Semua">🚜 Semua Jenis</option>
+                                <option value="FORKLIFT">FORKLIFT</option>
+                                <option value="LOADER">LOADER</option>
+                            </select>
+                            <select id="filter-riwayat-status" onchange="applyRiwayatFilters()" style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(15, 23, 42, 0.15); background: #ffffff; color: var(--text-main); font-weight: 600; cursor: pointer; outline: none; font-size: 0.8rem; font-family: var(--font-main); transition: var(--transition);">
+                                <option value="Semua">⚡ Semua Status</option>
+                                <option value="ONGOING">ONGOING</option>
+                                <option value="SELESAI">SELESAI</option>
+                            </select>
                             <button class="btn" onclick="exportToCSV()"><i class="fa-solid fa-file-csv"></i> Download CSV</button>
                         </div>
                     </div>
@@ -3665,6 +3736,10 @@
             </div>
             <div class="modal-body">
                 <div class="summary-grid">
+                    <div class="summary-item">
+                        <span class="summary-label">Lokasi Kerja</span>
+                        <span class="summary-value" id="summary-lokasi-kerja">-</span>
+                    </div>
                     <div class="summary-item">
                         <span class="summary-label">Jenis Unit</span>
                         <span class="summary-value" id="summary-jenis-unit">-</span>
@@ -3828,18 +3903,28 @@
     <script>
         // MASTER MOCK DATABASE (INITIALIZED TO LOCAL STORAGE IF NOT EXISTS)
         const MOCK_JENIS_UNIT = [
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 02", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 03", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 08", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 09", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 11", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MHE 16", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234" },
-            { jenisUnit: "FORKLIFT", typeUnit: "MITSUBISHI 11.5", vendor: "PT. KARYA MITRA TEKNIK", user: "KMT", pw: "KMT5678" },
-            { jenisUnit: "LOADER", typeUnit: "JGM", vendor: "PT. OSCAR OMEGA", user: "JGM", pw: "JGM0331" },
-            { jenisUnit: "LOADER", typeUnit: "LIUGONG", vendor: "PT. TRI MEGAH ANUGERAH PERKASA", user: "LIUGONG", pw: "LIUGONG2012" },
-            { jenisUnit: "LOADER", typeUnit: "SEM", vendor: "PT CPI", user: "ARF", pw: "1891" },
-            { jenisUnit: "FORKLIFT", typeUnit: "CATERPILLAR", vendor: "PT CPI", user: "TOYOTA", pw: "TYT123456" },
-            { jenisUnit: "FORKLIFT", typeUnit: "TOYOTA", vendor: "TOYOTA", user: "TOYOTA", pw: "TYT123456" }
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 02", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234", lokasiKerja: "RM" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 03", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234", lokasiKerja: "RM" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 08", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234", lokasiKerja: "RM" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 09", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234", lokasiKerja: "RM" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 11", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234", lokasiKerja: "RM" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 16", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234", lokasiKerja: "RM" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 01 (SPARE)", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "MHE", pw: "MHE1234", lokasiKerja: "RM" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MITSUBISHI 115", vendor: "PT. KARYA MITRA TEKNIK", user: "KMT", pw: "KMT5678", lokasiKerja: "RM" },
+            { jenisUnit: "LOADER", typeUnit: "JGM", vendor: "PT. OSCAR OMEGA", user: "JGM", pw: "JGM321", lokasiKerja: "RM" },
+            { jenisUnit: "LOADER", typeUnit: "LIUGONG", vendor: "PT. TRI MEGAH ANUGERAH PERKASA", user: "LIUGONG", pw: "LIUGONG2012", lokasiKerja: "RM" },
+            { jenisUnit: "LOADER", typeUnit: "SEM", vendor: "PT CPI", user: "ARIF", pw: "1891", lokasiKerja: "RM" },
+            { jenisUnit: "FORKLIFT", typeUnit: "CATERPILLAR", vendor: "PT KARUNIA MAS SEWATAMA", user: "TOYOTA", pw: "TYT123456", lokasiKerja: "RM" },
+            { jenisUnit: "FORKLIFT", typeUnit: "TOYOTA", vendor: "PT KARUNIA MAS SEWATAMA", user: "TOYOTA", pw: "TYT123456", lokasiKerja: "RM" },
+            { jenisUnit: "FORKLIFT", typeUnit: "HELI 01", vendor: "PT KARENU INDAH", user: "HELI", pw: "HELI456", lokasiKerja: "BOILER" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 05", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "PRODUKSI", pw: "PROD1234", lokasiKerja: "PRODUKSI" },
+            { jenisUnit: "FORKLIFT", typeUnit: "KMT 110", vendor: "PT. KARYA MITRA TEKNIK", user: "ARIF", pw: "1891", lokasiKerja: "FG" },
+            { jenisUnit: "FORKLIFT", typeUnit: "KMT 111", vendor: "PT. KARYA MITRA TEKNIK", user: "ARIF", pw: "1891", lokasiKerja: "FG" },
+            { jenisUnit: "FORKLIFT", typeUnit: "KMT 112", vendor: "PT. KARYA MITRA TEKNIK", user: "ARIF", pw: "1891", lokasiKerja: "FG" },
+            { jenisUnit: "FORKLIFT", typeUnit: "KMT 113", vendor: "PT. KARYA MITRA TEKNIK", user: "ARIF", pw: "1891", lokasiKerja: "FG" },
+            { jenisUnit: "FORKLIFT", typeUnit: "KMT 114", vendor: "PT. KARYA MITRA TEKNIK", user: "ARIF", pw: "1891", lokasiKerja: "FG" },
+            { jenisUnit: "FORKLIFT", typeUnit: "MHE 19", vendor: "PT. JEBSEN & JESSEN TECHNOLOGY", user: "ARIF", pw: "1891", lokasiKerja: "FG" },
+            { jenisUnit: "FORKLIFT", typeUnit: "HELI 02", vendor: "PT KARENU INDAH", user: "HELI", pw: "HELI456", lokasiKerja: "FG" }
         ];
 
         const CATEGORY_CONFIG = {
@@ -4464,14 +4549,16 @@
         let currentTab = "tab-dashboard";
         let activeWizardStep = 1;
         let dbMode = "online"; // "online" or "offline"
-        let appsScriptUrl = "https://script.google.com/macros/s/AKfycbyK1N7NjNN2hB-6qPHV642DksUtw4hbCOuHxWiLKMY6Tgi_tY0TiQb0eZUjHwoJAgrQtg/exec";
+        let appsScriptUrl = "https://script.google.com/macros/s/AKfycbzjhhH6Apid1e0GZ_qJz98zuaSal9hiH0h5qGMfeM-hD9ekeUkOCDhUZ9m_EI4sBtZ5kA/exec";
+        let activeLokasiFilter = "all";
+        let activeSelesaikanLokasiFilter = "all";
         
         // ============================================
         // AUTH STATE & FUNCTIONS
         // ============================================
         let loggedInUser = "";
         let isAdminUser = false;
-        const ADMIN_USERS = ["ARIF", "CECEP", "AJI", "BINTANG", "PAK ZUL", "PAK DOVAN", "PAK AGUSTRI", "PEPENG"];
+        const ADMIN_USERS = ["ARIF", "CECEP", "AJI", "BINTANG", "PAK ZUL", "PAK DOVAN", "PAK AGUSTRI", "PEPENG", "PAK AMAS"];
         const ADMIN_PASSWORD = "1891";
 
         // Get list of typeUnit allowed for current user
@@ -4814,7 +4901,7 @@
 
         // DATABASE CONNECTION STATE
         function initDatabaseConnectionSettings() {
-            const defaultUrl = "https://script.google.com/macros/s/AKfycbyK1N7NjNN2hB-6qPHV642DksUtw4hbCOuHxWiLKMY6Tgi_tY0TiQb0eZUjHwoJAgrQtg/exec";
+            const defaultUrl = "https://script.google.com/macros/s/AKfycbzjhhH6Apid1e0GZ_qJz98zuaSal9hiH0h5qGMfeM-hD9ekeUkOCDhUZ9m_EI4sBtZ5kA/exec";
             
             appsScriptUrl = defaultUrl;
             document.getElementById("settings-api-url").value = defaultUrl;
@@ -5064,9 +5151,8 @@
             });
         }
 
-        // Process data once loaded
         function processLoadedData() {
-            filteredRiwayat = filterByUserAccess([...cachedRiwayat]);
+            applyRiwayatFilters();
             
             // Adjust step 1 wizard options based on user access
             if (typeof adjustWizardJenisUnitOptions === "function") {
@@ -5079,7 +5165,7 @@
             }
             
             // Update Tab Selesaikan Badge Count (filtered by user)
-            const ongoingCount = filteredRiwayat.filter(r => r.status.toLowerCase() === "ongoing").length;
+            const ongoingCount = filterByUserAccess(cachedRiwayat).filter(r => r.status.toLowerCase() === "ongoing").length;
             const badgeS = document.getElementById("ongoing-badge-sidebar");
             if (ongoingCount > 0) {
                 badgeS.textContent = ongoingCount;
@@ -5093,8 +5179,6 @@
                 renderOngoingBreakdowns();
             } else if (currentTab === "tab-dashboard") {
                 calculateAndRenderDashboard();
-            } else if (currentTab === "tab-riwayat") {
-                renderHistoryTable();
             }
         }
 
@@ -5158,7 +5242,7 @@
             } else if (tabId === "tab-riwayat") {
                 textTitle.textContent = "Riwayat Laporan Terdaftar";
                 textSubtitle.textContent = "Arsip rekaman perbaikan dan durasi breakdown alat berat";
-                renderHistoryTable();
+                applyRiwayatFilters();
             }
 
             // Close mobile sidebar if open
@@ -5190,19 +5274,21 @@
             const backBtn = document.getElementById("stepper-back-btn");
             const indicatorText = document.getElementById("stepper-step-indicator");
             
-            const stepsCount = 7;
+            const stepsCount = 8;
             const pct = (activeWizardStep / stepsCount) * 100;
-            bar.style.width = `${pct}%`;
+            if (bar) bar.style.width = `${pct}%`;
             
-            indicatorText.textContent = `LANGKAH ${activeWizardStep} DARI ${stepsCount}`;
+            if (indicatorText) indicatorText.textContent = `LANGKAH ${activeWizardStep} DARI ${stepsCount}`;
             
-            if (activeWizardStep === 1) {
-                backBtn.style.visibility = "hidden";
-            } else {
-                backBtn.style.visibility = "visible";
+            if (backBtn) {
+                if (activeWizardStep === 1) {
+                    backBtn.style.visibility = "hidden";
+                } else {
+                    backBtn.style.visibility = "visible";
+                }
             }
 
-            if (activeWizardStep === 3) {
+            if (activeWizardStep === 4) {
                 buildCategoryGrid();
             }
 
@@ -5211,7 +5297,7 @@
         }
 
         function nextWizardStep() {
-            if (activeWizardStep < 7) {
+            if (activeWizardStep < 8) {
                 activeWizardStep++;
                 updateWizardUI();
             } else {
@@ -5230,27 +5316,31 @@
 
         function validateCurrentStep() {
             const nextBtn = document.getElementById("wizard-next-btn");
+            if (!nextBtn) return;
             let isValid = false;
 
             if (activeWizardStep === 1) {
-                isValid = formBreakdown.jenisUnit !== "";
+                isValid = (formBreakdown.lokasiKerja || "") !== "";
                 nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
             } else if (activeWizardStep === 2) {
-                isValid = formBreakdown.typeUnit !== "";
+                isValid = formBreakdown.jenisUnit !== "";
                 nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
             } else if (activeWizardStep === 3) {
-                isValid = formBreakdown.kategoriKerusakan !== "";
+                isValid = formBreakdown.typeUnit !== "";
                 nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
             } else if (activeWizardStep === 4) {
-                isValid = formBreakdown.pilihanKerusakan !== "";
+                isValid = formBreakdown.kategoriKerusakan !== "";
                 nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
             } else if (activeWizardStep === 5) {
-                isValid = formBreakdown.detailKerusakan.trim().length >= 10;
+                isValid = formBreakdown.pilihanKerusakan !== "";
                 nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
             } else if (activeWizardStep === 6) {
-                isValid = formBreakdown.operatorAwal.trim().length >= 2;
+                isValid = formBreakdown.detailKerusakan.trim().length >= 10;
                 nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
             } else if (activeWizardStep === 7) {
+                isValid = formBreakdown.operatorAwal.trim().length >= 2;
+                nextBtn.innerHTML = `Lanjut Langkah <i class="fa-solid fa-arrow-right"></i>`;
+            } else if (activeWizardStep === 8) {
                 isValid = true; // Optional step
                 const pUrl = document.getElementById("input-photo-url") ? document.getElementById("input-photo-url").value : "";
                 if (pUrl) {
@@ -5261,6 +5351,64 @@
             }
 
             nextBtn.disabled = !isValid;
+        }
+
+        // STEP 1: LOKASI SELECTION
+        function selectLokasiKerja(lokasi) {
+            formBreakdown.lokasiKerja = lokasi;
+            
+            // Visual active border
+            document.querySelectorAll(".lokasi-kerja-card").forEach(c => {
+                if (c.textContent.indexOf(lokasi) > -1) {
+                    c.classList.add("selected");
+                } else {
+                    c.classList.remove("selected");
+                }
+            });
+
+            // Reset downstream data
+            formBreakdown.jenisUnit = "";
+            formBreakdown.typeUnit = "";
+            formBreakdown.vendor = "-";
+            formBreakdown.kategoriKerusakan = "";
+            formBreakdown.pilihanKerusakan = "";
+            
+            // Adjust opacity and availability of Forklift / Loader cards in Step 2 based on selected Lokasi
+            const units = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+            const availableJenis = [...new Set(units
+                .filter(u => (u.lokasiKerja || "").toUpperCase() === lokasi.toUpperCase())
+                .map(u => u.jenisUnit.toUpperCase())
+            )];
+            
+            const forkliftCard = document.querySelector(".jenis-unit-card[onclick*='FORKLIFT']");
+            const loaderCard = document.querySelector(".jenis-unit-card[onclick*='LOADER']");
+            
+            if (forkliftCard) {
+                if (!availableJenis.includes("FORKLIFT")) {
+                    forkliftCard.style.opacity = "0.3";
+                    forkliftCard.style.pointerEvents = "none";
+                    forkliftCard.style.cursor = "not-allowed";
+                } else {
+                    forkliftCard.style.opacity = "1";
+                    forkliftCard.style.pointerEvents = "auto";
+                    forkliftCard.style.cursor = "pointer";
+                }
+            }
+            if (loaderCard) {
+                if (!availableJenis.includes("LOADER")) {
+                    loaderCard.style.opacity = "0.3";
+                    loaderCard.style.pointerEvents = "none";
+                    loaderCard.style.cursor = "not-allowed";
+                } else {
+                    loaderCard.style.opacity = "1";
+                    loaderCard.style.pointerEvents = "auto";
+                    loaderCard.style.cursor = "pointer";
+                }
+            }
+
+            setTimeout(() => {
+                nextWizardStep();
+            }, 300);
         }
 
         // STEP 1 SELECTION
@@ -5295,7 +5443,10 @@
             const container = document.getElementById("type-unit-grid");
             container.innerHTML = "";
             
-            const filtered = filterByUserAccess(cachedJenisUnit.filter(u => u.jenisUnit === formBreakdown.jenisUnit));
+            const filtered = filterByUserAccess(cachedJenisUnit.filter(u => 
+                u.jenisUnit === formBreakdown.jenisUnit && 
+                (!formBreakdown.lokasiKerja || (u.lokasiKerja || "").toUpperCase() === formBreakdown.lokasiKerja.toUpperCase())
+            ));
             
             filtered.forEach(unit => {
                 const card = document.createElement("div");
@@ -5512,6 +5663,7 @@
 
             document.getElementById("summary-jenis-unit").textContent = formBreakdown.jenisUnit;
             document.getElementById("summary-type-unit").textContent = formBreakdown.typeUnit;
+            document.getElementById("summary-lokasi-kerja").textContent = formBreakdown.lokasiKerja || "-";
             document.getElementById("summary-vendor").textContent = formBreakdown.vendor;
             document.getElementById("summary-kategori").textContent = formBreakdown.kategoriKerusakan;
             document.getElementById("summary-pilihan").textContent = formBreakdown.pilihanKerusakan;
@@ -5643,6 +5795,7 @@
             // Reset state
             activeWizardStep = 1;
             formBreakdown = {
+                lokasiKerja: "",
                 jenisUnit: "",
                 typeUnit: "",
                 vendor: "-",
@@ -5665,12 +5818,44 @@
                     <div class="stepper-progress">
                         <div class="stepper-progress-bar" id="stepper-bar"></div>
                     </div>
-                    <div class="stepper-info" id="stepper-step-indicator">LANGKAH 1 DARI 7</div>
+                    <div class="stepper-info" id="stepper-step-indicator">LANGKAH 1 DARI 8</div>
                 </div>
 
                 <div class="card" style="padding: 40px 24px;">
-                    <!-- STEP 1: PILIH JENIS UNIT -->
+                    <!-- STEP 1: PILIH LOKASI KERJA -->
                     <div id="step-1" class="wizard-step active">
+                        <h2 class="step-title">Pilih Lokasi Kerja</h2>
+                        <p class="step-subtitle">Pilih lokasi kerja tempat armada alat berat beroperasi</p>
+                        <div class="jenis-unit-container" style="grid-template-columns: repeat(2, 1fr); max-width: 600px; margin: 0 auto; gap: 20px;">
+                            <div class="jenis-unit-card lokasi-kerja-card" onclick="selectLokasiKerja('RM')">
+                                <div class="jenis-icon-circle">
+                                    <i class="fa-solid fa-warehouse"></i>
+                                </div>
+                                <div class="jenis-unit-title">RM</div>
+                            </div>
+                            <div class="jenis-unit-card lokasi-kerja-card" onclick="selectLokasiKerja('FG')">
+                                <div class="jenis-icon-circle">
+                                    <i class="fa-solid fa-boxes-stacked"></i>
+                                </div>
+                                <div class="jenis-unit-title">FG</div>
+                            </div>
+                            <div class="jenis-unit-card lokasi-kerja-card" onclick="selectLokasiKerja('PRODUKSI')">
+                                <div class="jenis-icon-circle">
+                                    <i class="fa-solid fa-industry"></i>
+                                </div>
+                                <div class="jenis-unit-title">PRODUKSI</div>
+                            </div>
+                            <div class="jenis-unit-card lokasi-kerja-card" onclick="selectLokasiKerja('BOILER')">
+                                <div class="jenis-icon-circle">
+                                    <i class="fa-solid fa-fire"></i>
+                                </div>
+                                <div class="jenis-unit-title">BOILER</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: PILIH JENIS UNIT -->
+                    <div id="step-2" class="wizard-step">
                         <h2 class="step-title">Pilih Jenis Unit</h2>
                         <p class="step-subtitle">Pilih kategori armada alat berat yang mengalami kendala breakdown</p>
                         <div class="jenis-unit-container">
@@ -5689,15 +5874,15 @@
                         </div>
                     </div>
 
-                    <!-- STEP 2: PILIH TYPE UNIT -->
-                    <div id="step-2" class="wizard-step">
+                    <!-- STEP 3: PILIH TYPE UNIT -->
+                    <div id="step-3" class="wizard-step">
                         <h2 class="step-title">Pilih Tipe Unit</h2>
                         <p class="step-subtitle">Pilih nomor seri atau tipe spesifik alat berat yang breakdown</p>
                         <div class="type-unit-grid" id="type-unit-grid"></div>
                     </div>
 
-                    <!-- STEP 3: KATEGORI KERUSAKAN -->
-                    <div id="step-3" class="wizard-step">
+                    <!-- STEP 4: KATEGORI KERUSAKAN -->
+                    <div id="step-4" class="wizard-step">
                         <h2 class="step-title">Pilih Kategori Kerusakan</h2>
                         <p class="step-subtitle">Pilih sistem atau komponen utama yang mengalami kendala teknis</p>
                         <div class="category-grid">
@@ -5734,15 +5919,15 @@
                         </div>
                     </div>
 
-                    <!-- STEP 4: PILIH DETAIL KERUSAKAN -->
-                    <div id="step-4" class="wizard-step">
+                    <!-- STEP 5: PILIH DETAIL KERUSAKAN -->
+                    <div id="step-5" class="wizard-step">
                         <h2 class="step-title">Pilih Gejala / Detail Kerusakan</h2>
                         <p class="step-subtitle">Pilih gejala kerusakan yang paling mencerminkan kondisi unit saat ini</p>
                         <div class="choices-container" id="choices-list-container"></div>
                     </div>
 
-                    <!-- STEP 5: DESKRIPSI DETAIL BEBAS -->
-                    <div id="step-5" class="wizard-step">
+                    <!-- STEP 6: DESKRIPSI DETAIL BEBAS -->
+                    <div id="step-6" class="wizard-step">
                         <h2 class="step-title">Tambahkan Catatan Tambahan</h2>
                         <p class="step-subtitle">Jelaskan kronologi kejadian secara bebas untuk memudahkan perbaikan (minimal 10 karakter)</p>
                         
@@ -5760,8 +5945,8 @@
                         </div>
                     </div>
 
-                    <!-- STEP 6: WAKTU MULAI & IDENTITAS -->
-                    <div id="step-6" class="wizard-step">
+                    <!-- STEP 7: WAKTU MULAI & IDENTITAS -->
+                    <div id="step-7" class="wizard-step">
                         <h2 class="step-title">Identitas Pelapor & Waktu Mulai</h2>
                         <p class="step-subtitle">Lengkapi nama penanggung jawab awal dan waktu kejadian breakdown</p>
                         <div class="waktu-mulai-form">
@@ -5782,8 +5967,8 @@
                         </div>
                     </div>
 
-                    <!-- STEP 7: UNGGHAH FOTO -->
-                    <div id="step-7" class="wizard-step">
+                    <!-- STEP 8: UNGGHAH FOTO -->
+                    <div id="step-8" class="wizard-step">
                         <h2 class="step-title">Unggah Foto Breakdown (Opsional)</h2>
                         <p class="step-subtitle">Ambil foto kerusakan secara langsung menggunakan kamera atau unggah dari file</p>
                         <div style="max-width: 400px; margin: 20px auto 0 auto; display: flex; flex-direction: column; gap: 15px;">
@@ -5821,11 +6006,41 @@
         // ==============================================
         // TAB 2: SELESAIKAN BREAKDOWN (ONGOING LIST)
         // ==============================================
+        function filterSelesaikanByLokasi(lokasi, btnEl) {
+            activeSelesaikanLokasiFilter = lokasi;
+            
+            // Toggle active class visually
+            document.querySelectorAll(".selesaikan-lokasi-btn").forEach(btn => {
+                btn.classList.remove("active");
+                btn.style.color = "var(--text-muted)";
+                btn.style.background = "transparent";
+                btn.style.boxShadow = "none";
+            });
+            
+            if (btnEl) {
+                btnEl.classList.add("active");
+                btnEl.style.color = "#ffffff";
+                btnEl.style.background = "linear-gradient(135deg, rgba(79, 70, 229, 0.85), rgba(6, 182, 212, 0.85))";
+                btnEl.style.boxShadow = "0 4px 10px rgba(6, 182, 212, 0.2)";
+            }
+            
+            // Refresh ongoing grid
+            renderOngoingBreakdowns();
+        }
+
         function renderOngoingBreakdowns() {
             const grid = document.getElementById("ongoing-cards-grid");
             grid.innerHTML = "";
             
-            const ongoingList = filterByUserAccess(cachedRiwayat.filter(r => r.status.toLowerCase() === "ongoing"));
+            let ongoingList = filterByUserAccess(cachedRiwayat.filter(r => r.status.toLowerCase() === "ongoing"));
+            
+            if (activeSelesaikanLokasiFilter !== "all") {
+                const allUnits = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+                ongoingList = ongoingList.filter(item => {
+                    const unit = allUnits.find(u => u.typeUnit === item.typeUnit);
+                    return unit && (unit.lokasiKerja || "").toUpperCase() === activeSelesaikanLokasiFilter.toUpperCase();
+                });
+            }
             
             if (ongoingList.length === 0) {
                 grid.innerHTML = `
@@ -6116,6 +6331,15 @@
 
             return filterByUserAccess(cachedRiwayat.filter(item => {
                 let match = true;
+                
+                // Filter Lokasi Kerja
+                if (activeLokasiFilter !== "all") {
+                    const units = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+                    const unit = units.find(u => u.typeUnit === item.typeUnit);
+                    if (!unit || (unit.lokasiKerja || "").toUpperCase() !== activeLokasiFilter.toUpperCase()) {
+                        match = false;
+                    }
+                }
                 
                 // Filter tanggal (berdasarkan Jam Mulai)
                 if (fFrom) {
@@ -6620,29 +6844,61 @@
             document.getElementById("btn-page-next").disabled = historyCurrentPage === totalPages;
         }
 
+        function applyRiwayatFilters() {
+            const searchVal = document.getElementById("table-search-input").value.toLowerCase().trim();
+            const filterLokasi = document.getElementById("filter-riwayat-lokasi")?.value || "Semua";
+            const filterJenis = document.getElementById("filter-riwayat-jenis")?.value || "Semua";
+            const filterStatus = document.getElementById("filter-riwayat-status")?.value || "Semua";
+
+            const allUnits = cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT;
+
+            filteredRiwayat = cachedRiwayat.filter(item => {
+                // 1. Text Search Filter
+                if (searchVal !== "") {
+                    const matchSearch = item.idBreakdown.toLowerCase().includes(searchVal) ||
+                                       item.typeUnit.toLowerCase().includes(searchVal) ||
+                                       item.operatorAwal.toLowerCase().includes(searchVal) ||
+                                       (item.operatorAkhir && item.operatorAkhir.toLowerCase().includes(searchVal)) ||
+                                       item.kategoriKerusakan.toLowerCase().includes(searchVal) ||
+                                       item.pilihanKerusakan.toLowerCase().includes(searchVal) ||
+                                       item.detailKerusakan.toLowerCase().includes(searchVal);
+                    if (!matchSearch) return false;
+                }
+
+                // 2. Lokasi Kerja Filter
+                if (filterLokasi !== "Semua") {
+                    const unit = allUnits.find(u => u.typeUnit === item.typeUnit);
+                    if (!unit || (unit.lokasiKerja || "").toUpperCase() !== filterLokasi.toUpperCase()) {
+                        return false;
+                    }
+                }
+
+                // 3. Jenis Unit Filter
+                if (filterJenis !== "Semua") {
+                    if (item.jenisUnit !== filterJenis) return false;
+                }
+
+                // 4. Status Filter
+                if (filterStatus !== "Semua") {
+                    if (item.status.toUpperCase() !== filterStatus.toUpperCase()) return false;
+                }
+
+                return true;
+            });
+
+            // Apply user access filter
+            filteredRiwayat = filterByUserAccess(filteredRiwayat);
+
+            historyCurrentPage = 1; // Reset to page 1 on filter change
+            renderHistoryTable();
+        }
+
         // DEBOUNCED SEARCH FILTER
         let searchTimeout = null;
         function handleTableSearchDebounced() {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
-                const searchVal = document.getElementById("table-search-input").value.toLowerCase().trim();
-                
-                if (searchVal === "") {
-                    filteredRiwayat = [...cachedRiwayat];
-                } else {
-                    filteredRiwayat = cachedRiwayat.filter(item => {
-                        return item.idBreakdown.toLowerCase().includes(searchVal) ||
-                               item.typeUnit.toLowerCase().includes(searchVal) ||
-                               item.operatorAwal.toLowerCase().includes(searchVal) ||
-                               item.operatorAkhir.toLowerCase().includes(searchVal) ||
-                               item.kategoriKerusakan.toLowerCase().includes(searchVal) ||
-                               item.pilihanKerusakan.toLowerCase().includes(searchVal) ||
-                               item.detailKerusakan.toLowerCase().includes(searchVal);
-                    });
-                }
-                
-                historyCurrentPage = 1; // Reset to page 1 on new search
-                renderHistoryTable();
+                applyRiwayatFilters();
             }, 300);
         }
 
@@ -6828,7 +7084,10 @@
             const grid = document.getElementById("fleet-monitoring-grid");
             if (!grid) return;
             grid.innerHTML = "";
-            const units = filterByUserAccess(cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT);
+            let units = filterByUserAccess(cachedJenisUnit.length > 0 ? cachedJenisUnit : MOCK_JENIS_UNIT);
+            if (activeLokasiFilter !== "all") {
+                units = units.filter(u => (u.lokasiKerja || "").toUpperCase() === activeLokasiFilter.toUpperCase());
+            }
             
             units.forEach(unit => {
                 const activeTickets = cachedRiwayat.filter(r => r.typeUnit === unit.typeUnit && r.status.toLowerCase() === "ongoing");
@@ -7198,6 +7457,35 @@
         let chartUptimeCompInstance = null;
         let filtersInitialized = false;
 
+        function filterDashboardByLokasi(lokasi, btnEl) {
+            activeLokasiFilter = lokasi;
+            
+            // Toggle active class visually
+            document.querySelectorAll(".lokasi-btn").forEach(btn => {
+                btn.classList.remove("active");
+                btn.style.color = "var(--text-muted)";
+                btn.style.background = "transparent";
+                btn.style.boxShadow = "none";
+            });
+            
+            if (btnEl) {
+                btnEl.classList.add("active");
+                btnEl.style.color = "#ffffff";
+                btnEl.style.background = "linear-gradient(135deg, rgba(79, 70, 229, 0.85), rgba(6, 182, 212, 0.85))";
+                btnEl.style.boxShadow = "0 4px 10px rgba(6, 182, 212, 0.2)";
+            }
+            
+            // Refresh Status grid
+            renderUnitStatusMonitoring();
+            
+            // Refresh Analisa
+            if (activeDashboardSubtab === "analisa") {
+                renderAnalisaSection();
+            } else {
+                calculateAndRenderDashboard();
+            }
+        }
+
         function switchDashboardSubtab(subtab) {
             activeDashboardSubtab = subtab;
             
@@ -7311,6 +7599,10 @@
             
             // Filter units first
             const filteredUnits = allUnits.filter(unit => {
+                // Filter by Lokasi Kerja
+                if (activeLokasiFilter !== "all" && (unit.lokasiKerja || "").toUpperCase() !== activeLokasiFilter.toUpperCase()) {
+                    return false;
+                }
                 // Filter by Type
                 if (selectedType !== "Semua" && unit.jenisUnit !== selectedType) {
                     return false;
@@ -7327,6 +7619,11 @@
                 // Match unit
                 const unit = allUnits.find(u => u.typeUnit === c.typeUnit);
                 if (!unit) return false;
+
+                // Apply Lokasi Kerja filter
+                if (activeLokasiFilter !== "all" && (unit.lokasiKerja || "").toUpperCase() !== activeLokasiFilter.toUpperCase()) {
+                    return false;
+                }
 
                 // Apply unit filters
                 if (selectedType !== "Semua" && unit.jenisUnit !== selectedType) {
