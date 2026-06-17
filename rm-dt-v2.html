@@ -401,6 +401,26 @@
             from { opacity: 0; transform: translateY(18px); }
             to   { opacity: 1; transform: translateY(0); }
         }
+        /* === EXPORT CSV BUTTON === */
+        .db-export-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 18px; border: 1.5px solid rgba(139,92,246,0.35);
+            border-radius: 10px; background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+            color: #7c3aed; font-family: 'Rajdhani', sans-serif; font-weight: 700;
+            font-size: 0.82rem; letter-spacing: 0.5px; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(139,92,246,0.1);
+            text-transform: uppercase; white-space: nowrap;
+        }
+        .db-export-btn:hover {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: #fff; border-color: transparent;
+            box-shadow: 0 8px 20px rgba(139,92,246,0.35);
+            transform: translateY(-2px);
+        }
+        .db-export-btn:active { transform: translateY(0) scale(0.97); }
+        .db-export-btn i { font-size: 1rem; }
+
         @media (max-width: 768px) {
             .db-summary-grid { grid-template-columns: 1fr 1fr; }
             .db-filter-panel { flex-direction: column; }
@@ -1868,9 +1888,14 @@
 
             <!-- VIEW: DURATION BREAKDOWN -->
             <div id="view-durbreakdown" style="display:none;">
-                <div class="section-title-bar">
-                    <h3><i class="fas fa-stopwatch" style="color:var(--purple);"></i> DURATION BREAKDOWN</h3>
-                    <span class="section-badge" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe); color:#7c3aed;">ANALISIS</span>
+                <div class="section-title-bar" style="justify-content:space-between; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <h3><i class="fas fa-stopwatch" style="color:var(--purple);"></i> DURATION BREAKDOWN</h3>
+                        <span class="section-badge" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe); color:#7c3aed;">ANALISIS</span>
+                    </div>
+                    <button class="db-export-btn" onclick="exportDurationBreakdownCSV()" title="Ekspor data durasi breakdown ke Excel">
+                        <i class="fa-solid fa-file-excel"></i> Ekspor CSV
+                    </button>
                 </div>
 
                 <!-- Filter Panel - Row 1: date + dropdowns -->
@@ -5943,6 +5968,384 @@
             if (_dbSortCol === col) { _dbSortAsc = !_dbSortAsc; }
             else { _dbSortCol = col; _dbSortAsc = true; }
             renderDurationBreakdown();
+        }
+
+        // ================================================================
+        // === DURATION BREAKDOWN - EXPORT CSV (Excel XML - 2 SHEETS) ===
+        // ================================================================
+        function exportDurationBreakdownCSV() {
+            if (!hubData || !hubData.templateDump) {
+                Swal.fire({ icon: 'error', title: 'Data Kosong', text: 'Tidak ada data yang dapat diekspor!', confirmButtonColor: '#7c3aed' });
+                return;
+            }
+
+            const isMuatMode = _dbSelectedMuatTypes.length > 0;
+            const rows = getDbFilteredRows(isMuatMode);
+
+            if (rows.length === 0) {
+                Swal.fire({ icon: 'warning', title: 'Data Kosong', text: 'Tidak ada data untuk filter yang dipilih. Ubah filter lalu coba lagi.', confirmButtonColor: '#7c3aed' });
+                return;
+            }
+
+            Swal.fire({
+                title: '<i class="fas fa-file-excel" style="color:#16a34a; margin-right:8px;"></i> Mempersiapkan Ekspor...',
+                html: '<div style="font-size:0.9rem; color:#64748b;">Mengolah data 2 sheet durasi breakdown...</div>',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            setTimeout(() => {
+                try {
+                    // ═══════════════════════════════════════
+                    // SHARED HELPERS
+                    // ═══════════════════════════════════════
+                    function escHtml(s) {
+                        return String(s == null ? '' : s)
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;')
+                            .replace(/"/g, '&quot;');
+                    }
+                    function fmtMinToHM(m) {
+                        if (m === null || m === undefined || isNaN(m)) return '-';
+                        if (m < 0) m = 0;
+                        return Math.floor(m / 60) + 'j ' + String(Math.round(m % 60)).padStart(2, '0') + 'm';
+                    }
+                    function fmtDateDisplay(dateStr) {
+                        if (!dateStr || dateStr.length < 10) return dateStr || '-';
+                        const [y, m, d] = dateStr.substring(0, 10).split('-');
+                        return d + '/' + m + '/' + y;
+                    }
+
+                    const userName = sessionStorage.getItem('dt_v2_user') || '\u2014';
+                    const timestampFile = new Date().toISOString().substring(0, 10);
+                    const now = new Date();
+                    const dayNames = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+                    const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                    const printTs = dayNames[now.getDay()] + ', ' + now.getDate() + ' ' + monthNames[now.getMonth()] + ' ' + now.getFullYear() + ', ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ' WIB';
+
+                    const startDate = document.getElementById('db_start_date')?.value || '';
+                    const endDate = document.getElementById('db_end_date')?.value || '';
+                    let periodText = 'Semua Periode';
+                    if (startDate && endDate) periodText = startDate + ' s/d ' + endDate;
+                    else if (startDate) periodText = 'Mulai dari ' + startDate;
+                    else if (endDate) periodText = 'Sampai dengan ' + endDate;
+
+                    const ths = 'style="background-color: #1e3a8a; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px 12px; font-size: 10pt; text-align: center; white-space: nowrap;"';
+                    const thsSub = 'style="background-color: #334155; color: #e2e8f0; font-weight: bold; border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 9pt; text-align: center; white-space: nowrap;"';
+                    const tdC = 'style="border: 1px solid #cbd5e1; text-align: center;"';
+                    const tdR = 'style="border: 1px solid #cbd5e1; text-align: right;"';
+                    const tdL = 'style="border: 1px solid #cbd5e1; text-align: left;"';
+                    const tdBold = 'style="border: 1px solid #cbd5e1; text-align: center; font-weight: bold;"';
+
+                    // ═══════════════════════════════════════
+                    // SHEET 1: REKAP HARIAN
+                    // ═══════════════════════════════════════
+                    const dateMap = {};
+                    rows.forEach(r => {
+                        const tgl = String(r.TANGGAL || '').substring(0, 10);
+                        if (!tgl) return;
+                        if (!dateMap[tgl]) dateMap[tgl] = { totalTrucks: 0, totalKg: 0, inapCount: 0, tidakInapCount: 0 };
+                        dateMap[tgl].totalTrucks++;
+                        dateMap[tgl].totalKg += Number(r.REAL_BONGKAR_MT || r.REAL_BONGKAR_KG || 0);
+                        if (!isMuatMode) {
+                            const inapData = computeInapForRow(r);
+                            if (inapData.valid && inapData.duration !== null && !isNaN(inapData.duration) && inapData.duration >= 0) {
+                                if (inapData.isInap) dateMap[tgl].inapCount++;
+                                else dateMap[tgl].tidakInapCount++;
+                            }
+                        } else {
+                            dateMap[tgl].tidakInapCount++;
+                        }
+                    });
+                    const sortedDates = Object.keys(dateMap).sort();
+
+                    let grandTrucks = 0, grandKg = 0, grandInap = 0, grandTidakInap = 0;
+                    sortedDates.forEach(d => {
+                        grandTrucks += dateMap[d].totalTrucks;
+                        grandKg += dateMap[d].totalKg;
+                        grandInap += dateMap[d].inapCount;
+                        grandTidakInap += dateMap[d].tidakInapCount;
+                    });
+
+                    let sheet1 = '';
+                    // KOP
+                    sheet1 += '<tr><td colspan="7" class="kop-main">PT Charoen Pokphand Indonesia - Cirebon</td></tr>';
+                    sheet1 += '<tr><td colspan="7" class="kop-sub">Smart Warehouse v2.0 - Downtime RM-Storage (Duration Breakdown)</td></tr>';
+                    sheet1 += '<tr><td colspan="7" class="kop-meta">Laporan Rekap Harian Durasi ' + (isMuatMode ? 'Muat' : 'Bongkar') + ' | Tanggal Cetak: ' + escHtml(printTs) + '</td></tr>';
+                    sheet1 += '<tr><td colspan="7" class="kop-meta">Periode Filter: <span style="color:#2563eb; font-weight:bold;">' + escHtml(periodText) + '</span> | Total Data: <span style="color:#16a34a; font-weight:bold;">' + rows.length + ' truck</span> | Total Hari: <span style="color:#7c3aed; font-weight:bold;">' + sortedDates.length + ' hari</span></td></tr>';
+                    sheet1 += '<tr><td colspan="7" style="border:none; height:10px;"></td></tr>';
+                    // Header
+                    sheet1 += '<tr>';
+                    sheet1 += '<th ' + ths + '>Tanggal</th>';
+                    sheet1 += '<th ' + ths + '>Total Truck</th>';
+                    sheet1 += '<th ' + ths + '>Quantity Total (KG)</th>';
+                    sheet1 += '<th ' + ths + '>Inap (Truck)</th>';
+                    sheet1 += '<th ' + ths + '>Persentase Inap</th>';
+                    sheet1 += '<th ' + ths + '>Tidak Inap (Truck)</th>';
+                    sheet1 += '<th ' + ths + '>Persentase Tidak Inap</th>';
+                    sheet1 += '</tr>';
+                    // Rows
+                    sortedDates.forEach(dateStr => {
+                        const d = dateMap[dateStr];
+                        const totalValid = d.inapCount + d.tidakInapCount;
+                        const inapPct = totalValid > 0 ? ((d.inapCount / totalValid) * 100).toFixed(1) : '0.0';
+                        const tidakInapPct = totalValid > 0 ? ((d.tidakInapCount / totalValid) * 100).toFixed(1) : '0.0';
+                        const inapCls = parseFloat(inapPct) > 20 ? 'pct-high' : 'pct-low';
+                        const tidakCls = parseFloat(tidakInapPct) >= 80 ? 'pct-low' : 'pct-high';
+                        sheet1 += '<tr>';
+                        sheet1 += '<td ' + tdBold + '>' + escHtml(fmtDateDisplay(dateStr)) + '</td>';
+                        sheet1 += '<td ' + tdC + '>' + d.totalTrucks + '</td>';
+                        sheet1 += '<td ' + tdR + '>' + d.totalKg.toLocaleString('id-ID') + '</td>';
+                        sheet1 += '<td style="border:1px solid #cbd5e1; text-align:center; color:#dc2626; font-weight:bold;">' + d.inapCount + '</td>';
+                        sheet1 += '<td class="' + inapCls + '" style="border:1px solid #cbd5e1;">' + inapPct + '%</td>';
+                        sheet1 += '<td style="border:1px solid #cbd5e1; text-align:center; color:#059669; font-weight:bold;">' + d.tidakInapCount + '</td>';
+                        sheet1 += '<td class="' + tidakCls + '" style="border:1px solid #cbd5e1;">' + tidakInapPct + '%</td>';
+                        sheet1 += '</tr>';
+                    });
+                    // Total
+                    const gIP = grandTrucks > 0 ? ((grandInap / grandTrucks) * 100).toFixed(1) : '0.0';
+                    const gTP = grandTrucks > 0 ? ((grandTidakInap / grandTrucks) * 100).toFixed(1) : '0.0';
+                    const trs = 'style="border:1px solid #cbd5e1; text-align:center; font-weight:bold; background-color:#f1f5f9; border-top:2px solid #1e3a8a;"';
+                    sheet1 += '<tr>';
+                    sheet1 += '<td ' + trs + '>TOTAL</td>';
+                    sheet1 += '<td ' + trs + '>' + grandTrucks + '</td>';
+                    sheet1 += '<td style="border:1px solid #cbd5e1; text-align:right; font-weight:bold; background-color:#f1f5f9; border-top:2px solid #1e3a8a;">' + grandKg.toLocaleString('id-ID') + '</td>';
+                    sheet1 += '<td style="border:1px solid #cbd5e1; text-align:center; font-weight:bold; background-color:#fee2e2; color:#dc2626; border-top:2px solid #1e3a8a;">' + grandInap + '</td>';
+                    sheet1 += '<td style="border:1px solid #cbd5e1; text-align:center; font-weight:bold; background-color:#fee2e2; color:#991b1b; border-top:2px solid #1e3a8a;">' + gIP + '%</td>';
+                    sheet1 += '<td style="border:1px solid #cbd5e1; text-align:center; font-weight:bold; background-color:#d1fae5; color:#059669; border-top:2px solid #1e3a8a;">' + grandTidakInap + '</td>';
+                    sheet1 += '<td style="border:1px solid #cbd5e1; text-align:center; font-weight:bold; background-color:#d1fae5; color:#065f46; border-top:2px solid #1e3a8a;">' + gTP + '%</td>';
+                    sheet1 += '</tr>';
+                    // Footer
+                    sheet1 += '<tr><td colspan="7" style="border:none; height:10px;"></td></tr>';
+                    sheet1 += '<tr><td colspan="7" class="kop-meta" style="font-weight:bold;">Dicetak oleh: ' + escHtml(userName) + ' | Tanggal cetak: ' + escHtml(printTs) + '</td></tr>';
+                    sheet1 += '<tr><td colspan="7" class="kop-meta" style="font-style:italic;">Keterangan: Inap = total durasi truck di gudang \u2265 24 jam | Tidak Inap = total durasi &lt; 24 jam</td></tr>';
+                    sheet1 += '<tr><td colspan="7" class="kop-meta" style="font-style:italic;">Accuracy | Transparency | Accountability</td></tr>';
+
+                    // ═══════════════════════════════════════
+                    // SHEET 2: DATA DETAIL LENGKAP
+                    // ═══════════════════════════════════════
+                    const detailCols = isMuatMode ? 16 : 18;
+                    let sheet2 = '';
+                    // KOP
+                    sheet2 += '<tr><td colspan="' + detailCols + '" class="kop-main">PT Charoen Pokphand Indonesia - Cirebon</td></tr>';
+                    sheet2 += '<tr><td colspan="' + detailCols + '" class="kop-sub">Smart Warehouse v2.0 - Data Detail Durasi ' + (isMuatMode ? 'Muat' : 'Bongkar') + ' Per Truck</td></tr>';
+                    sheet2 += '<tr><td colspan="' + detailCols + '" class="kop-meta">Tanggal Cetak: ' + escHtml(printTs) + '</td></tr>';
+                    sheet2 += '<tr><td colspan="' + detailCols + '" class="kop-meta">Periode: <span style="color:#2563eb; font-weight:bold;">' + escHtml(periodText) + '</span> | Total: <span style="color:#16a34a; font-weight:bold;">' + rows.length + ' truck</span></td></tr>';
+                    sheet2 += '<tr><td colspan="' + detailCols + '" style="border:none; height:10px;"></td></tr>';
+
+                    if (isMuatMode) {
+                        // === MUAT MODE HEADER ===
+                        sheet2 += '<tr>';
+                        sheet2 += '<th ' + ths + '>No</th>';
+                        sheet2 += '<th ' + ths + '>Tanggal</th>';
+                        sheet2 += '<th ' + ths + '>No Polisi</th>';
+                        sheet2 += '<th ' + ths + '>Jenis Truck</th>';
+                        sheet2 += '<th ' + ths + '>Material RM</th>';
+                        sheet2 += '<th ' + ths + '>Lokasi (SLOC)</th>';
+                        sheet2 += '<th ' + ths + '>Netto Muat (KG)</th>';
+                        // Muat duration headers
+                        sheet2 += '<th ' + thsSub + '>Bongkar Stapel</th>';
+                        sheet2 += '<th ' + thsSub + '>Proses Muat</th>';
+                        sheet2 += '<th ' + thsSub + '>Terpal &amp; Segel</th>';
+                        sheet2 += '<th ' + thsSub + '>Perjalanan</th>';
+                        sheet2 += '<th ' + thsSub + '>Proses Bongkar</th>';
+                        sheet2 += '<th ' + ths + '>Total Durasi</th>';
+                        sheet2 += '<th ' + ths + '>Total (Jam)</th>';
+                        sheet2 += '<th ' + ths + '>Status Kecepatan</th>';
+                        sheet2 += '<th ' + ths + '>Status Inap</th>';
+                        sheet2 += '</tr>';
+
+                        rows.forEach((r, idx) => {
+                            const dur = computeDbMuatDurations(r);
+                            let totalMin = 0, hasAny = false;
+                            DB_MUAT_DURATION_TYPES.forEach(t => {
+                                const v = dur[t.key];
+                                if (v !== null && !isNaN(v) && v >= 0) { totalMin += v; hasAny = true; }
+                            });
+                            const totalHrs = hasAny ? (totalMin / 60) : null;
+                            let badge = '-';
+                            if (totalHrs !== null) {
+                                if (totalHrs < 5) badge = 'CEPAT';
+                                else if (totalHrs <= 10) badge = 'NORMAL';
+                                else badge = 'LAMA';
+                            }
+                            const badgeStyle = badge === 'CEPAT' ? 'background-color:#d1fae5; color:#065f46; font-weight:bold; text-align:center; border:1px solid #cbd5e1;'
+                                : badge === 'NORMAL' ? 'background-color:#dbeafe; color:#1d4ed8; font-weight:bold; text-align:center; border:1px solid #cbd5e1;'
+                                : badge === 'LAMA' ? 'background-color:#fee2e2; color:#991b1b; font-weight:bold; text-align:center; border:1px solid #cbd5e1;'
+                                : 'text-align:center; border:1px solid #cbd5e1;';
+
+                            const kg = Number(r.REAL_BONGKAR_MT || r.REAL_BONGKAR_KG || 0);
+                            const rowBg = idx % 2 === 1 ? ' background-color:#f8fafc;' : '';
+
+                            sheet2 += '<tr>';
+                            sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center;' + rowBg + '">' + (idx + 1) + '</td>';
+                            sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center;' + rowBg + '">' + escHtml(fmtDateDisplay(String(r.TANGGAL || '').substring(0, 10))) + '</td>';
+                            sheet2 += '<td style="border:1px solid #cbd5e1; font-weight:bold;' + rowBg + '">' + escHtml(r.NOPOL || '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(String(r.JENIS_TRUCK || '-').trim()) + '</td>';
+                            sheet2 += '<td ' + tdL + '>' + escHtml(String(r.JENIS_RM || r.MATERIAL || '-').trim()) + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(String(r.LOKASI || r.GUDANG || '-').trim()) + '</td>';
+                            sheet2 += '<td ' + tdR + '>' + (kg > 0 ? kg.toLocaleString('id-ID') : '-') + '</td>';
+                            // Muat durations
+                            DB_MUAT_DURATION_TYPES.forEach(t => {
+                                const v = dur[t.key];
+                                const val = (v !== null && !isNaN(v) && v >= 0) ? fmtMinToHM(v) : '-';
+                                sheet2 += '<td ' + tdC + '>' + val + '</td>';
+                            });
+                            sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center; font-weight:bold;">' + (hasAny ? fmtMinToHM(totalMin) : '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + (totalHrs !== null ? totalHrs.toFixed(1) : '-') + '</td>';
+                            sheet2 += '<td style="' + badgeStyle + '">' + badge + '</td>';
+                            sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center; background-color:#d1fae5; color:#065f46; font-weight:bold;">TIDAK INAP</td>';
+                            sheet2 += '</tr>';
+                        });
+                    } else {
+                        // === BONGKAR MODE HEADER ===
+                        sheet2 += '<tr>';
+                        sheet2 += '<th ' + ths + '>No</th>';
+                        sheet2 += '<th ' + ths + '>Tanggal</th>';
+                        sheet2 += '<th ' + ths + '>No Polisi</th>';
+                        sheet2 += '<th ' + ths + '>Jenis Truck</th>';
+                        sheet2 += '<th ' + ths + '>Material RM</th>';
+                        sheet2 += '<th ' + ths + '>Lokasi (SLOC)</th>';
+                        sheet2 += '<th ' + ths + '>Netto Bongkar (KG)</th>';
+                        sheet2 += '<th ' + ths + '>Jam Arrival</th>';
+                        sheet2 += '<th ' + ths + '>Jam Finish</th>';
+                        // Bongkar duration headers
+                        sheet2 += '<th ' + thsSub + '>Sampling Awal</th>';
+                        sheet2 += '<th ' + thsSub + '>Panggil Masuk</th>';
+                        sheet2 += '<th ' + thsSub + '>Tunggu QC Datang</th>';
+                        sheet2 += '<th ' + thsSub + '>Bongkar Awal</th>';
+                        sheet2 += '<th ' + thsSub + '>Durasi Sampling 2</th>';
+                        sheet2 += '<th ' + thsSub + '>Bongkar Akhir</th>';
+                        sheet2 += '<th ' + ths + '>Total Durasi</th>';
+                        sheet2 += '<th ' + ths + '>Total (Jam)</th>';
+                        sheet2 += '<th ' + ths + '>Status Inap</th>';
+                        sheet2 += '</tr>';
+
+                        rows.forEach((r, idx) => {
+                            const dur = computeDbDurations(r);
+                            const inapData = computeInapForRow(r);
+                            let totalMin = 0, hasAny = false;
+                            DB_DURATION_TYPES.forEach(t => {
+                                const v = dur[t.key];
+                                if (v !== null && !isNaN(v) && v >= 0) { totalMin += v; hasAny = true; }
+                            });
+
+                            const isInap = inapData.valid && inapData.isInap;
+                            const inapText = inapData.valid ? (isInap ? 'INAP' : 'TIDAK INAP') : '-';
+                            const inapStyle = isInap
+                                ? 'background-color:#fee2e2; color:#991b1b; font-weight:bold; text-align:center; border:1px solid #cbd5e1;'
+                                : inapData.valid ? 'background-color:#d1fae5; color:#065f46; font-weight:bold; text-align:center; border:1px solid #cbd5e1;'
+                                : 'text-align:center; border:1px solid #cbd5e1;';
+
+                            const totalHrsInap = inapData.valid ? inapData.durationHours : null;
+                            const kg = Number(r.REAL_BONGKAR_MT || r.REAL_BONGKAR_KG || 0);
+                            const rowBg = idx % 2 === 1 ? ' background-color:#f8fafc;' : '';
+
+                            sheet2 += '<tr>';
+                            sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center;' + rowBg + '">' + (idx + 1) + '</td>';
+                            sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center;' + rowBg + '">' + escHtml(fmtDateDisplay(String(r.TANGGAL || '').substring(0, 10))) + '</td>';
+                            sheet2 += '<td style="border:1px solid #cbd5e1; font-weight:bold;' + rowBg + '">' + escHtml(r.NOPOL || '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(String(r.JENIS_TRUCK || '-').trim()) + '</td>';
+                            sheet2 += '<td ' + tdL + '>' + escHtml(String(r.JENIS_RM || r.MATERIAL || '-').trim()) + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(String(r.LOKASI || r.GUDANG || '-').trim()) + '</td>';
+                            sheet2 += '<td ' + tdR + '>' + (kg > 0 ? kg.toLocaleString('id-ID') : '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(r.ARRIVAL_TIME || '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(r.FINISH_TIME || '-') + '</td>';
+                            // Bongkar durations
+                            DB_DURATION_TYPES.forEach(t => {
+                                const v = dur[t.key];
+                                const val = (v !== null && !isNaN(v) && v >= 0) ? fmtMinToHM(v) : '-';
+                                sheet2 += '<td ' + tdC + '>' + val + '</td>';
+                            });
+                            sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center; font-weight:bold;">' + (hasAny ? fmtMinToHM(totalMin) : '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + (totalHrsInap !== null ? totalHrsInap.toFixed(1) : '-') + '</td>';
+                            sheet2 += '<td style="' + inapStyle + '">' + inapText + '</td>';
+                            sheet2 += '</tr>';
+                        });
+                    }
+
+                    // Footer sheet 2
+                    sheet2 += '<tr><td colspan="' + detailCols + '" style="border:none; height:10px;"></td></tr>';
+                    sheet2 += '<tr><td colspan="' + detailCols + '" class="kop-meta" style="font-weight:bold;">Total Data: ' + rows.length + ' truck | Dicetak oleh: ' + escHtml(userName) + ' | ' + escHtml(printTs) + '</td></tr>';
+                    sheet2 += '<tr><td colspan="' + detailCols + '" class="kop-meta" style="font-style:italic;">Kolom durasi dalam format Jam(j) Menit(m) | Inap = total arrival-finish \u2265 24 jam</td></tr>';
+                    sheet2 += '<tr><td colspan="' + detailCols + '" class="kop-meta" style="font-style:italic;">Accuracy | Transparency | Accountability</td></tr>';
+
+                    // ═══════════════════════════════════════
+                    // BUILD FINAL HTML WITH 2 SHEETS
+                    // ═══════════════════════════════════════
+                    const html = [];
+                    html.push('<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">');
+                    html.push('<head>');
+                    html.push('<meta charset="utf-8">');
+                    html.push('<!--[if gte mso 9]>');
+                    html.push('<xml>');
+                    html.push(' <x:ExcelWorkbook>');
+                    html.push('  <x:ExcelWorksheets>');
+                    html.push('   <x:ExcelWorksheet>');
+                    html.push('    <x:Name>Rekap Harian</x:Name>');
+                    html.push('    <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>');
+                    html.push('   </x:ExcelWorksheet>');
+                    html.push('   <x:ExcelWorksheet>');
+                    html.push('    <x:Name>Data Detail Lengkap</x:Name>');
+                    html.push('    <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>');
+                    html.push('   </x:ExcelWorksheet>');
+                    html.push('  </x:ExcelWorksheets>');
+                    html.push(' </x:ExcelWorkbook>');
+                    html.push('</xml>');
+                    html.push('<![endif]-->');
+                    html.push('<style>');
+                    html.push('  body { font-family: Calibri, Arial, sans-serif; }');
+                    html.push('  .kop-main { font-size: 14pt; font-weight: bold; color: #1e3a8a; }');
+                    html.push('  .kop-sub { font-size: 11pt; color: #475569; }');
+                    html.push('  .kop-meta { font-size: 10pt; color: #334155; }');
+                    html.push('  table { border-collapse: collapse; }');
+                    html.push('  th { background-color: #1e3a8a; color: #ffffff; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 10pt; text-align: center; }');
+                    html.push('  td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 10pt; vertical-align: middle; }');
+                    html.push('  .text-center { text-align: center; }');
+                    html.push('  .text-right { text-align: right; }');
+                    html.push('  .pct-high { background-color: #fee2e2; color: #991b1b; font-weight: bold; text-align: center; }');
+                    html.push('  .pct-low { background-color: #d1fae5; color: #065f46; font-weight: bold; text-align: center; }');
+                    html.push('</style>');
+                    html.push('</head>');
+                    html.push('<body>');
+                    // Sheet 1: Rekap Harian
+                    html.push('<table>' + sheet1 + '</table>');
+                    // Page break = new worksheet in Excel
+                    html.push('<br clear="all" style="mso-special-character:line-break; page-break-before:always">');
+                    // Sheet 2: Data Detail Lengkap
+                    html.push('<table>' + sheet2 + '</table>');
+                    html.push('</body>');
+                    html.push('</html>');
+
+                    // --- Download ---
+                    const excelContent = '\uFEFF' + html.join('\r\n');
+                    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `Laporan_Durasi_Breakdown_${timestampFile}.xls`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Ekspor Berhasil!',
+                        html: '<div style="font-size:0.9rem; color:#475569;">File <b>Laporan_Durasi_Breakdown_' + timestampFile + '.xls</b> berhasil diunduh.<br><span style="font-size:0.8rem; color:#94a3b8;">2 Sheet: Rekap Harian (' + sortedDates.length + ' hari) + Data Detail (' + rows.length + ' truck)</span></div>',
+                        confirmButtonColor: '#7c3aed',
+                        timer: 5000,
+                        timerProgressBar: true
+                    });
+
+                } catch (err) {
+                    console.error('Export error:', err);
+                    Swal.fire({ icon: 'error', title: 'Gagal Ekspor', text: 'Terjadi kesalahan saat mengekspor data: ' + err.message, confirmButtonColor: '#ef4444' });
+                }
+            }, 300);
         }
 
         function defaultDelayPalette(i) {
