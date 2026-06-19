@@ -3449,7 +3449,7 @@
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    onHover: (e) => { e.native.target.style.cursor = e.active.length ? 'pointer' : 'default'; },
+                    onHover: (e, elements) => { e.native.target.style.cursor = (elements && elements.length) ? 'pointer' : 'default'; },
                     plugins: {
                         legend: { position: 'top', align: 'end', labels: { usePointStyle: true, font: { family: 'Rajdhani', size: 13, weight: 700 } } },
                         tooltip: { 
@@ -6126,7 +6126,7 @@
                     // ═══════════════════════════════════════
                     // SHEET 2: DATA DETAIL LENGKAP
                     // ═══════════════════════════════════════
-                    const detailCols = isMuatMode ? 16 : 18;
+                    const detailCols = isMuatMode ? 23 : 30;
                     let sheet2 = '';
                     // KOP
                     sheet2 += '<tr><td colspan="' + detailCols + '" class="kop-main">PT Charoen Pokphand Indonesia - Cirebon</td></tr>';
@@ -6139,12 +6139,19 @@
                         // === MUAT MODE HEADER ===
                         sheet2 += '<tr>';
                         sheet2 += '<th ' + ths + '>No</th>';
+                        sheet2 += '<th ' + ths + '>Timestamp</th>';
                         sheet2 += '<th ' + ths + '>Tanggal</th>';
+                        sheet2 += '<th ' + ths + '>Shift</th>';
+                        sheet2 += '<th ' + ths + '>Kategori</th>';
                         sheet2 += '<th ' + ths + '>No Polisi</th>';
-                        sheet2 += '<th ' + ths + '>Jenis Truck</th>';
                         sheet2 += '<th ' + ths + '>Material RM</th>';
-                        sheet2 += '<th ' + ths + '>Lokasi (SLOC)</th>';
                         sheet2 += '<th ' + ths + '>Netto Muat (KG)</th>';
+                        sheet2 += '<th ' + ths + '>Jumlah Bag</th>';
+                        sheet2 += '<th ' + ths + '>Tim Harian</th>';
+                        sheet2 += '<th ' + ths + '>Jumlah Kuli</th>';
+                        sheet2 += '<th ' + ths + '>Nama Krani</th>';
+                        sheet2 += '<th ' + ths + '>Gudang Muat</th>';
+                        sheet2 += '<th ' + ths + '>Ekspedisi</th>';
                         // Muat duration headers
                         sheet2 += '<th ' + thsSub + '>Bongkar Stapel</th>';
                         sheet2 += '<th ' + thsSub + '>Proses Muat</th>';
@@ -6181,12 +6188,19 @@
 
                             sheet2 += '<tr>';
                             sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center;' + rowBg + '">' + (idx + 1) + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(r.TIMESTAMP || '-') + '</td>';
                             sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center;' + rowBg + '">' + escHtml(fmtDateDisplay(String(r.TANGGAL || '').substring(0, 10))) + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(r.SHIFT || '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(r.KATEGORI || '-') + '</td>';
                             sheet2 += '<td style="border:1px solid #cbd5e1; font-weight:bold;' + rowBg + '">' + escHtml(r.NOPOL || '-') + '</td>';
-                            sheet2 += '<td ' + tdC + '>' + escHtml(String(r.JENIS_TRUCK || '-').trim()) + '</td>';
                             sheet2 += '<td ' + tdL + '>' + escHtml(String(r.JENIS_RM || r.MATERIAL || '-').trim()) + '</td>';
-                            sheet2 += '<td ' + tdC + '>' + escHtml(String(r.LOKASI || r.GUDANG || '-').trim()) + '</td>';
                             sheet2 += '<td ' + tdR + '>' + (kg > 0 ? kg.toLocaleString('id-ID') : '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(r.JUMLAH_BAG || '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(r.TIM_HARIAN || '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(r.JUMLAH_KULI || '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(r.NAMA_KRANI || '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(r.LOKASI || '-') + '</td>';
+                            sheet2 += '<td ' + tdC + '>' + escHtml(r.EKSPEDISI || '-') + '</td>';
                             // Muat durations
                             DB_MUAT_DURATION_TYPES.forEach(t => {
                                 const v = dur[t.key];
@@ -6203,14 +6217,26 @@
                         // === BONGKAR MODE HEADER ===
                         sheet2 += '<tr>';
                         sheet2 += '<th ' + ths + '>No</th>';
-                        sheet2 += '<th ' + ths + '>Tanggal</th>';
-                        sheet2 += '<th ' + ths + '>No Polisi</th>';
+                        sheet2 += '<th ' + ths + '>Timestamp</th>';
+                        sheet2 += '<th ' + ths + '>Tipe Bongkar</th>';
+                        sheet2 += '<th ' + ths + '>Nama Krani</th>';
+                        sheet2 += '<th ' + ths + '>Shift</th>';
+                        sheet2 += '<th ' + ths + '>SLOC</th>';
                         sheet2 += '<th ' + ths + '>Jenis Truck</th>';
-                        sheet2 += '<th ' + ths + '>Material RM</th>';
-                        sheet2 += '<th ' + ths + '>Lokasi (SLOC)</th>';
-                        sheet2 += '<th ' + ths + '>Netto Bongkar (KG)</th>';
-                        sheet2 += '<th ' + ths + '>Jam Arrival</th>';
-                        sheet2 += '<th ' + ths + '>Jam Finish</th>';
+                        sheet2 += '<th ' + ths + '>Jenis RM</th>';
+                        sheet2 += '<th ' + ths + '>Jumlah Bag</th>';
+                        sheet2 += '<th ' + ths + '>Nopol</th>';
+                        sheet2 += '<th ' + ths + '>Netto (KG)</th>';
+                        sheet2 += '<th ' + ths + '>lokasi</th>';
+                        sheet2 += '<th ' + ths + '>Kuli Penggarap</th>';
+                        sheet2 += '<th ' + ths + '>Jumlah Kuli</th>';
+                        sheet2 += '<th ' + ths + '>Tim Kerja</th>';
+                        sheet2 += '<th ' + ths + '>Jenis Kuli</th>';
+                        sheet2 += '<th ' + ths + '>TANGGAL</th>';
+                        sheet2 += '<th ' + ths + '>Arrival Time</th>';
+                        sheet2 += '<th ' + ths + '>QC Sampling</th>';
+                        sheet2 += '<th ' + ths + '>Tanggal PB</th>';
+                        sheet2 += '<th ' + ths + '>Sampel Gudang</th>';
                         // Bongkar duration headers
                         sheet2 += '<th ' + thsSub + '>Sampling Awal</th>';
                         sheet2 += '<th ' + thsSub + '>Panggil Masuk</th>';
@@ -6224,47 +6250,59 @@
                         sheet2 += '</tr>';
 
                         rows.forEach((r, idx) => {
-                            const dur = computeDbDurations(r);
-                            const inapData = computeInapForRow(r);
-                            let totalMin = 0, hasAny = false;
-                            DB_DURATION_TYPES.forEach(t => {
-                                const v = dur[t.key];
-                                if (v !== null && !isNaN(v) && v >= 0) { totalMin += v; hasAny = true; }
-                            });
+                             const dur = computeDbDurations(r);
+                             const inapData = computeInapForRow(r);
+                             let totalMin = 0, hasAny = false;
+                             DB_DURATION_TYPES.forEach(t => {
+                                 const v = dur[t.key];
+                                 if (v !== null && !isNaN(v) && v >= 0) { totalMin += v; hasAny = true; }
+                             });
 
-                            const isInap = inapData.valid && inapData.isInap;
-                            const inapText = inapData.valid ? (isInap ? 'INAP' : 'TIDAK INAP') : '-';
-                            const inapStyle = isInap
-                                ? 'background-color:#fee2e2; color:#991b1b; font-weight:bold; text-align:center; border:1px solid #cbd5e1;'
-                                : inapData.valid ? 'background-color:#d1fae5; color:#065f46; font-weight:bold; text-align:center; border:1px solid #cbd5e1;'
-                                : 'text-align:center; border:1px solid #cbd5e1;';
+                             const isInap = inapData.valid && inapData.isInap;
+                             const inapText = inapData.valid ? (isInap ? 'INAP' : 'TIDAK INAP') : '-';
+                             const inapStyle = isInap
+                                 ? 'background-color:#fee2e2; color:#991b1b; font-weight:bold; text-align:center; border:1px solid #cbd5e1;'
+                                 : inapData.valid ? 'background-color:#d1fae5; color:#065f46; font-weight:bold; text-align:center; border:1px solid #cbd5e1;'
+                                 : 'text-align:center; border:1px solid #cbd5e1;';
 
-                            const totalHrsInap = inapData.valid ? inapData.durationHours : null;
-                            const kg = Number(r.REAL_BONGKAR_MT || r.REAL_BONGKAR_KG || 0);
-                            const rowBg = idx % 2 === 1 ? ' background-color:#f8fafc;' : '';
+                             const totalHrsInap = inapData.valid ? inapData.durationHours : null;
+                             const kg = Number(r.REAL_BONGKAR_MT || r.REAL_BONGKAR_KG || 0);
+                             const rowBg = idx % 2 === 1 ? ' background-color:#f8fafc;' : '';
 
-                            sheet2 += '<tr>';
-                            sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center;' + rowBg + '">' + (idx + 1) + '</td>';
-                            sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center;' + rowBg + '">' + escHtml(fmtDateDisplay(String(r.TANGGAL || '').substring(0, 10))) + '</td>';
-                            sheet2 += '<td style="border:1px solid #cbd5e1; font-weight:bold;' + rowBg + '">' + escHtml(r.NOPOL || '-') + '</td>';
-                            sheet2 += '<td ' + tdC + '>' + escHtml(String(r.JENIS_TRUCK || '-').trim()) + '</td>';
-                            sheet2 += '<td ' + tdL + '>' + escHtml(String(r.JENIS_RM || r.MATERIAL || '-').trim()) + '</td>';
-                            sheet2 += '<td ' + tdC + '>' + escHtml(String(r.LOKASI || r.GUDANG || '-').trim()) + '</td>';
-                            sheet2 += '<td ' + tdR + '>' + (kg > 0 ? kg.toLocaleString('id-ID') : '-') + '</td>';
-                            sheet2 += '<td ' + tdC + '>' + escHtml(r.ARRIVAL_TIME || '-') + '</td>';
-                            sheet2 += '<td ' + tdC + '>' + escHtml(r.FINISH_TIME || '-') + '</td>';
-                            // Bongkar durations
-                            DB_DURATION_TYPES.forEach(t => {
-                                const v = dur[t.key];
-                                const val = (v !== null && !isNaN(v) && v >= 0) ? fmtMinToHM(v) : '-';
-                                sheet2 += '<td ' + tdC + '>' + val + '</td>';
-                            });
-                            sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center; font-weight:bold;">' + (hasAny ? fmtMinToHM(totalMin) : '-') + '</td>';
-                            sheet2 += '<td ' + tdC + '>' + (totalHrsInap !== null ? totalHrsInap.toFixed(1) : '-') + '</td>';
-                            sheet2 += '<td style="' + inapStyle + '">' + inapText + '</td>';
-                            sheet2 += '</tr>';
-                        });
-                    }
+                             sheet2 += '<tr>';
+                             sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center;' + rowBg + '">' + (idx + 1) + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.TIMESTAMP || '-') + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.TIPE_BONGKAR || '-') + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.NAMA_KRANI || '-') + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.SHIFT || '-') + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.SLOC || r.LOKASI || '-') + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(String(r.JENIS_TRUCK || '-').trim()) + '</td>';
+                             sheet2 += '<td ' + tdL + '>' + escHtml(String(r.JENIS_RM || r.MATERIAL || '-').trim()) + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.JUMLAH_BAG || '-') + '</td>';
+                             sheet2 += '<td style="border:1px solid #cbd5e1; font-weight:bold;' + rowBg + '">' + escHtml(r.NOPOL || '-') + '</td>';
+                             sheet2 += '<td ' + tdR + '>' + (kg > 0 ? kg.toLocaleString('id-ID') : '-') + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.LOKASI_BONGKAR || '-') + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.KULI_PENGGARAP || '-') + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.JUMLAH_KULI || '-') + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.TIM_KERJA || '-') + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.JENIS_KULI || '-') + '</td>';
+                             sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center;' + rowBg + '">' + escHtml(fmtDateDisplay(String(r.TANGGAL || '').substring(0, 10))) + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.ARRIVAL_TIME || '-') + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.QC_SAMPLING_1 || '-') + '</td>';
+                             sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center;' + rowBg + '">' + escHtml(fmtDateDisplay(String(r.TANGGAL_PB || '').substring(0, 10))) + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + escHtml(r.SAMPEL_GUDANG || '-') + '</td>';
+                             // Bongkar durations
+                             DB_DURATION_TYPES.forEach(t => {
+                                 const v = dur[t.key];
+                                 const val = (v !== null && !isNaN(v) && v >= 0) ? fmtMinToHM(v) : '-';
+                                 sheet2 += '<td ' + tdC + '>' + val + '</td>';
+                             });
+                             sheet2 += '<td style="border:1px solid #cbd5e1; text-align:center; font-weight:bold;">' + (hasAny ? fmtMinToHM(totalMin) : '-') + '</td>';
+                             sheet2 += '<td ' + tdC + '>' + (totalHrsInap !== null ? totalHrsInap.toFixed(1) : '-') + '</td>';
+                             sheet2 += '<td style="' + inapStyle + '">' + inapText + '</td>';
+                             sheet2 += '</tr>';
+                         });
+                     }
 
                     // Footer sheet 2
                     sheet2 += '<tr><td colspan="' + detailCols + '" style="border:none; height:10px;"></td></tr>';

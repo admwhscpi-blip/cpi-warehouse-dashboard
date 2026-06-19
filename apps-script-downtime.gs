@@ -324,7 +324,7 @@ function doGet(e) {
           tanggal: findH(bH, ["TANGGAL", "DATE"]),
           material: findH(bH, ["MATERIAL", "JENIS RM", "KOMODITAS", "JENIS_RM", "NAMA BARANG"]),
           netto: findH(bH, ["NETTO (KG)", "REAL_BONGKAR_MT", "NETTO", "KG", "MT"]),
-          gudang: findH(bH, ["GUDANG/INTAKE", "GUDANG", "LOKASI"]),
+          gudang: findH(bH, ["SLOC", "GUDANG/INTAKE", "GUDANG", "LOKASI"]),
           tim: findH(bH, ["TIM KERJA", "TIM"]),
           jenisKuli: findH(bH, ["JENIS KULI", "KULI"]),
           startPanggil: findH(bH, ["START PANGGIL"]),
@@ -340,7 +340,20 @@ function doGet(e) {
           arrivalDate: findH(bH, ["ARRIVAL DATE"]),
           arrivalTime: findH(bH, ["ARRIVAL TIME"]),
           qcTime: findH(bH, ["QC SAMPLING 1 TIME", "QC TIME"]),
-          timbangTime: findH(bH, ["TIME TIMBANG MASUK", "TIMBANG IN"])
+          breakdownDurasi: findH(bH, ["BREAKDOWN DURASI", "BREAKDOWN_DURASI"]),
+          timbangTime: findH(bH, ["TIME TIMBANG MASUK", "TIMBANG IN", "TIMBANG MASUK"]),
+          tanggalPB: findH(bH, ["TANGGAL PB", "TANGGAL PROSES"]),
+          sampaiGudang: findH(bH, ["SAMPAI GUDANG", "SM GUDANG"]),
+          krani: findH(bH, ["NAMA KRANI", "KRANI", "OPERATOR", "USER"]),
+          kuliPenggarap: findH(bH, ["KULI PENGGARAP", "KULI"]),
+          jumlahKuli: findH(bH, ["JUMLAH KULI"]),
+          timestamp: findH(bH, ["TIMESTAMP"]),
+          tipeBongkar: findH(bH, ["TIPE BONGKAR", "TIPE_BONGKAR"]),
+          shift: findH(bH, ["SHIFT"]),
+          jumlahBag: findH(bH, ["JUMLAH BAG", "JUMLAH_BAG", "BAG"]),
+          lokasiBongkar: findH(bH, ["LOKASI", "GUDANG/INTAKE", "GUDANG"]),
+          sampelGudang: findH(bH, ["SAMPEL GUDANG", "SAMPEL_GUDANG", "SAMPEL"]),
+          sloc: findH(bH, ["SLOC", "LOKASI SIMPAN"])
         };
 
         for (let i = 1; i < bData.length; i++) {
@@ -374,6 +387,11 @@ function doGet(e) {
             KEGIATAN: "BONGKAR",
             LOKASI: gudang,
             NOPOL: String(bIdx.nopol >= 0 ? row[bIdx.nopol] : ""),
+            NAMA_KRANI: String(bIdx.krani >= 0 ? row[bIdx.krani] : ""),
+            KULI_PENGGARAP: String(bIdx.kuliPenggarap >= 0 ? row[bIdx.kuliPenggarap] : ""),
+            JUMLAH_KULI: String(bIdx.jumlahKuli >= 0 ? row[bIdx.jumlahKuli] : ""),
+            TIM_KERJA: String(bIdx.tim >= 0 ? row[bIdx.tim] : ""),
+            JENIS_KULI: String(bIdx.jenisKuli >= 0 ? row[bIdx.jenisKuli] : ""),
             REAL_BONGKAR_MT: netto,
             REAL_BONGKAR_KG: netto, // Alias for clarity v20.2.3
             ARRIVAL_DATE: (function(v) { 
@@ -396,7 +414,24 @@ function doGet(e) {
             FINISH_TIME: fmtTime(bIdx.finish >= 0 ? row[bIdx.finish] : ""),
             DURASI_BONGKAR: bIdx.startBongkar >= 0 && bIdx.finish >= 0 ? calcDurMin(row[bIdx.startBongkar], row[bIdx.finish]) : "-",
             PB_START: fmtTime(bIdx.startPanggil >= 0 ? row[bIdx.startPanggil] : ""),
-            TUNGGU_QC: fmtTime(bIdx.holdQC >= 0 ? row[bIdx.holdQC] : "")
+            TUNGGU_QC: fmtTime(bIdx.holdQC >= 0 ? row[bIdx.holdQC] : ""),
+            TANGGAL_PB: (function(v) {
+              if (!v) return "";
+              if (v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), "yyyy-MM-dd");
+              let s = String(v).trim();
+              let m2 = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+              if (m2) return m2[3] + "-" + m2[2].padStart(2, "0") + "-" + m2[1].padStart(2, "0");
+              return s;
+            })(bIdx.tanggalPB >= 0 ? row[bIdx.tanggalPB] : ""),
+            SAMPAI_GUDANG: fmtTime(bIdx.sampaiGudang >= 0 ? row[bIdx.sampaiGudang] : ""),
+            BREAKDOWN_DURASI: String(bIdx.breakdownDurasi >= 0 ? row[bIdx.breakdownDurasi] : ""),
+            TIMESTAMP: String(bIdx.timestamp >= 0 ? row[bIdx.timestamp] : ""),
+            TIPE_BONGKAR: String(bIdx.tipeBongkar >= 0 ? row[bIdx.tipeBongkar] : ""),
+            SHIFT: String(bIdx.shift >= 0 ? row[bIdx.shift] : ""),
+            JUMLAH_BAG: String(bIdx.jumlahBag >= 0 ? row[bIdx.jumlahBag] : ""),
+            LOKASI_BONGKAR: String(bIdx.lokasiBongkar >= 0 ? row[bIdx.lokasiBongkar] : ""),
+            SAMPEL_GUDANG: String(bIdx.sampelGudang >= 0 ? row[bIdx.sampelGudang] : ""),
+            SLOC: String(bIdx.sloc >= 0 ? row[bIdx.sloc] : "")
           });
 
           // Daily aggregation
@@ -420,11 +455,31 @@ function doGet(e) {
       if (mSheet2 && mSheet2.getLastRow() > 1) {
         const mData = mSheet2.getDataRange().getValues();
         const mH = mData[0].map(h => String(h).toUpperCase());
-        const mTanggal = mH.indexOf("TANGGAL") >= 0 ? mH.indexOf("TANGGAL") : 1;
-        const mNetto = mH.findIndex(h => h.includes("NETTO"));
-        const mKat = mH.indexOf("KATEGORI") >= 0 ? mH.indexOf("KATEGORI") : 3;
-        const mMaterial = mH.indexOf("MATERIAL") >= 0 ? mH.indexOf("MATERIAL") : 5;
-        const mGudang = mH.indexOf("GUDANG MUAT") >= 0 ? mH.indexOf("GUDANG MUAT") : 18; // S=18
+        const mTanggal      = mH.indexOf("TANGGAL")      >= 0 ? mH.indexOf("TANGGAL")      : 1;
+        const mNetto        = mH.findIndex(h => h.includes("NETTO"));
+        const mKat          = mH.indexOf("KATEGORI")     >= 0 ? mH.indexOf("KATEGORI")     : 3;
+        const mMaterial     = mH.indexOf("MATERIAL")     >= 0 ? mH.indexOf("MATERIAL")     : 5;
+        const mGudang       = mH.indexOf("GUDANG MUAT")  >= 0 ? mH.indexOf("GUDANG MUAT")  : 18; // S=18
+        const mNopol        = mH.indexOf("NOPOL")        >= 0 ? mH.indexOf("NOPOL")        : 4;  // E=4
+        const mBongkarStapel= mH.findIndex(h => h.includes("BONGKAR STAPEL") || h.includes("BONGKAR_STAPEL")) >= 0
+                              ? mH.findIndex(h => h.includes("BONGKAR STAPEL") || h.includes("BONGKAR_STAPEL")) : 11; // L=11
+        const mStartMuat    = mH.findIndex(h => h.includes("START MUAT") || h.includes("START_MUAT")) >= 0
+                              ? mH.findIndex(h => h.includes("START MUAT") || h.includes("START_MUAT")) : 12; // M=12
+        const mFinish       = mH.findIndex(h => h === "FINISH") >= 0
+                              ? mH.findIndex(h => h === "FINISH") : 13; // N=13
+        const mOtwPabrik    = mH.findIndex(h => h.includes("OTW PABRIK") || h.includes("OTW_PABRIK")) >= 0
+                              ? mH.findIndex(h => h.includes("OTW PABRIK") || h.includes("OTW_PABRIK")) : 14; // O=14
+        const mEkspedisi    = mH.indexOf("EKSPEDISI") >= 0 ? mH.indexOf("EKSPEDISI") : 19; // T=19
+        const mTimestamp    = mH.indexOf("TIMESTAMP")    >= 0 ? mH.indexOf("TIMESTAMP")    : 0;
+        const mShift        = mH.indexOf("SHIFT")        >= 0 ? mH.indexOf("SHIFT")        : 2;
+        const mJumlahBag    = mH.findIndex(h => h.includes("JUMLAH BAG") || h.includes("JUMLAH_BAG")) >= 0
+                              ? mH.findIndex(h => h.includes("JUMLAH BAG") || h.includes("JUMLAH_BAG")) : 7;
+        const mTimHarian    = mH.findIndex(h => h.includes("TIM HARIAN") || h.includes("TIM_HARIAN")) >= 0
+                              ? mH.findIndex(h => h.includes("TIM HARIAN") || h.includes("TIM_HARIAN")) : 8;
+        const mJumlahKuli   = mH.findIndex(h => h.includes("JUMLAH KULI") || h.includes("JUMLAH_KULI")) >= 0
+                              ? mH.findIndex(h => h.includes("JUAH KULI") || h.includes("JUMLAH_KULI")) : 9;
+        const mNamaKrani    = mH.findIndex(h => h.includes("NAMA KRANI") || h.includes("NAMA_KRANI")) >= 0
+                              ? mH.findIndex(h => h.includes("NAMA KRANI") || h.includes("NAMA_KRANI")) : 10;
 
         for (let i = 1; i < mData.length; i++) {
           let rawTgl = mData[i][mTanggal];
@@ -450,11 +505,27 @@ function doGet(e) {
           };
           dailyMap[tgl].muat += netto;
 
-          // MUAT template entries
+          // MUAT template entries — with timing fields for Duration Breakdown
           templateRows.push({
-            TANGGAL: tgl, JENIS_RM: String(mData[i][mMaterial] || ""), KEGIATAN: "MUAT",
+            TANGGAL:        tgl,
+            JENIS_RM:       String(mData[i][mMaterial] || ""),
+            KEGIATAN:       "MUAT",
             REAL_BONGKAR_MT: netto,
-            LOKASI: String(mData[i][mGudang >= 0 ? mGudang : 18] || "RM"), 
+            REAL_BONGKAR_KG: netto,
+            NOPOL:          String(mData[i][mNopol] || ""),
+            LOKASI:         String(mData[i][mGudang >= 0 ? mGudang : 18] || "RM"),
+            BONGKAR_STAPEL: fmtTime(mData[i][mBongkarStapel]),
+            START_MUAT:     fmtTime(mData[i][mStartMuat]),
+            FINISH:         fmtTime(mData[i][mFinish]),
+            OTW_PABRIK:     fmtTime(mData[i][mOtwPabrik]),
+            EKSPEDISI:      String(mData[i][mEkspedisi] || "-"),
+            TIMESTAMP:      String(mTimestamp >= 0 ? mData[i][mTimestamp] : ""),
+            SHIFT:          String(mShift >= 0 ? mData[i][mShift] : ""),
+            KATEGORI:       String(mKat >= 0 ? mData[i][mKat] : ""),
+            JUMLAH_BAG:     String(mJumlahBag >= 0 ? mData[i][mJumlahBag] : ""),
+            TIM_HARIAN:     String(mTimHarian >= 0 ? mData[i][mTimHarian] : ""),
+            JUMLAH_KULI:    String(mJumlahKuli >= 0 ? mData[i][mJumlahKuli] : ""),
+            NAMA_KRANI:     String(mNamaKrani >= 0 ? mData[i][mNamaKrani] : ""),
             DURASI_BONGKAR: null, PB_START: null, TUNGGU_QC: null
           });
         }
