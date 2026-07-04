@@ -26,6 +26,70 @@
             background: rgba(5, 5, 5, 0.95);
             z-index: 1000;
         }
+
+        /* Mobile Responsiveness Overrides */
+        @media (max-width: 768px) {
+            #live-dashboard {
+                padding: 30px 15px !important;
+            }
+            .section-header {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 20px !important;
+                text-align: center !important;
+                margin-bottom: 25px !important;
+            }
+            .mini-clock-wrapper {
+                transform: scale(1) !important;
+                transform-origin: center center !important;
+                display: flex !important;
+                justify-content: center !important;
+                margin: 0 auto !important;
+            }
+            .section-header h2 {
+                font-size: 1.6rem !important;
+                justify-content: center !important;
+                letter-spacing: 2px !important;
+            }
+            .section-header > div:last-child {
+                display: flex !important;
+                justify-content: center !important;
+                width: 100% !important;
+            }
+            
+            /* Global Stats Card Grid Stack */
+            #global-stats {
+                grid-template-columns: 1fr !important;
+                gap: 15px !important;
+                margin-bottom: 30px !important;
+            }
+            
+            /* Sticky specs headers on horizontal scroll for warehouse rows */
+            .warehouse-card-header {
+                position: sticky !important;
+                left: 0 !important;
+                background: #050505 !important;
+                z-index: 12 !important;
+                box-shadow: 8px 0 10px -5px rgba(0,0,0,0.7) !important;
+            }
+            
+            /* Stack Analytics layout cards */
+            .analytics-layout-grid {
+                grid-template-columns: 1fr !important;
+                gap: 20px !important;
+                margin-top: 30px !important;
+            }
+        }
+        @media (max-width: 480px) {
+            #category-chart-container {
+                flex-direction: column !important;
+                gap: 20px !important;
+            }
+            #category-chart-container > div {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+        }
     </style>
 </head>
 
@@ -128,6 +192,12 @@
                             📊 Category Distribution</h3>
                         <div id="category-chart-container"
                             style="display:flex; justify-content:space-around; align-items:center;"></div>
+                        <div id="rm-search-wrap" style="margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.08);">
+                            <h4 style="font-family:'Orbitron',sans-serif;font-size:0.75rem;color:#94a3b8;margin:0 0 10px 0;letter-spacing:2px;">SEARCH MATERIAL</h4>
+                            <input type="search" id="rm-search-input" placeholder="Ketik nama material (min. 2 huruf)…" autocomplete="off"
+                                style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;color:#fff;padding:10px 12px;border-radius:8px;font-family:Inter,sans-serif;font-size:0.85rem;margin-bottom:10px;">
+                            <div id="rm-search-results" style="max-height:340px;overflow-y:auto;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -187,11 +257,67 @@
     <script>
         // --- DASHBOARD SPECIFIC CONTROLLER ---
 
-        const App = { data: null };
+        const App = { data: null, liveData: null, viewMode: 'live' };
+        var rmSearchTimer = null;
+
+        function rmEsc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function formatKgToTon(kgValue) {
+            if (kgValue == null || isNaN(kgValue)) return '0,00';
+            const divider = (typeof CONFIG !== 'undefined' && CONFIG.UNIT_DIVIDER) ? CONFIG.UNIT_DIVIDER : 1000;
+            const tonValue = kgValue / divider;
+            return tonValue.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function applyRmDashboardData(raw) {
+            var data = typeof DataService.sanitizeRmDashboard === 'function' ? DataService.sanitizeRmDashboard(raw) : raw;
+            if (!data) return;
+            App.data = data;
+            App._fullData = data;
+            renderGlobalStats(DataService.processGlobalStats(App.data));
+            renderWarehouseCards(App.data);
+            var analytics = DataService.getAnalytics(App.data);
+            renderAnalytics(analytics);
+            var categories = DataService.getCategoryStats(App.data);
+            renderCategoryStats(categories);
+            rmRunMaterialSearch();
+        }
+
+        function rmRunMaterialSearch() {
+            var inp = document.getElementById('rm-search-input');
+            var out = document.getElementById('rm-search-results');
+            if (!inp || !out || !App.data) return;
+            var q = inp.value.trim();
+            if (q.length < 2) {
+                out.innerHTML = '';
+                return;
+            }
+            var rows = DataService.searchMaterials(App.data, q);
+            if (!rows.length) {
+                out.innerHTML = '<span style="color:#64748b;font-size:0.75rem;">Tidak ada material cocok.</span>';
+                return;
+            }
+            var html = '';
+            rows.forEach(function (r) {
+                html += '<div style="margin-bottom:14px;padding:12px;border-radius:8px;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.06);">';
+                html += '<div style="font-weight:700;color:#00f3ff;font-size:0.85rem;margin-bottom:8px;font-family:Rajdhani,sans-serif;">' + rmEsc(r.name) + '</div>';
+                html += '<div style="color:#94a3b8;font-size:0.7rem;margin-bottom:6px;">Total: <strong style="color:#fff;">' + r.totalTon.toLocaleString('id-ID', { maximumFractionDigits: 2 }) + '</strong> TON</div>';
+                html += '<table style="width:100%;font-size:0.72rem;border-collapse:collapse;"><thead><tr><th style="text-align:left;color:#64748b;padding:4px 0;">Gudang</th><th style="text-align:right;color:#64748b;padding:4px 0;">Stok (TON)</th><th style="text-align:right;color:#64748b;padding:4px 0;">%</th></tr></thead><tbody>';
+                r.distribution.forEach(function (d) {
+                    html += '<tr><td style="padding:3px 0;color:#cbd5e1;">' + rmEsc(d.warehouse) + '</td><td style="padding:3px 0;text-align:right;color:#fff;font-weight:600;">' + d.qtyTon.toLocaleString('id-ID', { maximumFractionDigits: 2 }) + '</td><td style="padding:3px 0;text-align:right;color:#64748b;">' + d.percent.toFixed(0) + '%</td></tr>';
+                });
+                html += '</tbody></table></div>';
+            });
+            out.innerHTML = html;
+        }
 
         // --- MODAL LOGIC ---
         function openDetailModal(warehouseIndex) {
-            const whName = App.data.warehouses[warehouseIndex];
+            const useData = App._fullData || App.data;
+            const whName = useData.warehouses[warehouseIndex];
             const modal = document.getElementById('warehouse-modal');
             const title = document.getElementById('modal-title');
             const tbody = document.getElementById('modal-list-body');
@@ -209,7 +335,7 @@
 
             // Collect items for this warehouse
             const items = [];
-            App.data.materials.forEach(mat => {
+            useData.materials.forEach(mat => {
                 const stockVal = mat.stocks[warehouseIndex] || 0;
                 if (stockVal > 0) {
                     items.push({ name: mat.name, qty: stockVal });
@@ -231,7 +357,7 @@
 
                     row.innerHTML = `
                         <td style="padding:15px 30px; color:#cbd5e1; font-weight:500;">${item.name}</td>
-                        <td style="padding:15px 30px; text-align:right; color:#fff; font-family:'Rajdhani'; font-weight:700; font-size:1.1rem;">${DataService.convertKgToTon(item.qty)}</td>
+                        <td style="padding:15px 30px; text-align:right; color:#fff; font-family:'Rajdhani'; font-weight:700; font-size:1.1rem;">${formatKgToTon(item.qty)}</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -281,7 +407,7 @@
 
                     row.innerHTML = `
                         <td style="padding:15px 30px; color:#cbd5e1; font-weight:700; font-family:'Orbitron'; font-size:0.9rem;">${item.name}</td>
-                        <td style="padding:15px 30px; text-align:right; color:#fff; font-family:'Rajdhani'; font-weight:700; font-size:1.1rem;">${DataService.convertKgToTon(item.qty)} T</td>
+                        <td style="padding:15px 30px; text-align:right; color:#fff; font-family:'Rajdhani'; font-weight:700; font-size:1.1rem;">${formatKgToTon(item.qty)} T</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -305,21 +431,22 @@
         // 1. DATA FETCHING
         async function initDashboard() {
             console.log("Initializing RM Stock Dashboard...");
-            const raw = await DataService.fetchData();
-            if (!raw) return;
+            App.data = await DataService.fetchData();
+            if (!App.data) return;
 
-            App.data = typeof DataService.sanitizeRmDashboard === 'function'
-                ? DataService.sanitizeRmDashboard(raw)
-                : raw;
+            App.liveData = typeof DataService.sanitizeRmDashboard === 'function'
+                ? DataService.sanitizeRmDashboard(App.data)
+                : App.data;
 
-            renderGlobalStats(DataService.processGlobalStats(App.data));
-            renderWarehouseCards(App.data);
+            applyRmDashboardData(App.liveData);
 
-            const analytics = DataService.getAnalytics(App.data);
-            renderAnalytics(analytics);
-
-            const categories = DataService.getCategoryStats(App.data);
-            renderCategoryStats(categories);
+            var si = document.getElementById('rm-search-input');
+            if (si) {
+                si.addEventListener('input', function () {
+                    clearTimeout(rmSearchTimer);
+                    rmSearchTimer = setTimeout(rmRunMaterialSearch, 280);
+                });
+            }
         }
 
         // 2. RENDER FUNCTIONS (PIXEL PERFECT COPIES)
@@ -337,12 +464,12 @@
             container.innerHTML = `
                  <div class="stat-card" style="background:linear-gradient(135deg, rgba(15,23,42,0.9), rgba(10,10,10,0.95)); border:1px solid rgba(255,255,255,0.08); padding:1.5rem; border-left: 3px solid #00f3ff; border-radius:4px;">
                      <div class="stat-title" style="color:#94a3b8; font-size:0.8rem; font-weight:600; letter-spacing:1px; margin-bottom:5px;">CURRENT RM STOCK</div>
-                     <div class="stat-value" style="color:#00f3ff; font-size:2rem; font-weight:700; font-family:'Rajdhani'">${DataService.convertKgToTon(stats.totalFilled)} <span class="unit" style="font-size:0.8rem; color:#64748b">TON</span></div>
+                     <div class="stat-value" style="color:#00f3ff; font-size:2rem; font-weight:700; font-family:'Rajdhani'">${formatKgToTon(stats.totalFilled)} <span class="unit" style="font-size:0.8rem; color:#64748b">TON</span></div>
                      <div class="stat-desc" style="color:#64748b; font-size:0.8rem;">Aggregation from all units</div>
                  </div>
                  <div class="stat-card" style="background:linear-gradient(135deg, rgba(15,23,42,0.9), rgba(10,10,10,0.95)); border:1px solid rgba(255,255,255,0.08); padding:1.5rem; border-left: 3px solid #ff9e0b; border-radius:4px;">
                      <div class="stat-title" style="color:#94a3b8; font-size:0.8rem; font-weight:600; letter-spacing:1px; margin-bottom:5px;">IDLE CAPACITY (EST)</div>
-                     <div class="stat-value" style="color:#ff9e0b; font-size:2rem; font-weight:700; font-family:'Rajdhani'">${DataService.convertKgToTon(stats.totalSpace)} <span class="unit" style="font-size:0.8rem; color:#64748b">TON</span></div>
+                     <div class="stat-value" style="color:#ff9e0b; font-size:2rem; font-weight:700; font-family:'Rajdhani'">${formatKgToTon(stats.totalSpace)} <span class="unit" style="font-size:0.8rem; color:#64748b">TON</span></div>
                      <div class="stat-desc" style="color:#64748b; font-size:0.8rem;">Based on hard-limit configuration</div>
                  </div>
                  <div class="stat-card" style="background:linear-gradient(135deg, rgba(15,23,42,0.9), rgba(10,10,10,0.95)); border:1px solid rgba(255,255,255,0.08); padding:1.5rem; display:flex; justify-content:space-between; align-items:center; border-left: 3px solid ${strokeColor}; border-radius:4px;">
@@ -362,9 +489,7 @@
 
         function renderWarehouseCards(data) {
             const container = document.getElementById('warehouse-display');
-            // Ensure container acts correctly with horizontal alignment
-            container.style.alignItems = 'stretch';
-            let html = '';
+            container.innerHTML = '';
 
             // Permanent Extra Data Mapping
             const extraDataMap = {
@@ -377,42 +502,61 @@
                 'SAMPING-F': { std: '2,890', eff: '1', effCap: '2,890' },
                 'GUDANG HINO': { std: '1,085', eff: '1', effCap: '1,085' },
                 'GD.HINO': { std: '1,085', eff: '1', effCap: '1,085' },
+                'GUDANG_HINO': { std: '1,085', eff: '1', effCap: '1,085' },
                 'KOPO 6': { std: '1,600', eff: '1', effCap: '1,600' }
             };
 
             const maxCap = Math.max(...data.capacities) || 10000;
             const MAX_H = 180;
 
-            // Generate Left Header Column to keep text aligned across warehouses
-            html += `
-            <div class="warehouse-card-header" style="flex:0 0 170px; display:flex; flex-direction:column; justify-content:flex-start; padding: 0 5px 0 0;">
-                <!-- Exact Spacer for wh-name -->
-                <div style="height:1.2rem; margin-bottom:8px;"></div>
+            // CANOPY GUDANG LIST
+            const KANOPI_GUDANG = ['RM', 'GEBANG-A', 'SAMPING-C', 'GUDANG HINO', 'GD.HINO', 'GUDANG_HINO', 'HINO', 'KOPO 6'];
 
-                <!-- Box Labels (Structurally identical to value box) -->
-                <div style="background:transparent; border:1px solid transparent; margin-bottom:12px; position:relative;">
-                    <div style="padding:7px 0; border-bottom:1px solid transparent; display:flex; justify-content:flex-start;">
-                        <span style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; text-transform:uppercase; letter-spacing:0.5px;">Kapasitas Standar (m²):</span>
+            // Split warehouses into rows — max 6 gudang per row
+            const totalWh = data.warehouses.length;
+            const PER_ROW = 6;
+            const rows = [];
+            for (let r = 0; r < totalWh; r += PER_ROW) {
+                rows.push({ start: r, end: Math.min(r + PER_ROW, totalWh) });
+            }
+
+            // Function to generate label column
+            function generateLabelColumn() {
+                return `
+                <div class="warehouse-card-header" style="flex:0 0 170px; display:flex; flex-direction:column; justify-content:flex-start; padding: 0 5px 0 0;">
+                    <div style="height:1.2rem; margin-bottom:8px;"></div>
+                    <div style="background:transparent; border:1px solid transparent; margin-bottom:12px; position:relative;">
+                        <div style="padding:7px 0; border-bottom:1px solid transparent; display:flex; justify-content:flex-start;">
+                            <span style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; text-transform:uppercase; letter-spacing:0.5px;">Kapasitas Standar (m²):</span>
+                        </div>
+                        <div style="padding:7px 0; border-bottom:1px solid transparent; display:flex; justify-content:flex-start;">
+                            <span style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; text-transform:uppercase; letter-spacing:0.5px;">Faktor Efisiensi (%):</span>
+                        </div>
+                        <div style="padding:7px 0; border-bottom:1px solid transparent; display:flex; justify-content:flex-start;">
+                            <span style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; text-transform:uppercase; letter-spacing:0.5px;">Kapasitas Efektif (m²):</span>
+                        </div>
                     </div>
-                    <div style="padding:7px 0; border-bottom:1px solid transparent; display:flex; justify-content:flex-start;">
-                        <span style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; text-transform:uppercase; letter-spacing:0.5px;">Faktor Efisiensi (%):</span>
+                    <div style="text-align:left;">
+                        <div style="color:#94a3b8; font-size:0.95rem; font-family:'Rajdhani'; font-weight:600; margin-bottom:4px; height:18px; display:flex; align-items:flex-end;">Cap:</div>
+                        <div style="color:#00f3ff; font-size:1.05rem; font-family:'Rajdhani'; font-weight:700; height:20px; display:flex; align-items:flex-end;">Stock:</div>
+                        <div style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; font-weight:600; height:22px; display:flex; align-items:flex-end; margin-top:6px; letter-spacing:0.5px; text-transform:uppercase;">Kanopi:</div>
                     </div>
-                    <div style="padding:7px 0; border-bottom:1px solid transparent; display:flex; justify-content:flex-start;">
-                        <span style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; text-transform:uppercase; letter-spacing:0.5px;">Kapasitas Efektif (m²):</span>
-                    </div>
-                </div>
+                </div>`;
+            }
 
-                <!-- Cap and Stock Labels -->
-                <div style="text-align:left;">
-                    <div style="color:#94a3b8; font-size:0.95rem; font-family:'Rajdhani'; font-weight:600; margin-bottom:4px; height:18px; display:flex; align-items:flex-end;">Cap:</div>
-                    <div style="color:#00f3ff; font-size:1.05rem; font-family:'Rajdhani'; font-weight:700; height:20px; display:flex; align-items:flex-end;">Stock:</div>
-                </div>
-            </div>`;
-
-            data.warehouses.forEach((name, index) => {
-                const nameKey = name.toUpperCase();
-                const extra = extraDataMap[nameKey] || { std: '-', eff: '-', effCap: '-' };
-
+            // Function to generate a single warehouse card
+            function generateWarehouseCard(name, index) {
+                const nameKey = name.toUpperCase().replace(/\s+/g, '_').replace(/_+/g, '_');
+                const nameKeySpaced = name.toUpperCase();
+                // Auto-generate extra data for warehouses not in the hardcoded map
+                let extra = extraDataMap[nameKeySpaced] || extraDataMap[nameKey] || null;
+                if (!extra) {
+                    // Auto: Faktor Efisiensi = 1, Kapasitas Efektif = Kapasitas Standar = dari data kapasitas
+                    const capVal = data.capacities[index] || 0;
+                    const capDisplay = capVal > 0 ? (capVal / 1000).toLocaleString('id-ID') : '-';
+                    extra = { std: capDisplay, eff: '1', effCap: capDisplay };
+                }
+                const hasCanopy = KANOPI_GUDANG.includes(nameKeySpaced) || KANOPI_GUDANG.includes(nameKey);
                 const capKg = data.capacities[index] || 0;
                 let totalStockKg = 0;
                 if (data.materials) {
@@ -430,21 +574,33 @@
                         'linear-gradient(to top, #00f3ff, #0e7490)');
                 const borderColor = isCritical ? '#ef4444' : (isHigh ? '#f59e0b' : '#00f3ff');
 
-                html += `
-                <div class="warehouse-card" style="flex:1; min-width:110px; display:flex; flex-direction:column; position:relative; cursor:pointer; padding:0 4px;" onclick="openDetailModal(${index})">
-                    
-                    <!-- Top Aligned Header Info -->
+                let canopyBadgeHtml = '';
+                if (hasCanopy) {
+                    canopyBadgeHtml = `
+                        <div style="margin-top:6px; text-align:center;">
+                            <span style="display:inline-block; padding:2px 8px; border-radius:10px; font-size:0.55rem; font-family:'Inter'; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);">
+                                🏠 ADA KANOPI
+                            </span>
+                        </div>`;
+                } else {
+                    canopyBadgeHtml = `
+                        <div style="margin-top:6px; text-align:center;">
+                            <span style="display:inline-block; padding:2px 8px; border-radius:10px; font-size:0.55rem; font-family:'Inter'; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">
+                                ☀️ TANPA KANOPI
+                            </span>
+                            ${isCritical ? `<div style="margin-top:4px; padding:3px 6px; border-radius:6px; font-size:0.5rem; font-family:'Inter'; font-weight:600; color:#fca5a5; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.25); line-height:1.3;">
+                                ⚠️ Muat/Bongkar terhambat<br>harus di dalam gudang
+                            </div>` : ''}
+                        </div>`;
+                }
+
+                return `
+                <div class="warehouse-card" style="flex:1; min-width:110px; max-width:200px; display:flex; flex-direction:column; position:relative; cursor:pointer; padding:0 4px;" onclick="openDetailModal(${index})">
                     <div class="wh-header" style="text-align:center; margin-bottom:auto; z-index:10;">
-                        <div class="wh-name" style="font-family:'Orbitron'; font-size:1.05rem; letter-spacing:1px; color:#fff; font-weight:800; text-shadow:0 0 10px rgba(0,0,0,0.8); margin-bottom:8px; height: 1.2rem; display:flex; align-items:center; justify-content:center;">${name}</div>
-                        
-                        <!-- Permanent Data Values / Electric Grid Effect -->
+                        <div class="wh-name" style="font-family:'Orbitron'; font-size:0.85rem; letter-spacing:1px; color:#fff; font-weight:800; text-shadow:0 0 10px rgba(0,0,0,0.8); margin-bottom:8px; height: 1.2rem; display:flex; align-items:center; justify-content:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</div>
                         <div style="background:linear-gradient(135deg, rgba(8,15,30,0.85) 0%, rgba(0,0,0,0.95) 100%); border:1px solid rgba(0,243,255,0.3); border-radius:6px; margin-bottom:12px; position:relative; overflow:hidden; box-shadow:0 0 10px rgba(0,243,255,0.1), inset 0 0 20px rgba(0,243,255,0.05);">
-                            <!-- Grid Pattern / Arsiran -->
                             <div style="position:absolute; top:0; left:0; right:0; bottom:0; background-image:linear-gradient(rgba(0,243,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,243,255,0.08) 1px, transparent 1px); background-size:8px 8px; pointer-events:none; z-index:1;"></div>
-                            <!-- Neon Top Glow -->
                             <div style="position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, #00f3ff, transparent); z-index:2;"></div>
-                            
-                            <!-- Table Rows -->
                             <div style="padding:7px 10px; border-bottom:1px solid rgba(0,243,255,0.15); display:flex; justify-content:flex-end; position:relative; z-index:3;">
                                 <span style="color:#e2e8f0; font-size:0.75rem; font-family:'Inter'; font-weight:700; text-shadow:0 0 5px rgba(255,255,255,0.2);">${extra.std}</span>
                             </div>
@@ -455,26 +611,45 @@
                                 <span style="color:#34d399; font-size:0.75rem; font-family:'Inter'; font-weight:700; text-shadow:0 0 5px rgba(52,211,153,0.4);">${extra.effCap}</span>
                             </div>
                         </div>
-
-                        <!-- Capacity and Stock Values -->
                         <div class="wh-cap" style="color:#cbd5e1; font-size:0.95rem; font-family:'Rajdhani'; font-weight:600; margin-bottom:4px; height:18px; display:flex; align-items:flex-end; justify-content:flex-end;">${(capKg / 1000).toLocaleString('id-ID')} T</div>
                         <div class="wh-stock" style="color:#00f3ff; font-size:1.05rem; font-family:'Rajdhani'; font-weight:700; height:20px; display:flex; align-items:flex-end; justify-content:flex-end;">${(totalStockKg / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} T</div>
+                        ${canopyBadgeHtml}
                     </div>
-                    
-                    <!-- Bottom Aligned Visual Bar -->
                     <div style="height: ${MAX_H + 20}px; display:flex; flex-direction:column; justify-content:flex-end; margin-top:20px;">
                         <div class="wh-visual-bar" style="height:${visualH}px; width:100%; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); position:relative; overflow:hidden; border-radius:4px 4px 0 0;">
-                            <!-- Grid Pattern -->
                             <div style="position:absolute; top:0; left:0; width:100%; height:100%; background-image:linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size:15px 15px;"></div>
-                            
                             <div class="wh-fill" style="position:absolute; bottom:0; left:0; width:100%; height:${Math.min(percent, 100)}%; background:${fillColor}; border-top:2px solid ${borderColor}; box-shadow: 0 0 15px ${borderColor}44; transition:height 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);"></div>
                             <div class="wh-label-overlay" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:#fff; font-family:'Orbitron'; font-weight:900; font-size:1.1rem; text-shadow:0 0 10px #000; z-index:2;">${Math.round(percent)}%</div>
                         </div>
                         <div class="wh-footer" style="height:6px; background:#1e293b; border:1px solid rgba(255,255,255,0.1); border-top:none; border-radius:0 0 4px 4px;"></div>
                     </div>
                 </div>`;
+            }
+
+            // Render 2 stacked rows
+            rows.forEach((rowRange, rowIdx) => {
+                // Skip row if empty
+                if (rowRange.start >= totalWh) return;
+
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'warehouse-row';
+                rowDiv.style.cssText = 'display:flex; gap:10px; align-items:stretch; overflow-x:auto; padding-bottom:15px; min-height:350px; padding-top:10px;';
+                if (rowIdx > 0) {
+                    rowDiv.style.marginTop = '30px';
+                    rowDiv.style.borderTop = '1px solid rgba(255,255,255,0.06)';
+                    rowDiv.style.paddingTop = '30px';
+                }
+
+                // Add label column for each row
+                rowDiv.innerHTML = generateLabelColumn();
+
+                // Add warehouse cards for this row
+                for (let i = rowRange.start; i < rowRange.end; i++) {
+                    rowDiv.innerHTML += generateWarehouseCard(data.warehouses[i], i);
+                }
+
+                container.appendChild(rowDiv);
             });
-            container.innerHTML = html;
         }
 
         function renderAnalytics(analytics) {
@@ -549,7 +724,7 @@
                            <span style="color:#cbd5e1; font-size:0.75rem; font-weight:500;">${cat.name}</span>
                        </div>
                        <div style="text-align:right;">
-                           <div style="color:#fff; font-weight:700; font-family:'Rajdhani'; font-size:0.85rem;">${Math.round(cat.totalTon)}T</div>
+                           <div style="color:#fff; font-weight:700; font-family:'Rajdhani'; font-size:0.85rem;">${Math.round(cat.totalTon).toLocaleString('id-ID')}T</div>
                        </div>
                    </div>
                `;

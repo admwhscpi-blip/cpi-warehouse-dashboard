@@ -30,6 +30,79 @@
         /* When opened via embed + fullscreen, hide some chrome for cleaner view */
         :fullscreen .navbar { display: none !important; }
         :fullscreen #rm-view-banner { display: none !important; }
+
+        /* Mobile Responsiveness Overrides */
+        @media (max-width: 768px) {
+            #live-dashboard {
+                padding: 30px 15px !important;
+            }
+            .section-header {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 20px !important;
+                text-align: center !important;
+                margin-bottom: 25px !important;
+            }
+            .mini-clock-wrapper {
+                transform: scale(1) !important;
+                transform-origin: center center !important;
+                display: flex !important;
+                justify-content: center !important;
+                margin: 0 auto !important;
+            }
+            .section-header h2 {
+                font-size: 1.6rem !important;
+                justify-content: center !important;
+                letter-spacing: 2px !important;
+            }
+            .section-header > div:last-child {
+                display: flex !important;
+                justify-content: center !important;
+                width: 100% !important;
+            }
+            .btn-dashboard {
+                margin: 0 auto !important;
+            }
+            #share-panel {
+                right: 50% !important;
+                transform: translateX(50%) !important;
+                width: 90vw !important;
+                max-width: 350px !important;
+            }
+            
+            /* Global Stats Card Grid Stack */
+            #global-stats {
+                grid-template-columns: 1fr !important;
+                gap: 15px !important;
+                margin-bottom: 30px !important;
+            }
+            
+            /* Sticky specs headers on horizontal scroll for warehouse rows */
+            .warehouse-card-header {
+                position: sticky !important;
+                left: 0 !important;
+                background: #050505 !important;
+                z-index: 12 !important;
+                box-shadow: 8px 0 10px -5px rgba(0,0,0,0.7) !important;
+            }
+            
+            /* Stack Analytics layout cards */
+            .analytics-layout-grid {
+                grid-template-columns: 1fr !important;
+                gap: 20px !important;
+                margin-top: 30px !important;
+            }
+        }
+        @media (max-width: 480px) {
+            #category-chart-container {
+                flex-direction: column !important;
+                gap: 20px !important;
+            }
+            #category-chart-container > div {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+        }
     </style>
 </head>
 
@@ -264,6 +337,13 @@
                 .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
+        function formatKgToTon(kgValue) {
+            if (kgValue == null || isNaN(kgValue)) return '0,00';
+            const divider = (typeof CONFIG !== 'undefined' && CONFIG.UNIT_DIVIDER) ? CONFIG.UNIT_DIVIDER : 1000;
+            const tonValue = kgValue / divider;
+            return tonValue.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
         function rmJakartaYmd() {
             return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
         }
@@ -367,7 +447,7 @@
 
                     row.innerHTML = `
                         <td style="padding:15px 30px; color:#cbd5e1; font-weight:500;">${item.name}</td>
-                        <td style="padding:15px 30px; text-align:right; color:#fff; font-family:'Rajdhani'; font-weight:700; font-size:1.1rem;">${DataService.convertKgToTon(item.qty)}</td>
+                        <td style="padding:15px 30px; text-align:right; color:#fff; font-family:'Rajdhani'; font-weight:700; font-size:1.1rem;">${formatKgToTon(item.qty)}</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -417,7 +497,7 @@
 
                     row.innerHTML = `
                         <td style="padding:15px 30px; color:#cbd5e1; font-weight:700; font-family:'Orbitron'; font-size:0.9rem;">${item.name}</td>
-                        <td style="padding:15px 30px; text-align:right; color:#fff; font-family:'Rajdhani'; font-weight:700; font-size:1.1rem;">${DataService.convertKgToTon(item.qty)} T</td>
+                        <td style="padding:15px 30px; text-align:right; color:#fff; font-family:'Rajdhani'; font-weight:700; font-size:1.1rem;">${formatKgToTon(item.qty)} T</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -477,12 +557,12 @@
             container.innerHTML = `
                  <div class="stat-card" style="background:linear-gradient(135deg, rgba(15,23,42,0.9), rgba(10,10,10,0.95)); border:1px solid rgba(255,255,255,0.08); padding:1.5rem; border-left: 3px solid #00f3ff; border-radius:4px;">
                      <div class="stat-title" style="color:#94a3b8; font-size:0.8rem; font-weight:600; letter-spacing:1px; margin-bottom:5px;">CURRENT RM STOCK</div>
-                     <div class="stat-value" style="color:#00f3ff; font-size:2rem; font-weight:700; font-family:'Rajdhani'">${DataService.convertKgToTon(stats.totalFilled)} <span class="unit" style="font-size:0.8rem; color:#64748b">TON</span></div>
+                     <div class="stat-value" style="color:#00f3ff; font-size:2rem; font-weight:700; font-family:'Rajdhani'">${formatKgToTon(stats.totalFilled)} <span class="unit" style="font-size:0.8rem; color:#64748b">TON</span></div>
                      <div class="stat-desc" style="color:#64748b; font-size:0.8rem;">Aggregation from all units</div>
                  </div>
                  <div class="stat-card" style="background:linear-gradient(135deg, rgba(15,23,42,0.9), rgba(10,10,10,0.95)); border:1px solid rgba(255,255,255,0.08); padding:1.5rem; border-left: 3px solid #ff9e0b; border-radius:4px;">
                      <div class="stat-title" style="color:#94a3b8; font-size:0.8rem; font-weight:600; letter-spacing:1px; margin-bottom:5px;">IDLE CAPACITY (EST)</div>
-                     <div class="stat-value" style="color:#ff9e0b; font-size:2rem; font-weight:700; font-family:'Rajdhani'">${DataService.convertKgToTon(stats.totalSpace)} <span class="unit" style="font-size:0.8rem; color:#64748b">TON</span></div>
+                     <div class="stat-value" style="color:#ff9e0b; font-size:2rem; font-weight:700; font-family:'Rajdhani'">${formatKgToTon(stats.totalSpace)} <span class="unit" style="font-size:0.8rem; color:#64748b">TON</span></div>
                      <div class="stat-desc" style="color:#64748b; font-size:0.8rem;">Based on hard-limit configuration</div>
                  </div>
                  <div class="stat-card" style="background:linear-gradient(135deg, rgba(15,23,42,0.9), rgba(10,10,10,0.95)); border:1px solid rgba(255,255,255,0.08); padding:1.5rem; display:flex; justify-content:space-between; align-items:center; border-left: 3px solid ${strokeColor}; border-radius:4px;">
@@ -736,9 +816,9 @@
                            <div style="width:8px; height:8px; border-radius:2px; background:${color}; box-shadow:0 0 5px ${color};"></div>
                            <span style="color:#cbd5e1; font-size:0.75rem; font-weight:500;">${cat.name}</span>
                        </div>
-                       <div style="text-align:right;">
-                           <div style="color:#fff; font-weight:700; font-family:'Rajdhani'; font-size:0.85rem;">${Math.round(cat.totalTon)}T</div>
-                       </div>
+                        <div style="text-align:right;">
+                            <div style="color:#fff; font-weight:700; font-family:'Rajdhani'; font-size:0.85rem;">${Math.round(cat.totalTon).toLocaleString('id-ID')}T</div>
+                        </div>
                    </div>
                `;
             });
