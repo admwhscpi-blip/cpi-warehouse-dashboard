@@ -180,16 +180,7 @@
                             style="font-family:'Orbitron'; color:#fff; border-left:3px solid #bc13fe; padding-left:10px; margin-bottom:20px;">
                             🏆 Top Materials</h3>
                         <div id="top-items-table"></div>
-                        <div id="rm-history-wrap" style="margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.08);">
-                            <h4 style="font-family:'Orbitron',sans-serif;font-size:0.75rem;color:#94a3b8;margin:0 0 10px 0;letter-spacing:2px;">HISTORIS SNAPSHOT</h4>
-                            <p style="color:#64748b;font-size:0.72rem;margin:0 0 12px 0;line-height:1.45;">Pilih tanggal: tampilan di atas (3 stat, gudang, Top Materials, kategori) mengikuti data tersimpan untuk tanggal itu.</p>
-                            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;">
-                                <input type="date" id="rm-hist-date" style="background:#0f172a;border:1px solid #334155;color:#fff;padding:8px 10px;border-radius:6px;font-family:Inter,sans-serif;">
-                                <button type="button" onclick="rmLoadHistoricalSnapshot()" style="background:#bc13fe;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-family:'Orbitron',sans-serif;font-weight:700;cursor:pointer;">Tampilkan</button>
-                            </div>
-                            <div id="rm-hist-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
-                            <p style="color:#475569;font-size:0.65rem;margin:0;">Otomatis jam 12:00 WIB: simpan snapshot (browser + Google Sheet setelah deploy Apps Script).</p>
-                        </div>
+
                     </div>
 
                     <!-- CATEGORY DISTRIBUTION -->
@@ -265,9 +256,8 @@
     <script>
         // --- DASHBOARD SPECIFIC CONTROLLER ---
 
-        const App = { data: null, liveData: null, viewMode: 'live', snapshotDate: null };
+        const App = { data: null, liveData: null, viewMode: 'live' };
         var rmSearchTimer = null;
-        var rmSnapSchedulerStarted = false;
 
         function rmEsc(s) {
             return String(s == null ? '' : s)
@@ -288,6 +278,7 @@
             var data = typeof DataService.sanitizeRmDashboard === 'function' ? DataService.sanitizeRmDashboard(raw) : raw;
             if (!data) return;
             App.data = data;
+            App._fullData = data;
             renderGlobalStats(DataService.processGlobalStats(App.data));
             renderWarehouseCards(App.data);
             var analytics = DataService.getAnalytics(App.data);
@@ -300,62 +291,9 @@
         function rmGoLive() {
             if (!App.liveData) return;
             App.viewMode = 'live';
-            App.snapshotDate = null;
             var b = document.getElementById('rm-view-banner');
             if (b) b.style.display = 'none';
             applyRmDashboardData(App.liveData);
-        }
-
-        async function rmLoadHistoricalSnapshot() {
-            var inp = document.getElementById('rm-hist-date');
-            var t = inp && inp.value ? inp.value : '';
-            if (!t) { alert('Pilih tanggal dulu.'); return; }
-            var snap = null;
-            try {
-                if (typeof DataService.fetchRmSnapshot === 'function') snap = await DataService.fetchRmSnapshot(t);
-            } catch (e) { console.warn('fetchRmSnapshot', e); }
-            if (!snap && typeof DataService.loadRmSnapshotLocal === 'function') snap = DataService.loadRmSnapshotLocal(t);
-            if (!snap) {
-                alert('Tidak ada snapshot untuk tanggal ' + t + '. Pastikan sudah pernah tersimpan (setelah jam 12 WIB atau deploy Apps Script).');
-                return;
-            }
-            App.viewMode = 'hist';
-            App.snapshotDate = t.substring(0, 10);
-            var b = document.getElementById('rm-view-banner');
-            var tx = document.getElementById('rm-view-banner-text');
-            if (b) {
-                b.style.display = 'flex';
-                b.style.flexDirection = 'row';
-            }
-            if (tx) tx.textContent = 'Snapshot: ' + App.snapshotDate + ' (bukan live)';
-            applyRmDashboardData(snap);
-        }
-
-        function rmChipClick(iso) {
-            var inp = document.getElementById('rm-hist-date');
-            if (inp) inp.value = iso;
-            rmLoadHistoricalSnapshot();
-        }
-
-        async function refreshRmHistChips() {
-            var el = document.getElementById('rm-hist-chips');
-            if (!el) return;
-            var server = [];
-            try {
-                if (typeof DataService.fetchRmSnapshotList === 'function') server = await DataService.fetchRmSnapshotList();
-            } catch (e) {}
-            var local = typeof DataService.listRmSnapshotLocal === 'function' ? DataService.listRmSnapshotLocal() : [];
-            var merged = {};
-            server.forEach(function (d) { merged[d] = 1; });
-            local.forEach(function (d) { merged[d] = 1; });
-            var dates = Object.keys(merged).sort().reverse().slice(0, 24);
-            if (!dates.length) {
-                el.innerHTML = '<span style="color:#475569;font-size:0.7rem;">Belum ada tanggal tersimpan di perangkat ini.</span>';
-                return;
-            }
-            el.innerHTML = dates.map(function (d) {
-                return '<button type="button" onclick="rmChipClick(\'' + d + '\')" style="background:rgba(15,23,42,0.9);border:1px solid #334155;color:#cbd5e1;padding:4px 10px;border-radius:999px;font-size:0.7rem;cursor:pointer;font-family:Inter,sans-serif;">' + d + '</button>';
-            }).join('');
         }
 
         function rmRunMaterialSearch() {
@@ -386,44 +324,10 @@
             out.innerHTML = html;
         }
 
-        async function maybeDailyRmSnapshot() {
-            if (rmJakartaHour() < 12) return;
-            var ymd = rmJakartaYmd();
-            var flagKey = 'rm_snap_noon_done_' + ymd;
-            if (localStorage.getItem(flagKey)) return;
-            var dataToSave = App.liveData;
-            try {
-                var fresh = await DataService.fetchData(true);
-                if (fresh && typeof DataService.sanitizeRmDashboard === 'function') {
-                    App.liveData = DataService.sanitizeRmDashboard(fresh);
-                    if (App.viewMode === 'live') {
-                        App.data = App.liveData;
-                        applyRmDashboardData(App.liveData);
-                    }
-                    dataToSave = App.liveData;
-                }
-            } catch (err) {
-                console.warn('Noon snapshot fetch', err);
-            }
-            if (!dataToSave) return;
-            if (typeof DataService.saveRmSnapshotLocal === 'function') DataService.saveRmSnapshotLocal(ymd, dataToSave);
-            localStorage.setItem(flagKey, '1');
-            if (typeof DataService.postRmSnapshot === 'function') {
-                DataService.postRmSnapshot(ymd, dataToSave).catch(function () {});
-            }
-            refreshRmHistChips();
-        }
-
-        function startRmSnapshotScheduler() {
-            if (rmSnapSchedulerStarted) return;
-            rmSnapSchedulerStarted = true;
-            setInterval(maybeDailyRmSnapshot, 60 * 1000);
-            maybeDailyRmSnapshot();
-        }
-
         // --- MODAL LOGIC ---
         function openDetailModal(warehouseIndex) {
-            const whName = App.data.warehouses[warehouseIndex];
+            const useData = App._fullData || App.data;
+            const whName = useData.warehouses[warehouseIndex];
             const modal = document.getElementById('warehouse-modal');
             const title = document.getElementById('modal-title');
             const tbody = document.getElementById('modal-list-body');
@@ -441,7 +345,7 @@
 
             // Collect items for this warehouse
             const items = [];
-            App.data.materials.forEach(mat => {
+            useData.materials.forEach(mat => {
                 const stockVal = mat.stocks[warehouseIndex] || 0;
                 if (stockVal > 0) {
                     items.push({ name: mat.name, qty: stockVal });
@@ -544,13 +448,10 @@
                 ? DataService.sanitizeRmDashboard(App.data)
                 : App.data;
             App.viewMode = 'live';
-            App.snapshotDate = null;
             var b = document.getElementById('rm-view-banner');
             if (b) b.style.display = 'none';
 
             applyRmDashboardData(App.liveData);
-            await refreshRmHistChips();
-            startRmSnapshotScheduler();
 
             var si = document.getElementById('rm-search-input');
             if (si) {
@@ -559,8 +460,6 @@
                     rmSearchTimer = setTimeout(rmRunMaterialSearch, 280);
                 });
             }
-            var hd = document.getElementById('rm-hist-date');
-            if (hd && !hd.value) hd.value = rmJakartaYmd();
         }
 
         // 2. RENDER FUNCTIONS (PIXEL PERFECT COPIES)
@@ -603,9 +502,7 @@
 
         function renderWarehouseCards(data) {
             const container = document.getElementById('warehouse-display');
-            // Ensure container acts correctly with horizontal alignment
-            container.style.alignItems = 'stretch';
-            let html = '';
+            container.innerHTML = '';
 
             // Permanent Extra Data Mapping
             const extraDataMap = {
@@ -618,46 +515,61 @@
                 'SAMPING-F': { std: '2,890', eff: '1', effCap: '2,890' },
                 'GUDANG HINO': { std: '1,085', eff: '1', effCap: '1,085' },
                 'GD.HINO': { std: '1,085', eff: '1', effCap: '1,085' },
+                'GUDANG_HINO': { std: '1,085', eff: '1', effCap: '1,085' },
                 'KOPO 6': { std: '1,600', eff: '1', effCap: '1,600' }
             };
 
             const maxCap = Math.max(...data.capacities) || 10000;
             const MAX_H = 180;
 
-            // Generate Left Header Column to keep text aligned across warehouses
-            html += `
-            <div class="warehouse-card-header" style="flex:0 0 170px; display:flex; flex-direction:column; justify-content:flex-start; padding: 0 5px 0 0;">
-                <!-- Exact Spacer for wh-name -->
-                <div style="height:1.2rem; margin-bottom:8px;"></div>
+            // CANOPY GUDANG LIST
+            const KANOPI_GUDANG = ['RM', 'GEBANG-A', 'SAMPING-C', 'GUDANG HINO', 'GD.HINO', 'GUDANG_HINO', 'HINO', 'KOPO 6'];
 
-                <!-- Box Labels (Structurally identical to value box) -->
-                <div style="background:transparent; border:1px solid transparent; margin-bottom:12px; position:relative;">
-                    <div style="padding:7px 0; border-bottom:1px solid transparent; display:flex; justify-content:flex-start;">
-                        <span style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; text-transform:uppercase; letter-spacing:0.5px;">Kapasitas Standar (m²):</span>
+            // Split warehouses into rows — max 6 gudang per row
+            const totalWh = data.warehouses.length;
+            const PER_ROW = 6;
+            const rows = [];
+            for (let r = 0; r < totalWh; r += PER_ROW) {
+                rows.push({ start: r, end: Math.min(r + PER_ROW, totalWh) });
+            }
+
+            // Function to generate label column
+            function generateLabelColumn() {
+                return `
+                <div class="warehouse-card-header" style="flex:0 0 170px; display:flex; flex-direction:column; justify-content:flex-start; padding: 0 5px 0 0;">
+                    <div style="height:1.2rem; margin-bottom:8px;"></div>
+                    <div style="background:transparent; border:1px solid transparent; margin-bottom:12px; position:relative;">
+                        <div style="padding:7px 0; border-bottom:1px solid transparent; display:flex; justify-content:flex-start;">
+                            <span style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; text-transform:uppercase; letter-spacing:0.5px;">Kapasitas Standar (m²):</span>
+                        </div>
+                        <div style="padding:7px 0; border-bottom:1px solid transparent; display:flex; justify-content:flex-start;">
+                            <span style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; text-transform:uppercase; letter-spacing:0.5px;">Faktor Efisiensi (%):</span>
+                        </div>
+                        <div style="padding:7px 0; border-bottom:1px solid transparent; display:flex; justify-content:flex-start;">
+                            <span style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; text-transform:uppercase; letter-spacing:0.5px;">Kapasitas Efektif (m²):</span>
+                        </div>
                     </div>
-                    <div style="padding:7px 0; border-bottom:1px solid transparent; display:flex; justify-content:flex-start;">
-                        <span style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; text-transform:uppercase; letter-spacing:0.5px;">Faktor Efisiensi (%):</span>
+                    <div style="text-align:left;">
+                        <div style="color:#94a3b8; font-size:0.95rem; font-family:'Rajdhani'; font-weight:600; margin-bottom:4px; height:18px; display:flex; align-items:flex-end;">Cap:</div>
+                        <div style="color:#00f3ff; font-size:1.05rem; font-family:'Rajdhani'; font-weight:700; height:20px; display:flex; align-items:flex-end;">Stock:</div>
+                        <div style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; font-weight:600; height:22px; display:flex; align-items:flex-end; margin-top:6px; letter-spacing:0.5px; text-transform:uppercase;">Kanopi:</div>
                     </div>
-                    <div style="padding:7px 0; border-bottom:1px solid transparent; display:flex; justify-content:flex-start;">
-                        <span style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; text-transform:uppercase; letter-spacing:0.5px;">Kapasitas Efektif (m²):</span>
-                    </div>
-                </div>
+                </div>`;
+            }
 
-                <!-- Cap, Stock and Kanopi Labels -->
-                <div style="text-align:left;">
-                    <div style="color:#94a3b8; font-size:0.95rem; font-family:'Rajdhani'; font-weight:600; margin-bottom:4px; height:18px; display:flex; align-items:flex-end;">Cap:</div>
-                    <div style="color:#00f3ff; font-size:1.05rem; font-family:'Rajdhani'; font-weight:700; height:20px; display:flex; align-items:flex-end;">Stock:</div>
-                    <div style="color:#94a3b8; font-size:0.7rem; font-family:'Inter'; font-weight:600; height:22px; display:flex; align-items:flex-end; margin-top:6px; letter-spacing:0.5px; text-transform:uppercase;">Kanopi:</div>
-                </div>
-            </div>`;
-
-            data.warehouses.forEach((name, index) => {
-            const nameKey = name.toUpperCase();
-                const extra = extraDataMap[nameKey] || { std: '-', eff: '-', effCap: '-' };
-
-                // --- CANOPY STATUS (Permanent / Hardcoded) ---
-                const KANOPI_GUDANG = ['RM', 'GEBANG-A', 'SAMPING-C', 'GUDANG HINO', 'GD.HINO', 'HINO', 'KOPO 6'];
-                const hasCanopy = KANOPI_GUDANG.includes(nameKey);
+            // Function to generate a single warehouse card
+            function generateWarehouseCard(name, index) {
+                const nameKey = name.toUpperCase().replace(/\s+/g, '_').replace(/_+/g, '_');
+                const nameKeySpaced = name.toUpperCase();
+                // Auto-generate extra data for warehouses not in the hardcoded map
+                let extra = extraDataMap[nameKeySpaced] || extraDataMap[nameKey] || null;
+                if (!extra) {
+                    // Auto: Faktor Efisiensi = 1, Kapasitas Efektif = Kapasitas Standar = dari data kapasitas
+                    const capVal = data.capacities[index] || 0;
+                    const capDisplay = capVal > 0 ? (capVal / 1000).toLocaleString('id-ID') : '-';
+                    extra = { std: capDisplay, eff: '1', effCap: capDisplay };
+                }
+                const hasCanopy = KANOPI_GUDANG.includes(nameKeySpaced) || KANOPI_GUDANG.includes(nameKey);
                 const capKg = data.capacities[index] || 0;
                 let totalStockKg = 0;
                 if (data.materials) {
@@ -675,7 +587,6 @@
                         'linear-gradient(to top, #00f3ff, #0e7490)');
                 const borderColor = isCritical ? '#ef4444' : (isHigh ? '#f59e0b' : '#00f3ff');
 
-                // Canopy badge HTML
                 let canopyBadgeHtml = '';
                 if (hasCanopy) {
                     canopyBadgeHtml = `
@@ -696,21 +607,13 @@
                         </div>`;
                 }
 
-                html += `
-                <div class="warehouse-card" style="flex:1; min-width:110px; display:flex; flex-direction:column; position:relative; cursor:pointer; padding:0 4px;" onclick="openDetailModal(${index})">
-                    
-                    <!-- Top Aligned Header Info -->
+                return `
+                <div class="warehouse-card" style="flex:1; min-width:110px; max-width:200px; display:flex; flex-direction:column; position:relative; cursor:pointer; padding:0 4px;" onclick="openDetailModal(${index})">
                     <div class="wh-header" style="text-align:center; margin-bottom:auto; z-index:10;">
-                        <div class="wh-name" style="font-family:'Orbitron'; font-size:1.05rem; letter-spacing:1px; color:#fff; font-weight:800; text-shadow:0 0 10px rgba(0,0,0,0.8); margin-bottom:8px; height: 1.2rem; display:flex; align-items:center; justify-content:center;">${name}</div>
-                        
-                        <!-- Permanent Data Values / Electric Grid Effect -->
+                        <div class="wh-name" style="font-family:'Orbitron'; font-size:0.85rem; letter-spacing:1px; color:#fff; font-weight:800; text-shadow:0 0 10px rgba(0,0,0,0.8); margin-bottom:8px; height: 1.2rem; display:flex; align-items:center; justify-content:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</div>
                         <div style="background:linear-gradient(135deg, rgba(8,15,30,0.85) 0%, rgba(0,0,0,0.95) 100%); border:1px solid rgba(0,243,255,0.3); border-radius:6px; margin-bottom:12px; position:relative; overflow:hidden; box-shadow:0 0 10px rgba(0,243,255,0.1), inset 0 0 20px rgba(0,243,255,0.05);">
-                            <!-- Grid Pattern / Arsiran -->
                             <div style="position:absolute; top:0; left:0; right:0; bottom:0; background-image:linear-gradient(rgba(0,243,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,243,255,0.08) 1px, transparent 1px); background-size:8px 8px; pointer-events:none; z-index:1;"></div>
-                            <!-- Neon Top Glow -->
                             <div style="position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg, transparent, #00f3ff, transparent); z-index:2;"></div>
-                            
-                            <!-- Table Rows -->
                             <div style="padding:7px 10px; border-bottom:1px solid rgba(0,243,255,0.15); display:flex; justify-content:flex-end; position:relative; z-index:3;">
                                 <span style="color:#e2e8f0; font-size:0.75rem; font-family:'Inter'; font-weight:700; text-shadow:0 0 5px rgba(255,255,255,0.2);">${extra.std}</span>
                             </div>
@@ -721,29 +624,45 @@
                                 <span style="color:#34d399; font-size:0.75rem; font-family:'Inter'; font-weight:700; text-shadow:0 0 5px rgba(52,211,153,0.4);">${extra.effCap}</span>
                             </div>
                         </div>
-
-                        <!-- Capacity and Stock Values -->
                         <div class="wh-cap" style="color:#cbd5e1; font-size:0.95rem; font-family:'Rajdhani'; font-weight:600; margin-bottom:4px; height:18px; display:flex; align-items:flex-end; justify-content:flex-end;">${(capKg / 1000).toLocaleString('id-ID')} T</div>
                         <div class="wh-stock" style="color:#00f3ff; font-size:1.05rem; font-family:'Rajdhani'; font-weight:700; height:20px; display:flex; align-items:flex-end; justify-content:flex-end;">${(totalStockKg / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} T</div>
-
-                        <!-- CANOPY STATUS BADGE -->
                         ${canopyBadgeHtml}
                     </div>
-                    
-                    <!-- Bottom Aligned Visual Bar -->
                     <div style="height: ${MAX_H + 20}px; display:flex; flex-direction:column; justify-content:flex-end; margin-top:20px;">
                         <div class="wh-visual-bar" style="height:${visualH}px; width:100%; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); position:relative; overflow:hidden; border-radius:4px 4px 0 0;">
-                            <!-- Grid Pattern -->
                             <div style="position:absolute; top:0; left:0; width:100%; height:100%; background-image:linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size:15px 15px;"></div>
-                            
                             <div class="wh-fill" style="position:absolute; bottom:0; left:0; width:100%; height:${Math.min(percent, 100)}%; background:${fillColor}; border-top:2px solid ${borderColor}; box-shadow: 0 0 15px ${borderColor}44; transition:height 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);"></div>
                             <div class="wh-label-overlay" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:#fff; font-family:'Orbitron'; font-weight:900; font-size:1.1rem; text-shadow:0 0 10px #000; z-index:2;">${Math.round(percent)}%</div>
                         </div>
                         <div class="wh-footer" style="height:6px; background:#1e293b; border:1px solid rgba(255,255,255,0.1); border-top:none; border-radius:0 0 4px 4px;"></div>
                     </div>
                 </div>`;
+            }
+
+            // Render 2 stacked rows
+            rows.forEach((rowRange, rowIdx) => {
+                // Skip row if empty
+                if (rowRange.start >= totalWh) return;
+
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'warehouse-row';
+                rowDiv.style.cssText = 'display:flex; gap:10px; align-items:stretch; overflow-x:auto; padding-bottom:15px; min-height:350px; padding-top:10px;';
+                if (rowIdx > 0) {
+                    rowDiv.style.marginTop = '30px';
+                    rowDiv.style.borderTop = '1px solid rgba(255,255,255,0.06)';
+                    rowDiv.style.paddingTop = '30px';
+                }
+
+                // Add label column for each row
+                rowDiv.innerHTML = generateLabelColumn();
+
+                // Add warehouse cards for this row
+                for (let i = rowRange.start; i < rowRange.end; i++) {
+                    rowDiv.innerHTML += generateWarehouseCard(data.warehouses[i], i);
+                }
+
+                container.appendChild(rowDiv);
             });
-            container.innerHTML = html;
         }
 
         function renderAnalytics(analytics) {

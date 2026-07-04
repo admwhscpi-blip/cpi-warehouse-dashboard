@@ -52,17 +52,24 @@
     font-size: 0.8rem;
 }
 
-/* WAREHOUSE GRID LAYOUT */
+/* WAREHOUSE GRID LAYOUT - Stacked rows container */
 #module-rm .warehouse-grid {
     display: flex;
-    gap: 10px;
-    align-items: flex-end;
-    /* Align bottom like bar chart */
-    overflow-x: auto;
+    flex-direction: column;
+    gap: 0;
     padding-bottom: 20px;
+    padding-top: 20px;
+}
+
+/* Each warehouse row (top/bottom) */
+#module-rm .warehouse-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+    overflow-x: auto;
+    padding-bottom: 15px;
     min-height: 350px;
-    padding-top: 50px;
-    /* Space for top labels */
+    padding-top: 10px;
 }
 
 /* WAREHOUSE CARD (VERTICAL BAR) */
@@ -71,6 +78,7 @@
     border: none;
     flex: 1;
     min-width: 100px;
+    max-width: 200px;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -479,13 +487,14 @@
     }
 
     /* 7. WAREHOUSE GRID SCROLL */
-    #module-rm .warehouse-grid {
+    #module-rm .warehouse-row {
         padding-bottom: 10px;
         min-height: 250px;
     }
 
     #module-rm .warehouse-card {
         min-width: 80px;
+        max-width: none;
         /* Smaller bars */
     }
 
