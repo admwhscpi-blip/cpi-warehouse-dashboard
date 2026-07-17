@@ -18,6 +18,11 @@
     <!-- LEAFLET MAP -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- LEAFLET MARKERCLUSTER -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
     <style>
         :root {
@@ -61,22 +66,8 @@
         .header-btn { background: var(--accent-blue); color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-family: 'Orbitron'; font-weight: 900; letter-spacing: 1px; font-size: 0.8rem; cursor: pointer; box-shadow: 0 5px 15px rgba(14, 165, 233, 0.3); transition: 0.3s; }
         .header-btn:hover { background: #0284c7; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(14, 165, 233, 0.5); }
 
-        /* HUD LEADERBOARD PANEL */
-        .hud-panel { position: absolute; top: 90px; right: 20px; z-index: 400; width: 280px; background: rgba(2, 6, 23, 0.92); backdrop-filter: blur(12px); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 16px; padding: 15px; box-shadow: 0 0 25px rgba(6, 182, 212, 0.15); animation: fadeHud 0.5s ease; }
+        /* HUD LEADERBOARD — See modern version below */
         @keyframes fadeHud { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
-        .hud-title { font-family:'Orbitron'; font-size:0.65rem; color:var(--neon-cyan); font-weight:900; letter-spacing:2px; margin-bottom:10px; display:flex; align-items:center; gap:8px; text-shadow:0 0 8px rgba(6,182,212,.6); }
-        .hud-total { font-family:'Orbitron'; font-size:1.8rem; color:#fff; font-weight:900; text-align:center; margin-bottom:8px; text-shadow:0 0 20px rgba(6,182,212,.5); }
-        .hud-sub { font-size:0.55rem; color:#94a3b8; text-align:center; margin-bottom:12px; font-weight:700; letter-spacing:1px; }
-        .hud-list { max-height: 200px; overflow-y: auto; }
-        .hud-list::-webkit-scrollbar { width:4px; } .hud-list::-webkit-scrollbar-track { background:transparent; } .hud-list::-webkit-scrollbar-thumb { background:rgba(6,182,212,.3); border-radius:4px; }
-        .hud-row { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; margin-bottom:4px; transition:0.3s; cursor:default; border:1px solid transparent; }
-        .hud-row:hover { background:rgba(6,182,212,.08); border-color:rgba(6,182,212,.2); }
-        .hud-rank { font-family:'Orbitron'; font-size:0.7rem; font-weight:900; color:var(--neon-cyan); min-width:24px; text-align:center; }
-        .hud-rank.gold { color:#fbbf24; text-shadow:0 0 8px rgba(251,191,36,.5); }
-        .hud-rank.silver { color:#94a3b8; }
-        .hud-rank.bronze { color:#f97316; }
-        .hud-name { font-size:0.7rem; font-weight:800; color:#e2e8f0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .hud-dist { font-size:0.6rem; color:#64748b; font-weight:700; font-family:'Orbitron'; }
 
         /* FULLSCREEN DETAIL MODAL */
         .detail-modal-overlay { position:fixed; inset:0; background:rgba(2,6,23,.92); backdrop-filter:blur(8px); z-index:3000; display:none; overflow-y:auto; animation:fadeIn .3s; }
@@ -245,11 +236,8 @@
         @keyframes pulse-glow { 0%, 100% { opacity: 0.7; text-shadow: 0 0 5px var(--neon-cyan); } 50% { opacity: 1; text-shadow: 0 0 20px var(--neon-cyan); } }
         #main-loader.hidden { opacity: 0; pointer-events: none; transform: translateY(-50px); }
 
-        /* GALLERY & SPINNER */
-        .swal2-container { z-index: 3100 !important; }
-        .gallery-container { position: relative; width: 100%; height: 350px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #000; border-radius: 15px; border: 1px solid var(--neon-cyan); box-shadow: 0 0 20px rgba(14, 165, 233, 0.2); }
+        /* GALLERY & SPINNER (base) */
         .gal-spinner { position: absolute; width: 40px; height: 40px; border: 4px solid rgba(14, 165, 233, 0.1); border-top-color: var(--neon-cyan); border-radius: 50%; animation: spin 1s linear infinite; display: none; z-index: 5; }
-        .gallery-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; transition: opacity 0.3s; z-index: 1; opacity: 0; }
         .gallery-img.show { opacity: 1; }
         .legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; }
         .legend-item:last-child { margin-bottom: 0; }
@@ -346,16 +334,266 @@
         .cyber-input { background: rgba(0,0,0,0.5) !important; border: 1px solid rgba(14, 165, 233, 0.5) !important; color: #fff !important; text-align: center; font-family: 'Orbitron'; letter-spacing: 2px; transition: 0.3s; margin-top:10px !important;}
         .cyber-input:focus { border-color: var(--neon-cyan) !important; box-shadow: 0 0 15px rgba(14, 165, 233, 0.5) !important; }
         
-        /* GALLERY ABOVE ALL */
+        /* GALLERY ABOVE ALL — FULLSCREEN MAX */
         .swal2-container { z-index: 3100 !important; }
+        .swal2-popup.gallery-fullscreen-popup { 
+            width: 96vw !important; 
+            max-width: 96vw !important; 
+            padding: 10px !important; 
+            background: rgba(2, 6, 23, 0.98) !important;
+            border: 1px solid rgba(6, 182, 212, 0.3) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 0 60px rgba(6, 182, 212, 0.15), inset 0 0 80px rgba(0,0,0,0.5) !important;
+        }
         
-        .gallery-container { position: relative; width: 100%; height: 300px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #000; border-radius: 15px; border: 1px solid var(--neon-cyan); box-shadow: 0 0 20px rgba(14, 165, 233, 0.2); }
-        .gallery-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; transition: opacity 0.3s; }
-        .gal-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(14, 165, 233, 0.2); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 10px 15px; font-size: 1.2rem; cursor: pointer; border-radius: 5px; transition: 0.3s; z-index: 10; }
-        .gal-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
-        .gal-prev { left: 10px; }
-        .gal-next { right: 10px; }
-        .gal-counter { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); box-shadow: 0 0 10px var(--neon-cyan); border: 1px solid rgba(14, 165, 233, 0.5); color: #fff; padding: 5px 15px; border-radius: 20px; font-family: 'Orbitron'; font-size: 0.8rem; letter-spacing: 1px; z-index: 10; }
+        .gallery-container { 
+            position: relative; width: 100%; height: 85vh; 
+            display: flex; align-items: center; justify-content: center; 
+            overflow: hidden; background: #000; border-radius: 16px; 
+            border: 1px solid rgba(6, 182, 212, 0.25); 
+            box-shadow: 0 0 40px rgba(6, 182, 212, 0.1), inset 0 0 60px rgba(0,0,0,0.8); 
+        }
+        .gallery-img { 
+            max-width: 100%; max-height: 100%; width: 100%; height: 100%;
+            object-fit: contain; border-radius: 10px; 
+            transition: opacity 0.4s ease; 
+        }
+        .gal-btn { 
+            position: absolute; top: 50%; transform: translateY(-50%); 
+            background: rgba(6, 182, 212, 0.12); border: 1.5px solid rgba(6, 182, 212, 0.5); 
+            color: var(--neon-cyan); padding: 14px 18px; font-size: 1.4rem; 
+            cursor: pointer; border-radius: 12px; transition: 0.3s; z-index: 10; 
+            backdrop-filter: blur(8px);
+        }
+        .gal-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 25px var(--neon-cyan); }
+        .gal-prev { left: 15px; }
+        .gal-next { right: 15px; }
+        .gal-counter { 
+            position: absolute; bottom: 15px; right: 15px; 
+            background: rgba(0,0,0,0.75); box-shadow: 0 0 15px rgba(6,182,212,0.4); 
+            border: 1px solid rgba(6, 182, 212, 0.5); color: #fff; 
+            padding: 8px 20px; border-radius: 25px; 
+            font-family: 'Orbitron'; font-size: 0.85rem; letter-spacing: 2px; z-index: 10; 
+        }
+
+        /* ====== MODERN HUD PANEL — DATA INTELLIGENCE THEME ====== */
+        .hud-panel {
+            position: absolute; top: 90px; right: 20px; z-index: 400; width: 300px;
+            background: linear-gradient(165deg, rgba(2, 6, 23, 0.95) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(2, 12, 30, 0.95) 100%);
+            backdrop-filter: blur(20px) saturate(1.5);
+            border: 1px solid transparent;
+            background-clip: padding-box;
+            border-radius: 20px;
+            padding: 0;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 30px rgba(6, 182, 212, 0.08);
+            animation: fadeHud 0.6s cubic-bezier(.4,0,.2,1);
+            overflow: hidden;
+        }
+        .hud-panel::before {
+            content: ''; position: absolute; inset: -1px;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.6), rgba(14, 165, 233, 0.1), rgba(6, 182, 212, 0.3), transparent, rgba(6, 182, 212, 0.4));
+            border-radius: 21px; z-index: -1;
+            animation: hud-border-rotate 6s linear infinite;
+        }
+        @keyframes hud-border-rotate {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+        .hud-inner { padding: 20px; }
+        .hud-header-block {
+            text-align: center; padding: 22px 20px 18px; position: relative;
+            background: linear-gradient(to bottom, rgba(6, 182, 212, 0.08), transparent);
+            border-bottom: 1px solid rgba(6, 182, 212, 0.15);
+        }
+        .hud-header-block::after {
+            content: ''; position: absolute; bottom: -1px; left: 20%; right: 20%; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+        }
+        .hud-icon-ring {
+            width: 56px; height: 56px; margin: 0 auto 10px;
+            border: 2px solid rgba(6, 182, 212, 0.4); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; animation: hud-icon-pulse 3s ease infinite;
+            background: rgba(6, 182, 212, 0.06);
+        }
+        .hud-icon-ring::before {
+            content: ''; position: absolute; inset: -4px;
+            border: 1px solid rgba(6, 182, 212, 0.15); border-radius: 50%;
+            animation: spin 8s linear infinite;
+            border-top-color: rgba(6, 182, 212, 0.5);
+        }
+        .hud-icon-ring i { font-size: 1.4rem; color: var(--neon-cyan); filter: drop-shadow(0 0 8px rgba(6,182,212,0.6)); }
+        @keyframes hud-icon-pulse { 0%,100% { box-shadow: 0 0 10px rgba(6,182,212,0.1); } 50% { box-shadow: 0 0 25px rgba(6,182,212,0.3); } }
+        
+        .hud-total-num {
+            font-family: 'Orbitron'; font-size: 2.8rem; font-weight: 900;
+            background: linear-gradient(135deg, #06b6d4, #38bdf8, #06b6d4);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; line-height: 1;
+            filter: drop-shadow(0 0 20px rgba(6,182,212,0.4));
+            margin-bottom: 4px;
+        }
+        .hud-sub-label {
+            font-family: 'Orbitron'; font-size: 0.55rem; font-weight: 800;
+            color: #64748b; letter-spacing: 3px; text-transform: uppercase;
+        }
+        .hud-stats-bar {
+            display: flex; justify-content: center; gap: 20px;
+            padding: 10px 20px; background: rgba(6, 182, 212, 0.04);
+            border-bottom: 1px solid rgba(6, 182, 212, 0.08);
+        }
+        .hud-stat-item { text-align: center; }
+        .hud-stat-val { font-family: 'Orbitron'; font-size: 0.75rem; font-weight: 900; color: #38bdf8; }
+        .hud-stat-lbl { font-size: 0.45rem; color: #475569; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+        
+        .hud-list-header {
+            padding: 12px 20px 8px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .hud-list-title {
+            font-family: 'Orbitron'; font-size: 0.55rem; color: rgba(6,182,212,0.7);
+            font-weight: 800; letter-spacing: 2px;
+        }
+        .hud-list-badge {
+            font-size: 0.5rem; background: rgba(6,182,212,0.15); color: var(--neon-cyan);
+            padding: 2px 8px; border-radius: 10px; font-weight: 800; font-family: 'Orbitron';
+        }
+        .hud-list { max-height: 220px; overflow-y: auto; padding: 0 12px 12px; }
+        .hud-list::-webkit-scrollbar { width: 3px; } 
+        .hud-list::-webkit-scrollbar-track { background: transparent; } 
+        .hud-list::-webkit-scrollbar-thumb { background: rgba(6,182,212,0.3); border-radius: 4px; }
+        .hud-row { 
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px; 
+            border-radius: 12px; margin-bottom: 3px; transition: 0.3s; 
+            cursor: pointer; border: 1px solid transparent; position: relative;
+        }
+        .hud-row:hover { 
+            background: rgba(6,182,212,0.08); border-color: rgba(6,182,212,0.2); 
+            transform: translateX(3px);
+        }
+        .hud-row::before {
+            content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 2px;
+            background: var(--neon-cyan); border-radius: 2px; opacity: 0; transition: 0.3s;
+        }
+        .hud-row:hover::before { opacity: 1; }
+        .hud-rank { font-family: 'Orbitron'; font-size: 0.65rem; font-weight: 900; color: #475569; min-width: 28px; text-align: center; padding: 3px 0; border-radius: 6px; background: rgba(255,255,255,0.03); }
+        .hud-rank.gold { color: #fbbf24; background: rgba(251,191,36,0.1); text-shadow: 0 0 8px rgba(251,191,36,0.4); }
+        .hud-rank.silver { color: #94a3b8; background: rgba(148,163,184,0.1); }
+        .hud-rank.bronze { color: #f97316; background: rgba(249,115,22,0.1); }
+        .hud-name { font-size: 0.68rem; font-weight: 800; color: #e2e8f0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hud-dist { font-size: 0.55rem; color: #38bdf8; font-weight: 700; font-family: 'Orbitron'; }
+
+        /* ====== MAP COMPASS ====== */
+        .map-compass {
+            position: absolute; bottom: 90px; left: 20px; z-index: 500;
+            width: 70px; height: 70px; border-radius: 50%;
+            background: rgba(2, 6, 23, 0.9); backdrop-filter: blur(12px);
+            border: 1.5px solid rgba(6, 182, 212, 0.4);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 15px rgba(6,182,212,0.1);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .compass-ring {
+            position: absolute; inset: 3px; border: 1px solid rgba(6,182,212,0.15);
+            border-radius: 50%;
+        }
+        .compass-needle {
+            position: relative; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .compass-n {
+            position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+            font-family: 'Orbitron'; font-size: 0.55rem; font-weight: 900;
+            color: #ef4444; text-shadow: 0 0 8px rgba(239,68,68,0.6);
+        }
+        .compass-s {
+            position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+            font-family: 'Orbitron'; font-size: 0.4rem; font-weight: 800; color: #475569;
+        }
+        .compass-e {
+            position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+            font-family: 'Orbitron'; font-size: 0.4rem; font-weight: 800; color: #475569;
+        }
+        .compass-w {
+            position: absolute; left: 7px; top: 50%; transform: translateY(-50%);
+            font-family: 'Orbitron'; font-size: 0.4rem; font-weight: 800; color: #475569;
+        }
+        .compass-center {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan);
+            z-index: 5;
+        }
+        .compass-line-n {
+            position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+            width: 2px; height: 16px;
+            background: linear-gradient(to bottom, #ef4444, transparent);
+        }
+        .compass-line-s {
+            position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+            width: 1.5px; height: 14px;
+            background: linear-gradient(to top, #475569, transparent);
+        }
+        .compass-tick { position: absolute; background: rgba(6,182,212,0.3); }
+        .compass-tick-h { width: 6px; height: 1px; }
+        .compass-tick-v { width: 1px; height: 6px; }
+
+        /* ====== CUSTOM MARKER CLUSTER STYLING ====== */
+        .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+            background: rgba(6, 182, 212, 0.2) !important;
+            border: 2px solid rgba(6, 182, 212, 0.6) !important;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3) !important;
+        }
+        .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+            background: rgba(2, 6, 23, 0.9) !important;
+            color: var(--neon-cyan) !important;
+            font-family: 'Orbitron' !important;
+            font-weight: 900 !important;
+            font-size: 0.75rem !important;
+            border: 1px solid rgba(6, 182, 212, 0.4) !important;
+            box-shadow: inset 0 0 10px rgba(6,182,212,0.2) !important;
+        }
+        
+        /* Map interaction hint */
+        .map-interaction-hint {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 500; background: rgba(2, 6, 23, 0.9); backdrop-filter: blur(10px);
+            border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 30px;
+            padding: 10px 25px; font-family: 'Orbitron'; font-size: 0.6rem;
+            color: var(--neon-cyan); font-weight: 800; letter-spacing: 1px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            opacity: 0; transition: opacity 0.5s; pointer-events: none;
+        }
+        .map-interaction-hint.show { opacity: 1; }
+        
+        /* Warehouse marker with distance badge */
+        .wh-marker-clickable {
+            background: transparent !important;
+            border: none !important;
+            pointer-events: auto !important;
+            cursor: pointer !important;
+        }
+        .wh-marker-badge {
+            position: relative; display: flex; flex-direction: column; align-items: center;
+            justify-content: flex-end; width: 100%; height: 100%;
+            cursor: pointer; pointer-events: auto;
+        }
+        .wh-marker-label {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            color: #fff; padding: 5px 14px; border-radius: 20px;
+            font-family: 'Orbitron'; font-weight: 900; font-size: 0.55rem;
+            border: 2px solid rgba(255,255,255,0.9); 
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5);
+            display: flex; align-items: center; gap: 5px; white-space: nowrap;
+            position: relative; cursor: pointer;
+        }
+        .wh-marker-dist {
+            position: absolute; top: 100%; margin-top: 2px; left: 50%; transform: translateX(-50%);
+            background: rgba(2, 6, 23, 0.9); color: var(--neon-cyan);
+            font-family: 'Orbitron'; font-size: 0.45rem; font-weight: 900;
+            padding: 2px 8px; border-radius: 8px; white-space: nowrap;
+            border: 1px solid rgba(6, 182, 212, 0.4);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            pointer-events: none;
+        }
 
         /* MOBILE HAMBURGER & RESPONSIVITY */
         .mob-toggle { display: none; position: fixed; top: 15px; left: 15px; z-index: 2400; background: #020617; color: #06b6d4; width: 45px; height: 45px; border-radius: 12px; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); border: 1.5px solid rgba(6, 182, 212, 0.3); }
@@ -370,13 +608,23 @@
             .header-title { font-size: 0.8rem !important; text-align:center;}
             .header-btn { font-size:0.7rem !important; width: 100%;}
             .map-legend { bottom: 15px !important; left: 15px !important; }
-            .hud-panel { position:fixed !important; top: 15px !important; bottom: auto !important; left: auto !important; right: 15px !important; width: 150px !important; border-radius: 12px !important; max-height: 40vh; overflow-y: auto; padding: 10px !important; box-shadow: 0 0 20px rgba(0,0,0,0.5) !important; translate: 0 50px; }
-            .hud-total { font-size: 1.2rem !important; margin-bottom: 5px !important; }
-            .hud-sub { font-size: 0.45rem !important; margin-bottom: 8px !important; }
-            .hud-row { padding: 5px 8px !important; gap: 6px !important; }
-            .hud-rank { min-width: 18px !important; font-size: 0.6rem !important; }
-            .hud-name { font-size: 0.6rem !important; }
-            .hud-dist { font-size: 0.5rem !important; }
+            .hud-panel { position:fixed !important; top: 15px !important; bottom: auto !important; left: auto !important; right: 15px !important; width: 160px !important; border-radius: 14px !important; max-height: 45vh; overflow-y: auto; padding: 0 !important; box-shadow: 0 0 20px rgba(0,0,0,0.5) !important; translate: 0 50px; }
+            .hud-header-block { padding: 12px 10px 10px !important; }
+            .hud-icon-ring { width: 36px !important; height: 36px !important; margin-bottom: 6px !important; }
+            .hud-icon-ring i { font-size: 0.9rem !important; }
+            .hud-total-num { font-size: 1.6rem !important; }
+            .hud-sub-label { font-size: 0.4rem !important; letter-spacing: 1.5px !important; }
+            .hud-stats-bar { gap: 10px !important; padding: 6px 10px !important; }
+            .hud-stat-val { font-size: 0.6rem !important; }
+            .hud-stat-lbl { font-size: 0.35rem !important; }
+            .hud-list-header { padding: 8px 10px 4px !important; }
+            .hud-row { padding: 6px 8px !important; gap: 6px !important; }
+            .hud-rank { min-width: 20px !important; font-size: 0.55rem !important; }
+            .hud-name { font-size: 0.55rem !important; }
+            .hud-dist { font-size: 0.45rem !important; }
+            .map-compass { width: 50px !important; height: 50px !important; bottom: 70px !important; left: 10px !important; }
+            .compass-n { font-size: 0.45rem !important; top: 4px !important; }
+            .compass-s, .compass-e, .compass-w { font-size: 0.3rem !important; }
             .modal-box { width: 100% !important; border-radius: 0 !important; height: 100vh !important; max-height: 100vh !important; }
             .detail-modal-box { margin:0 !important; padding:20px !important; }
             .dm-grid { grid-template-columns:1fr !important; }
@@ -502,10 +750,33 @@
                 </div>
             </div>
             
-            <!-- HUD LEADERBOARD PANEL -->
+            <!-- HUD LEADERBOARD PANEL — MODERN DATA INTELLIGENCE -->
             <div class="hud-panel" id="hudPanel">
-                <div class="hud-total" id="hudTotal">0</div>
-                <div class="hud-sub">TOTAL GUDANG TERDAFTAR</div>
+                <div class="hud-header-block">
+                    <div class="hud-icon-ring">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="hud-total-num" id="hudTotal">0</div>
+                    <div class="hud-sub-label">TOTAL GUDANG TERDAFTAR</div>
+                </div>
+                <div class="hud-stats-bar" id="hudStats">
+                    <div class="hud-stat-item">
+                        <div class="hud-stat-val" id="hudAvgDist">-</div>
+                        <div class="hud-stat-lbl">AVG JARAK</div>
+                    </div>
+                    <div class="hud-stat-item">
+                        <div class="hud-stat-val" id="hudTotalArea">-</div>
+                        <div class="hud-stat-lbl">TOTAL M²</div>
+                    </div>
+                    <div class="hud-stat-item">
+                        <div class="hud-stat-val" id="hudNearest">-</div>
+                        <div class="hud-stat-lbl">TERDEKAT</div>
+                    </div>
+                </div>
+                <div class="hud-list-header">
+                    <div class="hud-list-title">REGISTRY</div>
+                    <div class="hud-list-badge" id="hudListBadge">LIVE</div>
+                </div>
                 <div class="hud-list" id="hudList">
                     <!-- JS will populate -->
                 </div>
@@ -515,6 +786,25 @@
                 <div style="font-family:'Orbitron'; font-size:0.75rem; font-weight:900; margin-bottom:10px;">Map Legend</div>
                 <div class="legend-item"><div class="leg-dot" style="background:var(--accent-blue)"></div> Pabrik Utama</div>
                 <div class="legend-item"><div class="leg-dot" style="background:var(--accent-red)"></div> Gudang Terdaftar</div>
+            </div>
+
+            <!-- COMPASS -->
+            <div class="map-compass" id="mapCompass">
+                <div class="compass-ring"></div>
+                <div class="compass-needle">
+                    <div class="compass-n">N</div>
+                    <div class="compass-s">S</div>
+                    <div class="compass-e">E</div>
+                    <div class="compass-w">W</div>
+                    <div class="compass-line-n"></div>
+                    <div class="compass-line-s"></div>
+                    <div class="compass-center"></div>
+                </div>
+            </div>
+
+            <!-- MAP INTERACTION HINT -->
+            <div class="map-interaction-hint" id="mapHint">
+                <i class="fas fa-hand-pointer"></i>&nbsp; KLIK MARKER UNTUK DETAIL LOKASI & JARAK
             </div>
 
             <div id="map"></div>
@@ -778,7 +1068,7 @@
         let galleryIndex = 0;
 
         function openGallery(idxStr) {
-            let photos = idxStr.split('||'); // Kita parsing argumen sebagai string URL digabung '||'
+            let photos = idxStr.split('||');
             if(!photos || photos.length === 0 || photos[0] === '') return;
             
             activeGalleryPhotos = photos;
@@ -786,9 +1076,9 @@
 
             let htmlString = `
                 <div class="gallery-container">
-                    <div id="gallerySpinner" class="gal-spinner" style="display:block;"></div>
+                    <div id="gallerySpinner" class="gal-spinner" style="display:none;"></div>
                     <button class="gal-btn gal-prev" onclick="changeGal(-1)"><i class="fas fa-chevron-left"></i></button>
-                    <img id="swalGalleryImg" class="gallery-img" src="${activeGalleryPhotos[galleryIndex]}" onload="imageLoaded()">
+                    <img id="swalGalleryImg" class="gallery-img show" src="${activeGalleryPhotos[galleryIndex]}" onload="imageLoaded()">
                     <button class="gal-btn gal-next" onclick="changeGal(1)"><i class="fas fa-chevron-right"></i></button>
                     <div class="gal-counter" id="swalGalleryCount">1 / ${activeGalleryPhotos.length}</div>
                 </div>
@@ -796,11 +1086,11 @@
 
             Swal.fire({
                 html: htmlString,
-                width: '85%',
+                width: '96vw',
                 showConfirmButton: false,
-                background: 'rgba(5, 5, 10, 0.95)',
-                customClass: { popup: 'cyber-login-popup' },
-                backdrop: `rgba(0,0,0,0.95)`
+                background: 'rgba(2, 6, 23, 0.98)',
+                customClass: { popup: 'gallery-fullscreen-popup' },
+                backdrop: 'rgba(0,0,0,0.97)'
             });
         }
 
@@ -816,10 +1106,20 @@
             
             const img = document.getElementById('swalGalleryImg');
             const spinner = document.getElementById('gallerySpinner');
+            const nextUrl = activeGalleryPhotos[galleryIndex];
             
-            img.classList.remove('show');
-            spinner.style.display = 'block';
-            img.src = activeGalleryPhotos[galleryIndex];
+            // Check if image is already in our preload cache (fully loaded)
+            if(window._preloadedImages && window._preloadedImages[nextUrl]) {
+                // Image is cached — show instantly, no spinner
+                spinner.style.display = 'none';
+                img.src = nextUrl;
+                img.classList.add('show');
+            } else {
+                // Not yet cached — show spinner, load now
+                img.classList.remove('show');
+                spinner.style.display = 'block';
+                img.src = nextUrl;
+            }
             
             document.getElementById('swalGalleryCount').innerText = `${galleryIndex + 1} / ${activeGalleryPhotos.length}`;
         }
@@ -827,27 +1127,54 @@
         function renderMarkers() {
             if(!map) return;
             if(window.markerGroup) map.removeLayer(window.markerGroup);
-            window.markerGroup = L.layerGroup().addTo(map);
+            // Use MarkerCluster to prevent overlapping markers
+            window.markerGroup = L.markerClusterGroup({
+                maxClusterRadius: 50,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                zoomToBoundsOnClick: true,
+                iconCreateFunction: function(cluster) {
+                    const count = cluster.getChildCount();
+                    return L.divIcon({
+                        html: `<div style="background:rgba(2,6,23,0.9); color:#06b6d4; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Orbitron'; font-weight:900; font-size:0.8rem; border:2px solid rgba(6,182,212,0.5); box-shadow:0 0 20px rgba(6,182,212,0.3);">${count}</div>`,
+                        className: '',
+                        iconSize: [44, 44],
+                        iconAnchor: [22, 22]
+                    });
+                }
+            });
 
             let bounds = [];
             surveys.forEach((s, idx) => {
                 if(!s.lat || !s.lng) return;
                 bounds.push([s.lat, s.lng]);
 
+                // Calculate distance for marker badge
+                let dist = '?';
+                try { dist = (map.distance([FACTORY_LAT, FACTORY_LNG], [s.lat, s.lng]) / 1000).toFixed(1); } catch(e) {}
+
                 let dynIcon = L.divIcon({
                     html: `
-                        <div style="background:var(--accent-red); color:#fff; padding:6px 15px; border-radius:20px; font-family:'Orbitron'; font-weight:900; font-size:0.6rem; border:2px solid #fff; box-shadow:0 5px 15px rgba(239, 68, 68, 0.4); display:flex; align-items:center; justify-content:center; gap:5px; white-space:nowrap; transform:translate(-50%, -100%); position:absolute; top:0; left:0;">
-                            <i class="fas fa-map-marker-alt"></i> <span>${s.nama}</span>
+                        <div class="wh-marker-badge">
+                            <div class="wh-marker-label">
+                                <i class="fas fa-map-marker-alt"></i> <span>${s.nama}</span>
+                                <div class="wh-marker-dist">${dist} km</div>
+                            </div>
                         </div>
                     `,
-                    className: '',
-                    iconSize: [0, 0]
+                    className: 'wh-marker-clickable',
+                    iconSize: [160, 45],
+                    iconAnchor: [80, 45]
                 });
 
                 L.marker([s.lat, s.lng], {icon: dynIcon}).addTo(window.markerGroup).on('click', function() {
-                    openFullscreenDetail(s);
+                    // Fly to marker then show detail
+                    map.flyTo([s.lat, s.lng], 15, { animate: true, duration: 1 });
+                    setTimeout(() => openFullscreenDetail(s), 600);
                 });
             });
+
+            map.addLayer(window.markerGroup);
 
             // Zoom Peta Otomatis (Wide View) Agar Semua Gudang Terlihat
             if(bounds.length > 0) {
@@ -856,16 +1183,52 @@
 
             // Update HUD Leaderboard
             renderHudLeaderboard();
+
+            // Show interaction hint on map move
+            setupMapInteractionHint();
         }
 
-        // --- HUD LEADERBOARD ---
+        // --- MAP INTERACTION HINT ---
+        let mapHintTimer = null;
+        function setupMapInteractionHint() {
+            if(window._mapHintSetup) return;
+            window._mapHintSetup = true;
+            const hint = document.getElementById('mapHint');
+            map.on('movestart', function() {
+                hint.classList.add('show');
+                clearTimeout(mapHintTimer);
+            });
+            map.on('moveend', function() {
+                mapHintTimer = setTimeout(() => hint.classList.remove('show'), 2500);
+            });
+        }
+
+        // --- HUD LEADERBOARD (MODERN) ---
         function renderHudLeaderboard() {
-            const total = surveys.filter(s => s.lat && s.lng).length;
-            document.getElementById('hudTotal').textContent = total;
+            const geoSurveys = surveys.filter(s => s.lat && s.lng);
+            const total = geoSurveys.length;
+            
+            // Animated count-up
+            animateCountUp('hudTotal', total);
+            
             const listEl = document.getElementById('hudList');
+
+            // Calculate stats
+            let distances = [];
+            let totalArea = 0;
+            geoSurveys.forEach(s => {
+                try { distances.push(map.distance([FACTORY_LAT, FACTORY_LNG], [s.lat, s.lng]) / 1000); } catch(e) {}
+                totalArea += parseFloat(s.luas) || 0;
+            });
+            let avgDist = distances.length > 0 ? (distances.reduce((a,b) => a+b, 0) / distances.length).toFixed(1) : '-';
+            let nearest = distances.length > 0 ? Math.min(...distances).toFixed(1) : '-';
+
+            document.getElementById('hudAvgDist').textContent = avgDist !== '-' ? avgDist + ' km' : '-';
+            document.getElementById('hudTotalArea').textContent = totalArea > 0 ? totalArea.toLocaleString() : '-';
+            document.getElementById('hudNearest').textContent = nearest !== '-' ? nearest + ' km' : '-';
             
             // Sort by priority (ascending). If no priority, push to end.
-            let sorted = surveys.filter(s => s.lat && s.lng).slice().sort((a, b) => {
+            let sorted = geoSurveys.slice().sort((a, b) => {
                 let pa = parseInt(a.prioritas) || 9999;
                 let pb = parseInt(b.prioritas) || 9999;
                 return pa - pb;
@@ -883,6 +1246,26 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // --- ANIMATED COUNT-UP ---
+        function animateCountUp(elementId, target) {
+            const el = document.getElementById(elementId);
+            const current = parseInt(el.textContent) || 0;
+            if(current === target) return;
+            const duration = 800;
+            const steps = 20;
+            const stepTime = duration / steps;
+            const increment = (target - current) / steps;
+            let step = 0;
+            const timer = setInterval(() => {
+                step++;
+                el.textContent = Math.round(current + increment * step);
+                if(step >= steps) {
+                    el.textContent = target;
+                    clearInterval(timer);
+                }
+            }, stepTime);
         }
 
         // --- FULLSCREEN DETAIL MODAL ---
@@ -1019,10 +1402,14 @@
         function focusMarker(id) {
             const s = surveys.find(x => x.id === id);
             if(s && map) {
-                map.setView([s.lat, s.lng], 16, { animate: true, duration: 1.5 });
+                // Fly to marker with smooth animation
+                map.flyTo([s.lat, s.lng], 16, { animate: true, duration: 1.5 });
                 
                 // Optional: toggle mobile sidebar if open
                 if(window.innerWidth <= 768) toggleSidebar();
+
+                // Auto-open detail after animation
+                setTimeout(() => openFullscreenDetail(s), 800);
             }
         }
 
@@ -1326,11 +1713,10 @@
             const s = localStorage.getItem('smart_surveys');
             if(s) {
                 const cachedData = JSON.parse(s);
-                // Deduplikasi cache agar tidak ada duplikat historis
+                // Deduplikasi cache menggunakan ID sebagai kunci utama (FIX: sebelumnya pakai nama, menyebabkan double saat edit nama)
                 const dedupMap = new Map();
                 cachedData.forEach(item => { 
-                    // Gunakan Nama (seterlah dipangkas spasi) sebagai kunci utama untuk merapatkan duplikat nama
-                    const key = (item.nama ? item.nama.toLowerCase().trim() : '') || item.id;
+                    const key = item.id || (item.nama ? item.nama.toLowerCase().trim() : '');
                     if(key) dedupMap.set(key, item); 
                 });
                 surveys = Array.from(dedupMap.values());
@@ -1338,6 +1724,7 @@
                 renderMarkers();
                 renderList();
                 renderSimulationList();
+                preloadAllPhotos(); // Preload semua foto dari cache
             }
 
             // 2. Lakukan Sinkronisasi Real-time ke Cloud (Bypass Browser Cache)
@@ -1346,13 +1733,12 @@
                 .then(res => res.json())
                 .then(data => {
                     if(data && Array.isArray(data)) {
-                        // --- DEDUPLIKASI DATA (Hanya ambil versi terbaru setiap Nama/ID) ---
+                        // --- DEDUPLIKASI DATA (Gunakan ID sebagai kunci utama) ---
+                        // FIX: Sebelumnya pakai nama → saat edit nama, entry lama & baru jadi 2 key berbeda = double!
+                        // Sekarang pakai ID → ID unik per entry, saat edit tetap pakai ID yang sama
                         const dedupMap = new Map();
                         data.forEach(item => {
-                            // Karena Google Sheets biasanya mengembalikan baris secara kronologis,
-                            // Map.set akan menimpa baris lama dengan baris yang lebih baru (terakhir ditemukan).
-                            // Kita gunakan Nama sebagai kunci utama untuk menangkap duplikat akibat "Edit" yang jadi "Add"
-                            const key = (item.nama ? item.nama.toLowerCase().trim() : '') || item.id;
+                            const key = item.id || (item.nama ? item.nama.toLowerCase().trim() : '');
                             if(key) dedupMap.set(key, item);
                         });
                         const freshData = Array.from(dedupMap.values());
@@ -1382,7 +1768,8 @@
                         localStorage.setItem('smart_surveys', JSON.stringify(surveys));
                         renderMarkers();
                         renderList();
-                        renderSimulationList(); // Pastikan simulasi juga terupdate
+                        renderSimulationList();
+                        preloadAllPhotos(); // Preload semua foto setelah data fresh
                     }
                 })
                 .catch(e => console.warn("Sinkronisasi Cloud Tertunda:", e))
@@ -1434,11 +1821,16 @@
                 body: JSON.stringify(d)
             }).then(() => {
                 if(isEditing) {
-                    const idx = surveys.findIndex(s => s.id === uId);
-                    if(idx !== -1) surveys[idx] = d;
-                } else {
-                    surveys.push(d);
+                    // FIX: Remove old entry by ID first, then add updated entry
+                    // This prevents doubles when backend appends instead of updating
+                    const oldIdx = surveys.findIndex(s => s.id === uId);
+                    if(oldIdx !== -1) {
+                        // Preserve prioritas from old entry
+                        d.prioritas = surveys[oldIdx].prioritas;
+                        surveys.splice(oldIdx, 1);
+                    }
                 }
+                surveys.push(d);
                 
                 localStorage.setItem('smart_surveys', JSON.stringify(surveys));
                 
@@ -1831,7 +2223,37 @@
             `;
         }
 
+        // --- PRELOAD ALL PHOTOS FOR INSTANT GALLERY ---
+        // Global preload cache — tracks which images are fully loaded
+        window._preloadedImages = window._preloadedImages || {};
 
+        function preloadAllPhotos() {
+            let allUrls = [];
+            surveys.forEach(s => {
+                if(!s.foto) return;
+                try {
+                    let parsed = JSON.parse(s.foto);
+                    if(Array.isArray(parsed)) allUrls.push(...parsed);
+                    else allUrls.push(s.foto);
+                } catch(e) {
+                    allUrls.push(s.foto);
+                }
+            });
+            // Preload each unique URL into browser cache
+            const unique = [...new Set(allUrls)];
+            console.log(`[SmartWH] Preloading ${unique.length} photos into cache...`);
+            unique.forEach(url => {
+                if(window._preloadedImages[url]) return; // Already loaded
+                const img = new Image();
+                img.onload = function() {
+                    window._preloadedImages[url] = true;
+                };
+                img.onerror = function() {
+                    window._preloadedImages[url] = false;
+                };
+                img.src = url;
+            });
+        }
 
     </script>
 </body>
