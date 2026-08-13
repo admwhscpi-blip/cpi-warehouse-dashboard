@@ -357,24 +357,6 @@ function postAPI(action, data, cb) {
 }
 
 // ── NAVIGATION ─────────────────────────────────────────────────────────────
-/** Klon isi <template id="tmpl-xxx"> ke penampung <div id="page-xxx"> jika belum pernah di-render. */
-function ensurePageLoadedFromTemplate(page) {
-  var pg = $('page-' + page);
-  if (!pg) return false;
-  if (pg.children.length === 0) {
-    var tmpl = $('tmpl-' + page);
-    if (tmpl) {
-      var clone = document.importNode(tmpl.content, true);
-      pg.appendChild(clone);
-      if (typeof populateBKDropdowns === 'function') {
-        populateBKDropdowns();
-      }
-      return true;
-    }
-  }
-  return false;
-}
-
 function navigateTo(page) {
   if (!appState.user) return;
   var perms = ROLE_PERMISSIONS[appState.user.role] || {};
@@ -385,7 +367,6 @@ function navigateTo(page) {
     } else { toast('Anda tidak punya akses ke halaman ini', 'w'); }
     return;
   }
-  ensurePageLoadedFromTemplate(page);
   document.querySelectorAll('.page').forEach(function(el) { el.classList.remove('active'); });
   document.querySelectorAll('.nav-item').forEach(function(el) { el.classList.remove('active'); });
   var pg = $('page-' + page);
