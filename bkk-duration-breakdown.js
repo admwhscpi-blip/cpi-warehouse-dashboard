@@ -179,71 +179,275 @@
    * Rantai Intake 71 untuk satu baris: urutan truk + index baris ini.
    * Dipakai IDLE LOSS (menit) dan popup keterangan PB Finish / PB Start.
    */
-  function bkkDbIntakeChainContext(row, poolRows) {
-    if (!row || !poolRows || !poolRows.length) return null;
-    if (!bkkDbRowInIntakeChain(row)) return null;
+var _bkkDbIntakeChainIndex = null;
+var _bkkDbIntakeChainIndexRows = null;
 
-    var bk = String(bkkDbCol(row, 'BK_ID')).trim();
-    var rowDay = bkkDbYmdFromCell(bkkDbCol(row, 'TANGGAL'));
-    if (!bk || !rowDay) return null;
+function bkkDbBuildIntakeChainIndex(poolRows) {
+  if (
+    _bkkDbIntakeChainIndex &&
+    _bkkDbIntakeChainIndexRows === poolRows
+  ) {
+    return _bkkDbIntakeChainIndex;
+  }
 
-    var chain = [];
-    for (var i = 0; i < poolRows.length; i++) {
-      var r = poolRows[i];
-      if (String(bkkDbCol(r, 'BK_ID')).trim() !== bk) continue;
-      var d2 = bkkDbYmdFromCell(bkkDbCol(r, 'TANGGAL'));
-      if (d2 !== rowDay) continue;
-      if (!bkkDbShiftCompatible(row, r)) continue;
-      if (!bkkDbRowInIntakeChain(r)) continue;
+  var index = {};
 
-      var pbYmd = bkkDbYmdFromCell(bkkDbCol(r, 'PB_TANGGAL'));
-      if (!pbYmd) pbYmd = bkkDbYmdFromCell(bkkDbCol(r, 'TANGGAL'));
-      var ps = bkkDbNormalizeHM(bkkDbCol(r, 'PB_START'));
-      var pf = bkkDbNormalizeHM(bkkDbCol(r, 'PB_FINISH'));
-      if (!pbYmd || !ps || !pf) continue;
-      var msS = bkkDbConcatMs(pbYmd, ps);
-      var msF = bkkDbConcatMs(pbYmd, pf);
-      if (isNaN(msS) || isNaN(msF)) continue;
-      chain.push({
-        id: bkkDbCol(r, 'ID'),
-        nopol: String(bkkDbCol(r, 'NO_POLISI') || '').trim().toUpperCase(),
-        msS: msS,
-        msF: msF
-      });
+  for (var i = 0; i < poolRows.length; i++) {
+    var r = poolRows[i];
+
+    if (!r) continue;
+    if (!bkkDbRowInIntakeChain(r)) continue;
+
+    var bk = String(bkkDbCol(r, 'BK_ID') || '').trim();
+    var day = bkkDbYmdFromCell(bkkDbCol(r, 'TANGGAL'));
+
+    if (!bk || !day) continue;
+
+    var shift = String(
+      r.SHIFT != null ? r.SHIFT : ''
+    ).trim();
+
+    /*
+     * Sama dengan bkkDbShiftCompatible():
+     *
+     * jika shift kosong, kompatibel dengan semuanya.
+     * Karena itu row tanpa shift kita masukkan ke bucket khusus.
+     */
+    var key = bk + '|' + day + '|' + shift;
+
+    if (!index[key]) {
+      index[key] = [];
     }
 
-    if (chain.length < 2) return null;
+    var pbYmd = bkkDbYmdFromCell(
+      bkkDbCol(r, 'PB_TANGGAL')
+    );
 
-    chain.sort(function(a, b) {
+    if (!pbYmd) {
+      pbYmd = day;
+    }
+
+    var ps = bkkDbNormalizeHM(
+      bkkDbCol(r, 'PB_START')
+    );
+
+    var pf = bkkDbNormalizeHM(
+      bkkDbCol(r, 'PB_FINISH')
+    );
+
+    if (!pbYmd || !ps || !pf) continue;
+
+    var msS = bkkDbConcatMs(pbYmd, ps);
+    var msF = bkkDbConcatMs(pbYmd, pf);
+
+    if (isNaN(msS) || isNaN(msF)) continue;
+
+    index[key].push({
+      id: bkkDbCol(r, 'ID'),
+      nopol: String(
+        bkkDbCol(r, 'NO_POLISI') || ''
+      ).trim().toUpperCase(),
+      msS: msS,
+      msF: msF
+    });
+  }
+
+  Object.keys(index).forEach(function(key) {
+    index[key].sort(function(a, b) {
       return a.msS - b.msS;
     });
+  });
 
-    var rid = bkkDbCol(row, 'ID');
-    var myIdx = -1;
-    if (rid != null && String(rid).trim() !== '') {
-      for (var j = 0; j < chain.length; j++) {
-        if (String(chain[j].id) === String(rid)) {
-          myIdx = j;
-          break;
-        }
-      }
-    }
-    if (myIdx < 0) {
-      var np = String(bkkDbCol(row, 'NO_POLISI') || '').trim().toUpperCase();
-      var rowPbY = bkkDbYmdFromCell(bkkDbCol(row, 'PB_TANGGAL')) || rowDay;
-      var rowPs = bkkDbNormalizeHM(bkkDbCol(row, 'PB_START'));
-      var rowMsS = bkkDbConcatMs(rowPbY, rowPs);
-      for (var k = 0; k < chain.length; k++) {
-        if (np && chain[k].nopol === np && !isNaN(rowMsS) && Math.abs(chain[k].msS - rowMsS) < 120000) {
-          myIdx = k;
-          break;
-        }
-      }
-    }
-    if (myIdx <= 0) return null;
+  _bkkDbIntakeChainIndex = index;
+  _bkkDbIntakeChainIndexRows = poolRows;
 
-    return { chain: chain, myIdx: myIdx };
+  return index;
+}
+
+  // function bkkDbIntakeChainContext(row, poolRows) {
+  //   if (!row || !poolRows || !poolRows.length) return null;
+  //   if (!bkkDbRowInIntakeChain(row)) return null;
+
+  //   var bk = String(bkkDbCol(row, 'BK_ID')).trim();
+  //   var rowDay = bkkDbYmdFromCell(bkkDbCol(row, 'TANGGAL'));
+  //   if (!bk || !rowDay) return null;
+
+  //   var chain = [];
+  //   for (var i = 0; i < poolRows.length; i++) {
+  //     var r = poolRows[i];
+  //     if (String(bkkDbCol(r, 'BK_ID')).trim() !== bk) continue;
+  //     var d2 = bkkDbYmdFromCell(bkkDbCol(r, 'TANGGAL'));
+  //     if (d2 !== rowDay) continue;
+  //     if (!bkkDbShiftCompatible(row, r)) continue;
+  //     if (!bkkDbRowInIntakeChain(r)) continue;
+
+  //     var pbYmd = bkkDbYmdFromCell(bkkDbCol(r, 'PB_TANGGAL'));
+  //     if (!pbYmd) pbYmd = bkkDbYmdFromCell(bkkDbCol(r, 'TANGGAL'));
+  //     var ps = bkkDbNormalizeHM(bkkDbCol(r, 'PB_START'));
+  //     var pf = bkkDbNormalizeHM(bkkDbCol(r, 'PB_FINISH'));
+  //     if (!pbYmd || !ps || !pf) continue;
+  //     var msS = bkkDbConcatMs(pbYmd, ps);
+  //     var msF = bkkDbConcatMs(pbYmd, pf);
+  //     if (isNaN(msS) || isNaN(msF)) continue;
+  //     chain.push({
+  //       id: bkkDbCol(r, 'ID'),
+  //       nopol: String(bkkDbCol(r, 'NO_POLISI') || '').trim().toUpperCase(),
+  //       msS: msS,
+  //       msF: msF
+  //     });
+  //   }
+
+  //   if (chain.length < 2) return null;
+
+  //   chain.sort(function(a, b) {
+  //     return a.msS - b.msS;
+  //   });
+
+  //   var rid = bkkDbCol(row, 'ID');
+  //   var myIdx = -1;
+  //   if (rid != null && String(rid).trim() !== '') {
+  //     for (var j = 0; j < chain.length; j++) {
+  //       if (String(chain[j].id) === String(rid)) {
+  //         myIdx = j;
+  //         break;
+  //       }
+  //     }
+  //   }
+  //   if (myIdx < 0) {
+  //     var np = String(bkkDbCol(row, 'NO_POLISI') || '').trim().toUpperCase();
+  //     var rowPbY = bkkDbYmdFromCell(bkkDbCol(row, 'PB_TANGGAL')) || rowDay;
+  //     var rowPs = bkkDbNormalizeHM(bkkDbCol(row, 'PB_START'));
+  //     var rowMsS = bkkDbConcatMs(rowPbY, rowPs);
+  //     for (var k = 0; k < chain.length; k++) {
+  //       if (np && chain[k].nopol === np && !isNaN(rowMsS) && Math.abs(chain[k].msS - rowMsS) < 120000) {
+  //         myIdx = k;
+  //         break;
+  //       }
+  //     }
+  //   }
+  //   if (myIdx <= 0) return null;
+
+  //   return { chain: chain, myIdx: myIdx };
+  // }
+
+  function bkkDbIntakeChainContext(row, poolRows) {
+  if (!row || !poolRows || !poolRows.length) return null;
+  if (!bkkDbRowInIntakeChain(row)) return null;
+
+  var bk = String(
+    bkkDbCol(row, 'BK_ID') || ''
+  ).trim();
+
+  var rowDay = bkkDbYmdFromCell(
+    bkkDbCol(row, 'TANGGAL')
+  );
+
+  if (!bk || !rowDay) return null;
+
+  var shift = String(
+    row.SHIFT != null ? row.SHIFT : ''
+  ).trim();
+
+  var index = bkkDbBuildIntakeChainIndex(poolRows);
+
+  /*
+   * Shift normal → ambil bucket BK + tanggal + shift
+   */
+  var key = bk + '|' + rowDay + '|' + shift;
+
+  var chain = index[key] ? index[key].slice() : [];
+
+  /*
+   * bkkDbShiftCompatible() menganggap shift kosong
+   * kompatibel dengan semua shift.
+   *
+   * Jadi jika row memiliki shift, tambahkan juga
+   * record dari bucket shift kosong.
+   */
+  if (shift) {
+    var emptyKey = bk + '|' + rowDay + '|';
+
+    if (index[emptyKey]) {
+      chain = chain.concat(index[emptyKey]);
+    }
+  } else {
+    /*
+     * Row saat ini tidak punya SHIFT.
+     * Maka harus kompatibel dengan semua SHIFT.
+     */
+    var prefix = bk + '|' + rowDay + '|';
+
+    Object.keys(index).forEach(function(k) {
+      if (k.indexOf(prefix) !== 0) return;
+
+      if (k === key) return;
+
+      chain = chain.concat(index[k]);
+    });
   }
+
+  if (chain.length < 2) return null;
+
+  chain.sort(function(a, b) {
+    return a.msS - b.msS;
+  });
+
+  var rid = bkkDbCol(row, 'ID');
+  var myIdx = -1;
+
+  if (rid != null && String(rid).trim() !== '') {
+    for (var j = 0; j < chain.length; j++) {
+      if (
+        String(chain[j].id) === String(rid)
+      ) {
+        myIdx = j;
+        break;
+      }
+    }
+  }
+
+  /*
+   * Fallback jika ID tidak ditemukan.
+   */
+  if (myIdx < 0) {
+    var np = String(
+      bkkDbCol(row, 'NO_POLISI') || ''
+    ).trim().toUpperCase();
+
+    var rowPbY =
+      bkkDbYmdFromCell(
+        bkkDbCol(row, 'PB_TANGGAL')
+      ) || rowDay;
+
+    var rowPs = bkkDbNormalizeHM(
+      bkkDbCol(row, 'PB_START')
+    );
+
+    var rowMsS = bkkDbConcatMs(
+      rowPbY,
+      rowPs
+    );
+
+    for (var k = 0; k < chain.length; k++) {
+      if (
+        np &&
+        chain[k].nopol === np &&
+        !isNaN(rowMsS) &&
+        Math.abs(chain[k].msS - rowMsS) < 120000
+      ) {
+        myIdx = k;
+        break;
+      }
+    }
+  }
+
+  if (myIdx <= 0) return null;
+
+  return {
+    chain: chain,
+    myIdx: myIdx
+  };
+}
 
   function bkkDbIdleLossDetailForPopup(row, poolRows) {
     var ctx = bkkDbIntakeChainContext(row, poolRows);
@@ -1879,43 +2083,252 @@
     });
   }
 
+  // window.loadBkkDurationBreakdownPage = function() {
+  //   bkkDbInitOnce();
+  //   var now = new Date();
+  //   var startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  //   var fmt = function(d) {
+  //     return d.getFullYear() + '-' + bkkDbPad2(d.getMonth() + 1) + '-' + bkkDbPad2(d.getDate());
+  //   };
+  //   var ds = document.getElementById('bkkdb_start_date');
+  //   var de = document.getElementById('bkkdb_end_date');
+  //   if (ds && !ds.value) ds.value = fmt(startOfMonth);
+  //   if (de && !de.value) de.value = fmt(now);
+
+  //   if (typeof fetchAPI !== 'function') return;
+  //   if (typeof showLoader === 'function') showLoader(true);
+  //   fetchAPI('getBongkarHistory', {}, function(resp) {
+  //     if (typeof showLoader === 'function') showLoader(false);
+  //     var raw = resp.status !== 'error' ? resp.data : [];
+  //     window._bkkDbHistoryRows = typeof bwNormalizeBongkarHistory === 'function' ? bwNormalizeBongkarHistory(raw) : (Array.isArray(raw) ? raw : []);
+
+  //     var mats = new Set();
+  //     var bks = new Set();
+  //     window._bkkDbHistoryRows.forEach(function(r) {
+  //       if (r.MATERIAL) mats.add(String(r.MATERIAL).trim());
+  //       if (r.BK_ID) bks.add(String(r.BK_ID).trim());
+  //     });
+  //     bkkDbPopulateOneMs('bkkdb-ms-material', mats, 'SEMUA MATERIAL');
+  //     bkkDbPopulateOneMs('bkkdb-ms-bk', bks, 'SEMUA BK');
+  //     bkkDbPopulateTypeBongkaranMs();
+
+  //     bkkDbDiscoverKeys(window._bkkDbHistoryRows);
+  //     bkkDbBuildChips();
+  //     _bkkDbSelSbm = [];
+  //     _bkkDbSelNs = [];
+  //     document.querySelectorAll('#bkkdb-chips-sbm .db-chip, #bkkdb-chips-nonsbm .db-chip').forEach(function(c) {
+  //       c.classList.remove('active');
+  //     });
+  //     window.bkkDbRender();
+  //   });
+  // };
+
   window.loadBkkDurationBreakdownPage = function() {
-    bkkDbInitOnce();
-    var now = new Date();
-    var startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    var fmt = function(d) {
-      return d.getFullYear() + '-' + bkkDbPad2(d.getMonth() + 1) + '-' + bkkDbPad2(d.getDate());
-    };
-    var ds = document.getElementById('bkkdb_start_date');
-    var de = document.getElementById('bkkdb_end_date');
-    if (ds && !ds.value) ds.value = fmt(startOfMonth);
-    if (de && !de.value) de.value = fmt(now);
 
-    if (typeof fetchAPI !== 'function') return;
-    if (typeof showLoader === 'function') showLoader(true);
-    fetchAPI('getBongkarHistory', {}, function(resp) {
-      if (typeof showLoader === 'function') showLoader(false);
-      var raw = resp.status !== 'error' ? resp.data : [];
-      window._bkkDbHistoryRows = typeof bwNormalizeBongkarHistory === 'function' ? bwNormalizeBongkarHistory(raw) : (Array.isArray(raw) ? raw : []);
+  console.log(
+    '%c[DUR 01] loadBkkDurationBreakdownPage START',
+    'color:red;font-weight:bold'
+  );
 
-      var mats = new Set();
-      var bks = new Set();
-      window._bkkDbHistoryRows.forEach(function(r) {
-        if (r.MATERIAL) mats.add(String(r.MATERIAL).trim());
-        if (r.BK_ID) bks.add(String(r.BK_ID).trim());
-      });
-      bkkDbPopulateOneMs('bkkdb-ms-material', mats, 'SEMUA MATERIAL');
-      bkkDbPopulateOneMs('bkkdb-ms-bk', bks, 'SEMUA BK');
-      bkkDbPopulateTypeBongkaranMs();
+  console.time('[DUR] TOTAL');
 
-      bkkDbDiscoverKeys(window._bkkDbHistoryRows);
-      bkkDbBuildChips();
-      _bkkDbSelSbm = [];
-      _bkkDbSelNs = [];
-      document.querySelectorAll('#bkkdb-chips-sbm .db-chip, #bkkdb-chips-nonsbm .db-chip').forEach(function(c) {
+  console.log('[DUR 02] bkkDbInitOnce');
+
+  bkkDbInitOnce();
+
+  console.log('[DUR 03] bkkDbInitOnce FINISH');
+
+  var now = new Date();
+
+  var startOfMonth =
+    new Date(now.getFullYear(), now.getMonth(), 1);
+
+  var fmt = function(d) {
+    return (
+      d.getFullYear() +
+      '-' +
+      bkkDbPad2(d.getMonth() + 1) +
+      '-' +
+      bkkDbPad2(d.getDate())
+    );
+  };
+
+  var ds = document.getElementById('bkkdb_start_date');
+  var de = document.getElementById('bkkdb_end_date');
+
+  if (ds && !ds.value) {
+    ds.value = fmt(startOfMonth);
+  }
+
+  if (de && !de.value) {
+    de.value = fmt(now);
+  }
+
+  console.log(
+    '[DUR 04] tanggal',
+    ds ? ds.value : null,
+    de ? de.value : null
+  );
+
+  if (typeof fetchAPI !== 'function') {
+    console.error('[DUR ERROR] fetchAPI tidak ditemukan');
+    return;
+  }
+
+  console.log('[DUR 05] showLoader ON');
+
+  if (typeof showLoader === 'function') {
+    showLoader(true);
+  }
+
+  console.log('[DUR 06] fetch getBongkarHistory');
+
+  fetchAPI('getBongkarHistory', {}, function(resp) {
+
+    console.log(
+      '%c[DUR 07] CALLBACK getBongkarHistory',
+      'color:green;font-weight:bold',
+      resp
+    );
+
+    if (typeof showLoader === 'function') {
+      showLoader(false);
+    }
+
+    console.log('[DUR 08] showLoader OFF');
+
+    var raw =
+      resp.status !== 'error'
+        ? resp.data
+        : [];
+
+    console.log(
+      '[DUR 09] raw data',
+      Array.isArray(raw) ? raw.length : typeof raw
+    );
+
+    console.time('[DUR] NORMALIZE');
+
+    window._bkkDbHistoryRows =
+      typeof bwNormalizeBongkarHistory === 'function'
+        ? bwNormalizeBongkarHistory(raw)
+        : (Array.isArray(raw) ? raw : []);
+
+    console.timeEnd('[DUR] NORMALIZE');
+
+    console.log(
+      '%c[DUR 10] NORMALIZE SELESAI',
+      'color:green;font-weight:bold',
+      window._bkkDbHistoryRows.length
+    );
+
+    var mats = new Set();
+    var bks = new Set();
+
+    console.time('[DUR] BUILD SET');
+
+    window._bkkDbHistoryRows.forEach(function(r) {
+
+      if (r.MATERIAL) {
+        mats.add(String(r.MATERIAL).trim());
+      }
+
+      if (r.BK_ID) {
+        bks.add(String(r.BK_ID).trim());
+      }
+
+    });
+
+    console.timeEnd('[DUR] BUILD SET');
+
+    console.log(
+      '[DUR 11] material =',
+      mats.size,
+      'BK =',
+      bks.size
+    );
+
+    console.log('[DUR 12] populate material');
+
+    bkkDbPopulateOneMs(
+      'bkkdb-ms-material',
+      mats,
+      'SEMUA MATERIAL'
+    );
+
+    console.log('[DUR 13] populate material FINISH');
+
+    console.log('[DUR 14] populate BK');
+
+    bkkDbPopulateOneMs(
+      'bkkdb-ms-bk',
+      bks,
+      'SEMUA BK'
+    );
+
+    console.log('[DUR 15] populate BK FINISH');
+
+    console.log('[DUR 16] populate type bongkaran');
+
+    bkkDbPopulateTypeBongkaranMs();
+
+    console.log('[DUR 17] populate type bongkaran FINISH');
+
+    console.log('[DUR 18] discover keys');
+
+    console.time('[DUR] DISCOVER KEYS');
+
+    bkkDbDiscoverKeys(
+      window._bkkDbHistoryRows
+    );
+
+    console.timeEnd('[DUR] DISCOVER KEYS');
+
+    console.log('[DUR 19] discover keys FINISH');
+
+    console.log('[DUR 20] build chips');
+
+    console.time('[DUR] BUILD CHIPS');
+
+    bkkDbBuildChips();
+
+    console.timeEnd('[DUR] BUILD CHIPS');
+
+    console.log('[DUR 21] build chips FINISH');
+
+    _bkkDbSelSbm = [];
+    _bkkDbSelNs = [];
+
+    console.log('[DUR 22] reset chips');
+
+    document
+      .querySelectorAll(
+        '#bkkdb-chips-sbm .db-chip, #bkkdb-chips-nonsbm .db-chip'
+      )
+      .forEach(function(c) {
         c.classList.remove('active');
       });
-      window.bkkDbRender();
-    });
-  };
+
+    console.log('[DUR 23] reset chips FINISH');
+
+    console.log(
+      '%c[DUR 24] AKAN bkkDbRender()',
+      'color:orange;font-weight:bold'
+    );
+
+    console.time('[DUR] RENDER');
+
+    window.bkkDbRender();
+
+    console.timeEnd('[DUR] RENDER');
+
+    console.log(
+      '%c[DUR 25] bkkDbRender() FINISH',
+      'color:green;font-weight:bold'
+    );
+
+    console.timeEnd('[DUR] TOTAL');
+
+  });
+};
 })();

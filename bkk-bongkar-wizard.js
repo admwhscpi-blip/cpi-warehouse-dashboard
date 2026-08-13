@@ -2083,6 +2083,48 @@ function bwLoadSetupFromServer() {
 }
 
 function initBongkarWizard() {
+  fetchAPI('getBongkarHistory', {}, function(resp) {
+
+  console.log('[BW 01] callback getBongkarHistory masuk');
+
+  console.log('[BW 02] sebelum normalize');
+
+  appState.history.bongkar =
+    bwNormalizeBongkarHistory(
+      resp.status !== 'error' ? resp.data : []
+    );
+
+  console.log(
+    '[BW 03] setelah normalize',
+    appState.history.bongkar.length
+  );
+
+  bwSyncGhostHint();
+
+  console.log('[BW 04] setelah bwSyncGhostHint');
+
+  if ((bwWiz.step || 1) === 2) {
+    console.log('[BW 05] akan bwRefreshGhostFromServer');
+    bwRefreshGhostFromServer();
+    console.log('[BW 06] selesai bwRefreshGhostFromServer');
+  }
+
+  if ((bwWiz.step || 1) === 3) {
+    console.log('[BW 07] akan bwRefreshStep3');
+    bwRefreshStep3();
+    console.log('[BW 08] selesai bwRefreshStep3');
+  }
+
+  console.log('[BW 09] akan bwRefreshStep2MiniTable');
+
+  bwRefreshStep2MiniTable();
+
+  console.log('[BW 10] selesai bwRefreshStep2MiniTable');
+
+  bwPersistWizardLocal();
+
+  console.log('[BW 11] selesai bwPersistWizardLocal');
+});
   if (!$('bw-panel-1')) return;
   var restored = false;
   if (appState.user && appState.user.username) {

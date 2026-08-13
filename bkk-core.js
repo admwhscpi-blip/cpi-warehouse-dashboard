@@ -6,20 +6,22 @@ var appState = {
   sapData: [],
   history: { bongkar: [], kirim: [], opname: [] },
   sidebarOpen: false,
-  currentPage: 'dashboard',
+  currentPage: "dashboard",
   modalResolve: null,
   opnameData: null,
   /** Total bongkar / kirim hari ini (WIB) untuk KPI dashboard — diisi loadDashboard */
-  dashKpiToday: { masuk: 0, keluar: 0 }
+  dashKpiToday: { masuk: 0, keluar: 0 },
 };
 
 // ── UTILITIES ──────────────────────────────────────────────────────────────
-function $ (id) { return document.getElementById(id); }
+function $(id) {
+  return document.getElementById(id);
+}
 
 /** Master BK dari appState.dashData — cocokkan persis, lalu case-insensitive (tanpa menggabungkan BK1b → BK-1). */
 function getBKById(id) {
   var rows = appState.dashData;
-  if (!rows || !rows.length || id == null || id === '') return {};
+  if (!rows || !rows.length || id == null || id === "") return {};
   var raw = String(id).trim();
   if (!raw) return {};
   for (var i = 0; i < rows.length; i++) {
@@ -35,26 +37,26 @@ function getBKById(id) {
 }
 
 function bkMasterMaterial_(bk) {
-  if (!bk || typeof bk !== 'object') return '';
+  if (!bk || typeof bk !== "object") return "";
   var v =
-    bk.MATERIAL_DEFAULT != null && String(bk.MATERIAL_DEFAULT).trim() !== ''
+    bk.MATERIAL_DEFAULT != null && String(bk.MATERIAL_DEFAULT).trim() !== ""
       ? bk.MATERIAL_DEFAULT
-      : bk.MATERIAL || bk.material_default || '';
-  return String(v == null ? '' : v).trim();
+      : bk.MATERIAL || bk.material_default || "";
+  return String(v == null ? "" : v).trim();
 }
 
 function bkMasterSupplier_(bk) {
-  if (!bk || typeof bk !== 'object') return '';
+  if (!bk || typeof bk !== "object") return "";
   var v =
-    bk.SUPPLIER_DEFAULT != null && String(bk.SUPPLIER_DEFAULT).trim() !== ''
+    bk.SUPPLIER_DEFAULT != null && String(bk.SUPPLIER_DEFAULT).trim() !== ""
       ? bk.SUPPLIER_DEFAULT
-      : bk.SUPPLIER_DEF || bk.SUPPLIER || '';
-  return String(v == null ? '' : v).trim();
+      : bk.SUPPLIER_DEF || bk.SUPPLIER || "";
+  return String(v == null ? "" : v).trim();
 }
 
 /** Pastikan <select> punya <option> dengan value ini (populateBKDropdowns kadang tidak memuat material yang hanya dipakai satu BK). */
 function ensureSelectOptionValue_(sel, value, label) {
-  if (!sel || sel.tagName !== 'SELECT' || value == null || value === '') return;
+  if (!sel || sel.tagName !== "SELECT" || value == null || value === "") return;
   var v = String(value);
   for (var i = 0; i < sel.options.length; i++) {
     if (sel.options[i].value === v) {
@@ -62,161 +64,208 @@ function ensureSelectOptionValue_(sel, value, label) {
       return;
     }
   }
-  var o = document.createElement('option');
+  var o = document.createElement("option");
   o.value = v;
-  o.textContent = label != null && String(label).trim() !== '' ? String(label) : v;
+  o.textContent =
+    label != null && String(label).trim() !== "" ? String(label) : v;
   sel.appendChild(o);
   sel.value = v;
 }
 
 /** Isi Material & Supplier form Bongkar dari kolom master BK (sama sumbernya seperti MATERIAL_DEFAULT). */
 function applyBongkarMasterDefaults(bkId) {
-  var mEl = $('b_material') || $('bw_material');
-  var sEl = $('b_supplier') || $('bw_supplier');
+  var mEl = $("b_material") || $("bw_material");
+  var sEl = $("b_supplier") || $("bw_supplier");
   if (!bkId) {
-    if (mEl) mEl.value = '';
-    if (sEl) sEl.value = '';
+    if (mEl) mEl.value = "";
+    if (sEl) sEl.value = "";
     return;
   }
   var bk = getBKById(bkId);
-  var hasRow = bk && bk.BK_ID != null && String(bk.BK_ID).trim() !== '';
+  var hasRow = bk && bk.BK_ID != null && String(bk.BK_ID).trim() !== "";
   if (!hasRow) {
-    if (mEl) mEl.value = '';
-    if (sEl) sEl.value = '';
+    if (mEl) mEl.value = "";
+    if (sEl) sEl.value = "";
     return;
   }
   var mat = bkMasterMaterial_(bk);
   var sup = bkMasterSupplier_(bk);
   if (mEl) {
     if (mat) ensureSelectOptionValue_(mEl, mat, mat);
-    else mEl.value = '';
+    else mEl.value = "";
   }
-  if (sEl) sEl.value = sup || '';
+  if (sEl) sEl.value = sup || "";
 }
 
 function toast(msg, type) {
-  type = type || 's';
-  var icons = { s: 'fa-check-circle', e: 'fa-exclamation-circle', w: 'fa-exclamation-triangle', i: 'fa-info-circle' };
-  var t = document.createElement('div');
-  t.className = 'toast ' + type;
+  type = type || "s";
+  var icons = {
+    s: "fa-check-circle",
+    e: "fa-exclamation-circle",
+    w: "fa-exclamation-triangle",
+    i: "fa-info-circle",
+  };
+  var t = document.createElement("div");
+  t.className = "toast " + type;
   t.innerHTML = '<i class="fas ' + (icons[type] || icons.i) + '"></i> ' + msg;
-  $('toastContainer').appendChild(t);
-  setTimeout(function() {
-    t.style.opacity = '0';
-    t.style.transform = 'translateX(24px)';
-    setTimeout(function() { t.parentNode && t.parentNode.removeChild(t); }, 300);
+  $("toastContainer").appendChild(t);
+  setTimeout(function () {
+    t.style.opacity = "0";
+    t.style.transform = "translateX(24px)";
+    setTimeout(function () {
+      t.parentNode && t.parentNode.removeChild(t);
+    }, 300);
   }, 3000);
 }
 
 function modal(title, body, yesLabel, noLabel) {
-  return new Promise(function(resolve) {
-    $('modalTitle').textContent = title;
-    var mb = $('modalBody');
+  return new Promise(function (resolve) {
+    $("modalTitle").textContent = title;
+    var mb = $("modalBody");
     if (mb) mb.innerHTML = body;
-    $('modalYes').textContent = yesLabel || 'Ya';
-    $('modalNo').textContent = noLabel || 'Batal';
-    $('modal').classList.add('active');
+    $("modalYes").textContent = yesLabel || "Ya";
+    $("modalNo").textContent = noLabel || "Batal";
+    $("modal").classList.add("active");
     appState.modalResolve = resolve;
   });
 }
 
 // Wrap event listeners in DOMContentLoaded to ensure elements exist
-document.addEventListener('DOMContentLoaded', function() {
-  var mYes = $('modalYes');
+document.addEventListener("DOMContentLoaded", function () {
+  var mYes = $("modalYes");
   if (mYes) {
-    mYes.addEventListener('click', function() {
-      $('modal').classList.remove('active');
-      if (appState.modalResolve) { appState.modalResolve(true); }
+    mYes.addEventListener("click", function () {
+      $("modal").classList.remove("active");
+      if (appState.modalResolve) {
+        appState.modalResolve(true);
+      }
       appState.modalResolve = null;
     });
   }
 
-  var mNo = $('modalNo');
+  var mNo = $("modalNo");
   if (mNo) {
-    mNo.addEventListener('click', function() {
-      $('modal').classList.remove('active');
-      if (appState.modalResolve) { appState.modalResolve(false); }
+    mNo.addEventListener("click", function () {
+      $("modal").classList.remove("active");
+      if (appState.modalResolve) {
+        appState.modalResolve(false);
+      }
       appState.modalResolve = null;
     });
   }
 });
 
 function showLoader(on) {
-  var el = $('loaderOverlay');
-  if (on) { el.classList.add('active'); }
-  else { el.classList.remove('active'); }
+  var el = $("loaderOverlay");
+  if (on) {
+    el.classList.add("active");
+  } else {
+    el.classList.remove("active");
+  }
 }
 
 function fmtNum(n) {
-  if (n == null || isNaN(n)) return '0';
-  return Number(n).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+  if (n == null || isNaN(n)) return "0";
+  return Number(n).toLocaleString("id-ID", { maximumFractionDigits: 2 });
 }
 
 /** Persentase opname: dua desimal + % (contoh: 10.05%) */
 function fmtPct2(n) {
-  if (n == null || isNaN(n)) return '0.00%';
-  return Number(n).toFixed(2) + '%';
+  if (n == null || isNaN(n)) return "0.00%";
+  return Number(n).toFixed(2) + "%";
 }
 
 function fmtDate(d) {
-  if (!d) return '—';
-  var ymd = typeof dashDateToYMD === 'function' ? dashDateToYMD(d) : '';
+  if (!d) return "—";
+  var ymd = typeof dashDateToYMD === "function" ? dashDateToYMD(d) : "";
   if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
-    var p = ymd.split('-');
-    var dtWib = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 12, 0, 0);
-    return dtWib.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    var p = ymd.split("-");
+    var dtWib = new Date(
+      Number(p[0]),
+      Number(p[1]) - 1,
+      Number(p[2]),
+      12,
+      0,
+      0,
+    );
+    return dtWib.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   }
   var dt = new Date(d);
   if (isNaN(dt.getTime())) return String(d);
-  return dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
+  return dt.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  });
 }
 
 function todayStr() {
   var d = new Date();
-  var p = function(n) { return String(n).padStart(2, '0'); };
-  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+  var p = function (n) {
+    return String(n).padStart(2, "0");
+  };
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
 }
 
-function pad2(n) { return String(n).padStart(2, '0'); }
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
 
 function pbarClass(pct) {
-  if (pct == null) return 'lo';
-  return pct > 85 ? 'hi' : pct > 60 ? 'mi' : 'lo';
+  if (pct == null) return "lo";
+  return pct > 85 ? "hi" : pct > 60 ? "mi" : "lo";
 }
 
 function ageClass(days) {
-  if (days == null) return '';
-  return days > 14 ? 'ck' : days > 7 ? 'cw' : 'cm';
+  if (days == null) return "";
+  return days > 14 ? "ck" : days > 7 ? "cw" : "cm";
 }
 
 function clearTbody(id) {
   var el = $(id);
-  if (el) el.innerHTML = '';
+  if (el) el.innerHTML = "";
 }
 
 function renderPagination(pgId, page, totalPages, onPage) {
   var pg = $(pgId);
   if (!pg) return;
-  pg.innerHTML = '';
+  pg.innerHTML = "";
   if (totalPages <= 1) return;
   function btn(label, p, dis) {
-    var b = document.createElement('button');
+    var b = document.createElement("button");
     b.textContent = label;
     b.disabled = !!dis;
-    if (!dis) b.addEventListener('click', function() { onPage(p); });
+    if (!dis)
+      b.addEventListener("click", function () {
+        onPage(p);
+      });
     pg.appendChild(b);
   }
-  btn('«', 1, page === 1);
-  btn('‹', page - 1, page === 1);
-  for (var i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) {
-    var b = document.createElement('button');
+  btn("«", 1, page === 1);
+  btn("‹", page - 1, page === 1);
+  for (
+    var i = Math.max(1, page - 2);
+    i <= Math.min(totalPages, page + 2);
+    i++
+  ) {
+    var b = document.createElement("button");
     b.textContent = i;
-    if (i === page) b.style.fontWeight = '700';
-    else (function(idx) { b.addEventListener('click', function() { onPage(idx); }); })(i);
+    if (i === page) b.style.fontWeight = "700";
+    else
+      (function (idx) {
+        b.addEventListener("click", function () {
+          onPage(idx);
+        });
+      })(i);
     pg.appendChild(b);
   }
-  btn('›', page + 1, page === totalPages);
-  btn('»', totalPages, page === totalPages);
+  btn("›", page + 1, page === totalPages);
+  btn("»", totalPages, page === totalPages);
 }
 
 function getBulanOptions(selectEl) {
@@ -224,49 +273,264 @@ function getBulanOptions(selectEl) {
   var now = new Date();
   for (var i = 0; i < 12; i++) {
     var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    var opt = document.createElement('option');
-    opt.value = d.getFullYear() + '-' + pad2(d.getMonth()+1);
-    opt.textContent = d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    var opt = document.createElement("option");
+    opt.value = d.getFullYear() + "-" + pad2(d.getMonth() + 1);
+    opt.textContent = d.toLocaleDateString("id-ID", {
+      month: "long",
+      year: "numeric",
+    });
     selectEl.appendChild(opt);
   }
 }
 
 // ── JSONP API ──────────────────────────────────────────────────────────────
+// function fetchAPI(action, params, cb) {
+//   params = params || {};
+//   params.callback = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 99999);
+//   params.action = action;
+//   var url = CONFIG.SCRIPT_URL + '?' + Object.keys(params).map(function(k) {
+//     return k + '=' + encodeURIComponent(params[k]);
+//   }).join('&');
+//   var s = document.createElement('script');
+//   s.id = 'fetchScr';
+//   var cleanup = function() {
+//     var el = $('fetchScr');
+//     if (el) el.remove();
+//     delete window[params.callback];
+//   };
+//   window[params.callback] = function(data) {
+//     cleanup();
+//     cb(data);
+//   };
+//   s.onerror = function() {
+//     cleanup();
+//     cb({ status: 'error', message: 'Gagal koneksi ke server' });
+//   };
+//   s.src = url;
+//   document.head.appendChild(s);
+//   setTimeout(function() {
+//     if ($('fetchScr')) cleanup();
+//   }, 15000);
+// }
 function fetchAPI(action, params, cb) {
   params = params || {};
-  params.callback = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 99999);
+
+  var requestId =
+    "req_" + Date.now() + "_" + Math.floor(Math.random() * 99999);
+
+  var callbackName =
+    "cb_" + Date.now() + "_" + Math.floor(Math.random() * 99999);
+
+  params.callback = callbackName;
   params.action = action;
-  var url = CONFIG.SCRIPT_URL + '?' + Object.keys(params).map(function(k) {
-    return k + '=' + encodeURIComponent(params[k]);
-  }).join('&');
-  var s = document.createElement('script');
-  s.id = 'fetchScr';
-  var cleanup = function() {
-    var el = $('fetchScr');
-    if (el) el.remove();
-    delete window[params.callback];
+
+  var url =
+    CONFIG.SCRIPT_URL +
+    "?" +
+    Object.keys(params)
+      .map(function (k) {
+        return (
+          encodeURIComponent(k) +
+          "=" +
+          encodeURIComponent(params[k])
+        );
+      })
+      .join("&");
+
+  console.log(
+    "%c[FETCH START]",
+    "color:blue;font-weight:bold",
+    requestId,
+    "action =",
+    action
+  );
+
+  var s = document.createElement("script");
+  s.id = "fetchScr_" + requestId;
+
+  var finished = false;
+
+  var cleanup = function (reason) {
+    if (finished) return;
+
+    finished = true;
+
+    console.log(
+      "%c[FETCH CLEANUP]",
+      "color:gray",
+      requestId,
+      "action =",
+      action,
+      "reason =",
+      reason
+    );
+
+    if (s && s.parentNode) {
+      s.parentNode.removeChild(s);
+    }
+
+    try {
+      delete window[callbackName];
+    } catch (e) {
+      window[callbackName] = undefined;
+    }
   };
-  window[params.callback] = function(data) {
-    cleanup();
-    cb(data);
+
+  console.log(
+    "%c[FETCH REGISTER]",
+    "color:orange;font-weight:bold",
+    callbackName,
+    action
+  );
+
+  window[callbackName] = function (data) {
+
+    console.log(
+      "%c[FETCH CALLBACK]",
+      "color:green;font-weight:bold",
+      requestId,
+      "action =",
+      action,
+      data
+    );
+
+    if (finished) return;
+
+    cleanup("callback");
+
+    console.log(
+      "%c[FETCH CB START]",
+      "color:orange;font-weight:bold",
+      requestId,
+      "action =",
+      action
+    );
+
+    try {
+
+      if (typeof cb === "function") {
+        cb(data);
+      }
+
+      console.log(
+        "%c[FETCH CB FINISH]",
+        "color:purple;font-weight:bold",
+        requestId,
+        "action =",
+        action
+      );
+
+    } catch (err) {
+
+      console.error(
+        "%c[FETCH CB ERROR]",
+        "color:red;font-weight:bold",
+        requestId,
+        "action =",
+        action,
+        err
+      );
+
+      console.error(err.stack);
+
+    }
   };
-  s.onerror = function() {
-    cleanup();
-    cb({ status: 'error', message: 'Gagal koneksi ke server' });
+
+  s.onerror = function () {
+
+    console.error(
+      "%c[FETCH ERROR]",
+      "color:red;font-weight:bold",
+      requestId,
+      "action =",
+      action
+    );
+
+    if (finished) return;
+
+    cleanup("error");
+
+    try {
+
+      if (typeof cb === "function") {
+        cb({
+          status: "error",
+          message: "Gagal koneksi ke server",
+          action: action
+        });
+      }
+
+    } catch (err) {
+
+      console.error(
+        "%c[FETCH ERROR CALLBACK]",
+        "color:red;font-weight:bold",
+        requestId,
+        action,
+        err
+      );
+
+    }
   };
+
   s.src = url;
+
   document.head.appendChild(s);
-  setTimeout(function() {
-    if ($('fetchScr')) cleanup();
+
+  console.log(
+    "%c[FETCH SENT]",
+    "color:blue;font-weight:bold",
+    callbackName,
+    action,
+    url
+  );
+
+  setTimeout(function () {
+
+    if (finished) return;
+
+    console.error(
+      "%c[FETCH TIMEOUT]",
+      "color:red;font-weight:bold",
+      requestId,
+      "action =",
+      action
+    );
+
+    cleanup("timeout");
+
+    try {
+
+      if (typeof cb === "function") {
+        cb({
+          status: "error",
+          message: "Request timeout setelah 15 detik",
+          action: action
+        });
+      }
+
+    } catch (err) {
+
+      console.error(
+        "%c[FETCH TIMEOUT CALLBACK]",
+        "color:red;font-weight:bold",
+        requestId,
+        action,
+        err
+      );
+
+    }
+
   }, 15000);
 }
 
 /** Origin yang fetch-nya ke GAS web app sering gagal CORS (respons tanpa ACAO); JSONP GET aman & satu kali kirim. */
 function postJSONAPIPreferJsonp_() {
-  if (typeof location === 'undefined') return false;
-  if (location.protocol === 'file:') return true;
-  var h = String(location.hostname || '').toLowerCase();
-  if (h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '[::1]') return true;
+  if (typeof location === "undefined") return false;
+  if (location.protocol === "file:") return true;
+  var h = String(location.hostname || "").toLowerCase();
+  if (h === "localhost" || h === "127.0.0.1" || h === "::1" || h === "[::1]")
+    return true;
   return false;
 }
 
@@ -279,18 +543,23 @@ function postJSONAPI(action, payload, cb) {
 
   function tryJsonpFallback() {
     var flat = Object.assign({}, send);
-    Object.keys(flat).forEach(function(k) {
+    Object.keys(flat).forEach(function (k) {
       var v = flat[k];
-      if (v != null && typeof v === 'object') flat[k] = JSON.stringify(v);
-      else if (v === undefined) flat[k] = '';
+      if (v != null && typeof v === "object") flat[k] = JSON.stringify(v);
+      else if (v === undefined) flat[k] = "";
     });
-    var qs = Object.keys(flat).map(function(k) {
-      return k + '=' + encodeURIComponent(flat[k] == null ? '' : String(flat[k]));
-    }).join('&');
-    if ((CONFIG.SCRIPT_URL + '?' + qs).length > 7200) {
+    var qs = Object.keys(flat)
+      .map(function (k) {
+        return (
+          k + "=" + encodeURIComponent(flat[k] == null ? "" : String(flat[k]))
+        );
+      })
+      .join("&");
+    if ((CONFIG.SCRIPT_URL + "?" + qs).length > 7200) {
       cb({
-        status: 'error',
-        message: 'Payload terlalu panjang lewat file lokal. Buka halaman lewat Live Server (http://127.0.0.1) atau ringkas data.'
+        status: "error",
+        message:
+          "Payload terlalu panjang lewat file lokal. Buka halaman lewat Live Server (http://127.0.0.1) atau ringkas data.",
       });
       return;
     }
@@ -304,26 +573,29 @@ function postJSONAPI(action, payload, cb) {
   }
 
   fetch(CONFIG.SCRIPT_URL, {
-    method: 'POST',
-    mode: 'cors',
-    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-    body: bodyStr
+    method: "POST",
+    mode: "cors",
+    headers: { "Content-Type": "text/plain;charset=UTF-8" },
+    body: bodyStr,
   })
-    .then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
+    .then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
     })
     .then(cb)
-    .catch(function(err) {
+    .catch(function (err) {
       /**
        * Jangan fallback JSONP otomatis: bila POST fetch sudah diproses server tapi response gagal di klien,
        * JSONP kedua menyebabkan baris dobel di sheet (addBongkar dua kali).
        * JSONP hanya dipakai untuk file:// (cabang di atas).
        */
-      if (typeof cb === 'function') {
+      if (typeof cb === "function") {
         cb({
-          status: 'error',
-          message: (err && err.message) ? err.message : 'Gagal mengirim (jaringan/CORS). Cek apakah data sudah masuk sebelum kirim ulang.'
+          status: "error",
+          message:
+            err && err.message
+              ? err.message
+              : "Gagal mengirim (jaringan/CORS). Cek apakah data sudah masuk sebelum kirim ulang.",
         });
       }
     });
@@ -332,27 +604,35 @@ function postJSONAPI(action, payload, cb) {
 function postAPI(action, data, cb) {
   data = data || {};
   data.action = action;
-  data.callback = 'pcb_' + Date.now() + '_' + Math.floor(Math.random() * 99999);
-  var url = CONFIG.SCRIPT_URL + '?' + Object.keys(data).map(function(k) {
-    return k + '=' + encodeURIComponent(data[k]);
-  }).join('&');
-  var s = document.createElement('script');
-  s.id = 'postScr';
-  window[data.callback] = function(resp) {
-    var el = $('postScr');
+  data.callback = "pcb_" + Date.now() + "_" + Math.floor(Math.random() * 99999);
+  var url =
+    CONFIG.SCRIPT_URL +
+    "?" +
+    Object.keys(data)
+      .map(function (k) {
+        return k + "=" + encodeURIComponent(data[k]);
+      })
+      .join("&");
+  var s = document.createElement("script");
+  s.id = "postScr";
+  window[data.callback] = function (resp) {
+    var el = $("postScr");
     if (el) el.remove();
     delete window[data.callback];
     cb(resp);
   };
-  s.onerror = function() {
-    var el = $('postScr');
+  s.onerror = function () {
+    var el = $("postScr");
     if (el) el.remove();
-    cb({ status: 'error', message: 'Gagal mengirim data' });
+    cb({ status: "error", message: "Gagal mengirim data" });
   };
   s.src = url;
   document.head.appendChild(s);
-  setTimeout(function() {
-    if ($('postScr')) { $('postScr').remove(); delete window[data.callback]; }
+  setTimeout(function () {
+    if ($("postScr")) {
+      $("postScr").remove();
+      delete window[data.callback];
+    }
   }, 15000);
 }
 
@@ -360,163 +640,237 @@ function postAPI(action, data, cb) {
 function navigateTo(page) {
   if (!appState.user) return;
   var perms = ROLE_PERMISSIONS[appState.user.role] || {};
-  var menuNames = { bongkar:'Bongkar', kirim:'Kirim', opname:'Stock Opname', ceksap:'Cek SAP', history:'Riwayat', dashboard:'Dashboard', kartustock:'Kartu Stock', intake71:'Intake-71', outstanding:'Outstanding', durbreakdown:'Breakdown Durasi' };
+  var menuNames = {
+    bongkar: "Bongkar",
+    kirim: "Kirim",
+    opname: "Stock Opname",
+    ceksap: "Cek SAP",
+    history: "Riwayat",
+    dashboard: "Dashboard",
+    kartustock: "Kartu Stock",
+    intake71: "Intake-71",
+    outstanding: "Outstanding",
+    durbreakdown: "Breakdown Durasi",
+  };
   if (!perms[page]) {
-    if (typeof Swal !== 'undefined') {
-      Swal.fire({ icon:'error', title:'Akses Ditolak 🔒', html:'<div style="font-size:0.95rem;color:#64748b;">Anda tidak memiliki otorisasi untuk mengakses menu <b style="color:#ef4444;">' + (menuNames[page]||page) + '</b></div>', confirmButtonText:'Mengerti', confirmButtonColor:'#0284c7', background:'#fff', customClass:{ popup:'swal-premium' } });
-    } else { toast('Anda tidak punya akses ke halaman ini', 'w'); }
+    if (typeof Swal !== "undefined") {
+      Swal.fire({
+        icon: "error",
+        title: "Akses Ditolak 🔒",
+        html:
+          '<div style="font-size:0.95rem;color:#64748b;">Anda tidak memiliki otorisasi untuk mengakses menu <b style="color:#ef4444;">' +
+          (menuNames[page] || page) +
+          "</b></div>",
+        confirmButtonText: "Mengerti",
+        confirmButtonColor: "#0284c7",
+        background: "#fff",
+        customClass: { popup: "swal-premium" },
+      });
+    } else {
+      toast("Anda tidak punya akses ke halaman ini", "w");
+    }
     return;
   }
-  document.querySelectorAll('.page').forEach(function(el) { el.classList.remove('active'); });
-  document.querySelectorAll('.nav-item').forEach(function(el) { el.classList.remove('active'); });
-  var pg = $('page-' + page);
-  if (pg) pg.classList.add('active');
+  document.querySelectorAll(".page").forEach(function (el) {
+    el.classList.remove("active");
+  });
+  document.querySelectorAll(".nav-item").forEach(function (el) {
+    el.classList.remove("active");
+  });
+  var pg = $("page-" + page);
+  if (pg) pg.classList.add("active");
   /* Kartu Stock & Outstanding termasuk area Dashboard — sorot menu Dashboard di sidebar */
-  var sidebarNavPage = page === 'kartustock' || page === 'intake71' || page === 'outstanding' || page === 'durbreakdown' ? 'dashboard' : page;
-  document.querySelectorAll('.nav-item[data-page="' + sidebarNavPage + '"]').forEach(function(el) { el.classList.add('active'); });
-  document.querySelectorAll('.header-tab').forEach(function(el) { el.classList.remove('active'); });
-  document.querySelectorAll('.header-tab[data-page="' + page + '"]').forEach(function(el) { el.classList.add('active'); });
+  var sidebarNavPage =
+    page === "kartustock" ||
+    page === "intake71" ||
+    page === "outstanding" ||
+    page === "durbreakdown"
+      ? "dashboard"
+      : page;
+  document
+    .querySelectorAll('.nav-item[data-page="' + sidebarNavPage + '"]')
+    .forEach(function (el) {
+      el.classList.add("active");
+    });
+  document.querySelectorAll(".header-tab").forEach(function (el) {
+    el.classList.remove("active");
+  });
+  document
+    .querySelectorAll('.header-tab[data-page="' + page + '"]')
+    .forEach(function (el) {
+      el.classList.add("active");
+    });
   appState.currentPage = page;
   if (appState.sidebarOpen) closeSidebar();
-  if (page === 'dashboard') {
+  if (page === "dashboard") {
     loadDashboard();
   }
-  if (page === 'ceksap') {
+  if (page === "ceksap") {
     loadSAPData(); // load history dulu
     initSAP();
   }
-  if (page === 'history') initHistory();
-  if (page === 'kartustock') { loadKartuStockData(); initKartuStock(); }
-  if (page === 'outstanding') {
-    var ifr = $('iframeOutstanding');
-    if (ifr) ifr.src = 'outstanding-bkk.html?from=bkk&embed=1';
+  if (page === "history") initHistory();
+  if (page === "kartustock") {
+    loadKartuStockData();
+    initKartuStock();
   }
-  if (page === 'durbreakdown' && typeof loadBkkDurationBreakdownPage === 'function') {
+  if (page === "outstanding") {
+    var ifr = $("iframeOutstanding");
+    if (ifr) ifr.src = "outstanding-bkk.html?from=bkk&embed=1";
+  }
+  if (
+    page === "durbreakdown" &&
+    typeof loadBkkDurationBreakdownPage === "function"
+  ) {
     loadBkkDurationBreakdownPage();
   }
-  if (page === 'intake71' && typeof loadIntake71Page === 'function') {
+  if (page === "intake71" && typeof loadIntake71Page === "function") {
     loadIntake71Page();
   }
-  if (page === 'bongkar' || page === 'kirim' || page === 'opname') prefillFormOperatorNames();
-  if (page === 'opname' && typeof loadOpnamePageData === 'function') loadOpnamePageData();
-  if (page === 'bongkar') {
-    var bb = $('b_bk_id') || $('bw_bk_id');
+  if (page === "bongkar" || page === "kirim" || page === "opname")
+    prefillFormOperatorNames();
+  if (page === "opname" && typeof loadOpnamePageData === "function")
+    loadOpnamePageData();
+  if (page === "bongkar") {
+    var bb = $("b_bk_id") || $("bw_bk_id");
     if (bb && bb.value) applyBongkarMasterDefaults(bb.value);
-    if (typeof initBongkarWizard === 'function') initBongkarWizard();
+    if (typeof initBongkarWizard === "function") initBongkarWizard();
   }
   updateSubnavDashKartu(page);
 }
 
 function updateSubnavDashKartu(page) {
-  var bar = $('subnavDashStock');
+  var bar = $("subnavDashStock");
   if (!bar) return;
   /* Subnav Dashboard | Kartu Stock | Outstanding — hanya di ketiga halaman ini */
-  var show = page === 'dashboard' || page === 'kartustock' || page === 'intake71' || page === 'outstanding' || page === 'durbreakdown';
+  var show =
+    page === "dashboard" ||
+    page === "kartustock" ||
+    page === "intake71" ||
+    page === "outstanding" ||
+    page === "durbreakdown";
   if (show) {
-    bar.removeAttribute('hidden');
-    bar.style.display = 'flex';
+    bar.removeAttribute("hidden");
+    bar.style.display = "flex";
   } else {
-    bar.setAttribute('hidden', '');
-    bar.style.display = 'none';
+    bar.setAttribute("hidden", "");
+    bar.style.display = "none";
   }
   if (!show) return;
-  bar.querySelectorAll('.view-tab').forEach(function(t) { t.classList.remove('active'); });
-  var tabSel = { dashboard: '.tab-dashboard', kartustock: '.tab-kartustock', intake71: '.tab-intake71', outstanding: '.tab-outstanding', durbreakdown: '.tab-durbreakdown' };
-  var sel = tabSel[page] || '.tab-dashboard';
+  bar.querySelectorAll(".view-tab").forEach(function (t) {
+    t.classList.remove("active");
+  });
+  var tabSel = {
+    dashboard: ".tab-dashboard",
+    kartustock: ".tab-kartustock",
+    intake71: ".tab-intake71",
+    outstanding: ".tab-outstanding",
+    durbreakdown: ".tab-durbreakdown",
+  };
+  var sel = tabSel[page] || ".tab-dashboard";
   var btn = bar.querySelector(sel);
-  if (btn) btn.classList.add('active');
+  if (btn) btn.classList.add("active");
 }
 
 function openSidebar() {
-  $('sidebar').classList.add('open');
-  $('sidebarOvl').classList.add('active');
+  $("sidebar").classList.add("open");
+  $("sidebarOvl").classList.add("active");
   appState.sidebarOpen = true;
 }
 
 function closeSidebar() {
-  $('sidebar').classList.remove('open');
-  $('sidebarOvl').classList.remove('active');
+  $("sidebar").classList.remove("open");
+  $("sidebarOvl").classList.remove("active");
   appState.sidebarOpen = false;
 }
 
 // ── AUTHENTICATION ─────────────────────────────────────────────────────────
 function doLogin() {
-  var u = $('inpUser').value.trim().toLowerCase();
-  var p = $('inpPass').value.trim();
-  if (!u || !p) { toast('Username dan password harus diisi', 'w'); return; }
-  
-  var user = USERS_DATABASE.find(function(x) { return x.username.toLowerCase() === u && x.password === p; });
+  var u = $("inpUser").value.trim().toLowerCase();
+  var p = $("inpPass").value.trim();
+  if (!u || !p) {
+    toast("Username dan password harus diisi", "w");
+    return;
+  }
+
+  var user = USERS_DATABASE.find(function (x) {
+    return x.username.toLowerCase() === u && x.password === p;
+  });
   if (user) {
     appState.user = user;
-    sessionStorage.setItem('bkk_user', JSON.stringify(user));
-    $('page-login').classList.remove('active');
+    sessionStorage.setItem("bkk_user", JSON.stringify(user));
+    $("page-login").classList.remove("active");
     updateUserChrome(user);
-    navigateTo('dashboard');
-    toast('Selamat datang, ' + user.nama, 's');
+    navigateTo("dashboard");
+    toast("Selamat datang, " + user.nama, "s");
   } else {
-    var err = $('loginErr');
+    var err = $("loginErr");
     if (err) {
-      err.style.display = 'block';
-      setTimeout(function() { err.style.display = 'none'; }, 3000);
+      err.style.display = "block";
+      setTimeout(function () {
+        err.style.display = "none";
+      }, 3000);
     } else {
-      toast('Username atau password salah', 'e');
+      toast("Username atau password salah", "e");
     }
   }
 }
 
 function doLogout() {
   appState.user = null;
-  sessionStorage.removeItem('bkk_user');
+  sessionStorage.removeItem("bkk_user");
   clearFormOperatorNames();
-  document.querySelectorAll('.page').forEach(function(el) { el.classList.remove('active'); });
-  $('page-login').classList.add('active');
-  var nm = $('headerUserName');
-  if (nm) nm.textContent = '—';
-  var av = $('headerUserAvatar');
-  if (av) av.textContent = '?';
-  var sn = $('subnavDashStock');
+  document.querySelectorAll(".page").forEach(function (el) {
+    el.classList.remove("active");
+  });
+  $("page-login").classList.add("active");
+  var nm = $("headerUserName");
+  if (nm) nm.textContent = "—";
+  var av = $("headerUserAvatar");
+  if (av) av.textContent = "?";
+  var sn = $("subnavDashStock");
   if (sn) {
-    sn.setAttribute('hidden', '');
-    sn.style.display = 'none';
+    sn.setAttribute("hidden", "");
+    sn.style.display = "none";
   }
-  toast('Sesi berakhir', 'i');
+  toast("Sesi berakhir", "i");
 }
 
 /** Isi field Operator di form Bongkar / Kirim / Opname dari nama user yang login (readonly). */
 function prefillFormOperatorNames() {
   if (!appState.user) return;
-  var n = (appState.user.nama || '').trim();
-  var bo = $('b_operator') || $('bw_operator');
-  var ko = $('k_operator');
-  var oo = $('o_operator');
+  var n = (appState.user.nama || "").trim();
+  var bo = $("b_operator") || $("bw_operator");
+  var ko = $("k_operator");
+  var oo = $("o_operator");
   if (bo) bo.value = n;
   if (ko) ko.value = n;
   if (oo) oo.value = n;
 }
 
 function clearFormOperatorNames() {
-  var bo = $('b_operator') || $('bw_operator');
-  var ko = $('k_operator');
-  var oo = $('o_operator');
-  if (bo) bo.value = '';
-  if (ko) ko.value = '';
-  if (oo) oo.value = '';
+  var bo = $("b_operator") || $("bw_operator");
+  var ko = $("k_operator");
+  var oo = $("o_operator");
+  if (bo) bo.value = "";
+  if (ko) ko.value = "";
+  if (oo) oo.value = "";
 }
 
 function updateUserChrome(user) {
   if (!user) return;
-  var nm = $('headerUserName');
+  var nm = $("headerUserName");
   if (nm) nm.textContent = user.nama;
-  var av = $('headerUserAvatar');
+  var av = $("headerUserAvatar");
   if (av) {
-    var ch = (user.nama || '').trim().charAt(0);
-    av.textContent = ch ? ch.toUpperCase() : '?';
+    var ch = (user.nama || "").trim().charAt(0);
+    av.textContent = ch ? ch.toUpperCase() : "?";
   }
   prefillFormOperatorNames();
 }
 
 function checkAuth() {
-  var saved = sessionStorage.getItem('bkk_user');
+  var saved = sessionStorage.getItem("bkk_user");
   if (saved) {
     try {
       var user = JSON.parse(saved);
@@ -524,8 +878,9 @@ function checkAuth() {
       updateUserChrome(user);
       // We don't call navigateTo here because it's called from bkk-sap.js logic
       return true;
-    } catch(e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
   return false;
 }
-
