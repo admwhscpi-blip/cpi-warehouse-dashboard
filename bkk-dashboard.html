@@ -190,7 +190,8 @@
       </div>
 
       <!-- PAGE: LEAD TIME & BREAKDOWN DURASI (DTV2-style; SBM vs Non-SBM) -->
-      <div class="page dash-page-shell" id="page-durbreakdown">
+      <div class="page dash-page-shell" id="page-durbreakdown"></div>
+      <template id="tmpl-durbreakdown">
         <div class="section-title-bar" style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
           <h3 style="font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:var(--text-primary);margin:0;"><i class="fas fa-stopwatch" style="color:#8b5cf6;"></i> LEAD TIME &amp; BREAKDOWN DURASI</h3>
           <span style="padding:3px 12px;border-radius:6px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;background:linear-gradient(135deg,#ede9fe,#ddd6fe);color:#7c3aed;">ANALISIS</span>
@@ -336,10 +337,11 @@
             </table>
           </div>
         </div>
-      </div>
+      </template>
 
       <!-- PAGE: INTAKE-71 ANALYTICS -->
-      <div class="page dash-page-shell" id="page-intake71">
+      <div class="page dash-page-shell" id="page-intake71"></div>
+      <template id="tmpl-intake71">
         <input type="date" id="i71_date" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
         <style>
           #page-intake71 { --i71glass: linear-gradient(145deg,rgba(255,255,255,.92),rgba(244,248,255,.82)); --i71ink:#0f172a; }
@@ -501,10 +503,11 @@
             </table>
           </div>
         </div>
-      </div>
+      </template>
 
       <!-- PAGE: BONGKAR (wizard 3 langkah) -->
-      <div class="page" id="page-bongkar">
+      <div class="page" id="page-bongkar"></div>
+      <template id="tmpl-bongkar">
         <div class="fcard bw-wizard">
           <div class="ftitle"><i class="fas fa-truck-loading"></i> Bongkar — 3 langkah</div>
           <div class="bw-step-nav">
@@ -660,10 +663,11 @@
             </div>
           </div>
         </div>
-      </div>
+      </template>
 
       <!-- PAGE: KIRIM -->
-      <div class="page" id="page-kirim">
+      <div class="page" id="page-kirim"></div>
+      <template id="tmpl-kirim">
         <div class="fcard">
           <div class="ftitle"><i class="fas fa-paper-plane"></i> Form Kirim (Usage)</div>
           <div class="fgrid">
@@ -706,10 +710,11 @@
           </div>
           <button class="btn blk" id="btnKirim" style="margin-top:4px;">SIMPAN KIRIM</button>
         </div>
-      </div>
+      </template>
 
       <!-- PAGE: OPNAME -->
-      <div class="page" id="page-opname">
+      <div class="page" id="page-opname"></div>
+      <template id="tmpl-opname">
         <div style="display:flex;gap:16px;align-items:flex-start;">
           <div class="fcard" style="flex:1;min-width:0;">
             <div class="ftitle"><i class="fas fa-boxes-stacked"></i> Form Stock Opname</div>
@@ -776,10 +781,11 @@
             </table>
           </div>
         </div>
-      </div>
+      </template>
 
       <!-- PAGE: CEK SAP -->
-      <div class="page" id="page-ceksap">
+      <div class="page" id="page-ceksap"></div>
+      <template id="tmpl-ceksap">
         <div class="ftitle" style="margin-bottom:16px;"><i class="fas fa-file-invoice"></i> Cek &amp; Investigasi SAP</div>
 
         <!-- Step indicator -->
@@ -1015,10 +1021,11 @@
             </div>
           </div>
         </div>
-      </div>
+      </template>
 
       <!-- PAGE: KARTU STOCK -->
-      <div class="page" id="page-kartustock">
+      <div class="page" id="page-kartustock"></div>
+      <template id="tmpl-kartustock">
         <div class="ks-hero">
           <div class="ks-hero-left">
             <h1>KARTU STOCK</h1>
@@ -1055,10 +1062,11 @@
         <div style="text-align:center;margin-top:16px;">
           <button class="btn" id="ks_export_btn" style="display:none;"><i class="fas fa-download"></i> Export CSV</button>
         </div>
-      </div>
+      </template>
 
       <!-- PAGE: HISTORY -->
-      <div class="page" id="page-history">
+      <div class="page" id="page-history"></div>
+      <template id="tmpl-history">
         <div class="ftitle" style="margin-bottom:14px;"><i class="fas fa-history"></i> Riwayat Transaksi</div>
         <div class="tabs">
           <button class="tab-btn active" data-tab="htab-bongkar">Bongkar</button>
@@ -1107,7 +1115,7 @@
           </div>
           <div class="pagination" id="pgHOpname"></div>
         </div>
-      </div>
+      </template>
 
     </div><!-- /content-area -->
   </div><!-- /main-content -->

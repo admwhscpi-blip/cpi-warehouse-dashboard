@@ -1380,8 +1380,10 @@ function initFormDefaults() {
   if (bdt) bdt.value = t;
   var bwt = $('bw_tanggal');
   if (bwt) bwt.value = t;
-  $('k_tanggal').value = t;
-  $('o_tanggal').value = t;
+  var kdt = $('k_tanggal');
+  if (kdt) kdt.value = t;
+  var odt = $('o_tanggal');
+  if (odt) odt.value = t;
 }
 
 // ── DOMCONTENTLOADED ──────────────────────────────────────────────────────────
@@ -1419,8 +1421,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // Form buttons
   var btnB = $('btnBongkar');
   if (btnB) btnB.addEventListener('click', saveBongkar);
-  $('btnKirim').addEventListener('click', saveKirim);
-  $('btnOpname').addEventListener('click', saveOpname);
+  var btnK = $('btnKirim');
+  if (btnK) btnK.addEventListener('click', saveKirim);
+  var btnO = $('btnOpname');
+  if (btnO) btnO.addEventListener('click', saveOpname);
 
   // Auto-fill Bongkar BK — material & supplier dari BKK_Master
   var bBk = $('b_bk_id');
@@ -1429,7 +1433,8 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Auto-fill Kirim BK
-  $('k_bk_id').addEventListener('change', function() {
+  var kBk = $('k_bk_id');
+  if (kBk) kBk.addEventListener('change', function() {
     var bk = getBKById(this.value);
     var km = $('k_material');
     var mat = typeof bkMasterMaterial_ === 'function' ? bkMasterMaterial_(bk) : (bk.MATERIAL_DEFAULT || '').trim();
@@ -1446,8 +1451,10 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Opname BK change
-  $('o_bk_id').addEventListener('change', updateOpnameInfo);
-  $('o_tanggal').addEventListener('change', updateOpnameInfo);
+  var oBk = $('o_bk_id');
+  if (oBk) oBk.addEventListener('change', updateOpnameInfo);
+  var oTgl = $('o_tanggal');
+  if (oTgl) oTgl.addEventListener('change', updateOpnameInfo);
   var oFisik = $('o_stok_fisik');
   if (oFisik) oFisik.addEventListener('input', updateOpnameInfo);
 
@@ -1466,13 +1473,13 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Cek SAP new flow
-  $('sap_next_btn').addEventListener('click', sapNext);
-  $('sap_prev_btn').addEventListener('click', sapPrev);
-  $('sap_back_to_input').addEventListener('click', sapBackToInput);
-  $('sap_back_to_review').addEventListener('click', sapBackToReview);
-  $('sap_done_all_btn').addEventListener('click', sapDoneAll);
-  $('sap_export_btn').addEventListener('click', sapExportReport);
-  $('sap_lihat_detail_btn').addEventListener('click', sapLihatDetail);
+  var sNxt = $('sap_next_btn'); if (sNxt) sNxt.addEventListener('click', sapNext);
+  var sPrv = $('sap_prev_btn'); if (sPrv) sPrv.addEventListener('click', sapPrev);
+  var sBti = $('sap_back_to_input'); if (sBti) sBti.addEventListener('click', sapBackToInput);
+  var sBtr = $('sap_back_to_review'); if (sBtr) sBtr.addEventListener('click', sapBackToReview);
+  var sDa = $('sap_done_all_btn'); if (sDa) sDa.addEventListener('click', sapDoneAll);
+  var sExp = $('sap_export_btn'); if (sExp) sExp.addEventListener('click', sapExportReport);
+  var sLdt = $('sap_lihat_detail_btn'); if (sLdt) sLdt.addEventListener('click', sapLihatDetail);
   var sTapK = $('sap_btn_terap_kirim');
   if (sTapK) sTapK.addEventListener('click', sapApplyKirimTerap);
   var sTapB = $('sap_btn_terap_bongkar');
@@ -1483,8 +1490,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (sEx4) sEx4.addEventListener('click', sapExportReport);
   var sBk4 = $('sap_step4_back_review');
   if (sBk4) sBk4.addEventListener('click', sapBackToReview);
-  $('sap_bongkar_save').addEventListener('click', sapBongkarSave);
-  $('sap_kirim_save').addEventListener('click', sapKirimSave);
+  var sBs = $('sap_bongkar_save'); if (sBs) sBs.addEventListener('click', sapBongkarSave);
+  var sKs = $('sap_kirim_save'); if (sKs) sKs.addEventListener('click', sapKirimSave);
   var ikSave = $('sap_ik_save');
   if (ikSave) ikSave.addEventListener('click', sapInlineKirimSave);
 
@@ -1521,10 +1528,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  $('sap_stock_input').addEventListener('input', renderSAPStep1Preview);
-  $('sap_stock_input').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') sapNext();
-  });
+  var sSI = $('sap_stock_input');
+  if (sSI) {
+    sSI.addEventListener('input', renderSAPStep1Preview);
+    sSI.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') sapNext();
+    });
+  }
 
   // History tabs
   document.querySelectorAll('#page-history .tab-btn').forEach(function(btn) {
@@ -1546,12 +1556,12 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // History filters
-  $('h_bk_bongkar').addEventListener('change', function() { loadHistoryData('bongkar', this.value, $('h_bln_bongkar').value); });
-  $('h_bln_bongkar').addEventListener('change', function() { loadHistoryData('bongkar', $('h_bk_bongkar').value, this.value); });
-  $('h_bk_kirim').addEventListener('change', function() { loadHistoryData('kirim', this.value, $('h_bln_kirim').value); });
-  $('h_bln_kirim').addEventListener('change', function() { loadHistoryData('kirim', $('h_bk_kirim').value, this.value); });
-  $('h_bk_opname').addEventListener('change', function() { loadHistoryData('opname', this.value, $('h_bln_opname').value); });
-  $('h_bln_opname').addEventListener('change', function() { loadHistoryData('opname', $('h_bk_opname').value, this.value); });
+  var hBkB = $('h_bk_bongkar'); if (hBkB) hBkB.addEventListener('change', function() { loadHistoryData('bongkar', this.value, ($('h_bln_bongkar')||{}).value||''); });
+  var hBlB = $('h_bln_bongkar'); if (hBlB) hBlB.addEventListener('change', function() { loadHistoryData('bongkar', ($('h_bk_bongkar')||{}).value||'', this.value); });
+  var hBkK = $('h_bk_kirim'); if (hBkK) hBkK.addEventListener('change', function() { loadHistoryData('kirim', this.value, ($('h_bln_kirim')||{}).value||''); });
+  var hBlK = $('h_bln_kirim'); if (hBlK) hBlK.addEventListener('change', function() { loadHistoryData('kirim', ($('h_bk_kirim')||{}).value||'', this.value); });
+  var hBkO = $('h_bk_opname'); if (hBkO) hBkO.addEventListener('change', function() { loadHistoryData('opname', this.value, ($('h_bln_opname')||{}).value||''); });
+  var hBlO = $('h_bln_opname'); if (hBlO) hBlO.addEventListener('change', function() { loadHistoryData('opname', ($('h_bk_opname')||{}).value||'', this.value); });
 
   // Init defaults
   initFormDefaults();
