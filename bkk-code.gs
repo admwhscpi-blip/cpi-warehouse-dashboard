@@ -714,17 +714,42 @@ function handlePost(e) {
       insertRow(SHEET_KIRIM, rowData);
       return { status: 'success', data: rowData };
       
-    } else if (action === 'addOpname') {
-      var rowData = {
-        ID: generateId('OPN'),
-        TIMESTAMP: Utilities.formatDate(now, 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss'),
-        TANGGAL: data.TANGGAL,
-        BK_ID: data.BK_ID,
-        STOK_FISIK_KG: Number(data.STOK_FISIK_KG),
-        MATERIAL: data.MATERIAL,
-        INPUT_BY: data.INPUT_BY,
-        KETERANGAN: data.KETERANGAN
-      };
+} else if (action === 'addOpname') {
+  var rowData = {
+    ID: generateId('OPN'),
+    TIMESTAMP: Utilities.formatDate(now, 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss'),
+
+    TANGGAL: data.TANGGAL,
+    BK_ID: data.BK_ID,
+
+    STOK_SISTEM_KG: Number(data.STOK_SISTEM_KG) || 0,
+    STOK_FISIK_KG: Number(data.STOK_FISIK_KG) || 0,
+    PENERIMAAN_KG: Number(data.PENERIMAAN_KG) || 0,
+    PENGIRIMAN_KG: Number(data.PENGIRIMAN_KG) || 0,
+    SELISIH_KG: Number(data.SELISIH_KG) || 0,
+
+    PERSENTASE:
+      data.PERSENTASE !== '' &&
+      data.PERSENTASE != null &&
+      !isNaN(Number(data.PERSENTASE))
+        ? Number(data.PERSENTASE)
+        : '',
+
+    MATERIAL: data.MATERIAL,
+    INPUT_BY: data.INPUT_BY,
+    KETERANGAN: data.KETERANGAN
+  };
+
+  if (!rowData.INPUT_BY || rowData.INPUT_BY === '') {
+    throw new Error('INPUT_BY (Operator) tidak boleh kosong');
+  }
+
+  insertRow(SHEET_OPNAME, rowData);
+
+  return {
+    status: 'success',
+    data: rowData
+  };
       if (!rowData.INPUT_BY || rowData.INPUT_BY === '') {
         throw new Error('INPUT_BY (Operator) tidak boleh kosong');
       }

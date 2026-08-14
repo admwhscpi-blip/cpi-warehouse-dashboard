@@ -56,17 +56,35 @@ function renderHistoryTab(tab, page) {
           '<td style="font-size:0.75rem;color:var(--ts);">' + (r.INPUT_BY||'—') + '</td>';
       }
     },
-    opname: {
-      tbl: 'tblHOpname', pg: 'pgHOpname',
+    // opname: {
+    //   tbl: 'tblHOpname', pg: 'pgHOpname',
+    //   row: function(r) {
+    //     return '<td>' + fmtDate(r.TANGGAL) + '</td>' +
+    //       '<td><strong>' + r.BK_ID + '</strong></td>' +
+    //       '<td class="cs">' + fmtNum(r.STOK_FISIK_KG) + '</td>' +
+    //       '<td>' + (r.MATERIAL||'—') + '</td>' +
+    //       '<td style="font-size:0.75rem;color:var(--ts);">' + (r.INPUT_BY||'—') + '</td>' +
+    //       '<td style="font-size:0.75rem;">' + (r.KETERANGAN||'—') + '</td>';
+    //   }
+    // }
+
+        opname: {
+      tbl: 'tblHOpname',
+      pg: 'pgHOpname',
       row: function(r) {
         return '<td>' + fmtDate(r.TANGGAL) + '</td>' +
-          '<td><strong>' + r.BK_ID + '</strong></td>' +
+          '<td><strong>' + (r.BK_ID || '—') + '</strong></td>' +
+          '<td>' + (r.MATERIAL || '—') + '</td>' +
+          '<td style="font-size:0.75rem;color:var(--ts);">' + (r.INPUT_BY || '—') + '</td>' +
+          '<td>' + fmtNum(r.STOK_SISTEM_KG) + '</td>' +
           '<td class="cs">' + fmtNum(r.STOK_FISIK_KG) + '</td>' +
-          '<td>' + (r.MATERIAL||'—') + '</td>' +
-          '<td style="font-size:0.75rem;color:var(--ts);">' + (r.INPUT_BY||'—') + '</td>' +
-          '<td style="font-size:0.75rem;">' + (r.KETERANGAN||'—') + '</td>';
+          '<td class="cm">' + fmtNum(r.PENERIMAAN_KG) + '</td>' +
+          '<td>' + fmtNum(r.SELISIH_KG) + '</td>' +
+          '<td>' + (r.PERSENTASE != null ? r.PERSENTASE + '%' : '—') + '</td>' +
+          '<td style="font-size:0.75rem;">' + (r.KETERANGAN || '—') + '</td>';
       }
     }
+
   };
 
   var c = cfg[tab];

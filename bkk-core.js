@@ -524,6 +524,341 @@ function fetchAPI(action, params, cb) {
   }, 15000);
 }
 
+// function fetchAPI(action, params, cb) {
+//   params = params || {};
+
+//   var requestId =
+//     "req_" + Date.now() + "_" + Math.floor(Math.random() * 99999);
+
+//   var callbackName =
+//     "cb_" + Date.now() + "_" + Math.floor(Math.random() * 99999);
+
+//   params.callback = callbackName;
+//   params.action = action;
+
+//   var url =
+//     CONFIG.SCRIPT_URL +
+//     "?" +
+//     Object.keys(params)
+//       .map(function (k) {
+//         return (
+//           encodeURIComponent(k) +
+//           "=" +
+//           encodeURIComponent(params[k])
+//         );
+//       })
+//       .join("&");
+
+//   console.log(
+//     "%c[FETCH START]",
+//     "color:blue;font-weight:bold",
+//     requestId,
+//     "action =",
+//     action
+//   );
+
+//   var s = document.createElement("script");
+//   s.id = "fetchScr_" + requestId;
+
+//   var finished = false;
+//   var callbackRemoved = false;
+//   var timeoutTimer = null;
+//   var lateCleanupTimer = null;
+
+//   // =========================================================
+//   // REMOVE CALLBACK
+//   // =========================================================
+
+//   function removeCallback() {
+//     if (callbackRemoved) return;
+
+//     callbackRemoved = true;
+
+//     try {
+//       delete window[callbackName];
+//     } catch (e) {
+//       try {
+//         window[callbackName] = undefined;
+//       } catch (ignore) {}
+//     }
+//   }
+
+//   // =========================================================
+//   // REMOVE SCRIPT
+//   // =========================================================
+
+//   function removeScript() {
+//     if (s && s.parentNode) {
+//       s.parentNode.removeChild(s);
+//     }
+//   }
+
+//   // =========================================================
+//   // CLEANUP
+//   // =========================================================
+
+//   function cleanup(reason) {
+
+//     if (finished) return;
+
+//     finished = true;
+
+//     console.log(
+//       "%c[FETCH CLEANUP]",
+//       "color:gray",
+//       requestId,
+//       "action =",
+//       action,
+//       "reason =",
+//       reason
+//     );
+
+//     // Hentikan timer timeout
+//     if (timeoutTimer) {
+//       clearTimeout(timeoutTimer);
+//       timeoutTimer = null;
+//     }
+
+//     // Hapus script
+//     removeScript();
+
+//     /*
+//      * Untuk callback normal/error, callback bisa langsung dihapus.
+//      *
+//      * Untuk timeout, JANGAN langsung hapus callback.
+//      * Server mungkin masih mengirim response beberapa saat kemudian.
+//      */
+//     if (reason !== "timeout") {
+//       removeCallback();
+//     }
+//   }
+
+//   // =========================================================
+//   // REGISTER JSONP CALLBACK
+//   // =========================================================
+
+//   console.log(
+//     "%c[FETCH REGISTER]",
+//     "color:orange;font-weight:bold",
+//     callbackName,
+//     action
+//   );
+
+//   window[callbackName] = function (data) {
+
+//     console.log(
+//       "%c[FETCH CALLBACK]",
+//       "color:green;font-weight:bold",
+//       requestId,
+//       "action =",
+//       action,
+//       data
+//     );
+
+//     /*
+//      * Kalau request sudah timeout/error,
+//      * response yang datang terlambat cukup diabaikan.
+//      *
+//      * Yang penting callback masih ada sehingga
+//      * browser TIDAK menghasilkan:
+//      *
+//      * cb_xxxxx is not defined
+//      */
+//     if (finished) {
+
+//       console.warn(
+//         "%c[FETCH LATE CALLBACK IGNORED]",
+//         "color:#999",
+//         requestId,
+//         "action =",
+//         action
+//       );
+
+//       removeCallback();
+
+//       return;
+//     }
+
+//     finished = true;
+
+//     // Hentikan timeout
+//     if (timeoutTimer) {
+//       clearTimeout(timeoutTimer);
+//       timeoutTimer = null;
+//     }
+
+//     // Hapus script
+//     removeScript();
+
+//     console.log(
+//       "%c[FETCH CB START]",
+//       "color:orange;font-weight:bold",
+//       requestId,
+//       "action =",
+//       action
+//     );
+
+//     try {
+
+//       if (typeof cb === "function") {
+//         cb(data);
+//       }
+
+//       console.log(
+//         "%c[FETCH CB FINISH]",
+//         "color:purple;font-weight:bold",
+//         requestId,
+//         "action =",
+//         action
+//       );
+
+//     } catch (err) {
+
+//       console.error(
+//         "%c[FETCH CB ERROR]",
+//         "color:red;font-weight:bold",
+//         requestId,
+//         "action =",
+//         action,
+//         err
+//       );
+
+//       console.error(err.stack);
+
+//     } finally {
+
+//       removeCallback();
+//     }
+//   };
+
+//   // =========================================================
+//   // SCRIPT ERROR
+//   // =========================================================
+
+//   s.onerror = function () {
+
+//     console.error(
+//       "%c[FETCH ERROR]",
+//       "color:red;font-weight:bold",
+//       requestId,
+//       "action =",
+//       action
+//     );
+
+//     if (finished) return;
+
+//     cleanup("error");
+
+//     try {
+
+//       if (typeof cb === "function") {
+
+//         cb({
+//           status: "error",
+//           message: "Gagal koneksi ke server",
+//           action: action
+//         });
+
+//       }
+
+//     } catch (err) {
+
+//       console.error(
+//         "%c[FETCH ERROR CALLBACK]",
+//         "color:red;font-weight:bold",
+//         requestId,
+//         action,
+//         err
+//       );
+
+//     }
+//   };
+
+//   // =========================================================
+//   // SEND REQUEST
+//   // =========================================================
+
+//   s.src = url;
+
+//   document.head.appendChild(s);
+
+//   console.log(
+//     "%c[FETCH SENT]",
+//     "color:blue;font-weight:bold",
+//     callbackName,
+//     action,
+//     url
+//   );
+
+//   // =========================================================
+//   // TIMEOUT
+//   // =========================================================
+
+//   timeoutTimer = setTimeout(function () {
+
+//     if (finished) return;
+
+//     console.error(
+//       "%c[FETCH TIMEOUT]",
+//       "color:red;font-weight:bold",
+//       requestId,
+//       "action =",
+//       action
+//     );
+
+//     cleanup("timeout");
+
+//     try {
+
+//       if (typeof cb === "function") {
+
+//         cb({
+//           status: "error",
+//           message: "Request timeout setelah 15 detik",
+//           action: action
+//         });
+
+//       }
+
+//     } catch (err) {
+
+//       console.error(
+//         "%c[FETCH TIMEOUT CALLBACK]",
+//         "color:red;font-weight:bold",
+//         requestId,
+//         action,
+//         err
+//       );
+
+//     }
+
+//     /*
+//      * Callback tetap dipertahankan sementara.
+//      *
+//      * Ini penting karena Google Apps Script
+//      * mungkin masih mengirim response setelah timeout.
+//      *
+//      * Setelah 30 detik tambahan, callback dibersihkan.
+//      */
+//     lateCleanupTimer = setTimeout(function () {
+
+//       console.log(
+//         "%c[FETCH LATE CALLBACK CLEANUP]",
+//         "color:#777",
+//         requestId,
+//         "action =",
+//         action
+//       );
+
+//       removeCallback();
+
+//       lateCleanupTimer = null;
+
+//     }, 30000);
+
+//   }, 15000);
+// }
+
 /** Origin yang fetch-nya ke GAS web app sering gagal CORS (respons tanpa ACAO); JSONP GET aman & satu kali kirim. */
 function postJSONAPIPreferJsonp_() {
   if (typeof location === "undefined") return false;

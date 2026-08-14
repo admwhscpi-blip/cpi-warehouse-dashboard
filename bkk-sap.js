@@ -1219,15 +1219,34 @@ function saveOpname() {
 
   modal('Konfirmasi Stock Opname', tblHtml, 'Simpan', 'Batal').then(function(ok) {
     if (!ok) return;
+    // var data = {
+    //   action: 'addOpname',
+    //   TANGGAL: $('o_tanggal').value,
+    //   BK_ID: bkId,
+    //   STOK_FISIK_KG: fisik,
+    //   MATERIAL: $('o_material').value,
+    //   KETERANGAN: ket,
+    //   INPUT_BY: (appState.user ? appState.user.nama : '')
+    // };
+
+
     var data = {
       action: 'addOpname',
       TANGGAL: $('o_tanggal').value,
       BK_ID: bkId,
+
+      STOK_SISTEM_KG: sistem,
       STOK_FISIK_KG: fisik,
+      PENERIMAAN_KG: penerimaan,
+      PENGIRIMAN_KG: pengiriman,
+      SELISIH_KG: selisih,
+      PERSENTASE: pct,
+
       MATERIAL: $('o_material').value,
       KETERANGAN: ket,
       INPUT_BY: (appState.user ? appState.user.nama : '')
     };
+
     showLoader(true);
     postAPI('addOpname', data, function(resp) {
       showLoader(false);
