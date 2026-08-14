@@ -93,6 +93,11 @@ function loadDashboard(doneCb) {
     fetchAPI('getBongkarHistory', {}, function(r1) {
       if (r1.status !== 'error') {
         rowsB = r1.data || [];
+            appState.history.bongkar = rowsB;
+
+    console.log('===== BONGKAR HISTORY =====');
+    console.log('Jumlah:', rowsB.length);
+    console.log('Contoh:', rowsB[0]);
         rowsB.forEach(function(row) {
           if (row.STATUS_ROW === 'pending_final') return;
           if (dashDateToYMD(row.TANGGAL) === day) masuk += Number(row.NETTO_KG) || 0;
@@ -103,6 +108,13 @@ function loadDashboard(doneCb) {
     fetchAPI('getKirimHistory', {}, function(r2) {
       if (r2.status !== 'error') {
         rowsK = r2.data || [];
+
+            appState.history.kirim = rowsK;
+
+    console.log('===== KIRIM HISTORY =====');
+    console.log('Jumlah:', rowsK.length);
+    console.log('Contoh:', rowsK[0]);
+
         rowsK.forEach(function(row) {
           if (dashDateToYMD(row.TANGGAL) === day) keluar += Number(row.NETTO_KG) || 0;
         });
@@ -110,7 +122,20 @@ function loadDashboard(doneCb) {
       finishHistory();
     });
     fetchAPI('getOpnameHistory', {}, function(r3) {
-      if (r3.status !== 'error') rowsO = r3.data || [];
+      if (r3.status !== 'error') 
+        {
+    rowsO = r3.data || [];
+
+    console.log('===== OPNAME HISTORY =====');
+    console.log('Jumlah rowsO:', rowsO.length);
+    console.log('rowsO:', rowsO);
+    console.log('rowsO[0]:', rowsO[0]);
+
+    appState.history.opname = rowsO;
+
+    console.log('appState.history.opname:', appState.history.opname);
+  }
+      
       finishHistory();
     });
   });

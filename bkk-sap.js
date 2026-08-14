@@ -1294,6 +1294,14 @@ function updateOpnameInfo() {
   var bongkarData = appState.history.bongkar || [];
   var kirimData = appState.history.kirim || [];
   var allOpname = appState.history.opname || [];
+    console.log('=== OPNAME DEBUG ===');
+console.log('BK:', bkId);
+console.log('History Bongkar:', bongkarData.length);
+console.log('History Kirim:', kirimData.length);
+console.log('History Opname:', allOpname.length);
+console.log('Data Bongkar:', bongkarData);
+console.log('Data Kirim:', kirimData);
+console.log('Data Opname:', allOpname);
   var opRows = allOpname.filter(function(r) { return sapBkRowMatches(r.BK_ID, bkId); });
   opRows.sort(function(a, b) {
     var ma = bkkRowEventTimeMs(a);
@@ -1354,6 +1362,21 @@ function updateOpnameInfo() {
   var ketLabel = selisih == null ? '' : selisih > 0 ? 'Susut' : selisih < 0 ? 'Overfisik' : 'Sesuai';
   $('o_ket').value = ketLabel;
 
+    console.log('=== DEBUG OPNAME ===');
+    console.log('BK:', bkId);
+    console.log('BK DATA:', bk);
+    console.log('STOK SISTEM:', sistem);
+    console.log('FISIK:', fisik);
+    console.log('LAST SO:', lastSO);
+    console.log('LAST SO MS:', lastSOMs);
+    console.log('END YMD:', endYmd);
+    console.log('END CAP MS:', endCapMs);
+    console.log('TOTAL BONGKAR:', totalBongkar);
+    console.log('TOTAL KIRIM:', totalKirim);
+    console.log('PENERIMAAN:', penerimaan);
+    console.log('SELISIH:', selisih);
+    console.log('PERSENTASE:', pct);
+    console.log('====================');
   // Ringkasan box
   appState.opnameData = {
     sistem: sistem,
@@ -1363,6 +1386,7 @@ function updateOpnameInfo() {
     selisih: selisih != null ? selisih : 0,
     persentase: pct != null && !isNaN(pct) ? pct : null
   };
+
   var ringkasan = $('o_ringkasan_box');
   ringkasan.style.display = 'block';
   $('rs_operator').textContent = appState.user ? appState.user.nama : '—';
