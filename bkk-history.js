@@ -103,6 +103,13 @@ function renderHistoryTab(tab, page) {
     });
   }
   renderPagination(c.pg, page, totalPages, function(p) { renderHistoryTab(tab, p); });
+  /*
+ * Grafik Opname harus mengikuti data hasil filter,
+ * bukan hanya baris yang sedang tampil di halaman tabel.
+ */
+if (tab === 'opname') {
+  renderHistoryOpnameChart();
+}
 }
 
 function initHistory() {

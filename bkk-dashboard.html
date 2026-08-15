@@ -342,6 +342,382 @@
       <div class="page dash-page-shell" id="page-intake71">
         <input type="date" id="i71_date" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
         <style>
+
+          /* =====================================================
+   PREVIEW DETAIL STOCK OPNAME
+   ===================================================== */
+
+.history-opname-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+
+  background: rgba(15, 23, 42, .55);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  backdrop-filter: blur(3px);
+}
+
+
+.history-opname-preview-box {
+
+  width: min(820px, 100%);
+
+  max-height: 90vh;
+
+  overflow: auto;
+
+  background: #fff;
+
+  border-radius: 16px;
+
+  box-shadow:
+    0 25px 60px rgba(15, 23, 42, .30);
+}
+
+
+.history-opname-preview-header {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding: 18px 20px;
+
+  border-bottom: 1px solid #e2e8f0;
+
+  background: #f8fafc;
+}
+
+
+.history-opname-preview-title {
+
+  font-size: 1.1rem;
+
+  font-weight: 800;
+
+  color: #0f172a;
+}
+
+
+.history-opname-preview-title i {
+
+  margin-right: 7px;
+
+  color: #6366f1;
+}
+
+
+.history-opname-preview-subtitle {
+
+  margin-top: 3px;
+
+  color: #64748b;
+
+  font-size: .78rem;
+}
+
+
+.history-opname-preview-close {
+
+  border: 0;
+
+  background: transparent;
+
+  font-size: 1.7rem;
+
+  color: #64748b;
+
+  cursor: pointer;
+
+  line-height: 1;
+}
+
+
+.history-opname-preview-body {
+
+  padding: 20px;
+}
+
+
+.history-opname-preview-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 12px;
+
+  margin-bottom: 22px;
+}
+
+
+.history-opname-field {
+
+  padding: 12px 14px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 10px;
+}
+
+
+.history-opname-field span {
+
+  display: block;
+
+  font-size: .72rem;
+
+  color: #64748b;
+
+  margin-bottom: 4px;
+}
+
+
+.history-opname-field strong {
+
+  display: block;
+
+  font-size: .9rem;
+
+  color: #0f172a;
+}
+
+
+.history-opname-section-title {
+
+  margin: 18px 0 10px;
+
+  font-weight: 800;
+
+  color: #334155;
+
+  font-size: .9rem;
+}
+
+
+.history-opname-section-title i {
+
+  margin-right: 6px;
+
+  color: #6366f1;
+}
+
+
+.history-opname-number-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+
+  gap: 10px;
+}
+
+
+.history-opname-number {
+
+  padding: 13px;
+
+  border-radius: 10px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e2e8f0;
+}
+
+
+.history-opname-number span {
+
+  display: block;
+
+  font-size: .7rem;
+
+  color: #64748b;
+
+  margin-bottom: 5px;
+}
+
+
+.history-opname-number strong {
+
+  display: block;
+
+  font-size: .9rem;
+
+  color: #0f172a;
+}
+
+
+.history-opname-keterangan {
+
+  padding: 13px 14px;
+
+  border-radius: 10px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e2e8f0;
+
+  color: #334155;
+
+  font-size: .85rem;
+}
+
+
+.history-opname-info {
+
+  padding: 12px 14px;
+
+  background: #eff6ff;
+
+  border: 1px solid #bfdbfe;
+
+  border-radius: 10px;
+
+  color: #1e40af;
+
+  font-size: .78rem;
+
+  line-height: 1.5;
+}
+
+
+.history-opname-preview-footer {
+
+  display: flex;
+
+  justify-content: flex-end;
+
+  padding: 14px 20px;
+
+  border-top: 1px solid #e2e8f0;
+}
+
+
+@media (max-width: 700px) {
+
+  .history-opname-preview-grid {
+
+    grid-template-columns: 1fr;
+
+  }
+
+  .history-opname-number-grid {
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+  }
+
+}
+
+
+          /* =========================================================
+   HISTORY CHART
+   ========================================================= */
+
+.history-chart-card {
+  margin: 0 0 20px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px -12px rgba(15, 23, 42, .18);
+}
+
+.history-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.history-chart-header h3 {
+  margin: 0;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.history-chart-header h3 i {
+  color: #6366f1;
+  margin-right: 7px;
+}
+
+.history-chart-header p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: .76rem;
+}
+
+.history-chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.history-chart-box {
+  min-width: 0;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 13px;
+}
+
+.history-chart-full {
+  grid-column: 1 / -1;
+}
+
+.history-chart-title {
+  margin-bottom: 10px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: .95rem;
+  font-weight: 800;
+  color: #334155;
+}
+
+.history-chart-title i {
+  margin-right: 6px;
+  color: #6366f1;
+}
+
+.history-chart-canvas {
+  position: relative;
+  height: 260px;
+}
+
+.history-chart-canvas canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+@media (max-width: 800px) {
+  .history-chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .history-chart-full {
+    grid-column: auto;
+  }
+
+  .history-chart-canvas {
+    height: 230px;
+  }
+}
+
+
           #page-intake71 { --i71glass: linear-gradient(145deg,rgba(255,255,255,.92),rgba(244,248,255,.82)); --i71ink:#0f172a; }
           .i71-hero { background:linear-gradient(120deg,#ecfeff 0%, #dbeafe 48%, #e0e7ff 100%); border:1px solid #bfdbfe; border-radius:16px; padding:12px 14px; margin-bottom:10px; box-shadow:0 10px 20px -16px rgba(14,116,144,.45); position:relative; overflow:hidden; }
           .i71-hero::after { content:''; position:absolute; inset:0; background:radial-gradient(circle at 80% 10%, rgba(56,189,248,.15), transparent 40%); pointer-events:none; }
@@ -1093,8 +1469,38 @@
           </div>
           <div class="pagination" id="pgHKirim"></div>
         </div>
+                  <!-- ===== GRAFIK RIWAYAT ===== -->
+        <div class="history-chart-card" id="historyChartPanel">
 
+          <div class="history-chart-header">
+            <div>
+              <h3>
+                <i class="fas fa-chart-line"></i>
+                Grafik Riwayat Transaksi
+              </h3>
+              <p>
+                Ringkasan transaksi berdasarkan data yang tampil pada tabel riwayat.
+              </p>
+            </div>
+          </div>
+
+          <div class="history-chart-grid">
+            <!-- OPNAME -->
+            <div class="history-chart-box history-chart-full">
+              <div class="history-chart-title">
+                <i class="fas fa-boxes-stacked"></i>
+                Trend Fisik / Susut
+              </div>
+
+              <div class="history-chart-canvas">
+                <canvas id="historyChartOpname"></canvas>
+              </div>
+            </div>
+
+          </div>
+        </div>
         <div class="htab" id="htab-opname">
+
           <div class="fgrid" style="margin-bottom:14px;">
             <div class="fg"><label>Filter BK</label><select id="h_bk_opname"><option value="">Semua BK</option></select></div>
             <div class="fg"><label>Filter Bulan</label><select id="h_bln_opname"><option value="">Semua</option></select></div>
@@ -1145,6 +1551,146 @@
   <div class="spinner"></div>
   <div class="loader-text">Memuat data...</div>
 </div>
+
+        <!-- =====================================================
+     PREVIEW DETAIL STOCK OPNAME
+     ===================================================== -->
+      <div id="historyOpnamePreview"
+          class="history-opname-preview-overlay"
+          style="display:none;">
+
+        <div class="history-opname-preview-box">
+
+          <div class="history-opname-preview-header">
+
+            <div>
+              <div class="history-opname-preview-title">
+                <i class="fas fa-clipboard-check"></i>
+                Detail Stock Opname
+              </div>
+
+              <div
+                id="hop_preview_subtitle"
+                class="history-opname-preview-subtitle">
+                —
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="history-opname-preview-close"
+              onclick="closeHistoryOpnamePreview()">
+              &times;
+            </button>
+
+          </div>
+
+
+          <div class="history-opname-preview-body">
+
+            <div class="history-opname-preview-grid">
+
+              <div class="history-opname-field">
+                <span>Operator</span>
+                <strong id="hop_operator">—</strong>
+              </div>
+
+              <div class="history-opname-field">
+                <span>Tanggal</span>
+                <strong id="hop_tanggal">—</strong>
+              </div>
+
+              <div class="history-opname-field">
+                <span>BK</span>
+                <strong id="hop_bk">—</strong>
+              </div>
+
+              <div class="history-opname-field">
+                <span>Material</span>
+                <strong id="hop_material">—</strong>
+              </div>
+
+            </div>
+
+
+            <div class="history-opname-section-title">
+              <i class="fas fa-scale-balanced"></i>
+              Hasil Stock Opname
+            </div>
+
+
+            <div class="history-opname-number-grid">
+
+              <div class="history-opname-number system">
+                <span>Stok Sistem</span>
+                <strong id="hop_stok_sistem">0 kg</strong>
+              </div>
+
+              <div class="history-opname-number fisik">
+                <span>Stok Fisik</span>
+                <strong id="hop_stok_fisik">0 kg</strong>
+              </div>
+
+              <div class="history-opname-number penerimaan">
+                <span>Penerimaan</span>
+                <strong id="hop_penerimaan">0 kg</strong>
+              </div>
+
+              <div class="history-opname-number selisih">
+                <span>Selisih</span>
+                <strong id="hop_selisih">0 kg</strong>
+              </div>
+
+              <div class="history-opname-number persen">
+                <span>Persentase</span>
+                <strong id="hop_persentase">0%</strong>
+              </div>
+
+            </div>
+
+
+            <div class="history-opname-section-title">
+              <i class="fas fa-comment-dots"></i>
+              Keterangan
+            </div>
+
+            <div
+              id="hop_keterangan"
+              class="history-opname-keterangan">
+              —
+            </div>
+
+
+            <div class="history-opname-section-title">
+              <i class="fas fa-info-circle"></i>
+              Informasi
+            </div>
+
+            <div class="history-opname-info">
+              Klik pada batang atau titik grafik untuk membuka
+              detail Stock Opname pada tanggal tersebut.
+            </div>
+
+          </div>
+
+
+          <div class="history-opname-preview-footer">
+
+            <button
+              type="button"
+              class="btn"
+              onclick="closeHistoryOpnamePreview()">
+
+              <i class="fas fa-times"></i>
+              Tutup
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
 
 <script src="bkk-config.js"></script>
 <script src="bkk-core.js?v=20260507fix2"></script>
@@ -1231,6 +1777,23 @@
 </style>
 
 <script>
+
+  function closeHistoryOpnamePreview() {
+
+  const modal = document.getElementById(
+    'historyOpnamePreview'
+  );
+
+  if (!modal) {
+    console.warn(
+      'historyOpnamePreview tidak ditemukan'
+    );
+    return;
+  }
+
+  modal.style.display = 'none';
+}
+
 /* ===== TRUCK JOURNEY POPUP — SELF-CONTAINED SCRIPT ===== */
 (function() {
   'use strict';
@@ -1620,6 +2183,1646 @@
       }
     }
   });
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  // let historyChartBongkar = null;
+  // let historyChartKirim = null;
+  let historyChartOpname = null;
+
+  function historyParseNumber(value) {
+    if (value == null) return 0;
+
+    let s = String(value)
+      .replace(/\./g, '')
+      .replace(/,/g, '.')
+      .replace(/[^\d.-]/g, '');
+
+    const n = parseFloat(s);
+
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function historyNormalizeDate(value) {
+    if (!value) return '';
+
+    let s = String(value).trim();
+
+    if (s.includes('T')) {
+      s = s.substring(0, 10);
+    }
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+      const p = s.split('/');
+      return p[2] + '-' + p[1] + '-' + p[0];
+    }
+
+    return s.substring(0, 10);
+  }
+
+  function historyFormatDate(value) {
+    if (!value) return '-';
+
+    const d = new Date(value + 'T00:00:00');
+
+    if (isNaN(d.getTime())) return value;
+
+    return d.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  function historyCollectTableData(tbodyId, valueColumnIndex) {
+    const tbody = document.getElementById(tbodyId);
+
+    if (!tbody) return {};
+
+    const result = {};
+
+    tbody.querySelectorAll('tr').forEach(function (tr) {
+
+      const cells = tr.querySelectorAll('td');
+
+      if (!cells.length) return;
+
+      /*
+       * Kolom pertama = Tanggal
+       * valueColumnIndex = kolom angka yang ingin dijumlahkan
+       */
+      const tanggal = historyNormalizeDate(
+        cells[0] ? cells[0].textContent : ''
+      );
+
+      if (!tanggal) return;
+
+      const value = historyParseNumber(
+        cells[valueColumnIndex]
+          ? cells[valueColumnIndex].textContent
+          : 0
+      );
+
+      result[tanggal] = (result[tanggal] || 0) + value;
+    });
+
+    return result;
+  }
+
+  function historySortedData(obj) {
+
+    return Object.keys(obj)
+      .sort()
+      .map(function (tanggal) {
+        return {
+          tanggal: tanggal,
+          value: obj[tanggal]
+        };
+      });
+  }
+
+  function historyCreateChart(canvasId, chartRef, title, dataObj) {
+
+    const canvas = document.getElementById(canvasId);
+
+    if (!canvas) return chartRef;
+
+    const rows = historySortedData(dataObj);
+
+    if (chartRef) {
+      chartRef.destroy();
+      chartRef = null;
+    }
+
+    chartRef = new Chart(canvas, {
+      type: 'line',
+
+      data: {
+        labels: rows.map(function (r) {
+          return historyFormatDate(r.tanggal);
+        }),
+
+        datasets: [{
+          label: title + ' (kg)',
+
+          data: rows.map(function (r) {
+            return r.value;
+          }),
+
+          tension: 0.35,
+
+          fill: true,
+
+          borderWidth: 2,
+
+          pointRadius: 3,
+
+          pointHoverRadius: 5
+        }]
+      },
+
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+
+        interaction: {
+          intersect: true,
+          mode: 'nearest'
+        },
+
+        plugins: {
+          legend: {
+            display: true
+          },
+
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                return Number(context.raw || 0)
+                  .toLocaleString('id-ID') + ' kg';
+              }
+            }
+          }
+        },
+
+        scales: {
+          x: {
+            ticks: {
+              maxRotation: 45,
+              minRotation: 0
+            }
+          },
+
+          y: {
+            beginAtZero: true,
+
+            ticks: {
+              callback: function (value) {
+                return Number(value)
+                  .toLocaleString('id-ID');
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return chartRef;
+  }
+
+function renderHistoryCharts() {
+
+  // /*
+  //  * BONGKAR
+  //  */
+  // const bongkarData =
+  //   historyCollectTableData(
+  //     'tblHBongkar',
+  //     4
+  //   );
+
+  // historyChartBongkar =
+  //   historyCreateChart(
+  //     'historyChartBongkar',
+  //     historyChartBongkar,
+  //     'Bongkar',
+  //     bongkarData
+  //   );
+
+
+  // /*
+  //  * KIRIM
+  //  */
+  // const kirimData =
+  //   historyCollectTableData(
+  //     'tblHKirim',
+  //     3
+  //   );
+
+  // historyChartKirim =
+  //   historyCreateChart(
+  //     'historyChartKirim',
+  //     historyChartKirim,
+  //     'Kirim',
+  //     kirimData
+  //   );
+
+
+  /*
+   * OPNAME
+   * Khusus trend fisik / susut
+   */
+  renderHistoryOpnameChart();
+
+}
+
+//   function renderHistoryOpnameChart() {
+
+//   const tbody = document.getElementById('tblHOpname');
+
+//   if (!tbody) return;
+
+//   const rows = [];
+
+//   tbody.querySelectorAll('tr').forEach(function (tr) {
+
+//     const cells = tr.querySelectorAll('td');
+
+//     if (cells.length < 9) return;
+
+//     const tanggal = historyNormalizeDate(
+//       cells[0].textContent
+//     );
+
+//     if (!tanggal) return;
+
+//     const stokFisik = historyParseNumber(
+//       cells[5].textContent
+//     );
+
+//     const selisih = historyParseNumber(
+//       cells[7].textContent
+//     );
+
+//     let persentase = historyParseNumber(
+//       cells[8].textContent
+//     );
+
+//     /*
+//      * Jika nilai persentase belum tersedia /
+//      * tidak terbaca dari tabel, hitung dari:
+//      *
+//      * susut / stok sistem x 100
+//      */
+//     if (
+//       !Number.isFinite(persentase) ||
+//       persentase === 0
+//     ) {
+
+//       const stokSistem = historyParseNumber(
+//         cells[4].textContent
+//       );
+
+//       if (stokSistem !== 0) {
+//         persentase =
+//           Math.abs(selisih) / Math.abs(stokSistem) * 100;
+//       }
+//     }
+
+//     rows.push({
+//       tanggal: tanggal,
+//       fisik: stokFisik,
+//       susut: Math.abs(selisih),
+//       persen: Math.abs(persentase)
+//     });
+
+//   });
+
+//   /*
+//    * Urutkan berdasarkan tanggal
+//    */
+//   rows.sort(function (a, b) {
+//   return new Date(a.tanggal + 'T00:00:00').getTime() -
+//          new Date(b.tanggal + 'T00:00:00').getTime();
+// });
+
+//   /*
+//    * Hapus chart lama
+//    */
+//   if (historyChartOpname) {
+//     historyChartOpname.destroy();
+//     historyChartOpname = null;
+//   }
+
+//   const canvas = document.getElementById(
+//     'historyChartOpname'
+//   );
+
+//   if (!canvas) return;
+
+//   /*
+//    * Simpan data agar tooltip bisa membaca
+//    * susut + persentase.
+//    */
+//   canvas._historyOpnameRows = rows;
+
+//   historyChartOpname = new Chart(canvas, {
+
+//     type: 'line',
+
+//     data: {
+
+//       labels: rows.map(function (r) {
+//         return historyFormatDate(r.tanggal);
+//       }),
+
+//       datasets: [
+
+//         {
+//           label: 'Stok Fisik',
+
+//           data: rows.map(function (r) {
+//             return r.fisik;
+//           }),
+
+//           tension: 0.35,
+
+//           fill: true,
+
+//           borderWidth: 2,
+
+//           pointRadius: 4,
+
+//           pointHoverRadius: 6
+//         },
+
+//         {
+//           label: 'Susut',
+
+//           data: rows.map(function (r) {
+//             return r.susut;
+//           }),
+
+//           tension: 0.35,
+
+//           fill: false,
+
+//           borderWidth: 2,
+
+//           pointRadius: 4,
+
+//           pointHoverRadius: 6
+//         }
+
+//       ]
+
+//     },
+
+//     options: {
+
+//       responsive: true,
+
+//       maintainAspectRatio: false,
+
+//       interaction: {
+//         intersect: false,
+//         mode: 'index'
+//       },
+
+//       plugins: {
+
+//         legend: {
+//           display: true
+//         },
+
+//         tooltip: {
+
+//           callbacks: {
+
+//             title: function (items) {
+
+//               if (!items.length) return '';
+
+//               return 'Tanggal: ' +
+//                 items[0].label;
+//             },
+
+//             label: function (context) {
+
+//               const index = context.dataIndex;
+
+//               const row = rows[index];
+
+//               if (!row) return '';
+
+//               if (
+//                 context.dataset.label ===
+//                 'Stok Fisik'
+//               ) {
+
+//                 return 'Stok Fisik: ' +
+//                   row.fisik.toLocaleString(
+//                     'id-ID'
+//                   ) +
+//                   ' kg';
+
+//               }
+
+//               return 'Susut: ' +
+//                 row.susut.toLocaleString(
+//                   'id-ID'
+//                 ) +
+//                 ' kg';
+//             },
+
+//             afterBody: function (items) {
+
+//               if (!items.length) return '';
+
+//               const index =
+//                 items[0].dataIndex;
+
+//               const row = rows[index];
+
+//               if (!row) return '';
+
+//               return [
+//                 '',
+//                 'Susut: ' +
+//                   row.susut.toLocaleString(
+//                     'id-ID'
+//                   ) +
+//                   ' kg',
+
+//                 'Persentase: ' +
+//                   row.persen.toLocaleString(
+//                     'id-ID',
+//                     {
+//                       minimumFractionDigits: 2,
+//                       maximumFractionDigits: 2
+//                     }
+//                   ) +
+//                   '%'
+//               ];
+//             }
+
+//           }
+
+//         }
+
+//       },
+
+//       scales: {
+
+//         x: {
+
+//           ticks: {
+//             maxRotation: 45,
+//             minRotation: 0
+//           }
+
+//         },
+
+//         y: {
+
+//           beginAtZero: true,
+
+//           ticks: {
+
+//             callback: function (value) {
+
+//               return Number(value)
+//                 .toLocaleString('id-ID');
+
+//             }
+
+//           }
+
+//         }
+
+//       }
+
+//     }
+
+//   });
+
+// }
+
+function renderHistoryOpnameChart() {
+
+  /*
+   * ======================================================
+   * AMBIL DATA LANGSUNG DARI STATE
+   *
+   * Jangan mengambil data dari <tbody>.
+   * appState.history.opname sudah merupakan data yang
+   * sudah terkena filter BK dan filter bulan.
+   * ======================================================
+   */
+  const sourceRows =
+    appState.history &&
+    Array.isArray(appState.history.opname)
+      ? appState.history.opname
+      : [];
+
+
+  /*
+   * ======================================================
+   * PARSE TANGGAL
+   * ======================================================
+   */
+  // function parseOpnameDate(value) {
+
+  //   if (!value) return null;
+
+  //   const s = String(value).trim();
+
+  //   /*
+  //    * YYYY-MM-DD
+  //    * YYYY/MM/DD
+  //    */
+  //   let m = s.match(
+  //     /^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/
+  //   );
+
+  //   if (m) {
+
+  //     return new Date(
+  //       Number(m[1]),
+  //       Number(m[2]) - 1,
+  //       Number(m[3])
+  //     );
+
+  //   }
+
+
+  //   /*
+  //    * DD/MM/YYYY
+  //    * DD-MM-YYYY
+  //    */
+  //   m = s.match(
+  //     /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/
+  //   );
+
+  //   if (m) {
+
+  //     return new Date(
+  //       Number(m[3]),
+  //       Number(m[2]) - 1,
+  //       Number(m[1])
+  //     );
+
+  //   }
+
+
+  //   /*
+  //    * Format tanggal lainnya
+  //    */
+  //   const d = new Date(s);
+
+  //   if (!isNaN(d.getTime())) {
+  //     return d;
+  //   }
+
+  //   return null;
+  // }
+
+  function parseOpnameDate(value) {
+
+  if (!value) return null;
+
+  /*
+   * ======================================================
+   * PRIORITAS UTAMA:
+   * Gunakan dashDateToYMD() yang juga dipakai sistem
+   * untuk normalisasi tanggal.
+   *
+   * Tujuannya agar tanggal grafik sama persis dengan
+   * tanggal yang ditampilkan pada tabel.
+   * ======================================================
+   */
+  if (typeof dashDateToYMD === 'function') {
+
+    const ymd = dashDateToYMD(value);
+
+    if (
+      ymd &&
+      /^\d{4}-\d{2}-\d{2}$/.test(ymd)
+    ) {
+
+      const p = ymd.split('-');
+
+      /*
+       * Buat tanggal sebagai LOCAL DATE.
+       *
+       * Jangan:
+       * new Date('2026-08-06')
+       *
+       * karena format tersebut dapat dianggap UTC.
+       *
+       * Gunakan:
+       * new Date(year, month, day)
+       */
+      return new Date(
+        Number(p[0]),
+        Number(p[1]) - 1,
+        Number(p[2])
+      );
+    }
+  }
+
+
+  /*
+   * ======================================================
+   * FALLBACK
+   * ======================================================
+   */
+
+  const s = String(value).trim();
+
+
+  /*
+   * YYYY-MM-DD
+   * YYYY/MM/DD
+   */
+  let m = s.match(
+    /^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/
+  );
+
+  if (m) {
+
+    return new Date(
+      Number(m[1]),
+      Number(m[2]) - 1,
+      Number(m[3])
+    );
+
+  }
+
+
+  /*
+   * DD/MM/YYYY
+   * DD-MM-YYYY
+   */
+  m = s.match(
+    /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/
+  );
+
+  if (m) {
+
+    return new Date(
+      Number(m[3]),
+      Number(m[2]) - 1,
+      Number(m[1])
+    );
+
+  }
+
+
+  /*
+   * Jangan langsung memakai:
+   * new Date(s)
+   *
+   * karena bisa menyebabkan timezone shift.
+   *
+   * Hanya sebagai fallback terakhir.
+   */
+  const d = new Date(s);
+
+  if (!isNaN(d.getTime())) {
+    return d;
+  }
+
+  return null;
+}
+
+  /*
+   * ======================================================
+   * FORMAT TANGGAL
+   * ======================================================
+   *
+   * Contoh:
+   * 05 Mei 2026
+   * 08 Agu 2026
+   */
+  function formatOpnameDateFull(date) {
+
+    if (!date || isNaN(date.getTime())) {
+      return '-';
+    }
+
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des'
+    ];
+
+    return String(date.getDate()).padStart(2, '0') +
+      ' ' +
+      months[date.getMonth()] +
+      ' ' +
+      date.getFullYear();
+  }
+
+
+  /*
+   * ======================================================
+   * BENTUK DATA UNTUK GRAFIK
+   * ======================================================
+   */
+  const rows = [];
+
+
+sourceRows.forEach(function (r) {
+
+  if (!r) return;
+
+
+  /*
+   * ======================================================
+   * TANGGAL
+   * ======================================================
+   */
+  const dateObj =
+    parseOpnameDate(r.TANGGAL);
+
+  if (!dateObj) return;
+
+
+  /*
+   * ======================================================
+   * NILAI ASLI STOCK OPNAME
+   * ======================================================
+   */
+  const stokSistem =
+    historyParseNumber(
+      r.STOK_SISTEM_KG
+    );
+
+  const stokFisik =
+    historyParseNumber(
+      r.STOK_FISIK_KG
+    );
+
+  const penerimaan =
+    historyParseNumber(
+      r.PENERIMAAN_KG
+    );
+
+  const pengiriman =
+    historyParseNumber(
+      r.PENGIRIMAN_KG
+    );
+
+
+  /*
+   * ======================================================
+   * QUANTITY GRAFIK
+   *
+   * Stok Fisik - Stok Sistem
+   *
+   * Contoh:
+   *
+   * 5.487.117 - 5.488.117
+   * = -1.000
+   *
+   * 5.489.117 - 5.488.117
+   * = +1.000
+   *
+   * 5.488.117 - 5.488.117
+   * = 0
+   * ======================================================
+   */
+  const quantity =
+    stokFisik - stokSistem;
+
+
+  /*
+   * ======================================================
+   * PERSENTASE GRAFIK
+   *
+   * (Stok Fisik - Stok Sistem)
+   * / Stok Sistem
+   * × 100
+   *
+   * Tanda mengikuti quantity.
+   * ======================================================
+   */
+  let persentase = 0;
+
+  if (stokSistem !== 0) {
+
+    persentase =
+      (quantity / Math.abs(stokSistem)) * 100;
+
+  }
+
+
+  /*
+   * ======================================================
+   * SELISIH
+   *
+   * Untuk grafik dan preview,
+   * gunakan selisih berdasarkan Stock Fisik -
+   * Stock Sistem.
+   * ======================================================
+   */
+  const selisih =
+    quantity;
+
+
+  /*
+   * ======================================================
+   * SIMPAN DATA
+   * ======================================================
+   */
+  rows.push({
+
+    /*
+     * Tanggal
+     */
+    date:
+      dateObj,
+
+    timestamp:
+      dateObj.getTime(),
+
+    tanggal:
+      formatOpnameDateFull(dateObj),
+
+
+    /*
+     * Identitas SO
+     */
+    bk:
+      r.BK_ID || '—',
+
+    material:
+      r.MATERIAL || '—',
+
+    operator:
+      r.INPUT_BY || '—',
+
+
+    /*
+     * Angka SO
+     */
+    stokSistem:
+      stokSistem,
+
+    stokFisik:
+      stokFisik,
+
+    penerimaan:
+      penerimaan,
+
+    pengiriman:
+      pengiriman,
+
+
+    /*
+     * Selisih:
+     *
+     * Fisik - Sistem
+     */
+    selisih:
+      selisih,
+
+
+    /*
+     * ==================================================
+     * BAR
+     *
+     * Quantity
+     *
+     * Positif  = Fisik > Sistem
+     * Negatif  = Fisik < Sistem
+     * Nol      = Fisik = Sistem
+     * ==================================================
+     */
+    quantity:
+      quantity,
+
+
+    /*
+     * ==================================================
+     * LINE
+     *
+     * Persentase
+     * ==================================================
+     */
+    persen:
+      persentase,
+
+
+    /*
+     * Keterangan asli
+     */
+    keterangan:
+      r.KETERANGAN || '—',
+
+
+    /*
+     * Data asli untuk preview
+     */
+    raw:
+      r
+
+  });
+
+});
+  /*
+   * ======================================================
+   * URUTKAN:
+   *
+   * TANGGAL LAMA -> TANGGAL BARU
+   * ======================================================
+   */
+  rows.sort(function (a, b) {
+
+    return a.timestamp - b.timestamp;
+
+  });
+
+
+  /*
+   * Simpan untuk preview
+   */
+  window.__historyOpnameChartRows = rows;
+
+
+  /*
+   * ======================================================
+   * HAPUS CHART LAMA
+   * ======================================================
+   */
+  if (historyChartOpname) {
+
+    historyChartOpname.destroy();
+
+    historyChartOpname = null;
+
+  }
+
+
+  /*
+   * ======================================================
+   * CANVAS
+   * ======================================================
+   */
+  const canvas =
+    document.getElementById(
+      'historyChartOpname'
+    );
+
+  if (!canvas) return;
+
+
+  /*
+   * ======================================================
+   * TIDAK ADA DATA
+   *
+   * Jangan membuat chart kosong yang membingungkan.
+   * ======================================================
+   */
+  if (!rows.length) {
+
+    canvas.style.cursor = 'default';
+
+    return;
+
+  }
+
+
+  /*
+   * ======================================================
+   * COMBINATION CHART
+   *
+   * BAR  = Quantity / Susut
+   * LINE = Persentase
+   * ======================================================
+   */
+  historyChartOpname = new Chart(canvas, {
+
+    type: 'bar',
+
+    data: {
+
+      labels: rows.map(function (r) {
+
+        return r.tanggal;
+
+      }),
+
+
+      datasets: [
+
+        /*
+         * ==================================================
+         * BAR
+         * Quantity / Susut
+         * ==================================================
+         */
+        {
+          type: 'bar',
+
+          label: 'Quantity',
+
+          data: rows.map(function (r) {
+
+            return r.quantity;
+
+          }),
+
+          yAxisID: 'yQuantity',
+
+          borderWidth: 1,
+
+          borderRadius: 5,
+
+          maxBarThickness: 34,
+
+          order: 2
+        },
+
+
+        /*
+         * ==================================================
+         * LINE
+         * Persentase
+         * ==================================================
+         */
+        {
+          type: 'line',
+
+          label: 'Persentase',
+
+          data: rows.map(function (r) {
+
+            return r.persen;
+
+          }),
+
+          yAxisID: 'yPercent',
+
+          tension: 0.3,
+
+          borderWidth: 3,
+
+          pointRadius: 4,
+
+          pointHoverRadius: 7,
+
+          fill: false,
+
+          order: 1
+        }
+
+      ]
+
+    },
+
+
+    options: {
+
+      responsive: true,
+
+      maintainAspectRatio: false,
+
+
+      /*
+       * ==================================================
+       * KLIK BAR / TITIK
+       * ==================================================
+       */
+      onClick: function (
+        event,
+        activeElements
+      ) {
+
+        if (
+          !activeElements ||
+          !activeElements.length
+        ) {
+          return;
+        }
+
+
+        const index =
+          activeElements[0].index;
+
+
+        const row =
+          rows[index];
+
+
+        if (!row) return;
+
+
+        /*
+         * Buka preview SO
+         */
+        showHistoryOpnamePreview(row);
+
+      },
+
+
+      /*
+       * Hanya pilih elemen yang benar-benar diklik.
+       *
+       * Ini penting supaya klik tanggal tertentu
+       * membuka record yang tepat.
+       */
+      interaction: {
+
+        mode: 'nearest',
+
+        intersect: true
+
+      },
+
+
+      plugins: {
+
+        /*
+         * ==================================================
+         * LEGEND
+         * ==================================================
+         */
+        legend: {
+
+          display: true,
+
+          position: 'top'
+
+        },
+
+
+        /*
+         * ==================================================
+         * TOOLTIP
+         * ==================================================
+         */
+        tooltip: {
+
+          callbacks: {
+
+            /*
+             * Judul tooltip
+             */
+            title: function (items) {
+
+              if (!items.length) {
+                return '';
+              }
+
+
+              const row =
+                rows[
+                  items[0].dataIndex
+                ];
+
+
+              return row
+                ? row.tanggal
+                : '';
+
+            },
+
+
+            /*
+             * Nilai dataset
+             */
+            label: function (context) {
+
+              const row =
+                rows[
+                  context.dataIndex
+                ];
+
+
+              if (!row) return '';
+
+
+              if (
+                context.dataset.label ===
+                'Quantity / Susut'
+              ) {
+
+                return 'Quantity: ' +
+                  row.quantity.toLocaleString(
+                    'id-ID'
+                  ) +
+                  ' kg';
+
+              }
+
+
+              return 'Persentase: ' +
+                row.persen.toLocaleString(
+                  'id-ID',
+                  {
+                    minimumFractionDigits: 2,
+
+                    maximumFractionDigits: 2
+                  }
+                ) +
+                '%';
+
+            },
+
+
+            /*
+             * Detail SO
+             */
+            afterBody: function (items) {
+
+              if (!items.length) {
+                return [];
+              }
+
+
+              const row =
+                rows[
+                  items[0].dataIndex
+                ];
+
+
+              if (!row) return [];
+
+
+              return [
+
+                '',
+
+                'BK: ' +
+                  row.bk,
+
+                'Material: ' +
+                  row.material,
+
+                'Operator: ' +
+                  row.operator,
+
+                '',
+
+                'Stok Sistem: ' +
+                  row.stokSistem.toLocaleString(
+                    'id-ID'
+                  ) +
+                  ' kg',
+
+                'Stok Fisik: ' +
+                  row.stokFisik.toLocaleString(
+                    'id-ID'
+                  ) +
+                  ' kg',
+
+                'Penerimaan: ' +
+                  row.penerimaan.toLocaleString(
+                    'id-ID'
+                  ) +
+                  ' kg',
+
+                'Pengiriman: ' +
+                  row.pengiriman.toLocaleString(
+                    'id-ID'
+                  ) +
+                  ' kg',
+
+                'Selisih: ' +
+                  row.selisih.toLocaleString(
+                    'id-ID'
+                  ) +
+                  ' kg',
+
+                'Persentase: ' +
+                  row.persen.toLocaleString(
+                    'id-ID',
+                    {
+                      minimumFractionDigits: 2,
+
+                      maximumFractionDigits: 2
+                    }
+                  ) +
+                  '%',
+
+                '',
+
+                'Klik untuk melihat detail SO'
+
+              ];
+
+            }
+
+          }
+
+        }
+
+      },
+
+
+      /*
+       * ==================================================
+       * AXIS
+       * ==================================================
+       */
+      scales: {
+
+        /*
+         * ------------------------------------------------
+         * X
+         * ------------------------------------------------
+         */
+        x: {
+
+          ticks: {
+
+            /*
+             * SEMUA tanggal ditampilkan
+             */
+            autoSkip: false,
+
+            maxRotation: 45,
+
+            minRotation: 45,
+
+            padding: 8,
+
+            callback: function (
+              value,
+              index
+            ) {
+
+              return rows[index]
+                ? rows[index].tanggal
+                : '';
+
+            }
+
+          }
+
+        },
+
+
+        /*
+         * ------------------------------------------------
+         * Y KIRI
+         *
+         * Quantity / Susut
+         * ------------------------------------------------
+         */
+        yQuantity: {
+
+          type: 'linear',
+
+          position: 'left',
+
+          beginAtZero: true,
+
+          title: {
+
+            display: true,
+
+            text: 'Quantity(kg)'
+
+          },
+
+          ticks: {
+
+            callback: function (value) {
+
+              return Number(value)
+                .toLocaleString('id-ID');
+
+            }
+
+          }
+
+        },
+
+
+        /*
+         * ------------------------------------------------
+         * Y KANAN
+         *
+         * Persentase
+         * ------------------------------------------------
+         */
+        yPercent: {
+
+          type: 'linear',
+
+          position: 'right',
+
+          beginAtZero: true,
+
+          title: {
+
+            display: true,
+
+            text: 'Persentase (%)'
+
+          },
+
+          grid: {
+
+            drawOnChartArea: false
+
+          },
+
+          ticks: {
+
+            callback: function (value) {
+
+              return value + '%';
+
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+
+  });
+
+
+  /*
+   * ======================================================
+   * CURSOR
+   * ======================================================
+   */
+  canvas.style.cursor = 'pointer';
+
+}
+
+
+function showHistoryOpnamePreview(row) {
+
+  if (!row) return;
+
+
+  function fmtKg(value) {
+
+    return Number(value || 0)
+      .toLocaleString('id-ID', {
+        maximumFractionDigits: 2
+      }) + ' kg';
+
+  }
+
+
+  function fmtPercent(value) {
+
+    return Number(value || 0)
+      .toLocaleString('id-ID', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }) + '%';
+
+  }
+
+
+  document.getElementById(
+    'hop_operator'
+  ).textContent =
+    row.operator || '—';
+
+
+  document.getElementById(
+    'hop_tanggal'
+  ).textContent =
+    row.tanggal || '—';
+
+
+  document.getElementById(
+    'hop_bk'
+  ).textContent =
+    row.bk || '—';
+
+
+  document.getElementById(
+    'hop_material'
+  ).textContent =
+    row.material || '—';
+
+
+  document.getElementById(
+    'hop_stok_sistem'
+  ).textContent =
+    fmtKg(row.stokSistem);
+
+
+  document.getElementById(
+    'hop_stok_fisik'
+  ).textContent =
+    fmtKg(row.stokFisik);
+
+
+  document.getElementById(
+    'hop_penerimaan'
+  ).textContent =
+    fmtKg(row.penerimaan);
+
+
+  document.getElementById(
+    'hop_selisih'
+  ).textContent =
+    fmtKg(row.selisih);
+
+
+  document.getElementById(
+    'hop_persentase'
+  ).textContent =
+    fmtPercent(row.persen);
+
+
+  document.getElementById(
+    'hop_keterangan'
+  ).textContent =
+    row.keterangan || '—';
+
+
+  document.getElementById(
+    'hop_preview_subtitle'
+  ).textContent =
+    'Stock Opname • ' +
+    (row.bk || 'BK —') +
+    ' • ' +
+    (row.material || 'Material —');
+
+
+  const modal =
+    document.getElementById(
+      'historyOpnamePreview'
+    );
+
+  modal.style.display = 'flex';
+
+}
+
+
+function closeHistoryOpnamePreview() {
+
+  const modal =
+    document.getElementById(
+      'historyOpnamePreview'
+    );
+
+  if (modal) {
+
+    modal.style.display = 'none';
+
+  }
+
+}
+  /*
+   * Jalankan ketika halaman selesai dimuat.
+   */
+  document.addEventListener('DOMContentLoaded', function () {
+
+    setTimeout(function () {
+      renderHistoryCharts();
+    }, 500);
+
+  });
+
+  /*
+   * Fungsi global agar bkk-history.js
+   * bisa memanggilnya setelah tabel selesai
+   * dirender / difilter / berpindah halaman.
+   */
+  window.renderHistoryCharts = renderHistoryCharts;
+
+  /*
+   * Pantau perubahan tbody.
+   *
+   * Ini penting karena data Riwayat kemungkinan
+   * di-render secara asynchronous oleh bkk-history.js.
+   */
+  const historyObserver = new MutationObserver(function () {
+
+    clearTimeout(window.__historyChartTimer);
+
+    window.__historyChartTimer = setTimeout(function () {
+      renderHistoryCharts();
+    }, 150);
+
+  });
+
+  [
+    // 'tblHBongkar',
+    // 'tblHKirim',
+    'tblHOpname'
+  ].forEach(function (id) {
+
+    const el = document.getElementById(id);
+
+    if (el) {
+      historyObserver.observe(el, {
+        childList: true,
+        subtree: true
+      });
+    }
+
+  });
+
 })();
 </script>
 
