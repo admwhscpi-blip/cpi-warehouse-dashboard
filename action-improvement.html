@@ -1,0 +1,2654 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Warehouse - Action & Improvement Monitoring</title>
+    
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- SweetAlert2 & Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --bg-base: #0a0e17;
+            --bg-surface: #111827;
+            --bg-card: #162032;
+            --bg-card-hover: #1c2940;
+            --border-glass: rgba(56, 189, 248, 0.15);
+            --border-active: #06b6d4;
+            
+            --primary: #06b6d4;
+            --primary-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-crimson: #ef4444;
+            --accent-purple: #8b5cf6;
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            --status-open: #3b82f6;
+            --status-progress: #06b6d4;
+            --status-completed: #10b981;
+            --status-verified: #8b5cf6;
+            --status-overdue: #ef4444;
+            
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-full: 9999px;
+            
+            --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* Top Header */
+        .app-header {
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border-glass);
+            padding: 12px 18px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .brand-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary-gradient);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.35);
+        }
+
+        .brand-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            line-height: 1;
+            color: #fff;
+        }
+
+        .brand-sub {
+            font-size: 0.65rem;
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        /* Role Switcher Pill in Header */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .role-badge-box {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-full);
+            padding: 3px 8px 3px 6px;
+        }
+
+        .role-tag-pill {
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            background: var(--primary);
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .role-tag-pill.spv { background: #8b5cf6; color: #fff; }
+        .role-tag-pill.pic { background: #06b6d4; color: #000; }
+        .role-tag-pill.view { background: #64748b; color: #fff; }
+
+        .role-select {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .role-select option {
+            background: var(--bg-surface);
+            color: #fff;
+        }
+
+        /* Container */
+        .main-container {
+            flex: 1;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 16px 14px 40px;
+        }
+
+        /* Quick KPI Strip */
+        .kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .kpi-box {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 10px 6px;
+            text-align: center;
+        }
+
+        .kpi-box .num {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #fff;
+        }
+
+        .kpi-box .lbl {
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* View Switching */
+        .app-view {
+            display: none;
+            animation: fadeIn 0.2s ease forwards;
+        }
+
+        .app-view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ==========================================================================
+           1. HOME VIEW: 2 PILIHAN UTAMA (+ PERMISSION HANDLING)
+           ========================================================================== */
+        .home-title-box {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .home-title-box h1 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .home-title-box p {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* PIC Task Banner (Muncul bila role = PIC) */
+        .pic-assigned-banner {
+            display: none;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border: 1px solid rgba(6, 182, 212, 0.4);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .pic-assigned-banner.show {
+            display: flex;
+        }
+
+        .home-dual-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 640px) {
+            .home-dual-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .choice-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 24px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 190px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+        }
+
+        .choice-card:active, .choice-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+            background: var(--bg-card-hover);
+        }
+
+        .choice-card.input-card {
+            background: linear-gradient(145deg, #132238 0%, #0d1726 100%);
+            border-color: rgba(6, 182, 212, 0.35);
+        }
+
+        .choice-card.input-card.disabled {
+            opacity: 0.65;
+            filter: grayscale(0.2);
+        }
+
+        .choice-card.monitor-card {
+            background: linear-gradient(145deg, #122822 0%, #0c1c18 100%);
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+
+        .choice-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 14px;
+        }
+
+        .choice-card.input-card .choice-icon {
+            background: rgba(6, 182, 212, 0.18);
+            color: var(--primary);
+        }
+
+        .choice-card.monitor-card .choice-icon {
+            background: rgba(16, 185, 129, 0.18);
+            color: var(--accent-emerald);
+        }
+
+        .choice-badge {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-spv { background: rgba(139, 92, 246, 0.25); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.4); }
+        .badge-all { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
+        .badge-locked { background: rgba(239, 68, 68, 0.2); color: var(--accent-crimson); }
+
+        .choice-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .choice-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.35;
+        }
+
+        .choice-action-text {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .choice-card.monitor-card .choice-action-text {
+            color: var(--accent-emerald);
+        }
+
+        /* ==========================================================================
+           2. INPUT ACTION FORM VIEW (KHUSUS SPV)
+           ========================================================================== */
+        .back-nav-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            gap: 10px;
+        }
+
+        .btn-back {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            color: var(--text-primary);
+            padding: 8px 14px;
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 20px 16px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-label span.req { color: var(--accent-crimson); }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background: var(--bg-base);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.88rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: var(--primary);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 75px;
+        }
+
+        /* Area Selector Pills */
+        .area-radio-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        @media (min-width: 600px) {
+            .area-radio-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .area-radio-btn {
+            background: var(--bg-base);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+
+        .area-radio-btn.active {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Sub Area Rental */
+        .sub-rental-box {
+            display: none;
+            background: rgba(6, 182, 212, 0.05);
+            border: 1px dashed rgba(6, 182, 212, 0.3);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        .sub-rental-box.show {
+            display: block;
+        }
+
+        .sub-rental-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .sub-rental-btn {
+            background: var(--bg-base);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-sm);
+            padding: 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-align: center;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .sub-rental-btn.active {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+        }
+
+        /* Photo Upload Box (Cloudinary) */
+        .upload-touch-box {
+            border: 2px dashed rgba(6, 182, 212, 0.35);
+            border-radius: var(--radius-md);
+            background: rgba(6, 182, 212, 0.03);
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .upload-touch-box i {
+            font-size: 1.6rem;
+            color: var(--primary);
+        }
+
+        .upload-preview-wrap {
+            display: none;
+            position: relative;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            max-height: 180px;
+        }
+
+        .upload-preview-wrap img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .btn-remove-photo {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(239, 68, 68, 0.9);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+        }
+
+        /* Checklist Builder */
+        .checklist-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .checklist-item-input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-base);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+        }
+
+        .checklist-item-input-row input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .btn-add-item {
+            background: rgba(6, 182, 212, 0.12);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: var(--primary);
+            border-radius: var(--radius-md);
+            padding: 8px 14px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-submit-main {
+            width: 100%;
+            background: var(--primary-gradient);
+            border: none;
+            color: #fff;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.92rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 12px;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+        }
+
+        /* ==========================================================================
+           3. MONITORING VIEW (AREA SELECTOR & DIRECT ACTION LIST)
+           ========================================================================== */
+        /* Area Selector Bar: RM | BK | CPO | GUDANG RENTAL */
+        .monitoring-area-nav {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .area-nav-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 10px 4px;
+            text-align: center;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .area-nav-btn.active {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.35);
+        }
+
+        /* Sub-area Bar */
+        .rental-sub-nav {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            padding: 6px;
+            border-radius: var(--radius-md);
+        }
+
+        .rental-sub-nav.show {
+            display: grid;
+        }
+
+        .rental-nav-btn {
+            background: var(--bg-surface);
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            padding: 7px 4px;
+            text-align: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .rental-nav-btn.active {
+            background: var(--accent-emerald);
+            color: #000;
+            font-weight: 800;
+        }
+
+        /* Area Summary Banner */
+        .area-header-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .area-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .area-icon-pill {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            background: rgba(6, 182, 212, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        .area-title-text h2 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.1;
+        }
+
+        .area-title-text p {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .area-progress-circle {
+            text-align: right;
+        }
+
+        .area-pct-num {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .area-pct-lbl {
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* Action Cards List (List ke Bawah) */
+        .action-list-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .action-card:active, .action-card:hover {
+            border-color: var(--primary);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+        }
+
+        .action-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .action-area-badge {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--primary);
+            background: rgba(6, 182, 212, 0.12);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+        }
+
+        .action-status-pill {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-OPEN { background: rgba(59, 130, 246, 0.2); color: var(--status-open); }
+        .status-ON_PROGRESS { background: rgba(6, 182, 212, 0.2); color: var(--status-progress); }
+        .status-COMPLETED { background: rgba(16, 185, 129, 0.2); color: var(--status-completed); }
+        .status-VERIFIED { background: rgba(139, 92, 246, 0.2); color: var(--status-verified); }
+        .status-OVERDUE { background: rgba(239, 68, 68, 0.2); color: var(--status-overdue); }
+
+        .action-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+
+        .action-meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .action-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .action-meta-item.overdue {
+            color: var(--accent-crimson);
+            font-weight: 700;
+        }
+
+        /* Progress Bar on Card */
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-sub-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        /* ==========================================================================
+           4. DETAIL & UPDATE MODAL (DENGAN 5 TAHAP STEPPER PROGRESS)
+           ========================================================================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 580px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .modal-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(17, 24, 39, 0.98);
+        }
+
+        .btn-close-modal {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: var(--text-secondary);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .detail-meta-box {
+            background: var(--bg-base);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            font-size: 0.76rem;
+        }
+
+        /* 5-Step Stepper Header */
+        .stepper-track-wrap {
+            margin-bottom: 16px;
+            background: var(--bg-base);
+            border-radius: var(--radius-md);
+            padding: 12px;
+        }
+
+        .stepper-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .stepper-pct-badge {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .stepper-steps-bar {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+        }
+
+        .stepper-step-bar-item {
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: background 0.3s;
+        }
+
+        .stepper-step-bar-item.done {
+            background: var(--accent-emerald);
+        }
+
+        .before-after-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .photo-card {
+            background: var(--bg-base);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .photo-card-tag {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            background: rgba(0, 0, 0, 0.75);
+            font-size: 0.6rem;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .photo-card-tag.before { color: #38bdf8; }
+        .photo-card-tag.after { color: #4ade80; }
+
+        .btn-upload-after {
+            width: 100%;
+            padding: 6px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--accent-emerald);
+            font-size: 0.72rem;
+            font-weight: 700;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        /* 5 Tahapan Checklist Items */
+        .modal-checklist-box {
+            background: var(--bg-base);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            margin-bottom: 14px;
+        }
+
+        .checklist-item-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 6px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s;
+        }
+
+        .checklist-item-check.done {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .checklist-item-check.locked {
+            cursor: not-allowed;
+            opacity: 0.85;
+        }
+
+        .checkbox-custom {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            color: transparent;
+            flex-shrink: 0;
+        }
+
+        .checklist-item-check.done .checkbox-custom {
+            background: var(--accent-emerald);
+            border-color: var(--accent-emerald);
+            color: #000;
+        }
+
+        .checklist-item-check.done .check-text {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .check-text {
+            font-size: 0.84rem;
+            color: #fff;
+            flex: 1;
+            font-weight: 600;
+        }
+
+        .check-step-tag {
+            font-size: 0.65rem;
+            color: var(--primary);
+            font-weight: 700;
+            margin-left: 6px;
+        }
+
+        .verification-stamp-box {
+            display: none;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px dashed rgba(139, 92, 246, 0.4);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            text-align: center;
+            color: #c4b5fd;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .modal-actions-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border-glass);
+            display: flex;
+            gap: 8px;
+            background: rgba(17, 24, 39, 0.98);
+        }
+
+        .btn-footer-secondary {
+            flex: 1;
+            background: var(--bg-base);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            padding: 10px;
+            border-radius: var(--radius-md);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-footer-submit {
+            flex: 2;
+            background: var(--accent-emerald);
+            border: none;
+            color: #000;
+            padding: 10px;
+            border-radius: var(--radius-md);
+            font-size: 0.82rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-footer-verify {
+            flex: 2;
+            background: var(--accent-purple);
+            border: none;
+            color: #fff;
+            padding: 10px;
+            border-radius: var(--radius-md);
+            font-size: 0.82rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .permission-notice-bar {
+            padding: 6px 12px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: var(--radius-sm);
+            color: var(--accent-amber);
+            font-size: 0.72rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Sticky Header with Role Selector -->
+    <header class="app-header">
+        <div class="brand-box" onclick="App.showHome()">
+            <div class="brand-icon">
+                <i class="fas fa-cubes-stacked"></i>
+            </div>
+            <div>
+                <div class="brand-title">SMART WH</div>
+                <div class="brand-sub">Action & Improvement</div>
+            </div>
+        </div>
+
+        <!-- Role Selector (SPV / PIC / Viewer) -->
+        <div class="header-controls">
+            <div class="role-badge-box">
+                <span class="role-tag-pill spv" id="role-tag-pill">SPV</span>
+                <select class="role-select" id="role-switcher" onchange="App.setRole(this.value)">
+                    <option value="SPV">SPV Warehouse</option>
+                    <option value="PIC_ANDI">PIC: Andi (RM)</option>
+                    <option value="PIC_BUDI">PIC: Budi (Transport)</option>
+                    <option value="PIC_DENI">PIC: Deni (BK)</option>
+                    <option value="PIC_SITI">PIC: Siti (CPO)</option>
+                    <option value="PIC_EKO">PIC: Eko (Rental)</option>
+                    <option value="PIC_RIAN">PIC: Rian (5S)</option>
+                    <option value="VIEWER">Viewer / Management</option>
+                </select>
+            </div>
+            <button class="btn-back" onclick="App.showHome()" style="padding: 6px 10px;">
+                <i class="fas fa-house"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="main-container">
+        
+        <!-- Global Quick KPI Strip -->
+        <div class="kpi-strip">
+            <div class="kpi-box">
+                <div class="num" id="kpi-total">0</div>
+                <div class="lbl">Total Tugas</div>
+            </div>
+            <div class="kpi-box">
+                <div class="num" style="color: var(--status-progress);" id="kpi-progress">0</div>
+                <div class="lbl">On Progress</div>
+            </div>
+            <div class="kpi-box">
+                <div class="num" style="color: var(--status-completed);" id="kpi-completed">0</div>
+                <div class="lbl">Selesai</div>
+            </div>
+            <div class="kpi-box">
+                <div class="num" style="color: var(--status-overdue);" id="kpi-overdue">0</div>
+                <div class="lbl">Overdue</div>
+            </div>
+        </div>
+
+        <!-- ==================================================================
+             VIEW 1: HOME (2 PILIHAN UTAMA + PIC ASSIGNED BANNER)
+             ================================================================== -->
+        <section class="app-view active" id="view-home">
+            
+            <!-- Quick Banner for PIC -->
+            <div class="pic-assigned-banner" id="pic-assigned-banner" onclick="App.showMyActions()">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--primary); color:#000; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem;">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.85rem; font-weight: 800; color: #fff;">Tugas Saya: <span id="pic-name-banner">Andi</span></div>
+                        <div style="font-size: 0.72rem; color: var(--primary);" id="pic-tasks-count">2 Tugas aktif ditugaskan ke Anda</div>
+                    </div>
+                </div>
+                <div style="font-size: 0.78rem; font-weight: 700; color: var(--primary);">
+                    Buka Tugas <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+
+            <div class="home-title-box">
+                <h1>Control Dashboard</h1>
+                <p id="home-role-subtitle">SPV Buat & Verifikasi Tugas • PIC Eksekusi 5 Tahapan Progres</p>
+            </div>
+
+            <div class="home-dual-grid">
+                <!-- 1. INPUT ACTION (SPV ONLY) -->
+                <div class="choice-card input-card" id="card-btn-input" onclick="App.handleClickCreateAction()">
+                    <div>
+                        <div class="choice-icon">
+                            <i class="fas fa-circle-plus"></i>
+                        </div>
+                        <span class="choice-badge badge-spv" id="badge-input-role">Khusus SPV</span>
+                        <h2 class="choice-title">+ INPUT ACTION</h2>
+                        <p class="choice-desc">
+                            Khusus SPV untuk membuat tugas baru dengan 5 tahapan progres, assign PIC, area, due date & foto before Cloudinary.
+                        </p>
+                    </div>
+                    <div class="choice-action-text" id="action-text-input">
+                        <span>Buat Tugas Baru (SPV)</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- 2. MONITORING -->
+                <div class="choice-card monitor-card" onclick="App.showMonitoring()">
+                    <div>
+                        <div class="choice-icon">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <span class="choice-badge badge-all">Semua Role</span>
+                        <h2 class="choice-title">MONITORING</h2>
+                        <p class="choice-desc">
+                            Monitoring seluruh tugas & progres 5 tahap per area: RM, BK, CPO, dan Gudang Rental (Kalijaga, Gebang, Samping).
+                        </p>
+                    </div>
+                    <div class="choice-action-text">
+                        <span>Buka Monitoring</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================================================================
+             VIEW 2: INPUT ACTION FORM (KHUSUS SPV)
+             ================================================================== -->
+        <section class="app-view" id="view-create-action">
+            <div class="back-nav-bar">
+                <button class="btn-back" onclick="App.showHome()">
+                    <i class="fas fa-arrow-left"></i> Kembali ke Menu
+                </button>
+            </div>
+
+            <div class="form-card">
+                <h2 style="font-family: 'Rajdhani', sans-serif; font-size: 1.35rem; color: #fff; margin-bottom: 14px;">
+                    <i class="fas fa-circle-plus" style="color: var(--primary);"></i> SPV: Form Buat Tugas Baru
+                </h2>
+
+                <form id="actionForm" onsubmit="App.handleSaveAction(event)">
+                    
+                    <!-- 1. Area Selector -->
+                    <div class="form-group">
+                        <label class="form-label">1. Pilih Area <span class="req">*</span></label>
+                        <div class="area-radio-grid">
+                            <div class="area-radio-btn active" data-area="RM" onclick="App.selectFormArea('RM', this)">RM</div>
+                            <div class="area-radio-btn" data-area="BK" onclick="App.selectFormArea('BK', this)">BK</div>
+                            <div class="area-radio-btn" data-area="CPO" onclick="App.selectFormArea('CPO', this)">CPO</div>
+                            <div class="area-radio-btn" data-area="RENTAL" onclick="App.selectFormArea('RENTAL', this)">GUDANG RENTAL</div>
+                        </div>
+                        <input type="hidden" id="form-area" value="RM">
+
+                        <!-- Sub Rental Selector -->
+                        <div class="sub-rental-box" id="sub-rental-box">
+                            <div style="font-size: 0.72rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Pilih Lokasi Gudang Rental:</div>
+                            <div class="sub-rental-grid">
+                                <div class="sub-rental-btn active" data-sub="Kalijaga" onclick="App.selectSubRental('Kalijaga', this)">Kalijaga</div>
+                                <div class="sub-rental-btn" data-sub="Gebang" onclick="App.selectSubRental('Gebang', this)">Gebang</div>
+                                <div class="sub-rental-btn" data-sub="Samping" onclick="App.selectSubRental('Samping', this)">Samping</div>
+                            </div>
+                            <input type="hidden" id="form-sub-rental" value="Kalijaga">
+                        </div>
+                    </div>
+
+                    <!-- 2. Nama / Keterangan Action -->
+                    <div class="form-group">
+                        <label class="form-label" for="form-title">2. Nama / Keterangan Tugas <span class="req">*</span></label>
+                        <input type="text" id="form-title" class="form-input" placeholder="Contoh: Penataan Pallet Kosong & Pembersihan Lorong" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="form-desc">Detail / Lokasi Spesifik</label>
+                        <textarea id="form-desc" class="form-textarea" placeholder="Detail titik lokasi atau instruksi tambahan pekerjaan..."></textarea>
+                    </div>
+
+                    <!-- 3. PIC & Due Date -->
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                        <div class="form-group">
+                            <label class="form-label" for="form-pic">3. Assign PIC <span class="req">*</span></label>
+                            <select id="form-pic" class="form-select" required>
+                                <option value="Andi">Andi (RM)</option>
+                                <option value="Budi">Budi (Transport)</option>
+                                <option value="Deni">Deni (BK)</option>
+                                <option value="Siti">Siti (CPO)</option>
+                                <option value="Eko">Eko (Rental)</option>
+                                <option value="Rian">Rian (5S/Kebersihan)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="form-due-date">4. Due Date <span class="req">*</span></label>
+                            <input type="date" id="form-due-date" class="form-input" required>
+                        </div>
+                    </div>
+
+                    <!-- 4. Foto Before (Cloudinary) -->
+                    <div class="form-group">
+                        <label class="form-label">5. Foto Before (Upload ke Cloudinary)</label>
+                        <div class="upload-touch-box" id="upload-box-before" onclick="document.getElementById('file-before').click()">
+                            <i class="fas fa-cloud-arrow-up"></i>
+                            <div style="font-size: 0.8rem; font-weight: 700; color: #fff;">Ambil Foto / Upload Before ke Cloudinary</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">https://res.cloudinary.com/doxv3khr7/image/upload/...</div>
+                        </div>
+                        <input type="file" id="file-before" accept="image/*" capture="environment" style="display:none;" onchange="App.handleUploadBefore(event)">
+                        
+                        <div class="upload-preview-wrap" id="preview-before-wrap">
+                            <img id="img-preview-before" src="" alt="Preview Before">
+                            <button type="button" class="btn-remove-photo" onclick="App.removeBeforePhoto()">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" id="form-photo-before">
+                    </div>
+
+                    <!-- 5. Checklist 5 Tahap Standar -->
+                    <div class="form-group">
+                        <label class="form-label">6. Standar 5 Tahapan Progress PIC</label>
+                        <p style="font-size: 0.74rem; color: var(--text-muted); margin-bottom: 8px;">
+                            Alur pengerjaan PIC: Persiapan, Pelaksanaan, Finishing, Area sudah clean, Hasil sesuai target.
+                        </p>
+                        <div class="checklist-container" id="checklist-builder-container"></div>
+                        <button type="button" class="btn-add-item" onclick="App.addChecklistBuilderItem()">
+                            <i class="fas fa-plus"></i> Tambah Item Kustom
+                        </button>
+                    </div>
+
+                    <button type="submit" class="btn-submit-main">
+                        <i class="fas fa-paper-plane"></i> Terbitkan Tugas ke PIC
+                    </button>
+
+                </form>
+            </div>
+        </section>
+
+
+        <!-- ==================================================================
+             VIEW 3: MONITORING VIEW (AREA SELECTOR & DIRECT ACTION LIST)
+             ================================================================== -->
+        <section class="app-view" id="view-monitoring">
+            <div class="back-nav-bar">
+                <button class="btn-back" onclick="App.showHome()">
+                    <i class="fas fa-arrow-left"></i> Menu
+                </button>
+                <button class="btn-back" id="btn-header-input" style="background: rgba(6, 182, 212, 0.15); color: var(--primary); border-color: rgba(6, 182, 212, 0.3);" onclick="App.handleClickCreateAction()">
+                    <i class="fas fa-plus"></i> + Input Action
+                </button>
+            </div>
+
+            <!-- 1. Area Selector: RM | BK | CPO | GUDANG RENTAL -->
+            <div class="monitoring-area-nav">
+                <div class="area-nav-btn active" data-nav="RM" onclick="App.selectMonitoringArea('RM')">RM</div>
+                <div class="area-nav-btn" data-nav="BK" onclick="App.selectMonitoringArea('BK')">BK</div>
+                <div class="area-nav-btn" data-nav="CPO" onclick="App.selectMonitoringArea('CPO')">CPO</div>
+                <div class="area-nav-btn" data-nav="RENTAL" onclick="App.selectMonitoringArea('RENTAL')">GUDANG RENTAL</div>
+            </div>
+
+            <!-- 2. Sub-Rental Bar (Muncul jika pilih GUDANG RENTAL) -->
+            <div class="rental-sub-nav" id="monitoring-rental-sub-nav">
+                <div class="rental-nav-btn active" data-sub-nav="Kalijaga" onclick="App.selectMonitoringSubRental('Kalijaga')">Kalijaga</div>
+                <div class="rental-nav-btn" data-sub-nav="Gebang" onclick="App.selectMonitoringSubRental('Gebang')">Gebang</div>
+                <div class="rental-nav-btn" data-sub-nav="Samping" onclick="App.selectMonitoringSubRental('Samping')">Samping</div>
+            </div>
+
+            <!-- 3. Area Header & Progress Summary -->
+            <div class="area-header-card">
+                <div class="area-header-left">
+                    <div class="area-icon-pill" id="current-area-icon">
+                        <i class="fas fa-wheat-awn"></i>
+                    </div>
+                    <div class="area-title-text">
+                        <h2 id="current-area-name">RAW MATERIAL (RM)</h2>
+                        <p id="current-area-stats">Total: 0 • Selesai: 0 • On Progress: 0</p>
+                    </div>
+                </div>
+                <div class="area-progress-circle">
+                    <div class="area-pct-num" id="current-area-pct">0%</div>
+                    <div class="area-pct-lbl">Progress</div>
+                </div>
+            </div>
+
+            <!-- 4. Daftar Action di Area Tersebut (List ke Bawah) -->
+            <div class="action-list-vertical" id="monitoring-action-list">
+                <!-- Injected dynamically -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================================================================
+         ACTION DETAIL & UPDATE MODAL (STRICT ROLE PERMISSION ENFORCEMENT)
+         ================================================================== -->
+    <div class="modal-overlay" id="action-modal">
+        <div class="modal-box">
+            <div class="modal-head">
+                <span class="action-status-pill" id="modal-status">OPEN</span>
+                <button class="btn-close-modal" onclick="App.closeModal()">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 4px;" id="modal-title">Judul Tugas</h3>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;" id="modal-desc">Keterangan...</p>
+
+                <!-- 5-Step Stepper Progress Bar -->
+                <div class="stepper-track-wrap">
+                    <div class="stepper-header-row">
+                        <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Tahapan Progres (5 Tahap):</span>
+                        <span class="stepper-pct-badge" id="modal-stepper-pct">0%</span>
+                    </div>
+                    <div class="stepper-steps-bar" id="modal-stepper-bars">
+                        <div class="stepper-step-bar-item" title="1. Persiapan"></div>
+                        <div class="stepper-step-bar-item" title="2. Pelaksanaan"></div>
+                        <div class="stepper-step-bar-item" title="3. Finishing"></div>
+                        <div class="stepper-step-bar-item" title="4. Area Clean"></div>
+                        <div class="stepper-step-bar-item" title="5. Hasil Sesuai Target"></div>
+                    </div>
+                </div>
+
+                <div class="detail-meta-box">
+                    <div><b style="color:var(--text-muted)">Area:</b> <span id="modal-area" style="color:#fff">RM</span></div>
+                    <div><b style="color:var(--text-muted)">PIC:</b> <span id="modal-pic" style="color:#fff">Andi</span></div>
+                    <div><b style="color:var(--text-muted)">Due Date:</b> <span id="modal-due" style="color:#fff">2026-08-20</span></div>
+                    <div><b style="color:var(--text-muted)">Status:</b> <span id="modal-status-text" style="color:var(--primary); font-weight:800;">OPEN</span></div>
+                </div>
+
+                <!-- Role Notice in Modal -->
+                <div class="permission-notice-bar" id="modal-permission-notice">
+                    <i class="fas fa-circle-info"></i>
+                    <span id="modal-permission-text">Mode SPV: Anda hanya dapat memverifikasi & tidak dapat menceklis progres PIC.</span>
+                </div>
+
+                <!-- Verification Stamp (Muncul bila VERIFIED) -->
+                <div class="verification-stamp-box" id="modal-verified-stamp">
+                    <i class="fas fa-shield-check" style="font-size:1.1rem; color:var(--accent-purple); margin-right:4px;"></i>
+                    <span>TUGAS TERVERIFIKASI & DISELESAIKAN OLEH SPV WAREHOUSE</span>
+                </div>
+
+                <!-- Before & After Photos with Cloudinary Links -->
+                <div class="before-after-grid">
+                    <div class="photo-card">
+                        <span class="photo-card-tag before">Before</span>
+                        <img id="modal-img-before" src="" alt="Before">
+                        <div style="font-size:0.58rem; color:var(--text-muted); padding:3px 6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="modal-link-before">
+                            Cloudinary: doxv3khr7
+                        </div>
+                    </div>
+
+                    <div class="photo-card">
+                        <span class="photo-card-tag after">After</span>
+                        <img id="modal-img-after" src="" alt="After">
+                        <input type="file" id="file-after" accept="image/*" capture="environment" style="display:none;" onchange="App.handleUploadAfter(event)">
+                        <button type="button" class="btn-upload-after" id="btn-upload-after" onclick="App.handleClickUploadAfter()">
+                            <i class="fas fa-cloud-arrow-up"></i> Upload Foto After (Cloudinary)
+                        </button>
+                        <div style="font-size:0.58rem; color:var(--text-muted); padding:3px 6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="modal-link-after">
+                            Cloudinary: doxv3khr7
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5 Tahapan Checklist Interaktif (Strict Access Protection) -->
+                <div class="modal-checklist-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-size: 0.82rem; font-weight: 800; color: var(--primary);">
+                            <i class="fas fa-list-check"></i> Progres Checklist 5 Tahap
+                        </span>
+                        <span style="font-size: 0.72rem; color: var(--text-muted);" id="modal-checklist-counter">0/5 Selesai</span>
+                    </div>
+                    <div id="modal-checklist-list"></div>
+                </div>
+            </div>
+
+            <div class="modal-actions-footer">
+                <button class="btn-footer-secondary" onclick="App.shareWhatsApp()">
+                    <i class="fab fa-whatsapp"></i> WA
+                </button>
+                
+                <!-- PIC Submit Button (Only PIC can click) -->
+                <button class="btn-footer-submit" id="btn-modal-submit" onclick="App.submitCompletion()">
+                    <i class="fas fa-check-circle"></i> Selesai (Submit ke SPV)
+                </button>
+                
+                <!-- SPV Verification Button (Only SPV can click) -->
+                <button class="btn-footer-verify" id="btn-modal-verify" onclick="App.verifyAction()">
+                    <i class="fas fa-shield-check"></i> Verifikasi & Approve (SPV)
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script>
+/**
+ * SMART WAREHOUSE - ACTION & IMPROVEMENT ENGINE
+ * Cloudinary: https://res.cloudinary.com/doxv3khr7/image/upload
+ * Strict Permissions: PIC cannot input action; SPV cannot check PIC progress.
+ */
+const STORAGE_KEY = 'SMART_WH_CLOUDINARY_V1';
+const CLOUDINARY_BASE = 'https://res.cloudinary.com/doxv3khr7/image/upload';
+
+// 5 Standard Stages
+const DEFAULT_5_STAGES = [
+    'Persiapan',
+    'Pelaksanaan',
+    'Finishing',
+    'Area sudah clean',
+    'Hasil sesuai target'
+];
+
+// Helper to generate realistic Cloudinary-formatted sample images
+function getCloudinarySample(tag, colorCode) {
+    return `${CLOUDINARY_BASE}/w_600,h_400,c_fill,b_rgb:${colorCode}/co_rgb:ffffff,l_text:Arial_22_bold:${encodeURIComponent(tag)}/v1723730000/sample.jpg`;
+}
+
+// Initial Seed Data with Cloudinary links
+const SEED_DATA = [
+    {
+        id: 'ACT-001',
+        title: 'Penataan Tumpukan Jagung Silo 3',
+        desc: 'Re-bagging butiran jagung tercecer dan susun rapi di pallet standar.',
+        area: 'RM',
+        subRental: '',
+        pic: 'Andi',
+        dueDate: '2026-08-18',
+        status: 'VERIFIED',
+        beforeImg: getCloudinarySample('BEFORE: Ceceran Silo 3', '92400e'),
+        afterImg: getCloudinarySample('AFTER: Rapi & Bersih', '166534'),
+        checklist: [
+            { text: 'Persiapan', done: true },
+            { text: 'Pelaksanaan', done: true },
+            { text: 'Finishing', done: true },
+            { text: 'Area sudah clean', done: true },
+            { text: 'Hasil sesuai target', done: true }
+        ]
+    },
+    {
+        id: 'ACT-002',
+        title: 'Pengecatan Rambu & Marka Jalur Loader',
+        desc: 'Pengecatan ulang garis kuning batas manuver loader di Bay 2.',
+        area: 'RM',
+        subRental: '',
+        pic: 'Budi',
+        dueDate: '2026-08-20',
+        status: 'ON_PROGRESS',
+        beforeImg: getCloudinarySample('BEFORE: Marka Pudar', '334155'),
+        afterImg: '',
+        checklist: [
+            { text: 'Persiapan', done: true },
+            { text: 'Pelaksanaan', done: true },
+            { text: 'Finishing', done: false },
+            { text: 'Area sudah clean', done: false },
+            { text: 'Hasil sesuai target', done: false }
+        ]
+    },
+    {
+        id: 'ACT-003',
+        title: 'Sortir Pallet Rusak & Penataan Bay B',
+        desc: 'Pisahkan pallet rusak ke scrap karantina dan susun pallet bagus.',
+        area: 'BK',
+        subRental: '',
+        pic: 'Deni',
+        dueDate: '2026-08-19',
+        status: 'COMPLETED',
+        beforeImg: getCloudinarySample('BEFORE: Pallet Berantakan', '7c2d12'),
+        afterImg: getCloudinarySample('AFTER: Pallet Tersortir', '15803d'),
+        checklist: [
+            { text: 'Persiapan', done: true },
+            { text: 'Pelaksanaan', done: true },
+            { text: 'Finishing', done: true },
+            { text: 'Area sudah clean', done: true },
+            { text: 'Hasil sesuai target', done: true }
+        ]
+    },
+    {
+        id: 'ACT-004',
+        title: 'Pemasangan Drip Tray Pompa CPO #2',
+        desc: 'Pasang wadah penampung tetesan pompa agar tidak mengotori parit.',
+        area: 'CPO',
+        subRental: '',
+        pic: 'Siti',
+        dueDate: '2026-08-17',
+        status: 'VERIFIED',
+        beforeImg: getCloudinarySample('BEFORE: Tetesan Minyak', '78350f'),
+        afterImg: getCloudinarySample('AFTER: Drip Tray Terpasang', '1e40af'),
+        checklist: [
+            { text: 'Persiapan', done: true },
+            { text: 'Pelaksanaan', done: true },
+            { text: 'Finishing', done: true },
+            { text: 'Area sudah clean', done: true },
+            { text: 'Hasil sesuai target', done: true }
+        ]
+    },
+    {
+        id: 'ACT-005',
+        title: 'Pengecatan Garis Forklift Kalijaga',
+        desc: 'Pengecatan jalur lintasan forklift di gudang rental Kalijaga.',
+        area: 'RENTAL',
+        subRental: 'Kalijaga',
+        pic: 'Eko',
+        dueDate: '2026-08-18',
+        status: 'ON_PROGRESS',
+        beforeImg: getCloudinarySample('BEFORE: Lantai Kalijaga Polos', '1e293b'),
+        afterImg: '',
+        checklist: [
+            { text: 'Persiapan', done: true },
+            { text: 'Pelaksanaan', done: true },
+            { text: 'Finishing', done: true },
+            { text: 'Area sudah clean', done: false },
+            { text: 'Hasil sesuai target', done: false }
+        ]
+    },
+    {
+        id: 'ACT-006',
+        title: 'Pemasangan Lampu LED Ramp Gebang',
+        desc: 'Pemasangan 3 unit lampu LED Highbay di ramp loading Gebang.',
+        area: 'RENTAL',
+        subRental: 'Gebang',
+        pic: 'Rian',
+        dueDate: '2026-08-15',
+        status: 'OVERDUE',
+        beforeImg: getCloudinarySample('BEFORE: Ramp Gelap', '0f172a'),
+        afterImg: '',
+        checklist: [
+            { text: 'Persiapan', done: true },
+            { text: 'Pelaksanaan', done: false },
+            { text: 'Finishing', done: false },
+            { text: 'Area sudah clean', done: false },
+            { text: 'Hasil sesuai target', done: false }
+        ]
+    },
+    {
+        id: 'ACT-007',
+        title: 'Pemasangan Wiremesh Pest Control Samping',
+        desc: 'Tutup kisi ventilasi bawah dengan kawat strimin anti tikus/burung.',
+        area: 'RENTAL',
+        subRental: 'Samping',
+        pic: 'Eko',
+        dueDate: '2026-08-19',
+        status: 'VERIFIED',
+        beforeImg: getCloudinarySample('BEFORE: Ventilasi Terbuka', '475569'),
+        afterImg: getCloudinarySample('AFTER: Wiremesh Rapat', '065f46'),
+        checklist: [
+            { text: 'Persiapan', done: true },
+            { text: 'Pelaksanaan', done: true },
+            { text: 'Finishing', done: true },
+            { text: 'Area sudah clean', done: true },
+            { text: 'Hasil sesuai target', done: true }
+        ]
+    }
+];
+
+// ======================================================================
+// GOOGLE SPREADSHEET WEB APP URL
+// ======================================================================
+// LANGKAH PENTING: Paste URL Web App hasil Deploy Apps Script Anda di sini.
+// Contoh: 'https://script.google.com/macros/s/AKfycbx...xxxxx/exec'
+// Jika kosong (''), data hanya tersimpan di localStorage (offline).
+const SPREADSHEET_URL = 'https://script.google.com/macros/s/AKfycbw5PL2GaSrYiYAngFCCjfYgrjFRP-XILlbTYcJvLy3P9u_4bqFIX__yBE4kfz9MWXIO_A/exec';
+// ======================================================================
+
+// Helper: Kirim data ke Google Spreadsheet via Apps Script Web App
+// Menggunakan GET + mode: 'no-cors' agar tidak diblokir CORS pada redirect Google Apps Script
+async function syncToSheet(payload) {
+    if (!SPREADSHEET_URL) {
+        console.log('[SYNC] SPREADSHEET_URL belum diisi, data hanya di localStorage.');
+        return { status: 'skipped', message: 'URL belum diisi' };
+    }
+    try {
+        const dataParam = encodeURIComponent(JSON.stringify(payload));
+        const url = `${SPREADSHEET_URL}?action=sync&data=${dataParam}`;
+        
+        // Gunakan mode: 'no-cors' agar browser mengizinkan request redirect ke server Google
+        await fetch(url, {
+            method: 'GET',
+            mode: 'no-cors',
+            cache: 'no-cache',
+            redirect: 'follow'
+        });
+        
+        console.log('[SYNC] Request GET terkirim ke Spreadsheet (no-cors):', payload.actionType);
+        
+        // Tampilkan notifikasi sukses
+        Swal.fire({
+            toast: true,
+            position: 'bottom-end',
+            icon: 'success',
+            title: '✅ Sinkronisasi Spreadsheet Berhasil',
+            showConfirmButton: false,
+            timer: 1800,
+            background: '#111827', color: '#fff'
+        });
+        
+        return { status: 'success' };
+    } catch (err) {
+        console.error('[SYNC] Gagal kirim ke Spreadsheet:', err);
+        
+        // Fallback: gunakan image tag (paling aman dari batasan CORS)
+        try {
+            const dataParam = encodeURIComponent(JSON.stringify(payload));
+            const url = `${SPREADSHEET_URL}?action=sync&data=${dataParam}`;
+            const img = new Image();
+            img.src = url;
+            console.log('[SYNC] Fallback Image Tag terkirim:', payload.actionType);
+        } catch (e2) {
+            console.error('[SYNC] Fallback juga gagal:', e2);
+        }
+        
+        return { status: 'error', message: err.message };
+    }
+}
+
+const App = {
+    actions: [],
+    currentRole: 'SPV',
+    currentMonitoringArea: 'RM',
+    currentMonitoringSubRental: 'Kalijaga',
+    isFilterMyOnly: false,
+    activeActionId: null,
+
+    init() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        this.actions = saved ? JSON.parse(saved) : SEED_DATA;
+        if (!saved) this.save();
+
+        this.checkOverdue();
+        this.updateKPIs();
+        this.renderChecklistBuilder();
+        this.updateRoleUI();
+        this.showHome();
+
+        // Tampilkan peringatan jika SPREADSHEET_URL belum diisi
+        if (!SPREADSHEET_URL) {
+            console.warn('⚠️ SPREADSHEET_URL kosong. Data tidak akan tersinkronisasi ke Google Spreadsheet.');
+        }
+    },
+
+    save() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.actions));
+        this.updateKPIs();
+    },
+
+    checkOverdue() {
+        const today = new Date().toISOString().split('T')[0];
+        this.actions.forEach(a => {
+            if (a.status !== 'VERIFIED' && a.status !== 'COMPLETED') {
+                if (today > a.dueDate) a.status = 'OVERDUE';
+            }
+        });
+    },
+
+    calcPct(action) {
+        if (!action.checklist || action.checklist.length === 0) {
+            return action.status === 'VERIFIED' || action.status === 'COMPLETED' ? 100 : 0;
+        }
+        const done = action.checklist.filter(c => c.done).length;
+        return Math.round((done / action.checklist.length) * 100);
+    },
+
+    updateKPIs() {
+        const total = this.actions.length;
+        const onProg = this.actions.filter(a => a.status === 'ON_PROGRESS' || a.status === 'OPEN').length;
+        const comp = this.actions.filter(a => a.status === 'COMPLETED' || a.status === 'VERIFIED').length;
+        const overdue = this.actions.filter(a => a.status === 'OVERDUE').length;
+
+        document.getElementById('kpi-total').innerText = total;
+        document.getElementById('kpi-progress').innerText = onProg;
+        document.getElementById('kpi-completed').innerText = comp;
+        document.getElementById('kpi-overdue').innerText = overdue;
+    },
+
+    // Role Handler
+    setRole(role) {
+        this.currentRole = role;
+        this.isFilterMyOnly = false;
+        this.updateRoleUI();
+
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: `Beralih ke Role: ${this.getRoleName()}`,
+            showConfirmButton: false,
+            timer: 1500,
+            background: '#111827',
+            color: '#fff'
+        });
+    },
+
+    getPicName() {
+        if (this.currentRole === 'PIC_ANDI') return 'Andi';
+        if (this.currentRole === 'PIC_BUDI') return 'Budi';
+        if (this.currentRole === 'PIC_DENI') return 'Deni';
+        if (this.currentRole === 'PIC_SITI') return 'Siti';
+        if (this.currentRole === 'PIC_EKO') return 'Eko';
+        if (this.currentRole === 'PIC_RIAN') return 'Rian';
+        return '';
+    },
+
+    getRoleName() {
+        if (this.currentRole === 'SPV') return 'SPV Warehouse';
+        if (this.currentRole.startsWith('PIC')) return `PIC ${this.getPicName()}`;
+        return 'Viewer / Management';
+    },
+
+    updateRoleUI() {
+        const isSpv = this.currentRole === 'SPV';
+        const isPic = this.currentRole.startsWith('PIC');
+        const picName = this.getPicName();
+
+        const roleTag = document.getElementById('role-tag-pill');
+        roleTag.innerText = isSpv ? 'SPV' : isPic ? 'PIC' : 'VIEW';
+        roleTag.className = `role-tag-pill ${isSpv ? 'spv' : isPic ? 'pic' : 'view'}`;
+        document.getElementById('role-switcher').value = this.currentRole;
+
+        // PIC Assigned Banner
+        const picBanner = document.getElementById('pic-assigned-banner');
+        const cardInput = document.getElementById('card-btn-input');
+        const badgeInput = document.getElementById('badge-input-role');
+        const actionTextInput = document.getElementById('action-text-input');
+
+        if (isPic) {
+            picBanner.classList.add('show');
+            document.getElementById('pic-name-banner').innerText = picName;
+            const myTasks = this.actions.filter(a => a.pic === picName && a.status !== 'VERIFIED');
+            document.getElementById('pic-tasks-count').innerText = `${myTasks.length} Tugas aktif ditugaskan ke Anda`;
+            
+            // Disable Input Action for PIC
+            cardInput.classList.add('disabled');
+            badgeInput.className = 'choice-badge badge-locked';
+            badgeInput.innerText = 'Terkunci (PIC)';
+            actionTextInput.innerHTML = `<span>Hanya SPV yang Berhak Input</span> <i class="fas fa-lock" style="color:var(--accent-crimson);"></i>`;
+        } else {
+            picBanner.classList.remove('show');
+            cardInput.classList.remove('disabled');
+            badgeInput.className = 'choice-badge badge-spv';
+            badgeInput.innerText = 'Khusus SPV';
+            actionTextInput.innerHTML = `<span>Buat Tugas Baru (SPV)</span> <i class="fas fa-arrow-right"></i>`;
+        }
+    },
+
+    // Strict Check: Only SPV can open create action
+    handleClickCreateAction() {
+        if (this.currentRole !== 'SPV') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Akses Dibatasi!',
+                html: `Role Anda saat ini adalah <b>${this.getRoleName()}</b>.<br>Hanya <b>SPV Warehouse</b> yang memiliki wewenang untuk membuat action / tugas baru.`,
+                background: '#111827',
+                color: '#fff',
+                confirmButtonColor: '#ef4444'
+            });
+            return;
+        }
+        this.showCreateAction();
+    },
+
+    showMyActions() {
+        this.isFilterMyOnly = true;
+        this.showMonitoring();
+    },
+
+    // Navigation
+    showHome() {
+        this.isFilterMyOnly = false;
+        document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-home').classList.add('active');
+        this.updateKPIs();
+        this.updateRoleUI();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    showCreateAction() {
+        document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-create-action').classList.add('active');
+        
+        const d = new Date();
+        d.setDate(d.getDate() + 3);
+        document.getElementById('form-due-date').value = d.toISOString().split('T')[0];
+        
+        this.renderChecklistBuilder();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    showMonitoring() {
+        document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-monitoring').classList.add('active');
+        this.selectMonitoringArea(this.currentMonitoringArea);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    // Form Controls
+    selectFormArea(area, el) {
+        document.querySelectorAll('.area-radio-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('form-area').value = area;
+
+        const subBox = document.getElementById('sub-rental-box');
+        if (area === 'RENTAL') {
+            subBox.classList.add('show');
+        } else {
+            subBox.classList.remove('show');
+        }
+    },
+
+    selectSubRental(sub, el) {
+        document.querySelectorAll('.sub-rental-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('form-sub-rental').value = sub;
+    },
+
+    renderChecklistBuilder() {
+        const container = document.getElementById('checklist-builder-container');
+        container.innerHTML = '';
+        DEFAULT_5_STAGES.forEach((stage, idx) => {
+            this.addChecklistBuilderItem(stage, idx + 1);
+        });
+    },
+
+    addChecklistBuilderItem(text = '', stepNum = null) {
+        const container = document.getElementById('checklist-builder-container');
+        const div = document.createElement('div');
+        div.className = 'checklist-item-input-row';
+        div.innerHTML = `
+            <span style="font-size:0.72rem; font-weight:800; color:var(--primary);">${stepNum || '•'}</span>
+            <input type="text" value="${text}" placeholder="Tulis butir tahapan..." required>
+            <i class="fas fa-times" style="color:var(--accent-crimson); cursor:pointer;" onclick="this.parentElement.remove()"></i>
+        `;
+        container.appendChild(div);
+    },
+
+    // Cloudinary Upload Handler (REAL API)
+    async handleUploadBefore(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // PENTING: Ganti 'NAMA_PRESET_ANDA' dengan nama Upload Preset (Unsigned) dari dashboard Cloudinary Anda
+        const UPLOAD_PRESET = 'simple-improvement'; // Contoh default Cloudinary
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', UPLOAD_PRESET);
+        formData.append('folder', 'smart-warehouse'); // Opsional: folder di cloudinary
+
+        // Tampilkan loading state
+        Swal.fire({
+            title: 'Mengunggah Foto...',
+            text: 'Harap tunggu, foto sedang dikirim ke Cloudinary',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); },
+            background: '#111827', color: '#fff'
+        });
+
+        try {
+            const response = await fetch(`https://api.cloudinary.com/v1_1/doxv3khr7/image/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.secure_url) {
+                const cloudUrl = data.secure_url;
+                
+                document.getElementById('form-photo-before').value = cloudUrl; 
+                document.getElementById('img-preview-before').src = cloudUrl;
+                document.getElementById('upload-box-before').style.display = 'none';
+                document.getElementById('preview-before-wrap').style.display = 'block';
+                
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Foto Before tersimpan ke Cloudinary!',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    background: '#111827', color: '#fff'
+                });
+            } else {
+                throw new Error(data.error?.message || 'Gagal Upload');
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Upload Cloudinary',
+                text: 'Pastikan Upload Preset Anda benar dan koneksi internet stabil. Error: ' + error.message,
+                background: '#111827', color: '#fff'
+            });
+        }
+    },
+
+    removeBeforePhoto() {
+        document.getElementById('form-photo-before').value = '';
+        document.getElementById('upload-box-before').style.display = 'flex';
+        document.getElementById('preview-before-wrap').style.display = 'none';
+        document.getElementById('file-before').value = '';
+    },
+
+    handleSaveAction(e) {
+        e.preventDefault();
+
+        if (this.currentRole !== 'SPV') {
+            Swal.fire({ icon: 'error', title: 'Hanya SPV yang berhak input!' });
+            return;
+        }
+
+        const area = document.getElementById('form-area').value;
+        const subRental = area === 'RENTAL' ? document.getElementById('form-sub-rental').value : '';
+        const title = document.getElementById('form-title').value.trim();
+        const desc = document.getElementById('form-desc').value.trim();
+        const pic = document.getElementById('form-pic').value;
+        const dueDate = document.getElementById('form-due-date').value;
+        
+        let beforeImg = document.getElementById('form-photo-before').value;
+        if (!beforeImg) beforeImg = getCloudinarySample(`BEFORE: ${title}`, '1e293b');
+
+        const inputs = document.querySelectorAll('#checklist-builder-container input');
+        const checklist = [];
+        inputs.forEach(inp => {
+            const v = inp.value.trim();
+            if (v) checklist.push({ text: v, done: false });
+        });
+
+        const newId = `ACT-${String(this.actions.length + 1).padStart(3, '0')}`;
+        const newAct = {
+            id: newId,
+            title,
+            desc,
+            area,
+            subRental,
+            pic,
+            dueDate,
+            status: 'OPEN',
+            beforeImg,
+            afterImg: '',
+            cloudinaryBeforeUrl: `${CLOUDINARY_BASE}/v${Date.now()}/${newId}_before.jpg`,
+            cloudinaryAfterUrl: '',
+            createdAt: new Date().toISOString(),
+            checklist: checklist.length > 0 ? checklist : DEFAULT_5_STAGES.map(t => ({ text: t, done: false }))
+        };
+
+        this.actions.unshift(newAct);
+        this.save();
+
+        // === SYNC KE SPREADSHEET: CREATE_ACTION ===
+        syncToSheet({
+            actionType: 'CREATE_ACTION',
+            action: {
+                id: newAct.id,
+                area: newAct.area,
+                subRental: newAct.subRental,
+                title: newAct.title,
+                desc: newAct.desc,
+                pic: newAct.pic,
+                dueDate: newAct.dueDate,
+                cloudinaryBeforeUrl: newAct.beforeImg, // URL Cloudinary langsung
+                beforeImg: newAct.beforeImg
+            }
+        });
+
+        document.getElementById('actionForm').reset();
+        this.removeBeforePhoto();
+        this.renderChecklistBuilder();
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Tugas Berhasil Diterbitkan SPV!',
+            html: `Tugas <b>"${title}"</b> telah ditugaskan ke PIC <b>${pic}</b>.<br><small style="color:var(--text-muted)">Data tersinkronisasi ke Spreadsheet & Cloudinary</small>`,
+            background: '#111827',
+            color: '#fff',
+            confirmButtonColor: '#06b6d4'
+        }).then(() => {
+            this.currentMonitoringArea = area;
+            if (subRental) this.currentMonitoringSubRental = subRental;
+            this.showMonitoring();
+        });
+    },
+
+    // Monitoring Area Selector
+    selectMonitoringArea(area) {
+        this.currentMonitoringArea = area;
+        
+        document.querySelectorAll('.area-nav-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`.area-nav-btn[data-nav="${area}"]`);
+        if (btn) btn.classList.add('active');
+
+        const subNav = document.getElementById('monitoring-rental-sub-nav');
+        if (area === 'RENTAL') {
+            subNav.classList.add('show');
+            this.renderMonitoringList();
+        } else {
+            subNav.classList.remove('show');
+            this.renderMonitoringList();
+        }
+    },
+
+    selectMonitoringSubRental(sub) {
+        this.currentMonitoringSubRental = sub;
+        document.querySelectorAll('.rental-nav-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`.rental-nav-btn[data-sub-nav="${sub}"]`);
+        if (btn) btn.classList.add('active');
+        this.renderMonitoringList();
+    },
+
+    renderMonitoringList() {
+        const area = this.currentMonitoringArea;
+        const sub = this.currentMonitoringSubRental;
+        const picName = this.getPicName();
+
+        let filtered = [];
+        let areaTitle = '';
+        let iconHtml = '';
+
+        if (area === 'RM') {
+            filtered = this.actions.filter(a => a.area === 'RM');
+            areaTitle = 'RAW MATERIAL (RM)';
+            iconHtml = '<i class="fas fa-wheat-awn" style="color:#f59e0b"></i>';
+        } else if (area === 'BK') {
+            filtered = this.actions.filter(a => a.area === 'BK');
+            areaTitle = 'BAHAN KEMAS (BK)';
+            iconHtml = '<i class="fas fa-boxes-packing" style="color:#3b82f6"></i>';
+        } else if (area === 'CPO') {
+            filtered = this.actions.filter(a => a.area === 'CPO');
+            areaTitle = 'CPO TANK FARM';
+            iconHtml = '<i class="fas fa-oil-well" style="color:#06b6d4"></i>';
+        } else if (area === 'RENTAL') {
+            filtered = this.actions.filter(a => a.area === 'RENTAL' && a.subRental === sub);
+            areaTitle = `GUDANG RENTAL (${sub.toUpperCase()})`;
+            iconHtml = '<i class="fas fa-warehouse" style="color:#10b981"></i>';
+        }
+
+        if (this.isFilterMyOnly && picName) {
+            filtered = filtered.filter(a => a.pic === picName);
+            areaTitle += ` (Tugas: ${picName})`;
+        }
+
+        const total = filtered.length;
+        const comp = filtered.filter(a => a.status === 'COMPLETED' || a.status === 'VERIFIED').length;
+        const onProg = total - comp;
+        const avgPct = total > 0 ? Math.round(filtered.reduce((acc, c) => acc + this.calcPct(c), 0) / total) : 0;
+
+        document.getElementById('current-area-icon').innerHTML = iconHtml;
+        document.getElementById('current-area-name').innerText = areaTitle;
+        document.getElementById('current-area-stats').innerText = `Total: ${total} • Selesai: ${comp} • On Progress: ${onProg}`;
+        document.getElementById('current-area-pct').innerText = `${avgPct}%`;
+
+        const container = document.getElementById('monitoring-action-list');
+        if (filtered.length === 0) {
+            container.innerHTML = `
+            <div style="text-align:center; padding:36px 16px; background:var(--bg-surface); border-radius:var(--radius-md); color:var(--text-muted); border:1px dashed var(--border-glass);">
+                <i class="fas fa-inbox fa-2x" style="margin-bottom:8px; opacity:0.5;"></i>
+                <div style="font-size:0.9rem; font-weight:700; color:#fff;">Belum Ada Tugas di Sini</div>
+                <div style="font-size:0.75rem; margin-top:2px;">SPV dapat membuat tugas baru melalui tombol "+ Input Action".</div>
+            </div>`;
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(act => {
+            const pct = this.calcPct(act);
+            const checklistDone = act.checklist ? act.checklist.filter(c => c.done).length : 0;
+            const checklistTotal = act.checklist ? act.checklist.length : 5;
+            const isOverdue = act.status === 'OVERDUE';
+            const isMyTask = picName && act.pic === picName;
+
+            html += `
+            <div class="action-card" onclick="App.openModal('${act.id}')" style="${isMyTask ? 'border-color: rgba(6, 182, 212, 0.4);' : ''}">
+                <div class="action-card-header">
+                    <span class="action-area-badge">${act.subRental || act.area}</span>
+                    <span class="action-status-pill status-${act.status}">${act.status.replace('_', ' ')}</span>
+                </div>
+
+                <div class="action-title">${act.title}</div>
+
+                <div class="action-meta-row">
+                    <div class="action-meta-item">
+                        <i class="fas fa-user" style="color:${isMyTask ? 'var(--accent-emerald)' : 'var(--primary)'}"></i> 
+                        <b>${act.pic}</b> ${isMyTask ? '<span style="font-size:0.65rem; background:rgba(16,185,129,0.2); color:var(--accent-emerald); padding:1px 5px; border-radius:3px;">(Saya)</span>' : ''}
+                    </div>
+                    <div class="action-meta-item ${isOverdue ? 'overdue' : ''}">
+                        <i class="fas fa-calendar-day"></i> Due: ${act.dueDate}
+                    </div>
+                </div>
+
+                <div class="progress-track">
+                    <div class="progress-bar-fill" style="width: ${pct}%;"></div>
+                </div>
+                <div class="progress-sub-text">
+                    <span>Progress: ${checklistDone}/${checklistTotal} Tahap</span>
+                    <span style="color:var(--primary);">${pct}%</span>
+                </div>
+            </div>`;
+        });
+
+        container.innerHTML = html;
+    },
+
+    // Modal Action Detail & Update
+    openModal(id) {
+        this.activeActionId = id;
+        const act = this.actions.find(a => a.id === id);
+        if (!act) return;
+
+        document.getElementById('modal-title').innerText = act.title;
+        document.getElementById('modal-desc').innerText = act.desc || 'Tidak ada catatan tambahan.';
+        document.getElementById('modal-area').innerText = act.subRental ? `Rental - ${act.subRental}` : act.area;
+        document.getElementById('modal-pic').innerText = act.pic;
+        document.getElementById('modal-due').innerText = act.dueDate;
+        document.getElementById('modal-status-text').innerText = act.status.replace('_', ' ');
+
+        const statusPill = document.getElementById('modal-status');
+        statusPill.className = `action-status-pill status-${act.status}`;
+        statusPill.innerText = act.status.replace('_', ' ');
+
+        const pct = this.calcPct(act);
+        document.getElementById('modal-stepper-pct').innerText = `${pct}%`;
+
+        // Update Stepper Bar
+        const stepBars = document.querySelectorAll('.stepper-step-bar-item');
+        const doneCount = act.checklist ? act.checklist.filter(c => c.done).length : 0;
+        stepBars.forEach((bar, index) => {
+            if (index < doneCount) {
+                bar.classList.add('done');
+            } else {
+                bar.classList.remove('done');
+            }
+        });
+
+        // Verification Stamp
+        const isVerified = act.status === 'VERIFIED';
+        document.getElementById('modal-verified-stamp').style.display = isVerified ? 'block' : 'none';
+
+        // Photos
+        document.getElementById('modal-img-before').src = act.beforeImg || getCloudinarySample('NO BEFORE', '1e293b');
+        document.getElementById('modal-img-after').src = act.afterImg || getCloudinarySample('AFTER BELUM ADA', '0f172a');
+        
+        // Cloudinary link indicators
+        document.getElementById('modal-link-before').innerText = `Cloudinary: ${act.cloudinaryBeforeUrl || 'https://res.cloudinary.com/doxv3khr7/image/upload/sample_before.jpg'}`;
+        document.getElementById('modal-link-after').innerText = `Cloudinary: ${act.cloudinaryAfterUrl || 'https://res.cloudinary.com/doxv3khr7/image/upload/sample_after.jpg'}`;
+
+        // Role & Permission Logic in Modal
+        const isSpv = this.currentRole === 'SPV';
+        const isPic = this.currentRole.startsWith('PIC');
+        const isCompleted = act.status === 'COMPLETED';
+
+        const noticeBox = document.getElementById('modal-permission-notice');
+        const noticeText = document.getElementById('modal-permission-text');
+
+        if (isSpv) {
+            noticeBox.style.display = 'flex';
+            noticeText.innerHTML = `<b>Mode SPV:</b> Checklist terkunci (hanya PIC yang berhak mencentang). Anda bertugas memverifikasi setelah PIC submit.`;
+        } else if (isPic) {
+            noticeBox.style.display = 'flex';
+            noticeText.innerHTML = `<b>Mode PIC (${this.getPicName()}):</b> Silakan centang 5 tahap pengerjaan & upload foto After untuk submit.`;
+        } else {
+            noticeBox.style.display = 'none';
+        }
+
+        // Render 5 Tahapan Checklist Items with Strict Protection
+        const checkContainer = document.getElementById('modal-checklist-list');
+        checkContainer.innerHTML = '';
+
+        if (!act.checklist || act.checklist.length === 0) {
+            act.checklist = DEFAULT_5_STAGES.map(t => ({ text: t, done: false }));
+        }
+
+        const totalItems = act.checklist.length;
+        document.getElementById('modal-checklist-counter').innerText = `${doneCount}/${totalItems} Selesai (${pct}%)`;
+
+        act.checklist.forEach((item, idx) => {
+            const div = document.createElement('div');
+            div.className = `checklist-item-check ${item.done ? 'done' : ''} ${isSpv || isVerified ? 'locked' : ''}`;
+            
+            div.onclick = () => {
+                if (isVerified) {
+                    Swal.fire({ icon: 'info', title: 'Tugas telah selesai & terverifikasi!' });
+                    return;
+                }
+                if (isSpv) {
+                    // STRICT: SPV cannot check checklist items!
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Akses SPV Dibatasi',
+                        html: 'SPV <b>tidak dapat menceklis tahapan pengerjaan</b>.<br>Hanya <b>PIC terkait</b> yang berwenang mengisi progres eksekusi lapangan.',
+                        background: '#111827',
+                        color: '#fff',
+                        confirmButtonColor: '#f59e0b'
+                    });
+                    return;
+                }
+                // PIC checks item
+                App.toggleChecklist(idx);
+            };
+
+            div.innerHTML = `
+                <div class="checkbox-custom"><i class="fas fa-check"></i></div>
+                <div class="check-text">
+                    ${item.text}
+                    <span class="check-step-tag">Tahap ${idx + 1}</span>
+                </div>
+                ${isSpv ? '<i class="fas fa-lock" style="font-size:0.7rem; color:var(--text-muted);"></i>' : ''}
+            `;
+            checkContainer.appendChild(div);
+        });
+
+        // Buttons
+        const btnSubmit = document.getElementById('btn-modal-submit');
+        const btnVerify = document.getElementById('btn-modal-verify');
+        const btnUploadAfter = document.getElementById('btn-upload-after');
+
+        btnUploadAfter.style.display = isVerified ? 'none' : (isPic ? 'block' : 'none');
+
+        if (isVerified) {
+            btnSubmit.style.display = 'none';
+            btnVerify.style.display = 'none';
+        } else if (isCompleted) {
+            btnSubmit.style.display = 'none';
+            btnVerify.style.display = isSpv ? 'flex' : 'none';
+        } else {
+            btnSubmit.style.display = isPic ? 'flex' : 'none';
+            btnVerify.style.display = isSpv ? 'flex' : 'none';
+        }
+
+        document.getElementById('action-modal').classList.add('active');
+    },
+
+    closeModal() {
+        document.getElementById('action-modal').classList.remove('active');
+        this.activeActionId = null;
+    },
+
+    handleClickUploadAfter() {
+        if (this.currentRole === 'SPV') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Akses Upload Dibatasi',
+                text: 'Hanya PIC yang berhak mengunggah foto After hasil pengerjaan.',
+                background: '#111827',
+                color: '#fff'
+            });
+            return;
+        }
+        document.getElementById('file-after').click();
+    },
+
+    // PIC Updates Progress
+    toggleChecklist(idx) {
+        const act = this.actions.find(a => a.id === this.activeActionId);
+        if (!act || !act.checklist || !act.checklist[idx]) return;
+
+        act.checklist[idx].done = !act.checklist[idx].done;
+
+        // Automatic Status Progression
+        const pct = this.calcPct(act);
+        if (pct === 100 && act.status !== 'VERIFIED') {
+            act.status = 'COMPLETED';
+        } else if (pct > 0 && act.status === 'OPEN') {
+            act.status = 'ON_PROGRESS';
+        } else if (pct === 0 && act.status === 'ON_PROGRESS') {
+            act.status = 'OPEN';
+        }
+
+        // === SYNC KE SPREADSHEET: PIC_UPDATE (checklist progress) ===
+        syncToSheet({
+            actionType: 'PIC_UPDATE',
+            id: act.id,
+            checklist: act.checklist,
+            cloudinaryAfterUrl: act.afterImg || act.cloudinaryAfterUrl || '',
+            isSubmit: false
+        });
+
+        this.save();
+        this.openModal(this.activeActionId);
+        this.renderMonitoringList();
+    },
+
+    async handleUploadAfter(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const UPLOAD_PRESET = 'simple-improvement'; // Ganti dengan Upload Preset Cloudinary Anda
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', UPLOAD_PRESET);
+        formData.append('folder', 'smart-warehouse');
+
+        Swal.fire({
+            title: 'Mengunggah Foto After...',
+            text: 'Harap tunggu...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); },
+            background: '#111827', color: '#fff'
+        });
+
+        try {
+            const response = await fetch(`https://api.cloudinary.com/v1_1/doxv3khr7/image/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.secure_url) {
+                const cloudUrl = data.secure_url;
+                const act = this.actions.find(a => a.id === this.activeActionId);
+                
+                if (act) {
+                    act.afterImg = cloudUrl; // Gunakan URL langsung dari Cloudinary
+                    act.cloudinaryAfterUrl = cloudUrl;
+                    this.save();
+                    this.openModal(this.activeActionId);
+                    this.renderMonitoringList();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Foto After Tersimpan ke Cloudinary!',
+                        html: `<small style="color:var(--primary); word-break:break-all;">${cloudUrl}</small>`,
+                        timer: 2000,
+                        showConfirmButton: false,
+                        background: '#111827',
+                        color: '#fff'
+                    });
+                }
+            } else {
+                throw new Error(data.error?.message || 'Gagal Upload');
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Upload Cloudinary',
+                text: 'Pastikan Upload Preset benar. Error: ' + error.message,
+                background: '#111827', color: '#fff'
+            });
+        }
+    },
+
+    submitCompletion() {
+        const act = this.actions.find(a => a.id === this.activeActionId);
+        if (!act) return;
+
+        if (this.currentRole === 'SPV') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Akses Ditolak',
+                text: 'SPV tidak dapat mensubmit penyelesaian tugas atas nama PIC.',
+                background: '#111827',
+                color: '#fff'
+            });
+            return;
+        }
+
+        const pct = this.calcPct(act);
+        if (pct < 100) {
+            Swal.fire({
+                title: '5 Tahapan Belum Lengkap',
+                text: `Progres saat ini masih ${pct}%. Apakah Anda yakin ingin mengirimkan tugas ini untuk diverifikasi SPV?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Submit Selesai',
+                cancelButtonText: 'Lengkapi Dulu',
+                background: '#111827',
+                color: '#fff',
+                confirmButtonColor: '#10b981'
+            }).then(res => {
+                if (res.isConfirmed) this.finalizeSubmit(act);
+            });
+        } else {
+            this.finalizeSubmit(act);
+        }
+    },
+
+    finalizeSubmit(act) {
+        act.status = 'COMPLETED';
+        act.submittedAt = new Date().toISOString();
+        this.save();
+        this.openModal(this.activeActionId);
+        this.renderMonitoringList();
+
+        // === SYNC KE SPREADSHEET: PIC_UPDATE (submit selesai) ===
+        syncToSheet({
+            actionType: 'PIC_UPDATE',
+            id: act.id,
+            checklist: act.checklist,
+            cloudinaryAfterUrl: act.afterImg || act.cloudinaryAfterUrl || '',
+            isSubmit: true
+        });
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Tugas Berhasil Disubmit ke SPV!',
+            text: 'Status tugas kini COMPLETED & tersinkronisasi ke Spreadsheet.',
+            background: '#111827',
+            color: '#fff',
+            confirmButtonColor: '#10b981'
+        });
+    },
+
+    // SPV Verifies and Approves Completion
+    verifyAction() {
+        const act = this.actions.find(a => a.id === this.activeActionId);
+        if (!act) return;
+
+        if (this.currentRole !== 'SPV') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Hanya SPV yang berhak memverifikasi!',
+                background: '#111827',
+                color: '#fff'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Verifikasi & Setujui Tugas?',
+            text: `Apakah hasil pengerjaan "${act.title}" oleh PIC ${act.pic} telah dicek dan sesuai standar?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Approve & Selesai',
+            cancelButtonText: 'Batal',
+            background: '#111827',
+            color: '#fff',
+            confirmButtonColor: '#8b5cf6'
+        }).then(res => {
+            if (res.isConfirmed) {
+                act.status = 'VERIFIED';
+                act.verifiedAt = new Date().toISOString();
+                confetti({ particleCount: 90, spread: 65, origin: { y: 0.6 } });
+
+                this.save();
+                this.openModal(this.activeActionId);
+                this.renderMonitoringList();
+
+                // === SYNC KE SPREADSHEET: SPV_VERIFY ===
+                syncToSheet({
+                    actionType: 'SPV_VERIFY',
+                    id: act.id,
+                    notes: 'Disetujui & Diverifikasi oleh SPV Warehouse'
+                });
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Tugas Telah Diverifikasi SPV!',
+                    text: 'Tugas selesai tuntas 100% & tersinkronisasi ke Spreadsheet.',
+                    background: '#111827',
+                    color: '#fff',
+                    confirmButtonColor: '#8b5cf6'
+                });
+            }
+        });
+    },
+
+    shareWhatsApp() {
+        const act = this.actions.find(a => a.id === this.activeActionId);
+        if (!act) return;
+
+        const pct = this.calcPct(act);
+        const areaStr = act.subRental ? `Gudang Rental (${act.subRental})` : act.area;
+        const text = `*ACTION & IMPROVEMENT WAREHOUSE*%0A%0A` +
+                     `📌 *Tugas:* ${act.title}%0A` +
+                     `🏭 *Area:* ${areaStr}%0A` +
+                     `👷 *PIC:* ${act.pic}%0A` +
+                     `📅 *Due Date:* ${act.dueDate}%0A` +
+                     `📊 *Progress:* ${pct}%%0A` +
+                     `🏷️ *Status:* ${act.status}%0A` +
+                     `📸 *Cloudinary Foto:* ${CLOUDINARY_BASE}/...%0A%0A` +
+                     `_Dipantau melalui Smart Warehouse System_`;
+
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    App.init();
+});
+</script>
+
+</body>
+</html>
