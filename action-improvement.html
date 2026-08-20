@@ -1781,12 +1781,12 @@
                         <div class="form-group">
                             <label class="form-label" for="form-pic">5. Assign PIC <span class="req">*</span></label>
                             <select id="form-pic" class="form-select" required>
-                                <!-- <option value="Andi">Andi (RM)</option>
+                                <option value="Andi">Andi (RM)</option>
                                 <option value="Budi">Budi (Transport)</option>
                                 <option value="Deni">Deni (BK)</option>
                                 <option value="Siti">Siti (CPO)</option>
                                 <option value="Eko">Eko (Rental)</option>
-                                <option value="Rian">Rian (5S/Kebersihan)</option> -->
+                                <option value="Rian">Rian (5S/Kebersihan)</option>
                             </select>
                         </div>
 
@@ -2273,20 +2273,19 @@ const SEED_DATA = [
     }
 ];
 
-const SPREADSHEET_URL = 'https://script.google.com/macros/s/AKfycbw5PL2GaSrYiYAngFCCjfYgrjFRP-XILlbTYcJvLy3P9u_4bqFIX__yBE4kfz9MWXIO_A/exec';
+const SPREADSHEET_URL = 'https://script.google.com/macros/s/AKfycbwsO_-6xXOaRVyHkYjppx7AcdFgax8NKHfQ9Li2SOnhn0mT4V0PRppszLZXvKwWne6Y/exec';
 
 // Sync to Sheet Helper
 async function syncToSheet(payload) {
     if (!SPREADSHEET_URL) return { status: 'skipped' };
     try {
-        const dataParam = encodeURIComponent(JSON.stringify(payload));
-        const url = `${SPREADSHEET_URL}?action=sync&data=${dataParam}`;
-        
-        await fetch(url, {
-            method: 'GET',
+        await fetch(SPREADSHEET_URL, {
+            method: 'POST',
             mode: 'no-cors',
-            cache: 'no-cache',
-            redirect: 'follow'
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8' // Hindari CORS preflight
+            },
+            body: JSON.stringify(payload)
         });
         
         Swal.fire({
@@ -2832,7 +2831,9 @@ const App = {
                 area: newAct.area,
                 subRental: newAct.subRental,
                 title: newAct.problemFinding,
-                desc: `[Improvement]: ${newAct.improvementPlan} | [Lokasi]: ${newAct.desc}`,
+                problemFinding: newAct.problemFinding,
+                improvementPlan: newAct.improvementPlan,
+                detailLokasi: newAct.desc,
                 pic: newAct.pic,
                 dueDate: newAct.dueDate,
                 cloudinaryBeforeUrl: newAct.beforeImg,

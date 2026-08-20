@@ -34,12 +34,20 @@
  * 5. Paste script ini dan Deploy as Web App (akses "Anyone").
  */
 
-const SHEET_NAME = "ACTIONS";
-const CLOUDINARY_BASE_URL = "https://res.cloudinary.com/doxv3khr7/image/upload";
+const SHEET_NAME = "ACTIONS"; // Sesuaikan dengan nama sheet di spreadsheet
+
+const SPREADSHEET_ID = "1KQspDwzGXp9alhBaPcTHVVzWVbV6jnTg";
+
+function getSpreadsheet() {
+  if (SPREADSHEET_ID) {
+    return SpreadsheetApp.openById(SPREADSHEET_ID);
+  }
+  return SpreadsheetApp.getActiveSpreadsheet();
+}
 
 function doGet(e) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = getSpreadsheet();
     const sheet = ss.getSheetByName(SHEET_NAME) || ss.getSheets()[0];
 
     // Jika ini adalah request sync dari GET (karena redirect 302 POST)
@@ -48,54 +56,37 @@ function doGet(e) {
       return processSyncData(postData, sheet);
     }
 
-    // Jika GET biasa (fetch semua data)
+    // Default GET return all data
     const data = sheet.getDataRange().getValues();
-
-    if (data.length <= 1) {
+    const actions = [];
+    if (data.length <= 1)
       return createJsonResponse({ status: "success", data: [] });
-    }
 
-    const headers = data[0];
-    const rows = data.slice(1);
-
-    const actions = rows.map((r) => {
-      return {
+    data.slice(1).forEach((r) => {
+      actions.push({
         id: r[0],
-        createdAt: r[1],
+        title: r[4],
+        problemFinding: r[5],
+        improvementPlan: r[6],
+        desc: r[7],
         area: r[2],
         subRental: r[3],
-        title: r[4],
-        desc: r[5],
-        pic: r[6],
-        dueDate:
-          r[7] instanceof Date
-            ? Utilities.formatDate(
-                r[7],
-                Session.getScriptTimeZone(),
-                "yyyy-MM-dd",
-              )
-            : r[7],
-        pct: r[8],
+        pic: r[8],
+        dueDate: r[9],
         checklist: [
-          { text: "Persiapan", done: r[9] === true || r[9] === "TRUE" },
-          { text: "Pelaksanaan", done: r[10] === true || r[10] === "TRUE" },
-          { text: "Finishing", done: r[11] === true || r[11] === "TRUE" },
-          {
-            text: "Area sudah clean",
-            done: r[12] === true || r[12] === "TRUE",
-          },
-          {
-            text: "Hasil sesuai target",
-            done: r[13] === true || r[13] === "TRUE",
-          },
+          { text: "Langkah 1", done: r[11] === true || r[11] === "TRUE" },
+          { text: "Langkah 2", done: r[12] === true || r[12] === "TRUE" },
+          { text: "Langkah 3", done: r[13] === true || r[13] === "TRUE" },
+          { text: "Langkah 4", done: r[14] === true || r[14] === "TRUE" },
+          { text: "Langkah 5", done: r[15] === true || r[15] === "TRUE" },
         ],
-        status: r[14],
-        beforeImg: r[15] || "",
-        afterImg: r[16] || "",
-        submittedAt: r[17] || "",
-        verifiedAt: r[18] || "",
-        notes: r[19] || "",
-      };
+        status: r[16],
+        beforeImg: r[17] || "",
+        afterImg: r[18] || "",
+        submittedAt: r[19] || "",
+        verifiedAt: r[20] || "",
+        notes: r[21] || "",
+      });
     });
 
     return createJsonResponse({ status: "success", data: actions });
@@ -107,7 +98,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const postData = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = getSpreadsheet();
     const sheet = ss.getSheetByName(SHEET_NAME) || ss.getSheets()[0];
 
     return processSyncData(postData, sheet);
@@ -126,24 +117,26 @@ function processSyncData(postData, sheet) {
       const act = postData.action;
       const newRow = [
         act.id,
-        new Date().toISOString(),
+        Utilities.formatDate(new Date(), "Asia/Jakarta", "yyyy-MM-dd HH:mm:ss"),
         act.area,
         act.subRental || act.subLocation || "",
-        act.title,
-        act.desc || "",
-        act.pic,
+        act.title, // NAMA_TUGAS
+        act.problemFinding || "", // TEMUAN MASALAH
+        act.improvementPlan || "", // RENCANA IMPROVEMENT
+        act.detailLokasi || "", // DETAIL TITIK LOKASI
+        act.pic, // PIC
         act.dueDate,
         0, // Progress 0%
-        false,
-        false,
-        false,
-        false,
-        false, // 5 stages
-        "OPEN",
-        act.cloudinaryBeforeUrl || act.beforeImg || "",
-        "", // After photo empty initially
-        "", // Submit time empty
-        "", // Verify time empty
+        false, // Tahap 1
+        false, // Tahap 2
+        false, // Tahap 3
+        false, // Tahap 4
+        false, // Tahap 5
+        "OPEN", // Status
+        act.cloudinaryBeforeUrl || act.beforeImg || "", // Foto Before
+        "", // Foto After
+        "", // Waktu Submit
+        "", // Waktu Verifikasi
         "", // Notes
       ];
       sheet.appendRow(newRow);
@@ -174,30 +167,38 @@ function processSyncData(postData, sheet) {
         const doneCount = checklist.filter((c) => c.done).length;
         const pct = Math.round((doneCount / 5) * 100);
 
-        sheet.getRange(rowIndex, 9).setValue(pct); // Kolom I: Progress
-        sheet
-          .getRange(rowIndex, 10)
-          .setValue(checklist[0] ? checklist[0].done : false); // J
-        sheet
-          .getRange(rowIndex, 11)
-          .setValue(checklist[1] ? checklist[1].done : false); // K
+        sheet.getRange(rowIndex, 11).setValue(pct); // Kolom K: Progress
         sheet
           .getRange(rowIndex, 12)
-          .setValue(checklist[2] ? checklist[2].done : false); // L
+          .setValue(checklist[0] ? checklist[0].done : false); // L
         sheet
           .getRange(rowIndex, 13)
-          .setValue(checklist[3] ? checklist[3].done : false); // M
+          .setValue(checklist[1] ? checklist[1].done : false); // M
         sheet
           .getRange(rowIndex, 14)
-          .setValue(checklist[4] ? checklist[4].done : false); // N
+          .setValue(checklist[2] ? checklist[2].done : false); // N
+        sheet
+          .getRange(rowIndex, 15)
+          .setValue(checklist[3] ? checklist[3].done : false); // O
+        sheet
+          .getRange(rowIndex, 16)
+          .setValue(checklist[4] ? checklist[4].done : false); // P
 
-        if (afterUrl) sheet.getRange(rowIndex, 17).setValue(afterUrl); // Q: After Photo
+        if (afterUrl) sheet.getRange(rowIndex, 19).setValue(afterUrl); // S: After Photo
 
         if (isSubmit || pct === 100) {
-          sheet.getRange(rowIndex, 15).setValue("COMPLETED"); // O: Status
-          sheet.getRange(rowIndex, 18).setValue(new Date().toISOString()); // R: Waktu Submit
+          sheet.getRange(rowIndex, 17).setValue("COMPLETED"); // Q: Status
+          sheet
+            .getRange(rowIndex, 20)
+            .setValue(
+              Utilities.formatDate(
+                new Date(),
+                "Asia/Jakarta",
+                "yyyy-MM-dd HH:mm:ss",
+              ),
+            ); // T: Waktu Submit
         } else if (pct > 0) {
-          sheet.getRange(rowIndex, 15).setValue("ON_PROGRESS");
+          sheet.getRange(rowIndex, 17).setValue("ON_PROGRESS");
         }
 
         return createJsonResponse({
@@ -224,11 +225,19 @@ function processSyncData(postData, sheet) {
       }
 
       if (rowIndex !== -1) {
-        sheet.getRange(rowIndex, 15).setValue("VERIFIED"); // O: Status
-        sheet.getRange(rowIndex, 19).setValue(new Date().toISOString()); // S: Waktu Verifikasi
+        sheet.getRange(rowIndex, 17).setValue("VERIFIED"); // Q: Status
         sheet
-          .getRange(rowIndex, 20)
-          .setValue(postData.notes || "Disetujui SPV"); // T: Catatan
+          .getRange(rowIndex, 21)
+          .setValue(
+            Utilities.formatDate(
+              new Date(),
+              "Asia/Jakarta",
+              "yyyy-MM-dd HH:mm:ss",
+            ),
+          ); // U: Waktu Verifikasi
+        sheet
+          .getRange(rowIndex, 22)
+          .setValue(postData.notes || "Disetujui SPV"); // V: Catatan
         return createJsonResponse({
           status: "success",
           message: "Action verified by SPV",
