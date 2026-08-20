@@ -1614,13 +1614,13 @@
                 <span class="role-tag-pill spv" id="role-tag-pill">SPV</span>
                 <select class="role-select" id="role-switcher" onchange="App.setRole(this.value)">
                     <option value="SPV">SPV Warehouse</option>
-                    <option value="PIC_ANDI">PIC: Andi (RM)</option>
+                    <!-- <option value="PIC_ANDI">PIC: Andi (RM)</option>
                     <option value="PIC_BUDI">PIC: Budi (Transport)</option>
                     <option value="PIC_DENI">PIC: Deni (BK)</option>
                     <option value="PIC_SITI">PIC: Siti (CPO)</option>
                     <option value="PIC_EKO">PIC: Eko (Rental)</option>
                     <option value="PIC_RIAN">PIC: Rian (5S)</option>
-                    <option value="VIEWER">Viewer / Manajemen</option>
+                    <option value="VIEWER">Viewer / Manajemen</option> -->
                 </select>
             </div>
 
@@ -1781,12 +1781,12 @@
                         <div class="form-group">
                             <label class="form-label" for="form-pic">5. Assign PIC <span class="req">*</span></label>
                             <select id="form-pic" class="form-select" required>
-                                <option value="Andi">Andi (RM)</option>
+                                <!-- <option value="Andi">Andi (RM)</option>
                                 <option value="Budi">Budi (Transport)</option>
                                 <option value="Deni">Deni (BK)</option>
                                 <option value="Siti">Siti (CPO)</option>
                                 <option value="Eko">Eko (Rental)</option>
-                                <option value="Rian">Rian (5S/Kebersihan)</option>
+                                <option value="Rian">Rian (5S/Kebersihan)</option> -->
                             </select>
                         </div>
 
@@ -2438,15 +2438,15 @@ const App = {
         });
     },
 
-    getPicName() {
-        if (this.currentRole === 'PIC_ANDI') return 'Andi';
-        if (this.currentRole === 'PIC_BUDI') return 'Budi';
-        if (this.currentRole === 'PIC_DENI') return 'Deni';
-        if (this.currentRole === 'PIC_SITI') return 'Siti';
-        if (this.currentRole === 'PIC_EKO') return 'Eko';
-        if (this.currentRole === 'PIC_RIAN') return 'Rian';
-        return '';
-    },
+    // getPicName() {
+    //     if (this.currentRole === 'PIC_ANDI') return 'Andi';
+    //     if (this.currentRole === 'PIC_BUDI') return 'Budi';
+    //     if (this.currentRole === 'PIC_DENI') return 'Deni';
+    //     if (this.currentRole === 'PIC_SITI') return 'Siti';
+    //     if (this.currentRole === 'PIC_EKO') return 'Eko';
+    //     if (this.currentRole === 'PIC_RIAN') return 'Rian';
+    //     return '';
+    // },
 
     getRoleName() {
         if (this.currentRole === 'SPV') return 'SPV Warehouse';
