@@ -2124,153 +2124,153 @@ function getCloudinarySample(tag, colorCode) {
 
 // Initial Seed Data with Temuan Masalah & Rencana Improvement
 const SEED_DATA = [
-    {
-        id: 'ACT-001',
-        title: 'Penataan Tumpukan Jagung Silo 3',
-        problemFinding: 'Penataan Tumpukan Jagung Silo 3 (Ceceran butiran jagung di lantai bay loading)',
-        improvementPlan: 'Re-bagging butiran jagung tercecer dan susun rapi di pallet standar bertingkat.',
-        desc: 'Silo 3 Row B, dekat intake elevator.',
-        area: 'RM',
-        subRental: '',
-        pic: 'Andi',
-        dueDate: '2026-08-18',
-        status: 'VERIFIED',
-        beforeImg: getCloudinarySample('BEFORE: Ceceran Silo 3', '92400e'),
-        afterImg: getCloudinarySample('AFTER: Rapi & Bersih', '166534'),
-        checklist: [
-            { text: 'Persiapan', done: true },
-            { text: 'Pelaksanaan', done: true },
-            { text: 'Finishing', done: true },
-            { text: 'Area sudah clean', done: true },
-            { text: 'Hasil sesuai target', done: true }
-        ]
-    },
-    {
-        id: 'ACT-002',
-        title: 'Pengecatan Rambu & Marka Jalur Loader',
-        problemFinding: 'Garis batas manuver wheel loader pudar dan tidak terlihat di Bay 2',
-        improvementPlan: 'Pengecatan ulang garis kuning traffic line batas aman manuver loader.',
-        desc: 'Bay 2 RM - Area Manuver Utama',
-        area: 'RM',
-        subRental: '',
-        pic: 'Budi',
-        dueDate: '2026-08-20',
-        status: 'ON_PROGRESS',
-        beforeImg: getCloudinarySample('BEFORE: Marka Pudar', '334155'),
-        afterImg: '',
-        checklist: [
-            { text: 'Persiapan', done: true },
-            { text: 'Pelaksanaan', done: true },
-            { text: 'Finishing', done: false },
-            { text: 'Area sudah clean', done: false },
-            { text: 'Hasil sesuai target', done: false }
-        ]
-    },
-    {
-        id: 'ACT-003',
-        title: 'Sortir Pallet Rusak & Penataan Bay B',
-        problemFinding: 'Pallet pecah berserakan menghalangi forklift di Bay Bahan Kemas',
-        improvementPlan: 'Pisahkan pallet rusak ke scrap karantina dan susun rapi pallet grade A.',
-        desc: 'Gudang BK Bay B',
-        area: 'BK',
-        subRental: '',
-        pic: 'Deni',
-        dueDate: '2026-08-19',
-        status: 'COMPLETED',
-        beforeImg: getCloudinarySample('BEFORE: Pallet Berantakan', '7c2d12'),
-        afterImg: getCloudinarySample('AFTER: Pallet Tersortir', '15803d'),
-        checklist: [
-            { text: 'Persiapan', done: true },
-            { text: 'Pelaksanaan', done: true },
-            { text: 'Finishing', done: true },
-            { text: 'Area sudah clean', done: true },
-            { text: 'Hasil sesuai target', done: true }
-        ]
-    },
-    {
-        id: 'ACT-004',
-        title: 'Pemasangan Drip Tray Pompa CPO #2',
-        problemFinding: 'Tetesan minyak CPO mengotori lantai saluran drainase pompa #2',
-        improvementPlan: 'Pasang wadah drip tray stainless penampung tetesan pompa CPO.',
-        desc: 'CPO Tank Farm Pompa Discharge 2',
-        area: 'CPO',
-        subRental: '',
-        pic: 'Siti',
-        dueDate: '2026-08-17',
-        status: 'VERIFIED',
-        beforeImg: getCloudinarySample('BEFORE: Tetesan Minyak', '78350f'),
-        afterImg: getCloudinarySample('AFTER: Drip Tray Terpasang', '1e40af'),
-        checklist: [
-            { text: 'Persiapan', done: true },
-            { text: 'Pelaksanaan', done: true },
-            { text: 'Finishing', done: true },
-            { text: 'Area sudah clean', done: true },
-            { text: 'Hasil sesuai target', done: true }
-        ]
-    },
-    {
-        id: 'ACT-005',
-        title: 'Pengecatan Garis Forklift Kalijaga',
-        problemFinding: 'Tidak ada pembatas jalur pejalan kaki & jalur forklift di Kalijaga',
-        improvementPlan: 'Pengecatan garis kuning dan simbol forklift untuk standar safety K3.',
-        desc: 'Gudang Rental Kalijaga Lorong Utama',
-        area: 'RENTAL',
-        subRental: 'Kalijaga',
-        pic: 'Eko',
-        dueDate: '2026-08-18',
-        status: 'ON_PROGRESS',
-        beforeImg: getCloudinarySample('BEFORE: Lantai Kalijaga Polos', '1e293b'),
-        afterImg: '',
-        checklist: [
-            { text: 'Persiapan', done: true },
-            { text: 'Pelaksanaan', done: true },
-            { text: 'Finishing', done: true },
-            { text: 'Area sudah clean', done: false },
-            { text: 'Hasil sesuai target', done: false }
-        ]
-    },
-    {
-        id: 'ACT-006',
-        title: 'Pemasangan Lampu LED Ramp Gebang',
-        problemFinding: 'Pencahayaan ramp loading Gebang redup pada shift malam',
-        improvementPlan: 'Pemasangan 3 unit lampu LED Highbay 150W di atas ramp loading.',
-        desc: 'Gudang Rental Gebang Ramp 1 & 2',
-        area: 'RENTAL',
-        subRental: 'Gebang',
-        pic: 'Rian',
-        dueDate: '2026-08-15',
-        status: 'OVERDUE',
-        beforeImg: getCloudinarySample('BEFORE: Ramp Gelap', '0f172a'),
-        afterImg: '',
-        checklist: [
-            { text: 'Persiapan', done: true },
-            { text: 'Pelaksanaan', done: false },
-            { text: 'Finishing', done: false },
-            { text: 'Area sudah clean', done: false },
-            { text: 'Hasil sesuai target', done: false }
-        ]
-    },
-    {
-        id: 'ACT-007',
-        title: 'Pemasangan Wiremesh Pest Control Samping',
-        problemFinding: 'Kisi ventilasi bawah berlubang rentan dimasuki hama tikus & burung',
-        improvementPlan: 'Tutup seluruh kisi ventilasi bawah dengan kawat strimin kawat galvanis rapat.',
-        desc: 'Gudang Rental Samping Dinding Timur',
-        area: 'RENTAL',
-        subRental: 'Samping',
-        pic: 'Eko',
-        dueDate: '2026-08-19',
-        status: 'VERIFIED',
-        beforeImg: getCloudinarySample('BEFORE: Ventilasi Terbuka', '475569'),
-        afterImg: getCloudinarySample('AFTER: Wiremesh Rapat', '065f46'),
-        checklist: [
-            { text: 'Persiapan', done: true },
-            { text: 'Pelaksanaan', done: true },
-            { text: 'Finishing', done: true },
-            { text: 'Area sudah clean', done: true },
-            { text: 'Hasil sesuai target', done: true }
-        ]
-    }
+    // {
+    //     id: 'ACT-001',
+    //     title: 'Penataan Tumpukan Jagung Silo 3',
+    //     problemFinding: 'Penataan Tumpukan Jagung Silo 3 (Ceceran butiran jagung di lantai bay loading)',
+    //     improvementPlan: 'Re-bagging butiran jagung tercecer dan susun rapi di pallet standar bertingkat.',
+    //     desc: 'Silo 3 Row B, dekat intake elevator.',
+    //     area: 'RM',
+    //     subRental: '',
+    //     pic: 'Andi',
+    //     dueDate: '2026-08-18',
+    //     status: 'VERIFIED',
+    //     beforeImg: getCloudinarySample('BEFORE: Ceceran Silo 3', '92400e'),
+    //     afterImg: getCloudinarySample('AFTER: Rapi & Bersih', '166534'),
+    //     checklist: [
+    //         { text: 'Persiapan', done: true },
+    //         { text: 'Pelaksanaan', done: true },
+    //         { text: 'Finishing', done: true },
+    //         { text: 'Area sudah clean', done: true },
+    //         { text: 'Hasil sesuai target', done: true }
+    //     ]
+    // },
+    // {
+    //     id: 'ACT-002',
+    //     title: 'Pengecatan Rambu & Marka Jalur Loader',
+    //     problemFinding: 'Garis batas manuver wheel loader pudar dan tidak terlihat di Bay 2',
+    //     improvementPlan: 'Pengecatan ulang garis kuning traffic line batas aman manuver loader.',
+    //     desc: 'Bay 2 RM - Area Manuver Utama',
+    //     area: 'RM',
+    //     subRental: '',
+    //     pic: 'Budi',
+    //     dueDate: '2026-08-20',
+    //     status: 'ON_PROGRESS',
+    //     beforeImg: getCloudinarySample('BEFORE: Marka Pudar', '334155'),
+    //     afterImg: '',
+    //     checklist: [
+    //         { text: 'Persiapan', done: true },
+    //         { text: 'Pelaksanaan', done: true },
+    //         { text: 'Finishing', done: false },
+    //         { text: 'Area sudah clean', done: false },
+    //         { text: 'Hasil sesuai target', done: false }
+    //     ]
+    // },
+    // {
+    //     id: 'ACT-003',
+    //     title: 'Sortir Pallet Rusak & Penataan Bay B',
+    //     problemFinding: 'Pallet pecah berserakan menghalangi forklift di Bay Bahan Kemas',
+    //     improvementPlan: 'Pisahkan pallet rusak ke scrap karantina dan susun rapi pallet grade A.',
+    //     desc: 'Gudang BK Bay B',
+    //     area: 'BK',
+    //     subRental: '',
+    //     pic: 'Deni',
+    //     dueDate: '2026-08-19',
+    //     status: 'COMPLETED',
+    //     beforeImg: getCloudinarySample('BEFORE: Pallet Berantakan', '7c2d12'),
+    //     afterImg: getCloudinarySample('AFTER: Pallet Tersortir', '15803d'),
+    //     checklist: [
+    //         { text: 'Persiapan', done: true },
+    //         { text: 'Pelaksanaan', done: true },
+    //         { text: 'Finishing', done: true },
+    //         { text: 'Area sudah clean', done: true },
+    //         { text: 'Hasil sesuai target', done: true }
+    //     ]
+    // },
+    // {
+    //     id: 'ACT-004',
+    //     title: 'Pemasangan Drip Tray Pompa CPO #2',
+    //     problemFinding: 'Tetesan minyak CPO mengotori lantai saluran drainase pompa #2',
+    //     improvementPlan: 'Pasang wadah drip tray stainless penampung tetesan pompa CPO.',
+    //     desc: 'CPO Tank Farm Pompa Discharge 2',
+    //     area: 'CPO',
+    //     subRental: '',
+    //     pic: 'Siti',
+    //     dueDate: '2026-08-17',
+    //     status: 'VERIFIED',
+    //     beforeImg: getCloudinarySample('BEFORE: Tetesan Minyak', '78350f'),
+    //     afterImg: getCloudinarySample('AFTER: Drip Tray Terpasang', '1e40af'),
+    //     checklist: [
+    //         { text: 'Persiapan', done: true },
+    //         { text: 'Pelaksanaan', done: true },
+    //         { text: 'Finishing', done: true },
+    //         { text: 'Area sudah clean', done: true },
+    //         { text: 'Hasil sesuai target', done: true }
+    //     ]
+    // },
+    // {
+    //     id: 'ACT-005',
+    //     title: 'Pengecatan Garis Forklift Kalijaga',
+    //     problemFinding: 'Tidak ada pembatas jalur pejalan kaki & jalur forklift di Kalijaga',
+    //     improvementPlan: 'Pengecatan garis kuning dan simbol forklift untuk standar safety K3.',
+    //     desc: 'Gudang Rental Kalijaga Lorong Utama',
+    //     area: 'RENTAL',
+    //     subRental: 'Kalijaga',
+    //     pic: 'Eko',
+    //     dueDate: '2026-08-18',
+    //     status: 'ON_PROGRESS',
+    //     beforeImg: getCloudinarySample('BEFORE: Lantai Kalijaga Polos', '1e293b'),
+    //     afterImg: '',
+    //     checklist: [
+    //         { text: 'Persiapan', done: true },
+    //         { text: 'Pelaksanaan', done: true },
+    //         { text: 'Finishing', done: true },
+    //         { text: 'Area sudah clean', done: false },
+    //         { text: 'Hasil sesuai target', done: false }
+    //     ]
+    // },
+    // {
+    //     id: 'ACT-006',
+    //     title: 'Pemasangan Lampu LED Ramp Gebang',
+    //     problemFinding: 'Pencahayaan ramp loading Gebang redup pada shift malam',
+    //     improvementPlan: 'Pemasangan 3 unit lampu LED Highbay 150W di atas ramp loading.',
+    //     desc: 'Gudang Rental Gebang Ramp 1 & 2',
+    //     area: 'RENTAL',
+    //     subRental: 'Gebang',
+    //     pic: 'Rian',
+    //     dueDate: '2026-08-15',
+    //     status: 'OVERDUE',
+    //     beforeImg: getCloudinarySample('BEFORE: Ramp Gelap', '0f172a'),
+    //     afterImg: '',
+    //     checklist: [
+    //         { text: 'Persiapan', done: true },
+    //         { text: 'Pelaksanaan', done: false },
+    //         { text: 'Finishing', done: false },
+    //         { text: 'Area sudah clean', done: false },
+    //         { text: 'Hasil sesuai target', done: false }
+    //     ]
+    // },
+    // {
+    //     id: 'ACT-007',
+    //     title: 'Pemasangan Wiremesh Pest Control Samping',
+    //     problemFinding: 'Kisi ventilasi bawah berlubang rentan dimasuki hama tikus & burung',
+    //     improvementPlan: 'Tutup seluruh kisi ventilasi bawah dengan kawat strimin kawat galvanis rapat.',
+    //     desc: 'Gudang Rental Samping Dinding Timur',
+    //     area: 'RENTAL',
+    //     subRental: 'Samping',
+    //     pic: 'Eko',
+    //     dueDate: '2026-08-19',
+    //     status: 'VERIFIED',
+    //     beforeImg: getCloudinarySample('BEFORE: Ventilasi Terbuka', '475569'),
+    //     afterImg: getCloudinarySample('AFTER: Wiremesh Rapat', '065f46'),
+    //     checklist: [
+    //         { text: 'Persiapan', done: true },
+    //         { text: 'Pelaksanaan', done: true },
+    //         { text: 'Finishing', done: true },
+    //         { text: 'Area sudah clean', done: true },
+    //         { text: 'Hasil sesuai target', done: true }
+    //     ]
+    // }
 ];
 
 const SPREADSHEET_URL = 'https://script.google.com/macros/s/AKfycbwsO_-6xXOaRVyHkYjppx7AcdFgax8NKHfQ9Li2SOnhn0mT4V0PRppszLZXvKwWne6Y/exec';
