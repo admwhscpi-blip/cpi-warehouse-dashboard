@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -16,7 +16,55 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 
     <style>
-        :root {
+        /* ==========================================================================
+           1. DESIGN SYSTEM & COLOR THEMES (LIGHT DEFAULT + DARK THEME)
+           ========================================================================== */
+        :root, [data-theme="light"] {
+            --bg-base: #f1f5f9;
+            --bg-surface: #ffffff;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f8fafc;
+            --border-glass: rgba(148, 163, 184, 0.35);
+            --border-active: #0284c7;
+            
+            --primary: #0284c7;
+            --primary-gradient: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+            --accent-emerald: #059669;
+            --accent-amber: #d97706;
+            --accent-crimson: #dc2626;
+            --accent-purple: #7c3aed;
+            
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            
+            --status-open: #2563eb;
+            --status-progress: #0284c7;
+            --status-completed: #059669;
+            --status-verified: #7c3aed;
+            --status-overdue: #dc2626;
+            
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --input-text: #0f172a;
+            
+            --header-bg: rgba(255, 255, 255, 0.95);
+            --header-border: rgba(148, 163, 184, 0.25);
+            
+            --card-input-bg: linear-gradient(145deg, #f0f9ff 0%, #e0f2fe 100%);
+            --card-input-border: rgba(2, 132, 199, 0.35);
+            --card-monitor-bg: linear-gradient(145deg, #f0fdf4 0%, #dcfce7 100%);
+            --card-monitor-border: rgba(5, 150, 105, 0.35);
+            
+            --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+            --sub-box-bg: rgba(2, 132, 199, 0.05);
+            --sub-box-border: rgba(2, 132, 199, 0.25);
+            --modal-backdrop: rgba(15, 23, 42, 0.65);
+            --theme-toggle-bg: #e2e8f0;
+            --theme-toggle-color: #f59e0b;
+        }
+
+        [data-theme="dark"] {
             --bg-base: #0a0e17;
             --bg-surface: #111827;
             --bg-card: #162032;
@@ -41,12 +89,39 @@
             --status-verified: #8b5cf6;
             --status-overdue: #ef4444;
             
+            --input-bg: #0a0e17;
+            --input-border: rgba(255, 255, 255, 0.12);
+            --input-text: #ffffff;
+            
+            --header-bg: rgba(17, 24, 39, 0.95);
+            --header-border: var(--border-glass);
+            
+            --card-input-bg: linear-gradient(145deg, #132238 0%, #0d1726 100%);
+            --card-input-border: rgba(6, 182, 212, 0.35);
+            --card-monitor-bg: linear-gradient(145deg, #122822 0%, #0c1c18 100%);
+            --card-monitor-border: rgba(16, 185, 129, 0.35);
+            
+            --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
+            --sub-box-bg: rgba(6, 182, 212, 0.05);
+            --sub-box-border: rgba(6, 182, 212, 0.3);
+            --modal-backdrop: rgba(0, 0, 0, 0.82);
+            --theme-toggle-bg: #1f2937;
+            --theme-toggle-color: #38bdf8;
+        }
+
+        :root {
             --radius-sm: 8px;
             --radius-md: 14px;
             --radius-lg: 20px;
             --radius-full: 9999px;
-            
-            --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        /* Prevent all horizontal scrolling */
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            position: relative;
         }
 
         * {
@@ -54,6 +129,8 @@
             margin: 0;
             padding: 0;
             -webkit-tap-highlight-color: transparent;
+            word-break: break-word;
+            overflow-wrap: anywhere;
         }
 
         body {
@@ -63,25 +140,40 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
-            background-attachment: fixed;
+            transition: background-color 0.25s ease, color 0.25s ease;
         }
 
-        /* Top Header */
+        /* Subtle ambient background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(2, 132, 199, 0.06) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(37, 99, 235, 0.06) 0px, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Top Sticky Header */
         .app-header {
-            background: rgba(17, 24, 39, 0.95);
+            background: var(--header-bg);
             backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--border-glass);
-            padding: 12px 18px;
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--header-border);
+            padding: 10px 14px;
             position: sticky;
             top: 0;
             z-index: 100;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 8px;
+            width: 100%;
+            max-width: 100%;
         }
 
         .brand-box {
@@ -89,6 +181,7 @@
             align-items: center;
             gap: 10px;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         .brand-icon {
@@ -101,72 +194,114 @@
             justify-content: center;
             font-size: 1.05rem;
             color: #fff;
-            box-shadow: 0 0 12px rgba(6, 182, 212, 0.35);
+            box-shadow: 0 0 12px rgba(2, 132, 199, 0.35);
+            flex-shrink: 0;
         }
 
         .brand-title {
             font-family: 'Rajdhani', sans-serif;
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: 800;
             letter-spacing: 0.5px;
             line-height: 1;
-            color: #fff;
+            color: var(--text-primary);
         }
 
         .brand-sub {
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             color: var(--primary);
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.8px;
             margin-top: 2px;
         }
 
-        /* Role Switcher Pill in Header */
+        /* Header Controls */
         .header-controls {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        /* Theme Toggle Button (Sun / Moon) */
+        .btn-theme-toggle {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            background: var(--theme-toggle-bg);
+            border: 1px solid var(--border-glass);
+            color: var(--theme-toggle-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.05rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-theme-toggle:active {
+            transform: scale(0.92);
         }
 
         .role-badge-box {
             display: flex;
             align-items: center;
-            gap: 6px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            gap: 4px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-glass);
             border-radius: var(--radius-full);
-            padding: 3px 8px 3px 6px;
+            padding: 3px 8px 3px 5px;
         }
 
         .role-tag-pill {
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             font-weight: 800;
-            padding: 2px 8px;
+            padding: 2px 7px;
             border-radius: var(--radius-full);
             background: var(--primary);
-            color: #000;
+            color: #fff;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .role-tag-pill.spv { background: #8b5cf6; color: #fff; }
-        .role-tag-pill.pic { background: #06b6d4; color: #000; }
+        .role-tag-pill.spv { background: #7c3aed; color: #fff; }
+        .role-tag-pill.pic { background: var(--primary); color: #fff; }
         .role-tag-pill.view { background: #64748b; color: #fff; }
 
         .role-select {
             background: transparent;
             border: none;
-            color: #fff;
-            font-size: 0.78rem;
+            color: var(--text-primary);
+            font-size: 0.76rem;
             font-weight: 700;
             cursor: pointer;
             outline: none;
+            max-width: 110px;
         }
 
         .role-select option {
             background: var(--bg-surface);
-            color: #fff;
+            color: var(--text-primary);
+        }
+
+        .btn-header-home {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            color: var(--text-primary);
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-header-home:active {
+            transform: scale(0.92);
         }
 
         /* Container */
@@ -175,39 +310,48 @@
             width: 100%;
             max-width: 900px;
             margin: 0 auto;
-            padding: 16px 14px 40px;
+            padding: 14px 12px 40px;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 1;
         }
 
         /* Quick KPI Strip */
         .kpi-strip {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 6px;
+            margin-bottom: 16px;
+            width: 100%;
         }
 
         .kpi-box {
             background: var(--bg-surface);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
-            padding: 10px 6px;
+            padding: 8px 4px;
             text-align: center;
+            box-shadow: var(--shadow-card);
+            min-width: 0;
         }
 
         .kpi-box .num {
             font-family: 'Rajdhani', sans-serif;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 800;
             line-height: 1;
-            color: #fff;
+            color: var(--text-primary);
         }
 
         .kpi-box .lbl {
-            font-size: 0.6rem;
+            font-size: 0.58rem;
             font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
-            margin-top: 4px;
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* View Switching */
@@ -226,38 +370,39 @@
         }
 
         /* ==========================================================================
-           1. HOME VIEW: 2 PILIHAN UTAMA (+ PERMISSION HANDLING)
+           VIEW 1: HOME VIEW
            ========================================================================== */
         .home-title-box {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .home-title-box h1 {
             font-family: 'Rajdhani', sans-serif;
-            font-size: 1.7rem;
+            font-size: 1.6rem;
             font-weight: 800;
-            color: #fff;
+            color: var(--text-primary);
             line-height: 1.2;
         }
 
         .home-title-box p {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             color: var(--text-secondary);
             margin-top: 4px;
         }
 
-        /* PIC Task Banner (Muncul bila role = PIC) */
+        /* PIC Task Banner */
         .pic-assigned-banner {
             display: none;
-            background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(59, 130, 246, 0.1) 100%);
-            border: 1px solid rgba(6, 182, 212, 0.4);
+            background: var(--card-input-bg);
+            border: 1px solid var(--card-input-border);
             border-radius: var(--radius-md);
-            padding: 12px 16px;
+            padding: 12px 14px;
             margin-bottom: 16px;
             align-items: center;
             justify-content: space-between;
             cursor: pointer;
+            box-shadow: var(--shadow-card);
         }
 
         .pic-assigned-banner.show {
@@ -267,7 +412,7 @@
         .home-dual-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 16px;
+            gap: 14px;
             margin-bottom: 20px;
         }
 
@@ -281,13 +426,13 @@
             background: var(--bg-surface);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-lg);
-            padding: 24px 20px;
+            padding: 22px 18px;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            min-height: 190px;
+            min-height: 180px;
             position: relative;
             overflow: hidden;
             box-shadow: var(--shadow-card);
@@ -296,72 +441,71 @@
         .choice-card:active, .choice-card:hover {
             transform: translateY(-3px);
             border-color: var(--primary);
-            background: var(--bg-card-hover);
         }
 
         .choice-card.input-card {
-            background: linear-gradient(145deg, #132238 0%, #0d1726 100%);
-            border-color: rgba(6, 182, 212, 0.35);
+            background: var(--card-input-bg);
+            border-color: var(--card-input-border);
         }
 
         .choice-card.input-card.disabled {
             opacity: 0.65;
-            filter: grayscale(0.2);
+            filter: grayscale(0.3);
         }
 
         .choice-card.monitor-card {
-            background: linear-gradient(145deg, #122822 0%, #0c1c18 100%);
-            border-color: rgba(16, 185, 129, 0.35);
+            background: var(--card-monitor-bg);
+            border-color: var(--card-monitor-border);
         }
 
         .choice-icon {
-            width: 50px;
-            height: 50px;
+            width: 48px;
+            height: 48px;
             border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
-            margin-bottom: 14px;
+            font-size: 1.35rem;
+            margin-bottom: 12px;
         }
 
         .choice-card.input-card .choice-icon {
-            background: rgba(6, 182, 212, 0.18);
+            background: rgba(2, 132, 199, 0.15);
             color: var(--primary);
         }
 
         .choice-card.monitor-card .choice-icon {
-            background: rgba(16, 185, 129, 0.18);
+            background: rgba(5, 150, 105, 0.15);
             color: var(--accent-emerald);
         }
 
         .choice-badge {
             position: absolute;
-            top: 18px;
-            right: 18px;
+            top: 16px;
+            right: 16px;
             font-size: 0.65rem;
             font-weight: 800;
-            padding: 4px 10px;
+            padding: 4px 9px;
             border-radius: var(--radius-full);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .badge-spv { background: rgba(139, 92, 246, 0.25); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.4); }
-        .badge-all { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
-        .badge-locked { background: rgba(239, 68, 68, 0.2); color: var(--accent-crimson); }
+        .badge-spv { background: rgba(124, 58, 237, 0.18); color: var(--accent-purple); border: 1px solid rgba(124, 58, 237, 0.3); }
+        .badge-all { background: rgba(5, 150, 105, 0.18); color: var(--accent-emerald); border: 1px solid rgba(5, 150, 105, 0.3); }
+        .badge-locked { background: rgba(220, 38, 38, 0.18); color: var(--accent-crimson); border: 1px solid rgba(220, 38, 38, 0.3); }
 
         .choice-title {
             font-family: 'Rajdhani', sans-serif;
-            font-size: 1.45rem;
+            font-size: 1.35rem;
             font-weight: 800;
-            color: #fff;
+            color: var(--text-primary);
             margin-bottom: 4px;
             letter-spacing: 0.5px;
         }
 
         .choice-desc {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: var(--text-secondary);
             line-height: 1.35;
         }
@@ -370,7 +514,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-top: 16px;
+            margin-top: 14px;
             font-size: 0.8rem;
             font-weight: 700;
             color: var(--primary);
@@ -381,48 +525,49 @@
         }
 
         /* ==========================================================================
-           2. INPUT ACTION FORM VIEW (KHUSUS SPV)
+           VIEW 2: INPUT ACTION FORM (KHUSUS SPV)
            ========================================================================== */
         .back-nav-bar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 16px;
-            gap: 10px;
+            margin-bottom: 14px;
+            gap: 8px;
         }
 
         .btn-back {
             background: var(--bg-surface);
             border: 1px solid var(--border-glass);
             color: var(--text-primary);
-            padding: 8px 14px;
+            padding: 8px 12px;
             border-radius: var(--radius-md);
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            box-shadow: var(--shadow-card);
         }
 
         .form-card {
             background: var(--bg-surface);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-lg);
-            padding: 20px 16px;
+            padding: 18px 14px;
             box-shadow: var(--shadow-card);
         }
 
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
 
         .form-label {
             display: block;
-            font-size: 0.76rem;
-            font-weight: 700;
+            font-size: 0.74rem;
+            font-weight: 800;
             color: var(--text-primary);
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -431,55 +576,52 @@
 
         .form-input, .form-select, .form-textarea {
             width: 100%;
-            background: var(--bg-base);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
             border-radius: var(--radius-md);
-            padding: 10px 12px;
-            color: #fff;
+            padding: 9px 12px;
+            color: var(--input-text);
             font-family: inherit;
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             outline: none;
             transition: border-color 0.2s ease;
         }
 
         .form-input:focus, .form-select:focus, .form-textarea:focus {
             border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
         }
 
         .form-textarea {
             resize: vertical;
-            min-height: 75px;
+            min-height: 68px;
         }
 
         /* Area Selector Pills */
         .area-radio-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        @media (min-width: 600px) {
-            .area-radio-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 4px;
+            margin-bottom: 8px;
         }
 
         .area-radio-btn {
-            background: var(--bg-base);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
             border-radius: var(--radius-md);
-            padding: 10px;
+            padding: 8px 4px;
             text-align: center;
             cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 700;
+            font-size: 0.8rem;
+            font-weight: 800;
             color: var(--text-secondary);
             transition: all 0.2s ease;
+            font-family: 'Rajdhani', sans-serif;
+            letter-spacing: 0.5px;
         }
 
         .area-radio-btn.active {
-            background: rgba(6, 182, 212, 0.15);
+            background: rgba(2, 132, 199, 0.15);
             border-color: var(--primary);
             color: var(--primary);
         }
@@ -487,11 +629,11 @@
         /* Sub Area Rental */
         .sub-rental-box {
             display: none;
-            background: rgba(6, 182, 212, 0.05);
-            border: 1px dashed rgba(6, 182, 212, 0.3);
+            background: var(--sub-box-bg);
+            border: 1px dashed var(--sub-box-border);
             border-radius: var(--radius-md);
             padding: 10px;
-            margin-top: 8px;
+            margin-top: 6px;
         }
 
         .sub-rental-box.show {
@@ -500,17 +642,17 @@
 
         .sub-rental-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 4px;
             margin-top: 6px;
         }
 
         .sub-rental-btn {
-            background: var(--bg-base);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
             border-radius: var(--radius-sm);
-            padding: 8px;
-            font-size: 0.78rem;
+            padding: 7px 4px;
+            font-size: 0.74rem;
             font-weight: 700;
             text-align: center;
             color: var(--text-secondary);
@@ -519,16 +661,16 @@
 
         .sub-rental-btn.active {
             background: var(--primary);
-            color: #000;
+            color: #fff;
             border-color: var(--primary);
         }
 
-        /* Photo Upload Box (Cloudinary) */
+        /* Direct Camera Trigger Touch Box (Strictly Camera Only) */
         .upload-touch-box {
-            border: 2px dashed rgba(6, 182, 212, 0.35);
+            border: 2px dashed rgba(2, 132, 199, 0.4);
             border-radius: var(--radius-md);
-            background: rgba(6, 182, 212, 0.03);
-            padding: 16px;
+            background: rgba(2, 132, 199, 0.05);
+            padding: 14px;
             text-align: center;
             cursor: pointer;
             display: flex;
@@ -536,10 +678,15 @@
             align-items: center;
             justify-content: center;
             gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .upload-touch-box:active {
+            background: rgba(2, 132, 199, 0.12);
         }
 
         .upload-touch-box i {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             color: var(--primary);
         }
 
@@ -549,6 +696,7 @@
             border-radius: var(--radius-md);
             overflow: hidden;
             max-height: 180px;
+            border: 1px solid var(--border-glass);
         }
 
         .upload-preview-wrap img {
@@ -562,20 +710,23 @@
             position: absolute;
             top: 8px;
             right: 8px;
-            background: rgba(239, 68, 68, 0.9);
+            background: rgba(220, 38, 38, 0.9);
             color: #fff;
             border: none;
             border-radius: 50%;
             width: 30px;
             height: 30px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Checklist Builder */
         .checklist-container {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
             margin-bottom: 8px;
         }
 
@@ -583,28 +734,28 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: var(--bg-base);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
             border-radius: var(--radius-sm);
-            padding: 8px 10px;
+            padding: 7px 10px;
         }
 
         .checklist-item-input-row input {
             flex: 1;
             background: transparent;
             border: none;
-            color: #fff;
-            font-size: 0.85rem;
+            color: var(--input-text);
+            font-size: 0.82rem;
             outline: none;
         }
 
         .btn-add-item {
-            background: rgba(6, 182, 212, 0.12);
-            border: 1px solid rgba(6, 182, 212, 0.3);
+            background: rgba(2, 132, 199, 0.12);
+            border: 1px solid rgba(2, 132, 199, 0.3);
             color: var(--primary);
             border-radius: var(--radius-md);
-            padding: 8px 14px;
-            font-size: 0.78rem;
+            padding: 7px 12px;
+            font-size: 0.74rem;
             font-weight: 700;
             cursor: pointer;
             display: inline-flex;
@@ -619,36 +770,39 @@
             color: #fff;
             padding: 12px;
             border-radius: var(--radius-md);
-            font-size: 0.92rem;
+            font-size: 0.9rem;
             font-weight: 800;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            margin-top: 12px;
-            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+            margin-top: 14px;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+        }
+
+        .btn-submit-main:active {
+            transform: scale(0.98);
         }
 
         /* ==========================================================================
-           3. MONITORING VIEW (AREA SELECTOR & DIRECT ACTION LIST)
+           VIEW 3: MONITORING VIEW
            ========================================================================== */
-        /* Area Selector Bar: RM | BK | CPO | GUDANG RENTAL */
         .monitoring-area-nav {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-            margin-bottom: 10px;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 4px;
+            margin-bottom: 8px;
         }
 
         .area-nav-btn {
             background: var(--bg-surface);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
-            padding: 10px 4px;
+            padding: 9px 2px;
             text-align: center;
             font-family: 'Rajdhani', sans-serif;
-            font-size: 0.9rem;
+            font-size: 0.84rem;
             font-weight: 800;
             color: var(--text-secondary);
             cursor: pointer;
@@ -657,20 +811,19 @@
 
         .area-nav-btn.active {
             background: var(--primary);
-            color: #000;
+            color: #fff;
             border-color: var(--primary);
-            box-shadow: 0 0 12px rgba(6, 182, 212, 0.35);
+            box-shadow: 0 0 12px rgba(2, 132, 199, 0.35);
         }
 
-        /* Sub-area Bar */
         .rental-sub-nav {
             display: none;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-bottom: 12px;
-            background: rgba(6, 182, 212, 0.08);
-            border: 1px solid rgba(6, 182, 212, 0.2);
-            padding: 6px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 4px;
+            margin-bottom: 10px;
+            background: var(--sub-box-bg);
+            border: 1px solid var(--sub-box-border);
+            padding: 5px;
             border-radius: var(--radius-md);
         }
 
@@ -682,9 +835,9 @@
             background: var(--bg-surface);
             border: 1px solid transparent;
             border-radius: var(--radius-sm);
-            padding: 7px 4px;
+            padding: 6px 2px;
             text-align: center;
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             font-weight: 700;
             color: var(--text-secondary);
             cursor: pointer;
@@ -692,7 +845,7 @@
 
         .rental-nav-btn.active {
             background: var(--accent-emerald);
-            color: #000;
+            color: #fff;
             font-weight: 800;
         }
 
@@ -701,60 +854,74 @@
             background: var(--bg-surface);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-lg);
-            padding: 14px 16px;
-            margin-bottom: 14px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
+            gap: 8px;
+            box-shadow: var(--shadow-card);
         }
 
         .area-header-left {
             display: flex;
             align-items: center;
             gap: 10px;
+            min-width: 0;
         }
 
         .area-icon-pill {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             border-radius: var(--radius-md);
-            background: rgba(6, 182, 212, 0.15);
+            background: rgba(2, 132, 199, 0.12);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .area-title-text {
+            min-width: 0;
         }
 
         .area-title-text h2 {
             font-family: 'Rajdhani', sans-serif;
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             font-weight: 800;
-            color: #fff;
+            color: var(--text-primary);
             line-height: 1.1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .area-title-text p {
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             color: var(--text-muted);
             margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .area-progress-circle {
             text-align: right;
+            flex-shrink: 0;
         }
 
         .area-pct-num {
             font-family: 'Rajdhani', sans-serif;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 800;
             color: var(--primary);
             line-height: 1;
         }
 
         .area-pct-lbl {
-            font-size: 0.62rem;
+            font-size: 0.58rem;
             color: var(--text-muted);
             font-weight: 700;
             text-transform: uppercase;
@@ -771,15 +938,15 @@
             background: var(--bg-surface);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
-            padding: 14px;
+            padding: 13px;
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
+            box-shadow: var(--shadow-card);
         }
 
         .action-card:active, .action-card:hover {
             border-color: var(--primary);
-            background: var(--bg-card-hover);
             transform: translateY(-2px);
         }
 
@@ -791,62 +958,93 @@
         }
 
         .action-area-badge {
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             font-weight: 800;
             color: var(--primary);
-            background: rgba(6, 182, 212, 0.12);
-            padding: 2px 8px;
+            background: rgba(2, 132, 199, 0.12);
+            padding: 2px 7px;
             border-radius: var(--radius-full);
         }
 
         .action-status-pill {
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             font-weight: 800;
-            padding: 2px 8px;
+            padding: 2px 7px;
             border-radius: var(--radius-full);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .status-OPEN { background: rgba(59, 130, 246, 0.2); color: var(--status-open); }
-        .status-ON_PROGRESS { background: rgba(6, 182, 212, 0.2); color: var(--status-progress); }
-        .status-COMPLETED { background: rgba(16, 185, 129, 0.2); color: var(--status-completed); }
-        .status-VERIFIED { background: rgba(139, 92, 246, 0.2); color: var(--status-verified); }
-        .status-OVERDUE { background: rgba(239, 68, 68, 0.2); color: var(--status-overdue); }
+        .status-OPEN { background: rgba(37, 99, 235, 0.15); color: var(--status-open); }
+        .status-ON_PROGRESS { background: rgba(2, 132, 199, 0.15); color: var(--status-progress); }
+        .status-COMPLETED { background: rgba(5, 150, 105, 0.15); color: var(--status-completed); }
+        .status-VERIFIED { background: rgba(124, 58, 237, 0.15); color: var(--status-verified); }
+        .status-OVERDUE { background: rgba(220, 38, 38, 0.15); color: var(--status-overdue); }
 
-        .action-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 6px;
+        /* Problem & Improvement Display on Card */
+        .card-problem-title {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            line-height: 1.25;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .card-problem-title i {
+            color: var(--accent-crimson);
+            margin-top: 3px;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .card-improvement-sub {
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
             line-height: 1.3;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            background: var(--sub-box-bg);
+            padding: 5px 8px;
+            border-radius: var(--radius-sm);
+        }
+
+        .card-improvement-sub i {
+            color: var(--accent-emerald);
+            margin-top: 2px;
+            font-size: 0.8rem;
+            flex-shrink: 0;
         }
 
         .action-meta-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.74rem;
+            font-size: 0.72rem;
             color: var(--text-secondary);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .action-meta-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
 
         .action-meta-item.overdue {
             color: var(--accent-crimson);
-            font-weight: 700;
+            font-weight: 800;
         }
 
-        /* Progress Bar on Card */
         .progress-track {
             width: 100%;
             height: 6px;
-            background: rgba(255, 255, 255, 0.08);
+            background: var(--input-bg);
+            border: 1px solid var(--border-glass);
             border-radius: 3px;
             overflow: hidden;
             margin-bottom: 4px;
@@ -862,27 +1060,58 @@
         .progress-sub-text {
             display: flex;
             justify-content: space-between;
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             font-weight: 700;
             color: var(--text-muted);
         }
 
+        /* Quick Share WA button on Card */
+        .card-bottom-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding-top: 6px;
+            border-top: 1px solid var(--border-glass);
+        }
+
+        .btn-card-wa {
+            background: rgba(37, 211, 102, 0.12);
+            border: 1px solid rgba(37, 211, 102, 0.3);
+            color: #10b981;
+            padding: 3px 8px;
+            border-radius: var(--radius-full);
+            font-size: 0.68rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .btn-card-wa:hover {
+            background: #25d366;
+            color: #fff;
+        }
+
         /* ==========================================================================
-           4. DETAIL & UPDATE MODAL (DENGAN 5 TAHAP STEPPER PROGRESS)
+           4. DETAIL & UPDATE MODAL
            ========================================================================== */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.8);
+            width: 100%;
+            height: 100%;
+            background: var(--modal-backdrop);
             backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             z-index: 1000;
             display: none;
             align-items: center;
             justify-content: center;
-            padding: 12px;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         .modal-overlay.active {
@@ -894,63 +1123,91 @@
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-lg);
             width: 100%;
-            max-width: 580px;
+            max-width: 560px;
             max-height: 90vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
 
         .modal-head {
-            padding: 14px 16px;
+            padding: 12px 14px;
             border-bottom: 1px solid var(--border-glass);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(17, 24, 39, 0.98);
+            background: var(--bg-surface);
         }
 
         .btn-close-modal {
-            background: rgba(255, 255, 255, 0.08);
-            border: none;
+            background: var(--input-bg);
+            border: 1px solid var(--border-glass);
             color: var(--text-secondary);
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .modal-body {
-            padding: 16px;
+            padding: 14px;
             overflow-y: auto;
             flex: 1;
         }
 
-        .detail-meta-box {
-            background: var(--bg-base);
+        /* Problem & Improvement Box in Modal */
+        .modal-findings-card {
+            background: var(--input-bg);
+            border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
-            padding: 10px 12px;
-            margin-bottom: 14px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 6px;
-            font-size: 0.76rem;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .modal-finding-row {
+            margin-bottom: 8px;
+        }
+
+        .modal-finding-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-finding-label {
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .modal-finding-val {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.35;
         }
 
         /* 5-Step Stepper Header */
         .stepper-track-wrap {
-            margin-bottom: 16px;
-            background: var(--bg-base);
+            margin-bottom: 12px;
+            background: var(--input-bg);
             border-radius: var(--radius-md);
-            padding: 12px;
+            padding: 10px;
+            border: 1px solid var(--border-glass);
         }
 
         .stepper-header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .stepper-pct-badge {
@@ -962,14 +1219,14 @@
 
         .stepper-steps-bar {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 4px;
         }
 
         .stepper-step-bar-item {
             height: 6px;
             border-radius: 3px;
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--border-glass);
             transition: background 0.3s;
         }
 
@@ -977,24 +1234,36 @@
             background: var(--accent-emerald);
         }
 
+        .detail-meta-box {
+            background: var(--input-bg);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+            font-size: 0.74rem;
+            border: 1px solid var(--border-glass);
+        }
+
         .before-after-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 14px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 12px;
         }
 
         .photo-card {
-            background: var(--bg-base);
+            background: var(--input-bg);
             border-radius: var(--radius-md);
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-glass);
             position: relative;
         }
 
         .photo-card img {
             width: 100%;
-            height: 120px;
+            height: 110px;
             object-fit: cover;
             display: block;
         }
@@ -1016,42 +1285,47 @@
 
         .btn-upload-after {
             width: 100%;
-            padding: 6px;
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 7px 4px;
+            background: rgba(5, 150, 105, 0.15);
+            border: 1px solid rgba(5, 150, 105, 0.3);
             color: var(--accent-emerald);
             font-size: 0.72rem;
-            font-weight: 700;
+            font-weight: 800;
             border-radius: 4px;
             cursor: pointer;
             text-align: center;
             margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
         }
 
         /* 5 Tahapan Checklist Items */
         .modal-checklist-box {
-            background: var(--bg-base);
+            background: var(--input-bg);
             border-radius: var(--radius-md);
-            padding: 12px;
-            margin-bottom: 14px;
+            padding: 10px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-glass);
         }
 
         .checklist-item-check {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px 10px;
+            gap: 8px;
+            padding: 7px 9px;
             border-radius: var(--radius-sm);
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             cursor: pointer;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
             transition: all 0.2s;
         }
 
         .checklist-item-check.done {
-            background: rgba(16, 185, 129, 0.1);
-            border-color: rgba(16, 185, 129, 0.3);
+            background: rgba(5, 150, 105, 0.12);
+            border-color: rgba(5, 150, 105, 0.35);
         }
 
         .checklist-item-check.locked {
@@ -1060,14 +1334,14 @@
         }
 
         .checkbox-custom {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             border-radius: 4px;
             border: 2px solid var(--text-muted);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.72rem;
+            font-size: 0.65rem;
             color: transparent;
             flex-shrink: 0;
         }
@@ -1075,7 +1349,7 @@
         .checklist-item-check.done .checkbox-custom {
             background: var(--accent-emerald);
             border-color: var(--accent-emerald);
-            color: #000;
+            color: #fff;
         }
 
         .checklist-item-check.done .check-text {
@@ -1084,102 +1358,239 @@
         }
 
         .check-text {
-            font-size: 0.84rem;
-            color: #fff;
+            font-size: 0.8rem;
+            color: var(--text-primary);
             flex: 1;
             font-weight: 600;
         }
 
         .check-step-tag {
-            font-size: 0.65rem;
+            font-size: 0.62rem;
             color: var(--primary);
             font-weight: 700;
-            margin-left: 6px;
+            margin-left: 4px;
         }
 
         .verification-stamp-box {
             display: none;
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px dashed rgba(139, 92, 246, 0.4);
+            background: rgba(124, 58, 237, 0.12);
+            border: 1px dashed rgba(124, 58, 237, 0.4);
             border-radius: var(--radius-md);
-            padding: 12px;
+            padding: 10px;
             text-align: center;
-            color: #c4b5fd;
-            font-size: 0.8rem;
-            font-weight: 700;
+            color: var(--accent-purple);
+            font-size: 0.78rem;
+            font-weight: 800;
             margin-bottom: 12px;
         }
 
-        .modal-actions-footer {
-            padding: 12px 16px;
-            border-top: 1px solid var(--border-glass);
-            display: flex;
-            gap: 8px;
-            background: rgba(17, 24, 39, 0.98);
-        }
-
-        .btn-footer-secondary {
-            flex: 1;
-            background: var(--bg-base);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: var(--text-secondary);
-            padding: 10px;
-            border-radius: var(--radius-md);
-            font-size: 0.82rem;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .btn-footer-submit {
-            flex: 2;
-            background: var(--accent-emerald);
-            border: none;
-            color: #000;
-            padding: 10px;
-            border-radius: var(--radius-md);
-            font-size: 0.82rem;
-            font-weight: 800;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .btn-footer-verify {
-            flex: 2;
-            background: var(--accent-purple);
-            border: none;
-            color: #fff;
-            padding: 10px;
-            border-radius: var(--radius-md);
-            font-size: 0.82rem;
-            font-weight: 800;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
         .permission-notice-bar {
-            padding: 6px 12px;
-            background: rgba(245, 158, 11, 0.12);
-            border: 1px solid rgba(245, 158, 11, 0.3);
+            padding: 6px 10px;
+            background: rgba(217, 119, 6, 0.12);
+            border: 1px solid rgba(217, 119, 6, 0.3);
             border-radius: var(--radius-sm);
             color: var(--accent-amber);
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             font-weight: 600;
             margin-bottom: 10px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
+
+        .modal-actions-footer {
+            padding: 10px 14px;
+            border-top: 1px solid var(--border-glass);
+            display: flex;
+            gap: 6px;
+            background: var(--bg-surface);
+        }
+
+        .btn-footer-wa {
+            background: #25d366;
+            color: #fff;
+            border: none;
+            padding: 9px 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .btn-footer-submit {
+            flex: 1;
+            background: var(--accent-emerald);
+            border: none;
+            color: #fff;
+            padding: 9px 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .btn-footer-verify {
+            flex: 1;
+            background: var(--accent-purple);
+            border: none;
+            color: #fff;
+            padding: 9px 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        /* ==========================================================================
+           5. WHATSAPP SHARE MODAL (DETAIL 1-POINT VIEW)
+           ========================================================================== */
+        .wa-share-card {
+            background: var(--input-bg);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            margin-bottom: 12px;
+            font-size: 0.78rem;
+            line-height: 1.45;
+            color: var(--text-primary);
+        }
+
+        .wa-text-preview {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.72rem;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            user-select: all;
+        }
+
+        /* ==========================================================================
+           6. IN-APP LIVE CAMERA MODAL (KAMERA LANGSUNG)
+           ========================================================================== */
+        #camera-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px;
+            box-sizing: border-box;
+        }
+
+        #camera-modal.active {
+            display: flex;
+        }
+
+        .camera-viewport-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: var(--radius-lg);
+            background: #111;
+        }
+
+        #camera-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #camera-canvas {
+            display: none;
+        }
+
+        .camera-guide-box {
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            right: 10%;
+            bottom: 10%;
+            border: 2px dashed rgba(255, 255, 255, 0.4);
+            border-radius: var(--radius-md);
+            pointer-events: none;
+        }
+
+        .camera-top-bar {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #fff;
+            padding: 6px 4px;
+        }
+
+        .camera-controls-bottom {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 16px 10px;
+        }
+
+        .btn-shutter {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: #fff;
+            border: 5px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            transition: transform 0.1s;
+        }
+
+        .btn-shutter:active {
+            transform: scale(0.9);
+        }
+
+        .btn-camera-ctrl {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #fff;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Top Sticky Header with Role Selector -->
+    <!-- TOP STICKY HEADER -->
     <header class="app-header">
         <div class="brand-box" onclick="App.showHome()">
             <div class="brand-icon">
@@ -1191,8 +1602,14 @@
             </div>
         </div>
 
-        <!-- Role Selector (SPV / PIC / Viewer) -->
+        <!-- Role Selector, Theme Switcher & Home Button -->
         <div class="header-controls">
+            <!-- Theme Switcher Toggle (☀️ Light / 🌙 Dark) -->
+            <button class="btn-theme-toggle" id="btn-theme-toggle" onclick="App.toggleTheme()" title="Ubah Tema">
+                <i class="fas fa-sun" id="theme-icon"></i>
+            </button>
+
+            <!-- Role Selector -->
             <div class="role-badge-box">
                 <span class="role-tag-pill spv" id="role-tag-pill">SPV</span>
                 <select class="role-select" id="role-switcher" onchange="App.setRole(this.value)">
@@ -1203,10 +1620,11 @@
                     <option value="PIC_SITI">PIC: Siti (CPO)</option>
                     <option value="PIC_EKO">PIC: Eko (Rental)</option>
                     <option value="PIC_RIAN">PIC: Rian (5S)</option>
-                    <option value="VIEWER">Viewer / Management</option>
+                    <option value="VIEWER">Viewer / Manajemen</option>
                 </select>
             </div>
-            <button class="btn-back" onclick="App.showHome()" style="padding: 6px 10px;">
+
+            <button class="btn-header-home" onclick="App.showHome()" title="Menu Utama">
                 <i class="fas fa-house"></i>
             </button>
         </div>
@@ -1214,7 +1632,7 @@
 
     <main class="main-container">
         
-        <!-- Global Quick KPI Strip -->
+        <!-- Quick KPI Strip -->
         <div class="kpi-strip">
             <div class="kpi-box">
                 <div class="num" id="kpi-total">0</div>
@@ -1235,29 +1653,29 @@
         </div>
 
         <!-- ==================================================================
-             VIEW 1: HOME (2 PILIHAN UTAMA + PIC ASSIGNED BANNER)
+             VIEW 1: HOME (2 PILIHAN UTAMA)
              ================================================================== -->
         <section class="app-view active" id="view-home">
             
             <!-- Quick Banner for PIC -->
             <div class="pic-assigned-banner" id="pic-assigned-banner" onclick="App.showMyActions()">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--primary); color:#000; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem;">
+                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.8rem; flex-shrink: 0;">
                         <i class="fas fa-user-check"></i>
                     </div>
-                    <div>
-                        <div style="font-size: 0.85rem; font-weight: 800; color: #fff;">Tugas Saya: <span id="pic-name-banner">Andi</span></div>
-                        <div style="font-size: 0.72rem; color: var(--primary);" id="pic-tasks-count">2 Tugas aktif ditugaskan ke Anda</div>
+                    <div style="min-width: 0;">
+                        <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-primary);">Tugas Saya: <span id="pic-name-banner">Andi</span></div>
+                        <div style="font-size: 0.7rem; color: var(--primary);" id="pic-tasks-count">2 Tugas aktif ditugaskan ke Anda</div>
                     </div>
                 </div>
-                <div style="font-size: 0.78rem; font-weight: 700; color: var(--primary);">
-                    Buka Tugas <i class="fas fa-chevron-right"></i>
+                <div style="font-size: 0.75rem; font-weight: 800; color: var(--primary); flex-shrink: 0;">
+                    Buka <i class="fas fa-chevron-right"></i>
                 </div>
             </div>
 
             <div class="home-title-box">
                 <h1>Control Dashboard</h1>
-                <p id="home-role-subtitle">SPV Buat & Verifikasi Tugas • PIC Eksekusi 5 Tahapan Progres</p>
+                <p id="home-role-subtitle">SPV Terbitkan & Verifikasi • PIC Eksekusi 5 Tahapan Progres</p>
             </div>
 
             <div class="home-dual-grid">
@@ -1270,11 +1688,11 @@
                         <span class="choice-badge badge-spv" id="badge-input-role">Khusus SPV</span>
                         <h2 class="choice-title">+ INPUT ACTION</h2>
                         <p class="choice-desc">
-                            Khusus SPV untuk membuat tugas baru dengan 5 tahapan progres, assign PIC, area, due date & foto before Cloudinary.
+                            Input Temuan Masalah & Rencana Improvement, assign PIC, area, batas waktu & foto before kamera langsung.
                         </p>
                     </div>
                     <div class="choice-action-text" id="action-text-input">
-                        <span>Buat Tugas Baru (SPV)</span>
+                        <span>Buat Temuan & Rencana (SPV)</span>
                         <i class="fas fa-arrow-right"></i>
                     </div>
                 </div>
@@ -1288,7 +1706,7 @@
                         <span class="choice-badge badge-all">Semua Role</span>
                         <h2 class="choice-title">MONITORING</h2>
                         <p class="choice-desc">
-                            Monitoring seluruh tugas & progres 5 tahap per area: RM, BK, CPO, dan Gudang Rental (Kalijaga, Gebang, Samping).
+                            Monitoring seluruh tindakan & progres per area: RM, BK, CPO, dan Gudang Rental (Kalijaga, Gebang, Samping).
                         </p>
                     </div>
                     <div class="choice-action-text">
@@ -1311,8 +1729,8 @@
             </div>
 
             <div class="form-card">
-                <h2 style="font-family: 'Rajdhani', sans-serif; font-size: 1.35rem; color: #fff; margin-bottom: 14px;">
-                    <i class="fas fa-circle-plus" style="color: var(--primary);"></i> SPV: Form Buat Tugas Baru
+                <h2 style="font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-circle-plus" style="color: var(--primary);"></i> Form Temuan Masalah & Improvement
                 </h2>
 
                 <form id="actionForm" onsubmit="App.handleSaveAction(event)">
@@ -1324,13 +1742,13 @@
                             <div class="area-radio-btn active" data-area="RM" onclick="App.selectFormArea('RM', this)">RM</div>
                             <div class="area-radio-btn" data-area="BK" onclick="App.selectFormArea('BK', this)">BK</div>
                             <div class="area-radio-btn" data-area="CPO" onclick="App.selectFormArea('CPO', this)">CPO</div>
-                            <div class="area-radio-btn" data-area="RENTAL" onclick="App.selectFormArea('RENTAL', this)">GUDANG RENTAL</div>
+                            <div class="area-radio-btn" data-area="RENTAL" onclick="App.selectFormArea('RENTAL', this)">RENTAL</div>
                         </div>
                         <input type="hidden" id="form-area" value="RM">
 
                         <!-- Sub Rental Selector -->
                         <div class="sub-rental-box" id="sub-rental-box">
-                            <div style="font-size: 0.72rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Pilih Lokasi Gudang Rental:</div>
+                            <div style="font-size: 0.7rem; font-weight: 800; color: var(--primary); text-transform: uppercase;">Lokasi Gudang Rental:</div>
                             <div class="sub-rental-grid">
                                 <div class="sub-rental-btn active" data-sub="Kalijaga" onclick="App.selectSubRental('Kalijaga', this)">Kalijaga</div>
                                 <div class="sub-rental-btn" data-sub="Gebang" onclick="App.selectSubRental('Gebang', this)">Gebang</div>
@@ -1340,21 +1758,28 @@
                         </div>
                     </div>
 
-                    <!-- 2. Nama / Keterangan Action -->
+                    <!-- 2. Temuan Masalah (Ganti Nama/Keterangan Tugas) -->
                     <div class="form-group">
-                        <label class="form-label" for="form-title">2. Nama / Keterangan Tugas <span class="req">*</span></label>
-                        <input type="text" id="form-title" class="form-input" placeholder="Contoh: Penataan Pallet Kosong & Pembersihan Lorong" required>
+                        <label class="form-label" for="form-problem">2. Temuan Masalah <span class="req">*</span></label>
+                        <input type="text" id="form-problem" class="form-input" placeholder="Contoh: Pallet rusak berserakan di jalur manuver Silo 3" required>
                     </div>
 
+                    <!-- 3. Rencana Improvement (Kolom Baru) -->
                     <div class="form-group">
-                        <label class="form-label" for="form-desc">Detail / Lokasi Spesifik</label>
-                        <textarea id="form-desc" class="form-textarea" placeholder="Detail titik lokasi atau instruksi tambahan pekerjaan..."></textarea>
+                        <label class="form-label" for="form-improvement">3. Rencana Improvement <span class="req">*</span></label>
+                        <textarea id="form-improvement" class="form-textarea" placeholder="Contoh: Pemindahan pallet rusak ke area karantina & pengecatan ulang batas marka jalan..." required></textarea>
                     </div>
 
-                    <!-- 3. PIC & Due Date -->
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                    <!-- Detail / Lokasi Spesifik -->
+                    <div class="form-group">
+                        <label class="form-label" for="form-desc">4. Detail Titik Lokasi / Catatan Khusus</label>
+                        <input type="text" id="form-desc" class="form-input" placeholder="Contoh: Sisi Selatan Bay 2 dekat pintu rolling">
+                    </div>
+
+                    <!-- 4. PIC & Due Date -->
+                    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
                         <div class="form-group">
-                            <label class="form-label" for="form-pic">3. Assign PIC <span class="req">*</span></label>
+                            <label class="form-label" for="form-pic">5. Assign PIC <span class="req">*</span></label>
                             <select id="form-pic" class="form-select" required>
                                 <option value="Andi">Andi (RM)</option>
                                 <option value="Budi">Budi (Transport)</option>
@@ -1366,19 +1791,21 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label" for="form-due-date">4. Due Date <span class="req">*</span></label>
+                            <label class="form-label" for="form-due-date">6. Due Date <span class="req">*</span></label>
                             <input type="date" id="form-due-date" class="form-input" required>
                         </div>
                     </div>
 
-                    <!-- 4. Foto Before (Cloudinary) -->
+                    <!-- 5. Foto Before (Strict Direct Camera Only) -->
                     <div class="form-group">
-                        <label class="form-label">5. Foto Before (Upload ke Cloudinary)</label>
-                        <div class="upload-touch-box" id="upload-box-before" onclick="document.getElementById('file-before').click()">
-                            <i class="fas fa-cloud-arrow-up"></i>
-                            <div style="font-size: 0.8rem; font-weight: 700; color: #fff;">Ambil Foto / Upload Before ke Cloudinary</div>
-                            <div style="font-size: 0.65rem; color: var(--text-muted);">https://res.cloudinary.com/doxv3khr7/image/upload/...</div>
+                        <label class="form-label">7. Ambil Foto Temuan (Kamera Langsung)</label>
+                        <div class="upload-touch-box" id="upload-box-before" onclick="App.triggerCamera('before')">
+                            <i class="fas fa-camera"></i>
+                            <div style="font-size: 0.8rem; font-weight: 800; color: var(--text-primary);">Buka Kamera Langsung (Foto Temuan)</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">Langsung ambil foto dari kamera smartphone/device</div>
                         </div>
+                        
+                        <!-- Native camera fallback input with capture="environment" -->
                         <input type="file" id="file-before" accept="image/*" capture="environment" style="display:none;" onchange="App.handleUploadBefore(event)">
                         
                         <div class="upload-preview-wrap" id="preview-before-wrap">
@@ -1390,11 +1817,11 @@
                         <input type="hidden" id="form-photo-before">
                     </div>
 
-                    <!-- 5. Checklist 5 Tahap Standar -->
+                    <!-- 6. Checklist 5 Tahap Standar -->
                     <div class="form-group">
-                        <label class="form-label">6. Standar 5 Tahapan Progress PIC</label>
-                        <p style="font-size: 0.74rem; color: var(--text-muted); margin-bottom: 8px;">
-                            Alur pengerjaan PIC: Persiapan, Pelaksanaan, Finishing, Area sudah clean, Hasil sesuai target.
+                        <label class="form-label">8. Standar 5 Tahapan Progress PIC</label>
+                        <p style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px;">
+                            Alur eksekusi PIC: Persiapan, Pelaksanaan, Finishing, Area clean, Hasil sesuai target.
                         </p>
                         <div class="checklist-container" id="checklist-builder-container"></div>
                         <button type="button" class="btn-add-item" onclick="App.addChecklistBuilderItem()">
@@ -1403,7 +1830,7 @@
                     </div>
 
                     <button type="submit" class="btn-submit-main">
-                        <i class="fas fa-paper-plane"></i> Terbitkan Tugas ke PIC
+                        <i class="fas fa-paper-plane"></i> Terbitkan Action ke PIC
                     </button>
 
                 </form>
@@ -1419,17 +1846,17 @@
                 <button class="btn-back" onclick="App.showHome()">
                     <i class="fas fa-arrow-left"></i> Menu
                 </button>
-                <button class="btn-back" id="btn-header-input" style="background: rgba(6, 182, 212, 0.15); color: var(--primary); border-color: rgba(6, 182, 212, 0.3);" onclick="App.handleClickCreateAction()">
+                <button class="btn-back" id="btn-header-input" style="background: rgba(2, 132, 199, 0.15); color: var(--primary); border-color: rgba(2, 132, 199, 0.3);" onclick="App.handleClickCreateAction()">
                     <i class="fas fa-plus"></i> + Input Action
                 </button>
             </div>
 
-            <!-- 1. Area Selector: RM | BK | CPO | GUDANG RENTAL -->
+            <!-- 1. Area Selector: RM | BK | CPO | RENTAL -->
             <div class="monitoring-area-nav">
                 <div class="area-nav-btn active" data-nav="RM" onclick="App.selectMonitoringArea('RM')">RM</div>
                 <div class="area-nav-btn" data-nav="BK" onclick="App.selectMonitoringArea('BK')">BK</div>
                 <div class="area-nav-btn" data-nav="CPO" onclick="App.selectMonitoringArea('CPO')">CPO</div>
-                <div class="area-nav-btn" data-nav="RENTAL" onclick="App.selectMonitoringArea('RENTAL')">GUDANG RENTAL</div>
+                <div class="area-nav-btn" data-nav="RENTAL" onclick="App.selectMonitoringArea('RENTAL')">RENTAL</div>
             </div>
 
             <!-- 2. Sub-Rental Bar (Muncul jika pilih GUDANG RENTAL) -->
@@ -1465,7 +1892,7 @@
     </main>
 
     <!-- ==================================================================
-         ACTION DETAIL & UPDATE MODAL (STRICT ROLE PERMISSION ENFORCEMENT)
+         MODAL 1: ACTION DETAIL & UPDATE MODAL
          ================================================================== -->
     <div class="modal-overlay" id="action-modal">
         <div class="modal-box">
@@ -1477,13 +1904,32 @@
             </div>
 
             <div class="modal-body">
-                <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 4px;" id="modal-title">Judul Tugas</h3>
-                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;" id="modal-desc">Keterangan...</p>
+                <!-- Temuan Masalah & Rencana Improvement Highlight Box -->
+                <div class="modal-findings-card">
+                    <div class="modal-finding-row">
+                        <div class="modal-finding-label" style="color: var(--accent-crimson);">
+                            <i class="fas fa-triangle-exclamation"></i> Temuan Masalah
+                        </div>
+                        <div class="modal-finding-val" id="modal-problem">Temuan masalah...</div>
+                    </div>
+                    <div class="modal-finding-row" style="margin-top: 8px;">
+                        <div class="modal-finding-label" style="color: var(--accent-emerald);">
+                            <i class="fas fa-lightbulb"></i> Rencana Improvement
+                        </div>
+                        <div class="modal-finding-val" id="modal-improvement">Rencana improvement...</div>
+                    </div>
+                    <div class="modal-finding-row" id="modal-desc-row" style="margin-top: 6px; display: none;">
+                        <div class="modal-finding-label" style="color: var(--text-muted);">
+                            <i class="fas fa-location-dot"></i> Detail Lokasi / Catatan
+                        </div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary);" id="modal-desc">Lokasi...</div>
+                    </div>
+                </div>
 
                 <!-- 5-Step Stepper Progress Bar -->
                 <div class="stepper-track-wrap">
                     <div class="stepper-header-row">
-                        <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Tahapan Progres (5 Tahap):</span>
+                        <span style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Tahapan Progres (5 Tahap):</span>
                         <span class="stepper-pct-badge" id="modal-stepper-pct">0%</span>
                     </div>
                     <div class="stepper-steps-bar" id="modal-stepper-bars">
@@ -1496,16 +1942,16 @@
                 </div>
 
                 <div class="detail-meta-box">
-                    <div><b style="color:var(--text-muted)">Area:</b> <span id="modal-area" style="color:#fff">RM</span></div>
-                    <div><b style="color:var(--text-muted)">PIC:</b> <span id="modal-pic" style="color:#fff">Andi</span></div>
-                    <div><b style="color:var(--text-muted)">Due Date:</b> <span id="modal-due" style="color:#fff">2026-08-20</span></div>
+                    <div><b style="color:var(--text-muted)">Area:</b> <span id="modal-area" style="color:var(--text-primary); font-weight:700;">RM</span></div>
+                    <div><b style="color:var(--text-muted)">PIC:</b> <span id="modal-pic" style="color:var(--text-primary); font-weight:700;">Andi</span></div>
+                    <div><b style="color:var(--text-muted)">Due Date:</b> <span id="modal-due" style="color:var(--text-primary); font-weight:700;">2026-08-20</span></div>
                     <div><b style="color:var(--text-muted)">Status:</b> <span id="modal-status-text" style="color:var(--primary); font-weight:800;">OPEN</span></div>
                 </div>
 
                 <!-- Role Notice in Modal -->
                 <div class="permission-notice-bar" id="modal-permission-notice">
                     <i class="fas fa-circle-info"></i>
-                    <span id="modal-permission-text">Mode SPV: Anda hanya dapat memverifikasi & tidak dapat menceklis progres PIC.</span>
+                    <span id="modal-permission-text">Mode SPV</span>
                 </div>
 
                 <!-- Verification Stamp (Muncul bila VERIFIED) -->
@@ -1514,52 +1960,54 @@
                     <span>TUGAS TERVERIFIKASI & DISELESAIKAN OLEH SPV WAREHOUSE</span>
                 </div>
 
-                <!-- Before & After Photos with Cloudinary Links -->
+                <!-- Before & After Photos (Camera Driven) -->
                 <div class="before-after-grid">
                     <div class="photo-card">
                         <span class="photo-card-tag before">Before</span>
                         <img id="modal-img-before" src="" alt="Before">
                         <div style="font-size:0.58rem; color:var(--text-muted); padding:3px 6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="modal-link-before">
-                            Cloudinary: doxv3khr7
+                            Foto Before
                         </div>
                     </div>
 
                     <div class="photo-card">
                         <span class="photo-card-tag after">After</span>
                         <img id="modal-img-after" src="" alt="After">
+                        
+                        <!-- Native camera fallback input with capture="environment" -->
                         <input type="file" id="file-after" accept="image/*" capture="environment" style="display:none;" onchange="App.handleUploadAfter(event)">
-                        <button type="button" class="btn-upload-after" id="btn-upload-after" onclick="App.handleClickUploadAfter()">
-                            <i class="fas fa-cloud-arrow-up"></i> Upload Foto After (Cloudinary)
+                        <button type="button" class="btn-upload-after" id="btn-upload-after" onclick="App.triggerCamera('after')">
+                            <i class="fas fa-camera"></i> Foto Kamera (After)
                         </button>
                         <div style="font-size:0.58rem; color:var(--text-muted); padding:3px 6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="modal-link-after">
-                            Cloudinary: doxv3khr7
+                            Foto After
                         </div>
                     </div>
                 </div>
 
-                <!-- 5 Tahapan Checklist Interaktif (Strict Access Protection) -->
+                <!-- 5 Tahapan Checklist Interaktif -->
                 <div class="modal-checklist-box">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <span style="font-size: 0.82rem; font-weight: 800; color: var(--primary);">
+                        <span style="font-size: 0.8rem; font-weight: 800; color: var(--primary);">
                             <i class="fas fa-list-check"></i> Progres Checklist 5 Tahap
                         </span>
-                        <span style="font-size: 0.72rem; color: var(--text-muted);" id="modal-checklist-counter">0/5 Selesai</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted); font-weight:700;" id="modal-checklist-counter">0/5 Selesai</span>
                     </div>
                     <div id="modal-checklist-list"></div>
                 </div>
             </div>
 
             <div class="modal-actions-footer">
-                <button class="btn-footer-secondary" onclick="App.shareWhatsApp()">
-                    <i class="fab fa-whatsapp"></i> WA
+                <button class="btn-footer-wa" onclick="App.openWhatsAppShareModal(App.activeActionId)" title="Bagikan Laporan ke WhatsApp">
+                    <i class="fab fa-whatsapp"></i> Bagikan WA
                 </button>
                 
-                <!-- PIC Submit Button (Only PIC can click) -->
+                <!-- PIC Submit Button -->
                 <button class="btn-footer-submit" id="btn-modal-submit" onclick="App.submitCompletion()">
                     <i class="fas fa-check-circle"></i> Selesai (Submit ke SPV)
                 </button>
                 
-                <!-- SPV Verification Button (Only SPV can click) -->
+                <!-- SPV Verification Button -->
                 <button class="btn-footer-verify" id="btn-modal-verify" onclick="App.verifyAction()">
                     <i class="fas fa-shield-check"></i> Verifikasi & Approve (SPV)
                 </button>
@@ -1567,13 +2015,97 @@
         </div>
     </div>
 
+    <!-- ==================================================================
+         MODAL 2: WHATSAPP SHARE PREVIEW MODAL (DETAIL 1-POINT VIEW)
+         ================================================================== -->
+    <div class="modal-overlay" id="wa-share-modal">
+        <div class="modal-box" style="max-width: 500px;">
+            <div class="modal-head">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fab fa-whatsapp" style="color: #25d366; font-size: 1.2rem;"></i>
+                    <span style="font-size: 0.95rem; font-weight: 800; color: var(--text-primary);">Bagikan Laporan Pekerjaan</span>
+                </div>
+                <button class="btn-close-modal" onclick="App.closeWhatsAppModal()">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="wa-share-card">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <span class="action-area-badge" id="wa-card-area">RM</span>
+                        <span class="action-status-pill" id="wa-card-status">ON PROGRESS</span>
+                    </div>
+                    <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 4px;" id="wa-card-problem">
+                        Temuan Masalah
+                    </div>
+                    <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 8px;" id="wa-card-improvement">
+                        Rencana Improvement
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted);">
+                        <span><i class="fas fa-user"></i> PIC: <b id="wa-card-pic" style="color:var(--text-primary)">Andi</b></span>
+                        <span><i class="fas fa-calendar-day"></i> Due: <b id="wa-card-due" style="color:var(--text-primary)">2026-08-20</b></span>
+                    </div>
+                </div>
+
+                <label class="form-label" style="margin-bottom: 4px;">Teks Laporan WhatsApp (Format Siap Kirim):</label>
+                <div class="wa-text-preview" id="wa-preview-text">...</div>
+
+                <!-- Optional direct phone input -->
+                <div class="form-group" style="margin-bottom: 8px;">
+                    <label class="form-label" for="wa-custom-phone" style="font-size: 0.7rem;">Kirim ke No. WA Tertentu (Opsional):</label>
+                    <input type="tel" id="wa-custom-phone" class="form-input" placeholder="Contoh: 08123456789 atau 628123456789">
+                </div>
+            </div>
+
+            <div class="modal-actions-footer">
+                <button type="button" class="btn-footer-submit" style="background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--border-glass);" onclick="App.copyWhatsAppText()">
+                    <i class="fas fa-copy"></i> Salin Teks
+                </button>
+                <button type="button" class="btn-footer-submit" style="background: #25d366; color: #fff;" onclick="App.sendWhatsAppDirect()">
+                    <i class="fab fa-whatsapp"></i> Buka WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================================================================
+         MODAL 3: IN-APP LIVE CAMERA VIEWFINDER (KAMERA LANGSUNG)
+         ================================================================== -->
+    <div id="camera-modal">
+        <div class="camera-top-bar">
+            <div style="font-size: 0.9rem; font-weight: 800;">
+                <i class="fas fa-camera"></i> <span id="camera-modal-title">Ambil Foto Temuan</span>
+            </div>
+            <button class="btn-camera-ctrl" onclick="App.closeCameraModal()">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="camera-viewport-wrap">
+            <video id="camera-video" autoplay playsinline></video>
+            <div class="camera-guide-box"></div>
+            <canvas id="camera-canvas"></canvas>
+        </div>
+
+        <div class="camera-controls-bottom">
+            <button class="btn-camera-ctrl" onclick="App.switchCamera()" title="Ganti Kamera Depan/Belakang">
+                <i class="fas fa-camera-rotate"></i>
+            </button>
+            <button class="btn-shutter" onclick="App.captureLivePhoto()" title="Ambil Foto"></button>
+            <button class="btn-camera-ctrl" onclick="App.triggerNativeFileInput()" title="Gunakan Kamera Sistem">
+                <i class="fas fa-mobile-screen"></i>
+            </button>
+        </div>
+    </div>
+
 <script>
 /**
  * SMART WAREHOUSE - ACTION & IMPROVEMENT ENGINE
  * Cloudinary: https://res.cloudinary.com/doxv3khr7/image/upload
- * Strict Permissions: PIC cannot input action; SPV cannot check PIC progress.
  */
-const STORAGE_KEY = 'SMART_WH_CLOUDINARY_V1';
+const STORAGE_KEY = 'SMART_WH_CLOUDINARY_V2';
+const THEME_KEY = 'SMART_WH_THEME';
 const CLOUDINARY_BASE = 'https://res.cloudinary.com/doxv3khr7/image/upload';
 
 // 5 Standard Stages
@@ -1590,12 +2122,14 @@ function getCloudinarySample(tag, colorCode) {
     return `${CLOUDINARY_BASE}/w_600,h_400,c_fill,b_rgb:${colorCode}/co_rgb:ffffff,l_text:Arial_22_bold:${encodeURIComponent(tag)}/v1723730000/sample.jpg`;
 }
 
-// Initial Seed Data with Cloudinary links
+// Initial Seed Data with Temuan Masalah & Rencana Improvement
 const SEED_DATA = [
     {
         id: 'ACT-001',
         title: 'Penataan Tumpukan Jagung Silo 3',
-        desc: 'Re-bagging butiran jagung tercecer dan susun rapi di pallet standar.',
+        problemFinding: 'Penataan Tumpukan Jagung Silo 3 (Ceceran butiran jagung di lantai bay loading)',
+        improvementPlan: 'Re-bagging butiran jagung tercecer dan susun rapi di pallet standar bertingkat.',
+        desc: 'Silo 3 Row B, dekat intake elevator.',
         area: 'RM',
         subRental: '',
         pic: 'Andi',
@@ -1614,7 +2148,9 @@ const SEED_DATA = [
     {
         id: 'ACT-002',
         title: 'Pengecatan Rambu & Marka Jalur Loader',
-        desc: 'Pengecatan ulang garis kuning batas manuver loader di Bay 2.',
+        problemFinding: 'Garis batas manuver wheel loader pudar dan tidak terlihat di Bay 2',
+        improvementPlan: 'Pengecatan ulang garis kuning traffic line batas aman manuver loader.',
+        desc: 'Bay 2 RM - Area Manuver Utama',
         area: 'RM',
         subRental: '',
         pic: 'Budi',
@@ -1633,7 +2169,9 @@ const SEED_DATA = [
     {
         id: 'ACT-003',
         title: 'Sortir Pallet Rusak & Penataan Bay B',
-        desc: 'Pisahkan pallet rusak ke scrap karantina dan susun pallet bagus.',
+        problemFinding: 'Pallet pecah berserakan menghalangi forklift di Bay Bahan Kemas',
+        improvementPlan: 'Pisahkan pallet rusak ke scrap karantina dan susun rapi pallet grade A.',
+        desc: 'Gudang BK Bay B',
         area: 'BK',
         subRental: '',
         pic: 'Deni',
@@ -1652,7 +2190,9 @@ const SEED_DATA = [
     {
         id: 'ACT-004',
         title: 'Pemasangan Drip Tray Pompa CPO #2',
-        desc: 'Pasang wadah penampung tetesan pompa agar tidak mengotori parit.',
+        problemFinding: 'Tetesan minyak CPO mengotori lantai saluran drainase pompa #2',
+        improvementPlan: 'Pasang wadah drip tray stainless penampung tetesan pompa CPO.',
+        desc: 'CPO Tank Farm Pompa Discharge 2',
         area: 'CPO',
         subRental: '',
         pic: 'Siti',
@@ -1671,7 +2211,9 @@ const SEED_DATA = [
     {
         id: 'ACT-005',
         title: 'Pengecatan Garis Forklift Kalijaga',
-        desc: 'Pengecatan jalur lintasan forklift di gudang rental Kalijaga.',
+        problemFinding: 'Tidak ada pembatas jalur pejalan kaki & jalur forklift di Kalijaga',
+        improvementPlan: 'Pengecatan garis kuning dan simbol forklift untuk standar safety K3.',
+        desc: 'Gudang Rental Kalijaga Lorong Utama',
         area: 'RENTAL',
         subRental: 'Kalijaga',
         pic: 'Eko',
@@ -1690,7 +2232,9 @@ const SEED_DATA = [
     {
         id: 'ACT-006',
         title: 'Pemasangan Lampu LED Ramp Gebang',
-        desc: 'Pemasangan 3 unit lampu LED Highbay di ramp loading Gebang.',
+        problemFinding: 'Pencahayaan ramp loading Gebang redup pada shift malam',
+        improvementPlan: 'Pemasangan 3 unit lampu LED Highbay 150W di atas ramp loading.',
+        desc: 'Gudang Rental Gebang Ramp 1 & 2',
         area: 'RENTAL',
         subRental: 'Gebang',
         pic: 'Rian',
@@ -1709,7 +2253,9 @@ const SEED_DATA = [
     {
         id: 'ACT-007',
         title: 'Pemasangan Wiremesh Pest Control Samping',
-        desc: 'Tutup kisi ventilasi bawah dengan kawat strimin anti tikus/burung.',
+        problemFinding: 'Kisi ventilasi bawah berlubang rentan dimasuki hama tikus & burung',
+        improvementPlan: 'Tutup seluruh kisi ventilasi bawah dengan kawat strimin kawat galvanis rapat.',
+        desc: 'Gudang Rental Samping Dinding Timur',
         area: 'RENTAL',
         subRental: 'Samping',
         pic: 'Eko',
@@ -1727,27 +2273,15 @@ const SEED_DATA = [
     }
 ];
 
-// ======================================================================
-// GOOGLE SPREADSHEET WEB APP URL
-// ======================================================================
-// LANGKAH PENTING: Paste URL Web App hasil Deploy Apps Script Anda di sini.
-// Contoh: 'https://script.google.com/macros/s/AKfycbx...xxxxx/exec'
-// Jika kosong (''), data hanya tersimpan di localStorage (offline).
 const SPREADSHEET_URL = 'https://script.google.com/macros/s/AKfycbw5PL2GaSrYiYAngFCCjfYgrjFRP-XILlbTYcJvLy3P9u_4bqFIX__yBE4kfz9MWXIO_A/exec';
-// ======================================================================
 
-// Helper: Kirim data ke Google Spreadsheet via Apps Script Web App
-// Menggunakan GET + mode: 'no-cors' agar tidak diblokir CORS pada redirect Google Apps Script
+// Sync to Sheet Helper
 async function syncToSheet(payload) {
-    if (!SPREADSHEET_URL) {
-        console.log('[SYNC] SPREADSHEET_URL belum diisi, data hanya di localStorage.');
-        return { status: 'skipped', message: 'URL belum diisi' };
-    }
+    if (!SPREADSHEET_URL) return { status: 'skipped' };
     try {
         const dataParam = encodeURIComponent(JSON.stringify(payload));
         const url = `${SPREADSHEET_URL}?action=sync&data=${dataParam}`;
         
-        // Gunakan mode: 'no-cors' agar browser mengizinkan request redirect ke server Google
         await fetch(url, {
             method: 'GET',
             mode: 'no-cors',
@@ -1755,34 +2289,19 @@ async function syncToSheet(payload) {
             redirect: 'follow'
         });
         
-        console.log('[SYNC] Request GET terkirim ke Spreadsheet (no-cors):', payload.actionType);
-        
-        // Tampilkan notifikasi sukses
         Swal.fire({
             toast: true,
             position: 'bottom-end',
             icon: 'success',
             title: '✅ Sinkronisasi Spreadsheet Berhasil',
             showConfirmButton: false,
-            timer: 1800,
-            background: '#111827', color: '#fff'
+            timer: 1600,
+            background: App.isDark() ? '#111827' : '#ffffff',
+            color: App.isDark() ? '#fff' : '#0f172a'
         });
-        
         return { status: 'success' };
     } catch (err) {
-        console.error('[SYNC] Gagal kirim ke Spreadsheet:', err);
-        
-        // Fallback: gunakan image tag (paling aman dari batasan CORS)
-        try {
-            const dataParam = encodeURIComponent(JSON.stringify(payload));
-            const url = `${SPREADSHEET_URL}?action=sync&data=${dataParam}`;
-            const img = new Image();
-            img.src = url;
-            console.log('[SYNC] Fallback Image Tag terkirim:', payload.actionType);
-        } catch (e2) {
-            console.error('[SYNC] Fallback juga gagal:', e2);
-        }
-        
+        console.error('[SYNC] Gagal:', err);
         return { status: 'error', message: err.message };
     }
 }
@@ -1790,14 +2309,29 @@ async function syncToSheet(payload) {
 const App = {
     actions: [],
     currentRole: 'SPV',
+    currentTheme: 'light', // Default Light Theme
     currentMonitoringArea: 'RM',
     currentMonitoringSubRental: 'Kalijaga',
     isFilterMyOnly: false,
     activeActionId: null,
+    
+    // Live Camera State
+    cameraTarget: 'before', // 'before' | 'after'
+    cameraStream: null,
+    cameraFacingMode: 'environment', // 'environment' | 'user'
 
     init() {
+        this.initTheme();
+        
         const saved = localStorage.getItem(STORAGE_KEY);
         this.actions = saved ? JSON.parse(saved) : SEED_DATA;
+        
+        // Ensure problemFinding & improvementPlan exist on old saved items
+        this.actions.forEach(a => {
+            if (!a.problemFinding) a.problemFinding = a.title || 'Temuan Masalah';
+            if (!a.improvementPlan) a.improvementPlan = a.desc || 'Rencana Perbaikan';
+        });
+
         if (!saved) this.save();
 
         this.checkOverdue();
@@ -1805,11 +2339,51 @@ const App = {
         this.renderChecklistBuilder();
         this.updateRoleUI();
         this.showHome();
+    },
 
-        // Tampilkan peringatan jika SPREADSHEET_URL belum diisi
-        if (!SPREADSHEET_URL) {
-            console.warn('⚠️ SPREADSHEET_URL kosong. Data tidak akan tersinkronisasi ke Google Spreadsheet.');
+    // =========================================================================
+    // THEME MANAGEMENT (DEFAULT LIGHT + TOGGLE)
+    // =========================================================================
+    initTheme() {
+        const savedTheme = localStorage.getItem(THEME_KEY) || 'light';
+        this.applyTheme(savedTheme);
+    },
+
+    applyTheme(theme) {
+        this.currentTheme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem(THEME_KEY, theme);
+        
+        const icon = document.getElementById('theme-icon');
+        if (icon) {
+            if (theme === 'dark') {
+                icon.className = 'fas fa-moon';
+                icon.style.color = '#38bdf8';
+            } else {
+                icon.className = 'fas fa-sun';
+                icon.style.color = '#f59e0b';
+            }
         }
+    },
+
+    toggleTheme() {
+        const newTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+        this.applyTheme(newTheme);
+        
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: `Tema beralih ke: ${newTheme === 'dark' ? 'Gelap 🌙' : 'Terang ☀️'}`,
+            showConfirmButton: false,
+            timer: 1200,
+            background: this.isDark() ? '#111827' : '#ffffff',
+            color: this.isDark() ? '#fff' : '#0f172a'
+        });
+    },
+
+    isDark() {
+        return this.currentTheme === 'dark';
     },
 
     save() {
@@ -1859,8 +2433,8 @@ const App = {
             title: `Beralih ke Role: ${this.getRoleName()}`,
             showConfirmButton: false,
             timer: 1500,
-            background: '#111827',
-            color: '#fff'
+            background: this.isDark() ? '#111827' : '#ffffff',
+            color: this.isDark() ? '#fff' : '#0f172a'
         });
     },
 
@@ -1877,7 +2451,7 @@ const App = {
     getRoleName() {
         if (this.currentRole === 'SPV') return 'SPV Warehouse';
         if (this.currentRole.startsWith('PIC')) return `PIC ${this.getPicName()}`;
-        return 'Viewer / Management';
+        return 'Viewer / Manajemen';
     },
 
     updateRoleUI() {
@@ -1890,7 +2464,6 @@ const App = {
         roleTag.className = `role-tag-pill ${isSpv ? 'spv' : isPic ? 'pic' : 'view'}`;
         document.getElementById('role-switcher').value = this.currentRole;
 
-        // PIC Assigned Banner
         const picBanner = document.getElementById('pic-assigned-banner');
         const cardInput = document.getElementById('card-btn-input');
         const badgeInput = document.getElementById('badge-input-role');
@@ -1902,7 +2475,6 @@ const App = {
             const myTasks = this.actions.filter(a => a.pic === picName && a.status !== 'VERIFIED');
             document.getElementById('pic-tasks-count').innerText = `${myTasks.length} Tugas aktif ditugaskan ke Anda`;
             
-            // Disable Input Action for PIC
             cardInput.classList.add('disabled');
             badgeInput.className = 'choice-badge badge-locked';
             badgeInput.innerText = 'Terkunci (PIC)';
@@ -1912,19 +2484,18 @@ const App = {
             cardInput.classList.remove('disabled');
             badgeInput.className = 'choice-badge badge-spv';
             badgeInput.innerText = 'Khusus SPV';
-            actionTextInput.innerHTML = `<span>Buat Tugas Baru (SPV)</span> <i class="fas fa-arrow-right"></i>`;
+            actionTextInput.innerHTML = `<span>Buat Temuan & Rencana (SPV)</span> <i class="fas fa-arrow-right"></i>`;
         }
     },
 
-    // Strict Check: Only SPV can open create action
     handleClickCreateAction() {
         if (this.currentRole !== 'SPV') {
             Swal.fire({
                 icon: 'error',
                 title: 'Akses Dibatasi!',
-                html: `Role Anda saat ini adalah <b>${this.getRoleName()}</b>.<br>Hanya <b>SPV Warehouse</b> yang memiliki wewenang untuk membuat action / tugas baru.`,
-                background: '#111827',
-                color: '#fff',
+                html: `Role Anda saat ini adalah <b>${this.getRoleName()}</b>.<br>Hanya <b>SPV Warehouse</b> yang berwenang membuat action & improvement baru.`,
+                background: this.isDark() ? '#111827' : '#ffffff',
+                color: this.isDark() ? '#fff' : '#0f172a',
                 confirmButtonColor: '#ef4444'
             });
             return;
@@ -1937,7 +2508,6 @@ const App = {
         this.showMonitoring();
     },
 
-    // Navigation
     showHome() {
         this.isFilterMyOnly = false;
         document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
@@ -2006,26 +2576,115 @@ const App = {
         container.appendChild(div);
     },
 
-    // Cloudinary Upload Handler (REAL API)
-    async handleUploadBefore(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    // =========================================================================
+    // DIRECT CAMERA CAPTURE (STRICT NO GALLERY SELECTION)
+    // =========================================================================
+    triggerCamera(target) {
+        this.cameraTarget = target; // 'before' | 'after'
+        
+        // Try WebRTC in-app live camera first
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            this.openLiveCamera(target);
+        } else {
+            // Native direct camera fallback
+            this.triggerNativeFileInput();
+        }
+    },
 
-        // PENTING: Ganti 'NAMA_PRESET_ANDA' dengan nama Upload Preset (Unsigned) dari dashboard Cloudinary Anda
-        const UPLOAD_PRESET = 'simple-improvement'; // Contoh default Cloudinary
+    triggerNativeFileInput() {
+        this.closeCameraModal();
+        if (this.cameraTarget === 'before') {
+            document.getElementById('file-before').click();
+        } else {
+            document.getElementById('file-after').click();
+        }
+    },
 
+    async openLiveCamera(target) {
+        const modal = document.getElementById('camera-modal');
+        const titleEl = document.getElementById('camera-modal-title');
+        titleEl.innerText = target === 'before' ? 'Ambil Foto Temuan Masalah' : 'Ambil Foto Hasil Selesai (After)';
+        
+        modal.classList.add('active');
+        await this.startCameraStream();
+    },
+
+    async startCameraStream() {
+        const video = document.getElementById('camera-video');
+        if (this.cameraStream) {
+            this.cameraStream.getTracks().forEach(track => track.stop());
+        }
+
+        try {
+            const constraints = {
+                video: {
+                    facingMode: { ideal: this.cameraFacingMode },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: false
+            };
+
+            this.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = this.cameraStream;
+        } catch (err) {
+            console.warn('[CAMERA] WebRTC direct error, using native capture fallback:', err);
+            this.triggerNativeFileInput();
+        }
+    },
+
+    switchCamera() {
+        this.cameraFacingMode = this.cameraFacingMode === 'environment' ? 'user' : 'environment';
+        this.startCameraStream();
+    },
+
+    closeCameraModal() {
+        const modal = document.getElementById('camera-modal');
+        modal.classList.remove('active');
+        if (this.cameraStream) {
+            this.cameraStream.getTracks().forEach(track => track.stop());
+            this.cameraStream = null;
+        }
+    },
+
+    captureLivePhoto() {
+        const video = document.getElementById('camera-video');
+        const canvas = document.getElementById('camera-canvas');
+        
+        if (!video || !video.videoWidth) {
+            this.triggerNativeFileInput();
+            return;
+        }
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(blob => {
+            this.closeCameraModal();
+            if (this.cameraTarget === 'before') {
+                this.processCapturedPhoto(blob, 'before');
+            } else {
+                this.processCapturedPhoto(blob, 'after');
+            }
+        }, 'image/jpeg', 0.85);
+    },
+
+    async processCapturedPhoto(blobOrFile, target) {
+        const UPLOAD_PRESET = 'simple-improvement';
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', blobOrFile);
         formData.append('upload_preset', UPLOAD_PRESET);
-        formData.append('folder', 'smart-warehouse'); // Opsional: folder di cloudinary
+        formData.append('folder', 'smart-warehouse');
 
-        // Tampilkan loading state
         Swal.fire({
-            title: 'Mengunggah Foto...',
+            title: 'Mengunggah Foto Kamera...',
             text: 'Harap tunggu, foto sedang dikirim ke Cloudinary',
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); },
-            background: '#111827', color: '#fff'
+            background: this.isDark() ? '#111827' : '#ffffff',
+            color: this.isDark() ? '#fff' : '#0f172a'
         });
 
         try {
@@ -2038,31 +2697,74 @@ const App = {
             if (data.secure_url) {
                 const cloudUrl = data.secure_url;
                 
-                document.getElementById('form-photo-before').value = cloudUrl; 
-                document.getElementById('img-preview-before').src = cloudUrl;
-                document.getElementById('upload-box-before').style.display = 'none';
-                document.getElementById('preview-before-wrap').style.display = 'block';
-                
+                if (target === 'before') {
+                    document.getElementById('form-photo-before').value = cloudUrl; 
+                    document.getElementById('img-preview-before').src = cloudUrl;
+                    document.getElementById('upload-box-before').style.display = 'none';
+                    document.getElementById('preview-before-wrap').style.display = 'block';
+                } else {
+                    const act = this.actions.find(a => a.id === this.activeActionId);
+                    if (act) {
+                        act.afterImg = cloudUrl;
+                        act.cloudinaryAfterUrl = cloudUrl;
+                        this.save();
+                        this.openModal(this.activeActionId);
+                        this.renderMonitoringList();
+                    }
+                }
+
                 Swal.fire({
                     toast: true,
                     position: 'top-end',
                     icon: 'success',
-                    title: 'Foto Before tersimpan ke Cloudinary!',
+                    title: `Foto ${target === 'before' ? 'Before' : 'After'} tersimpan ke Cloudinary!`,
                     showConfirmButton: false,
                     timer: 2000,
-                    background: '#111827', color: '#fff'
+                    background: this.isDark() ? '#111827' : '#ffffff',
+                    color: this.isDark() ? '#fff' : '#0f172a'
                 });
             } else {
                 throw new Error(data.error?.message || 'Gagal Upload');
             }
         } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal Upload Cloudinary',
-                text: 'Pastikan Upload Preset Anda benar dan koneksi internet stabil. Error: ' + error.message,
-                background: '#111827', color: '#fff'
-            });
+            // Local DataURL Fallback if Cloudinary is offline
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const localUrl = e.target.result;
+                if (target === 'before') {
+                    document.getElementById('form-photo-before').value = localUrl;
+                    document.getElementById('img-preview-before').src = localUrl;
+                    document.getElementById('upload-box-before').style.display = 'none';
+                    document.getElementById('preview-before-wrap').style.display = 'block';
+                } else {
+                    const act = this.actions.find(a => a.id === this.activeActionId);
+                    if (act) {
+                        act.afterImg = localUrl;
+                        this.save();
+                        this.openModal(this.activeActionId);
+                        this.renderMonitoringList();
+                    }
+                }
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Foto Tersimpan Lokal',
+                    text: 'Tersimpan ke memori perangkat: ' + error.message,
+                    background: this.isDark() ? '#111827' : '#ffffff',
+                    color: this.isDark() ? '#fff' : '#0f172a'
+                });
+            };
+            reader.readAsDataURL(blobOrFile);
         }
+    },
+
+    handleUploadBefore(e) {
+        const file = e.target.files[0];
+        if (file) this.processCapturedPhoto(file, 'before');
+    },
+
+    handleUploadAfter(e) {
+        const file = e.target.files[0];
+        if (file) this.processCapturedPhoto(file, 'after');
     },
 
     removeBeforePhoto() {
@@ -2072,6 +2774,7 @@ const App = {
         document.getElementById('file-before').value = '';
     },
 
+    // Save New Action (SPV)
     handleSaveAction(e) {
         e.preventDefault();
 
@@ -2082,13 +2785,14 @@ const App = {
 
         const area = document.getElementById('form-area').value;
         const subRental = area === 'RENTAL' ? document.getElementById('form-sub-rental').value : '';
-        const title = document.getElementById('form-title').value.trim();
+        const problemFinding = document.getElementById('form-problem').value.trim();
+        const improvementPlan = document.getElementById('form-improvement').value.trim();
         const desc = document.getElementById('form-desc').value.trim();
         const pic = document.getElementById('form-pic').value;
         const dueDate = document.getElementById('form-due-date').value;
         
         let beforeImg = document.getElementById('form-photo-before').value;
-        if (!beforeImg) beforeImg = getCloudinarySample(`BEFORE: ${title}`, '1e293b');
+        if (!beforeImg) beforeImg = getCloudinarySample(`BEFORE: ${problemFinding}`, '1e293b');
 
         const inputs = document.querySelectorAll('#checklist-builder-container input');
         const checklist = [];
@@ -2100,7 +2804,9 @@ const App = {
         const newId = `ACT-${String(this.actions.length + 1).padStart(3, '0')}`;
         const newAct = {
             id: newId,
-            title,
+            title: problemFinding, // Backward compatible title
+            problemFinding,
+            improvementPlan,
             desc,
             area,
             subRental,
@@ -2109,7 +2815,7 @@ const App = {
             status: 'OPEN',
             beforeImg,
             afterImg: '',
-            cloudinaryBeforeUrl: `${CLOUDINARY_BASE}/v${Date.now()}/${newId}_before.jpg`,
+            cloudinaryBeforeUrl: beforeImg,
             cloudinaryAfterUrl: '',
             createdAt: new Date().toISOString(),
             checklist: checklist.length > 0 ? checklist : DEFAULT_5_STAGES.map(t => ({ text: t, done: false }))
@@ -2118,18 +2824,18 @@ const App = {
         this.actions.unshift(newAct);
         this.save();
 
-        // === SYNC KE SPREADSHEET: CREATE_ACTION ===
+        // Sync to Google Sheet
         syncToSheet({
             actionType: 'CREATE_ACTION',
             action: {
                 id: newAct.id,
                 area: newAct.area,
                 subRental: newAct.subRental,
-                title: newAct.title,
-                desc: newAct.desc,
+                title: newAct.problemFinding,
+                desc: `[Improvement]: ${newAct.improvementPlan} | [Lokasi]: ${newAct.desc}`,
                 pic: newAct.pic,
                 dueDate: newAct.dueDate,
-                cloudinaryBeforeUrl: newAct.beforeImg, // URL Cloudinary langsung
+                cloudinaryBeforeUrl: newAct.beforeImg,
                 beforeImg: newAct.beforeImg
             }
         });
@@ -2140,11 +2846,11 @@ const App = {
 
         Swal.fire({
             icon: 'success',
-            title: 'Tugas Berhasil Diterbitkan SPV!',
-            html: `Tugas <b>"${title}"</b> telah ditugaskan ke PIC <b>${pic}</b>.<br><small style="color:var(--text-muted)">Data tersinkronisasi ke Spreadsheet & Cloudinary</small>`,
-            background: '#111827',
-            color: '#fff',
-            confirmButtonColor: '#06b6d4'
+            title: 'Action Berhasil Diterbitkan SPV!',
+            html: `Temuan Masalah <b>"${problemFinding}"</b> telah ditugaskan ke PIC <b>${pic}</b>.`,
+            background: this.isDark() ? '#111827' : '#ffffff',
+            color: this.isDark() ? '#fff' : '#0f172a',
+            confirmButtonColor: '#0284c7'
         }).then(() => {
             this.currentMonitoringArea = area;
             if (subRental) this.currentMonitoringSubRental = subRental;
@@ -2152,7 +2858,7 @@ const App = {
         });
     },
 
-    // Monitoring Area Selector
+    // Monitoring
     selectMonitoringArea(area) {
         this.currentMonitoringArea = area;
         
@@ -2163,11 +2869,10 @@ const App = {
         const subNav = document.getElementById('monitoring-rental-sub-nav');
         if (area === 'RENTAL') {
             subNav.classList.add('show');
-            this.renderMonitoringList();
         } else {
             subNav.classList.remove('show');
-            this.renderMonitoringList();
         }
+        this.renderMonitoringList();
     },
 
     selectMonitoringSubRental(sub) {
@@ -2194,15 +2899,15 @@ const App = {
         } else if (area === 'BK') {
             filtered = this.actions.filter(a => a.area === 'BK');
             areaTitle = 'BAHAN KEMAS (BK)';
-            iconHtml = '<i class="fas fa-boxes-packing" style="color:#3b82f6"></i>';
+            iconHtml = '<i class="fas fa-boxes-packing" style="color:#2563eb"></i>';
         } else if (area === 'CPO') {
             filtered = this.actions.filter(a => a.area === 'CPO');
             areaTitle = 'CPO TANK FARM';
-            iconHtml = '<i class="fas fa-oil-well" style="color:#06b6d4"></i>';
+            iconHtml = '<i class="fas fa-oil-well" style="color:#0284c7"></i>';
         } else if (area === 'RENTAL') {
             filtered = this.actions.filter(a => a.area === 'RENTAL' && a.subRental === sub);
             areaTitle = `GUDANG RENTAL (${sub.toUpperCase()})`;
-            iconHtml = '<i class="fas fa-warehouse" style="color:#10b981"></i>';
+            iconHtml = '<i class="fas fa-warehouse" style="color:#059669"></i>';
         }
 
         if (this.isFilterMyOnly && picName) {
@@ -2225,8 +2930,8 @@ const App = {
             container.innerHTML = `
             <div style="text-align:center; padding:36px 16px; background:var(--bg-surface); border-radius:var(--radius-md); color:var(--text-muted); border:1px dashed var(--border-glass);">
                 <i class="fas fa-inbox fa-2x" style="margin-bottom:8px; opacity:0.5;"></i>
-                <div style="font-size:0.9rem; font-weight:700; color:#fff;">Belum Ada Tugas di Sini</div>
-                <div style="font-size:0.75rem; margin-top:2px;">SPV dapat membuat tugas baru melalui tombol "+ Input Action".</div>
+                <div style="font-size:0.9rem; font-weight:800; color:var(--text-primary);">Belum Ada Temuan Masalah di Sini</div>
+                <div style="font-size:0.75rem; margin-top:2px;">SPV dapat menerbitkan tugas melalui tombol "+ Input Action".</div>
             </div>`;
             return;
         }
@@ -2238,20 +2943,30 @@ const App = {
             const checklistTotal = act.checklist ? act.checklist.length : 5;
             const isOverdue = act.status === 'OVERDUE';
             const isMyTask = picName && act.pic === picName;
+            const problem = act.problemFinding || act.title;
+            const improvement = act.improvementPlan || act.desc || 'Rencana perbaikan belum ditentukan.';
 
             html += `
-            <div class="action-card" onclick="App.openModal('${act.id}')" style="${isMyTask ? 'border-color: rgba(6, 182, 212, 0.4);' : ''}">
+            <div class="action-card" onclick="App.openModal('${act.id}')" style="${isMyTask ? 'border-color: var(--primary);' : ''}">
                 <div class="action-card-header">
                     <span class="action-area-badge">${act.subRental || act.area}</span>
                     <span class="action-status-pill status-${act.status}">${act.status.replace('_', ' ')}</span>
                 </div>
 
-                <div class="action-title">${act.title}</div>
+                <div class="card-problem-title">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <span>${problem}</span>
+                </div>
+
+                <div class="card-improvement-sub">
+                    <i class="fas fa-lightbulb"></i>
+                    <span><b>Rencana:</b> ${improvement}</span>
+                </div>
 
                 <div class="action-meta-row">
                     <div class="action-meta-item">
                         <i class="fas fa-user" style="color:${isMyTask ? 'var(--accent-emerald)' : 'var(--primary)'}"></i> 
-                        <b>${act.pic}</b> ${isMyTask ? '<span style="font-size:0.65rem; background:rgba(16,185,129,0.2); color:var(--accent-emerald); padding:1px 5px; border-radius:3px;">(Saya)</span>' : ''}
+                        <b>${act.pic}</b> ${isMyTask ? '<span style="font-size:0.62rem; background:rgba(5,150,105,0.15); color:var(--accent-emerald); padding:1px 5px; border-radius:3px;">(Saya)</span>' : ''}
                     </div>
                     <div class="action-meta-item ${isOverdue ? 'overdue' : ''}">
                         <i class="fas fa-calendar-day"></i> Due: ${act.dueDate}
@@ -2265,6 +2980,13 @@ const App = {
                     <span>Progress: ${checklistDone}/${checklistTotal} Tahap</span>
                     <span style="color:var(--primary);">${pct}%</span>
                 </div>
+
+                <div class="card-bottom-actions" onclick="event.stopPropagation();">
+                    <span style="font-size:0.68rem; color:var(--text-muted);">ID: <b>${act.id}</b></span>
+                    <button class="btn-card-wa" onclick="App.openWhatsAppShareModal('${act.id}')">
+                        <i class="fab fa-whatsapp"></i> Bagikan WA
+                    </button>
+                </div>
             </div>`;
         });
 
@@ -2277,8 +2999,19 @@ const App = {
         const act = this.actions.find(a => a.id === id);
         if (!act) return;
 
-        document.getElementById('modal-title').innerText = act.title;
-        document.getElementById('modal-desc').innerText = act.desc || 'Tidak ada catatan tambahan.';
+        const problem = act.problemFinding || act.title;
+        const improvement = act.improvementPlan || act.desc || 'Tidak ada catatan rencana khusus.';
+
+        document.getElementById('modal-problem').innerText = problem;
+        document.getElementById('modal-improvement').innerText = improvement;
+        
+        if (act.desc && act.desc !== improvement) {
+            document.getElementById('modal-desc-row').style.display = 'block';
+            document.getElementById('modal-desc').innerText = act.desc;
+        } else {
+            document.getElementById('modal-desc-row').style.display = 'none';
+        }
+
         document.getElementById('modal-area').innerText = act.subRental ? `Rental - ${act.subRental}` : act.area;
         document.getElementById('modal-pic').innerText = act.pic;
         document.getElementById('modal-due').innerText = act.dueDate;
@@ -2310,11 +3043,10 @@ const App = {
         document.getElementById('modal-img-before').src = act.beforeImg || getCloudinarySample('NO BEFORE', '1e293b');
         document.getElementById('modal-img-after').src = act.afterImg || getCloudinarySample('AFTER BELUM ADA', '0f172a');
         
-        // Cloudinary link indicators
-        document.getElementById('modal-link-before').innerText = `Cloudinary: ${act.cloudinaryBeforeUrl || 'https://res.cloudinary.com/doxv3khr7/image/upload/sample_before.jpg'}`;
-        document.getElementById('modal-link-after').innerText = `Cloudinary: ${act.cloudinaryAfterUrl || 'https://res.cloudinary.com/doxv3khr7/image/upload/sample_after.jpg'}`;
+        document.getElementById('modal-link-before').innerText = act.beforeImg ? 'Foto Temuan Before' : 'Belum Ada';
+        document.getElementById('modal-link-after').innerText = act.afterImg ? 'Foto Selesai After' : 'Belum Ada';
 
-        // Role & Permission Logic in Modal
+        // Role & Permission Logic
         const isSpv = this.currentRole === 'SPV';
         const isPic = this.currentRole.startsWith('PIC');
         const isCompleted = act.status === 'COMPLETED';
@@ -2324,15 +3056,15 @@ const App = {
 
         if (isSpv) {
             noticeBox.style.display = 'flex';
-            noticeText.innerHTML = `<b>Mode SPV:</b> Checklist terkunci (hanya PIC yang berhak mencentang). Anda bertugas memverifikasi setelah PIC submit.`;
+            noticeText.innerHTML = `<b>Mode SPV:</b> Anda bertugas memverifikasi & approve setelah PIC menyelesaikan 5 tahap.`;
         } else if (isPic) {
             noticeBox.style.display = 'flex';
-            noticeText.innerHTML = `<b>Mode PIC (${this.getPicName()}):</b> Silakan centang 5 tahap pengerjaan & upload foto After untuk submit.`;
+            noticeText.innerHTML = `<b>Mode PIC (${this.getPicName()}):</b> Silakan centang 5 tahap pengerjaan & ambil foto After dengan kamera.`;
         } else {
             noticeBox.style.display = 'none';
         }
 
-        // Render 5 Tahapan Checklist Items with Strict Protection
+        // Render 5 Tahapan Checklist Items
         const checkContainer = document.getElementById('modal-checklist-list');
         checkContainer.innerHTML = '';
 
@@ -2353,18 +3085,16 @@ const App = {
                     return;
                 }
                 if (isSpv) {
-                    // STRICT: SPV cannot check checklist items!
                     Swal.fire({
                         icon: 'warning',
                         title: 'Akses SPV Dibatasi',
                         html: 'SPV <b>tidak dapat menceklis tahapan pengerjaan</b>.<br>Hanya <b>PIC terkait</b> yang berwenang mengisi progres eksekusi lapangan.',
-                        background: '#111827',
-                        color: '#fff',
+                        background: this.isDark() ? '#111827' : '#ffffff',
+                        color: this.isDark() ? '#fff' : '#0f172a',
                         confirmButtonColor: '#f59e0b'
                     });
                     return;
                 }
-                // PIC checks item
                 App.toggleChecklist(idx);
             };
 
@@ -2384,7 +3114,7 @@ const App = {
         const btnVerify = document.getElementById('btn-modal-verify');
         const btnUploadAfter = document.getElementById('btn-upload-after');
 
-        btnUploadAfter.style.display = isVerified ? 'none' : (isPic ? 'block' : 'none');
+        btnUploadAfter.style.display = isVerified ? 'none' : (isPic ? 'flex' : 'none');
 
         if (isVerified) {
             btnSubmit.style.display = 'none';
@@ -2405,20 +3135,6 @@ const App = {
         this.activeActionId = null;
     },
 
-    handleClickUploadAfter() {
-        if (this.currentRole === 'SPV') {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Akses Upload Dibatasi',
-                text: 'Hanya PIC yang berhak mengunggah foto After hasil pengerjaan.',
-                background: '#111827',
-                color: '#fff'
-            });
-            return;
-        }
-        document.getElementById('file-after').click();
-    },
-
     // PIC Updates Progress
     toggleChecklist(idx) {
         const act = this.actions.find(a => a.id === this.activeActionId);
@@ -2426,7 +3142,6 @@ const App = {
 
         act.checklist[idx].done = !act.checklist[idx].done;
 
-        // Automatic Status Progression
         const pct = this.calcPct(act);
         if (pct === 100 && act.status !== 'VERIFIED') {
             act.status = 'COMPLETED';
@@ -2436,7 +3151,6 @@ const App = {
             act.status = 'OPEN';
         }
 
-        // === SYNC KE SPREADSHEET: PIC_UPDATE (checklist progress) ===
         syncToSheet({
             actionType: 'PIC_UPDATE',
             id: act.id,
@@ -2450,66 +3164,6 @@ const App = {
         this.renderMonitoringList();
     },
 
-    async handleUploadAfter(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const UPLOAD_PRESET = 'simple-improvement'; // Ganti dengan Upload Preset Cloudinary Anda
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', UPLOAD_PRESET);
-        formData.append('folder', 'smart-warehouse');
-
-        Swal.fire({
-            title: 'Mengunggah Foto After...',
-            text: 'Harap tunggu...',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); },
-            background: '#111827', color: '#fff'
-        });
-
-        try {
-            const response = await fetch(`https://api.cloudinary.com/v1_1/doxv3khr7/image/upload`, {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-
-            if (data.secure_url) {
-                const cloudUrl = data.secure_url;
-                const act = this.actions.find(a => a.id === this.activeActionId);
-                
-                if (act) {
-                    act.afterImg = cloudUrl; // Gunakan URL langsung dari Cloudinary
-                    act.cloudinaryAfterUrl = cloudUrl;
-                    this.save();
-                    this.openModal(this.activeActionId);
-                    this.renderMonitoringList();
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Foto After Tersimpan ke Cloudinary!',
-                        html: `<small style="color:var(--primary); word-break:break-all;">${cloudUrl}</small>`,
-                        timer: 2000,
-                        showConfirmButton: false,
-                        background: '#111827',
-                        color: '#fff'
-                    });
-                }
-            } else {
-                throw new Error(data.error?.message || 'Gagal Upload');
-            }
-        } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal Upload Cloudinary',
-                text: 'Pastikan Upload Preset benar. Error: ' + error.message,
-                background: '#111827', color: '#fff'
-            });
-        }
-    },
-
     submitCompletion() {
         const act = this.actions.find(a => a.id === this.activeActionId);
         if (!act) return;
@@ -2519,8 +3173,8 @@ const App = {
                 icon: 'warning',
                 title: 'Akses Ditolak',
                 text: 'SPV tidak dapat mensubmit penyelesaian tugas atas nama PIC.',
-                background: '#111827',
-                color: '#fff'
+                background: this.isDark() ? '#111827' : '#ffffff',
+                color: this.isDark() ? '#fff' : '#0f172a'
             });
             return;
         }
@@ -2534,9 +3188,9 @@ const App = {
                 showCancelButton: true,
                 confirmButtonText: 'Ya, Submit Selesai',
                 cancelButtonText: 'Lengkapi Dulu',
-                background: '#111827',
-                color: '#fff',
-                confirmButtonColor: '#10b981'
+                background: this.isDark() ? '#111827' : '#ffffff',
+                color: this.isDark() ? '#fff' : '#0f172a',
+                confirmButtonColor: '#059669'
             }).then(res => {
                 if (res.isConfirmed) this.finalizeSubmit(act);
             });
@@ -2552,7 +3206,6 @@ const App = {
         this.openModal(this.activeActionId);
         this.renderMonitoringList();
 
-        // === SYNC KE SPREADSHEET: PIC_UPDATE (submit selesai) ===
         syncToSheet({
             actionType: 'PIC_UPDATE',
             id: act.id,
@@ -2565,13 +3218,12 @@ const App = {
             icon: 'success',
             title: 'Tugas Berhasil Disubmit ke SPV!',
             text: 'Status tugas kini COMPLETED & tersinkronisasi ke Spreadsheet.',
-            background: '#111827',
-            color: '#fff',
-            confirmButtonColor: '#10b981'
+            background: this.isDark() ? '#111827' : '#ffffff',
+            color: this.isDark() ? '#fff' : '#0f172a',
+            confirmButtonColor: '#059669'
         });
     },
 
-    // SPV Verifies and Approves Completion
     verifyAction() {
         const act = this.actions.find(a => a.id === this.activeActionId);
         if (!act) return;
@@ -2580,22 +3232,22 @@ const App = {
             Swal.fire({
                 icon: 'error',
                 title: 'Hanya SPV yang berhak memverifikasi!',
-                background: '#111827',
-                color: '#fff'
+                background: this.isDark() ? '#111827' : '#ffffff',
+                color: this.isDark() ? '#fff' : '#0f172a'
             });
             return;
         }
 
         Swal.fire({
-            title: 'Verifikasi & Setujui Tugas?',
-            text: `Apakah hasil pengerjaan "${act.title}" oleh PIC ${act.pic} telah dicek dan sesuai standar?`,
+            title: 'Verifikasi & Setujui Improvement?',
+            text: `Apakah hasil perbaikan "${act.problemFinding || act.title}" oleh PIC ${act.pic} telah dicek dan memenuhi standar?`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Ya, Approve & Selesai',
             cancelButtonText: 'Batal',
-            background: '#111827',
-            color: '#fff',
-            confirmButtonColor: '#8b5cf6'
+            background: this.isDark() ? '#111827' : '#ffffff',
+            color: this.isDark() ? '#fff' : '#0f172a',
+            confirmButtonColor: '#7c3aed'
         }).then(res => {
             if (res.isConfirmed) {
                 act.status = 'VERIFIED';
@@ -2606,7 +3258,6 @@ const App = {
                 this.openModal(this.activeActionId);
                 this.renderMonitoringList();
 
-                // === SYNC KE SPREADSHEET: SPV_VERIFY ===
                 syncToSheet({
                     actionType: 'SPV_VERIFY',
                     id: act.id,
@@ -2615,33 +3266,124 @@ const App = {
 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Tugas Telah Diverifikasi SPV!',
-                    text: 'Tugas selesai tuntas 100% & tersinkronisasi ke Spreadsheet.',
-                    background: '#111827',
-                    color: '#fff',
-                    confirmButtonColor: '#8b5cf6'
+                    title: 'Action Improvement Terverifikasi!',
+                    text: 'Tugas tuntas 100% dan tersinkronisasi.',
+                    background: this.isDark() ? '#111827' : '#ffffff',
+                    color: this.isDark() ? '#fff' : '#0f172a',
+                    confirmButtonColor: '#7c3aed'
                 });
             }
         });
     },
 
-    shareWhatsApp() {
-        const act = this.actions.find(a => a.id === this.activeActionId);
-        if (!act) return;
-
+    // =========================================================================
+    // WHATSAPP SHARE FORMATTER & MODAL (DETAIL 1-POINT VIEW)
+    // =========================================================================
+    generateWhatsAppReport(act) {
         const pct = this.calcPct(act);
         const areaStr = act.subRental ? `Gudang Rental (${act.subRental})` : act.area;
-        const text = `*ACTION & IMPROVEMENT WAREHOUSE*%0A%0A` +
-                     `📌 *Tugas:* ${act.title}%0A` +
-                     `🏭 *Area:* ${areaStr}%0A` +
-                     `👷 *PIC:* ${act.pic}%0A` +
-                     `📅 *Due Date:* ${act.dueDate}%0A` +
-                     `📊 *Progress:* ${pct}%%0A` +
-                     `🏷️ *Status:* ${act.status}%0A` +
-                     `📸 *Cloudinary Foto:* ${CLOUDINARY_BASE}/...%0A%0A` +
-                     `_Dipantau melalui Smart Warehouse System_`;
+        const problem = act.problemFinding || act.title;
+        const improvement = act.improvementPlan || act.desc || '-';
+        const location = act.desc || '-';
+        
+        let checklistText = '';
+        if (act.checklist && act.checklist.length > 0) {
+            checklistText = act.checklist.map((c, i) => `${c.done ? '✅' : '⬜'} ${i + 1}. ${c.text}`).join('\n');
+        } else {
+            checklistText = '• 5 Tahapan Standar';
+        }
 
-        window.open(`https://wa.me/?text=${text}`, '_blank');
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+        return `📋 *LAPORAN ACTION & IMPROVEMENT - SMART WAREHOUSE*
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🆔 *ID:* ${act.id}
+🏭 *Area:* ${areaStr}
+👷 *PIC:* ${act.pic}
+📅 *Due Date:* ${act.dueDate}
+🏷️ *Status:* ${act.status.replace('_', ' ')}
+📊 *Progress:* ${pct}%
+
+⚠️ *TEMUAN MASALAH:*
+${problem}
+
+💡 *RENCANA IMPROVEMENT:*
+${improvement}
+
+📍 *Detail Lokasi:*
+${location}
+
+📝 *PROGRES 5 TAHAPAN:*
+${checklistText}
+
+📸 *DOKUMENTASI FOTO:*
+• *Foto Before:* ${act.beforeImg || '(Belum ada)'}
+• *Foto After:* ${act.afterImg || '(Belum selesai/upload)'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🕒 *Update:* ${dateStr}, ${timeStr} WIB
+🏢 *Smart Warehouse Live Monitoring System*`;
+    },
+
+    openWhatsAppShareModal(actionId) {
+        const act = this.actions.find(a => a.id === actionId);
+        if (!act) return;
+
+        this.activeActionId = actionId;
+        const problem = act.problemFinding || act.title;
+        const improvement = act.improvementPlan || act.desc || '-';
+
+        document.getElementById('wa-card-area').innerText = act.subRental || act.area;
+        document.getElementById('wa-card-status').innerText = act.status.replace('_', ' ');
+        document.getElementById('wa-card-status').className = `action-status-pill status-${act.status}`;
+        document.getElementById('wa-card-problem').innerText = problem;
+        document.getElementById('wa-card-improvement').innerText = `Rencana: ${improvement}`;
+        document.getElementById('wa-card-pic').innerText = act.pic;
+        document.getElementById('wa-card-due').innerText = act.dueDate;
+
+        const reportText = this.generateWhatsAppReport(act);
+        document.getElementById('wa-preview-text').innerText = reportText;
+
+        document.getElementById('wa-share-modal').classList.add('active');
+    },
+
+    closeWhatsAppModal() {
+        document.getElementById('wa-share-modal').classList.remove('active');
+    },
+
+    copyWhatsAppText() {
+        const text = document.getElementById('wa-preview-text').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Teks Laporan Disalin ke Clipboard!',
+                showConfirmButton: false,
+                timer: 1600,
+                background: this.isDark() ? '#111827' : '#ffffff',
+                color: this.isDark() ? '#fff' : '#0f172a'
+            });
+        }).catch(err => {
+            Swal.fire({ icon: 'error', title: 'Gagal menyalin teks' });
+        });
+    },
+
+    sendWhatsAppDirect() {
+        const text = document.getElementById('wa-preview-text').innerText;
+        let phone = document.getElementById('wa-custom-phone').value.trim().replace(/\D/g, '');
+        
+        let url = '';
+        if (phone) {
+            if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+            url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`;
+        } else {
+            url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+        }
+        
+        window.open(url, '_blank');
     }
 };
 
